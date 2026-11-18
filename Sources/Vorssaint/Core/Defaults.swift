@@ -987,6 +987,12 @@ enum DefaultsKey {
     static let notchShowInCaptures = "notchShowInCaptures"
     static let notchLockScreen = "notchLockScreen" // music and live activities over the lock screen
     static let notchLockSounds = "notchLockSounds" // padlock sounds as the Mac locks and unlocks
+    // Zenith fork: each lock screen item on its own (NotchLockScreenItem).
+    static let notchLockScreenMusic = "notchLockScreenMusic"
+    static let notchLockScreenTimer = "notchLockScreenTimer"
+    static let notchLockScreenAgents = "notchLockScreenAgents"
+    static let notchLockScreenDownloads = "notchLockScreenDownloads"
+    static let notchLockScreenCalendar = "notchLockScreenCalendar"
     // Companion: a small friend who rests in the closed island and is the Command Bar's face.
     static let notchMascotEnabled = "notchMascotEnabled"
     static let notchMascotVisits = "notchMascotVisits" // passes through the island now and then
@@ -1599,6 +1605,11 @@ enum Defaults {
         DefaultsKey.notchShowInCaptures: true,
         DefaultsKey.notchLockScreen: false,
         DefaultsKey.notchLockSounds: false,
+        DefaultsKey.notchLockScreenMusic: true,
+        DefaultsKey.notchLockScreenTimer: true,
+        DefaultsKey.notchLockScreenAgents: true,
+        DefaultsKey.notchLockScreenDownloads: true,
+        DefaultsKey.notchLockScreenCalendar: true,
         DefaultsKey.notchMascotEnabled: false,
         DefaultsKey.notchMascotVisits: true,
         DefaultsKey.notchMascotReactions: true,

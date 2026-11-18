@@ -647,6 +647,8 @@ struct NotchSettings: View {
             let locked = FeatureStrings.notchLockScreen(l10n.language)
             SettingsCard(title: locked.title) {
                 switchRow("lock.display", locked.show, caption: locked.showHint, isOn: $lockScreen)
+                // Zenith fork: choose what the lock screen shows, item by item.
+                if lockScreen { NotchLockScreenItemToggles() }
                 switchRow("speaker.wave.2", locked.sounds, caption: locked.soundsHint, isOn: $lockSounds)
             }
         }

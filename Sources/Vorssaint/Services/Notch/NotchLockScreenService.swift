@@ -103,11 +103,15 @@ final class NotchLockScreenService {
         // drawn open from its first frame.
         padlockWork?.cancel()
         model.padlockOpen = closingPadlock
+        // Zenith fork: each item also has its own lock screen switch.
+        let calendar = NotchLockScreenItem.calendar.isOn()
         let gates = NotchLockScreenModel.Gates(
-            music: NotchLockScreenSupport.showsMusic(), timer: NotchTimerSupport.isEnabled(),
-            agents: NotchAgentSupport.showsLiveActivity(),
-            downloads: NotchSupport.routes(.download), countdown: NotchCalendarSupport.showsCountdown(),
-            timeLeft: NotchCalendarSupport.showsTimeLeft())
+            music: NotchLockScreenSupport.showsMusic() && NotchLockScreenItem.music.isOn(),
+            timer: NotchTimerSupport.isEnabled() && NotchLockScreenItem.timer.isOn(),
+            agents: NotchAgentSupport.showsLiveActivity() && NotchLockScreenItem.agents.isOn(),
+            downloads: NotchSupport.routes(.download) && NotchLockScreenItem.downloads.isOn(),
+            countdown: NotchCalendarSupport.showsCountdown() && calendar,
+            timeLeft: NotchCalendarSupport.showsTimeLeft() && calendar)
         if model.gates != gates { model.gates = gates }
         var scene: [NotchLockScreenPanel] = []
         // Without the Music section there is no player to show or to click.
@@ -143,6 +147,13 @@ final class NotchLockScreenService {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: work)
         }
         for panel in panels {
+            // Zenith fork: the padlock island replaces the island at once, so
+            // the island never shows through a fade; the rest still fades in.
+            if panel === island {
+                panel.alphaValue = 1
+                panel.orderFrontRegardless()
+                continue
+            }
             panel.alphaValue = 0
             panel.orderFrontRegardless()
             NSAnimationContext.runAnimationGroup { context in
