@@ -52,6 +52,8 @@ enum DockClickSupport {
     static func isOwnBundleIdentifier(_ bundleIdentifier: String?) -> Bool {
         bundleIdentifier == "com.vorssaint.utils"
             || bundleIdentifier == "com.vorssaint.utils.dev"
+            || bundleIdentifier == "id.satuvisual.zenith"
+            || bundleIdentifier == "id.satuvisual.zenith.dev"
     }
 
     /// The Option-Command-M chord is not unique to Minimize All. Only the

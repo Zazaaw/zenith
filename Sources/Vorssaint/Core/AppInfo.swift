@@ -1,17 +1,38 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Vorssaint
+// Copyright (C) 2026 Satu Visual
 
 import Foundation
 
 /// Static identity of the app, shared by UI, notifications and tooling.
+///
+/// Zenith fork: every brand value lives here. Zenith is based on Vorssaint;
+/// the GPL requires that attribution to stay visible (see `copyright`).
 enum AppInfo {
-    static let name = "Vorssaint"
-    static let copyright = "© 2026 Vorssaint"
-    static let websiteURL = URL(string: "https://vorssaint.com")!
-    static let repositoryURL = URL(string: "https://github.com/vorssaint/vorssaint-utils")!
-    static let coffeeURL = URL(string: "https://buymeacoffee.com/vorssaint")!
-    static let discordURL = URL(string: "https://discord.gg/M6BwWH4BJp")!
-    static let socialURL = URL(string: "https://x.com/vorssaint")!
+    static let name = "Zenith"
+    static let maker = "Satu Visual"
+    static let copyright = "© 2026 Satu Visual · Based on Vorssaint © 2026 Vorssaint"
+    static let websiteURL = URL(string: "https://p441z-satuvisual.vercel.app")!
+    static let repositoryURL = URL(string: "https://github.com/satuvisual/zenith")!
+    /// `owner/repo` on GitHub, used by the update check.
+    static let repositorySlug = "satuvisual/zenith"
+    /// Zenith has no donation, Discord or social channel yet; UI hides what is nil.
+    static let coffeeURL: URL? = nil
+    static let discordURL: URL? = nil
+    static let socialURL: URL? = nil
+
+    static let bundleIdentifier = "id.satuvisual.zenith"
+    static let developerBundleIdentifier = "id.satuvisual.zenith.dev"
+
+    /// Off until Zenith publishes its own signed releases. The upstream updater
+    /// verifies Vorssaint's Developer ID, so pointing it anywhere else would only fail,
+    /// and pointing it at upstream would replace Zenith with the official Vorssaint.
+    static let updatesEnabled = false
+    /// Zenith runs no feedback or sharing service yet. Nil keeps feedback from
+    /// leaving the Mac; sharing uploads go to a reserved `.invalid` host (RFC 2606)
+    /// that never resolves, so nothing reaches Vorssaint's servers.
+    static let feedbackEndpoint: URL? = nil
+    static let sharingEndpoint = URL(string: "https://sharing.zenith.invalid")!
 
     /// The bundle version. The fallback only applies to the bare binary
     /// (e.g. `--selftest`), never the shipped app, which reads its Info.plist.

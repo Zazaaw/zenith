@@ -969,13 +969,15 @@ struct SupportSettings: View {
                         .frame(maxWidth: 460)
                 }
 
-                Button {
-                    openURL(AppInfo.coffeeURL)
-                } label: {
-                    Label(l10n.s.donateButton, systemImage: "cup.and.saucer.fill")
+                if let coffeeURL = AppInfo.coffeeURL {
+                    Button {
+                        openURL(coffeeURL)
+                    } label: {
+                        Label(l10n.s.donateButton, systemImage: "cup.and.saucer.fill")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
 
                 HStack(alignment: .top, spacing: 14) {
                     Image(systemName: "star.fill")

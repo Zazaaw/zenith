@@ -2490,12 +2490,26 @@ enum SwitcherModelFeatureTests {
                && !SupportUpdateIntroInfo.shouldShow(appVersion: "3.4.4-beta.2", lastSeenVersion: nil)
                && !SupportUpdateIntroInfo.shouldShow(appVersion: "3.5.0", lastSeenVersion: nil),
                "support prompt never leaks into another release or a beta")
-        suite.expect(AppInfo.discordURL.absoluteString == "https://discord.gg/M6BwWH4BJp",
-               "the community action uses the permanent Discord invitation")
-        suite.expect(AppInfo.coffeeURL.absoluteString == "https://buymeacoffee.com/vorssaint",
-               "financial support uses Buy Me a Coffee")
-        suite.expect(AppInfo.socialURL.absoluteString == "https://x.com/vorssaint",
-               "social previews keep the official X profile")
+        // Zenith fork: identity and the guards that keep Zenith from talking to
+        // Vorssaint's services. A sync that flips any of these fails here.
+        suite.expect(AppInfo.name == "Zenith" && AppInfo.maker == "Satu Visual",
+               "the app presents itself as Zenith by Satu Visual")
+        suite.expect(AppInfo.copyright.contains("Vorssaint"),
+               "the copyright line keeps the GPL attribution to Vorssaint")
+        suite.expect(AppInfo.bundleIdentifier == "id.satuvisual.zenith"
+               && AppInfo.developerBundleIdentifier == "id.satuvisual.zenith.dev",
+               "Zenith uses its own bundle identifiers")
+        suite.expect(AppInfo.repositorySlug == "satuvisual/zenith"
+               && AppInfo.repositoryURL.absoluteString == "https://github.com/satuvisual/zenith",
+               "repository links point at Zenith, not upstream")
+        suite.expect(!AppInfo.updatesEnabled,
+               "updates stay off until Zenith ships its own signed releases")
+        suite.expect(AppInfo.feedbackEndpoint == nil,
+               "feedback never reaches Vorssaint's server")
+        suite.expect(AppInfo.sharingEndpoint.host?.hasSuffix(".invalid") == true,
+               "sharing uploads never reach Vorssaint's server")
+        suite.expect(AppInfo.discordURL == nil && AppInfo.coffeeURL == nil && AppInfo.socialURL == nil,
+               "Zenith has no community, donation or social channel yet")
         // AppInfo.version falls back to "dev" in this bare harness, so read
         // the plist the shipped app will actually carry. The pin is a
         // per-release decision: this check fails on every version bump so the

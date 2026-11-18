@@ -31,6 +31,44 @@ rebranding dikerjakan bertahap (lihat di bawah).
 Nama internal (folder `Sources/Vorssaint/`, nama modul, nama tipe) **tidak** di-rename,
 karena memindahkan path ribuan file akan membuat setiap sync konflik.
 
+### Status fase 1
+
+**1a. Identitas inti dan keamanan (selesai, branch `feat/rebrand-identity`):**
+
+- Semua nilai brand ada di `Core/AppInfo.swift`: nama, pembuat, copyright (dengan
+  atribusi Vorssaint), website, repo, bundle ID, dan saklar layanan.
+- Auto-update **mati** (`AppInfo.updatesEnabled = false`). Installer upstream
+  memverifikasi Developer ID Vorssaint (Team `3D485NHW29`), jadi kalau update tetap
+  mengarah ke upstream, Zenith akan ditimpa Vorssaint resmi.
+- Feedback **mati** (`AppInfo.feedbackEndpoint = nil`, error `unavailable`). Sharing
+  screenshot/rekaman diarahkan ke host `.invalid` yang tidak pernah resolve, jadi tidak
+  ada data yang terkirim ke `screenshots.vorssaint.com`. Tombol share masih terlihat.
+- Tombol donasi disembunyikan (`coffeeURL = nil`). Discord dan X juga `nil` (tidak dipakai di UI).
+- Bundle ID `id.satuvisual.zenith` / `.dev`, executable `Zenith` / `ZenithDeveloper`,
+  helper fan-control `id.satuvisual.zenith.fan-control`, nama app dan teks izin
+  (Info.plist dan 14 `InfoPlist.strings`).
+- Daftar perlindungan diri (Quit All, Dock click, Kill Process, Cleaner, Uninstaller)
+  mengenali ID Zenith. ID Vorssaint tetap dilindungi.
+- `build.sh --install` tidak lagi menghapus app lama Vorssaint; test isolasi install
+  diubah sesuai aturan itu.
+- Judul panel, User-Agent, dan nama klien memakai `AppInfo.name`.
+
+**1b. Belum dikerjakan:**
+
+- Teks UI di 15 bahasa (sekitar 1.880 kemunculan "Vorssaint"), termasuk label ikon
+  menu bar `keepAwakeActiveIconVorssaint`.
+- Nama folder backup pengaturan (`SettingsBackupSupport`: "vorssaint").
+- `Tools/uninstall.sh` masih untuk Vorssaint. **Jangan dijalankan untuk Zenith.**
+- `UpdateInstallerSupport` masih memverifikasi Team ID Vorssaint. Ganti ke Team ID
+  Satu Visual begitu ada Apple Developer Program, lalu nyalakan `updatesEnabled`.
+- Workflow `release.yml` adalah pipeline rilis Vorssaint (signing dan notarisasi
+  mereka), jadi tidak dipakai Zenith.
+- Identitas signing lokal "Vorssaint Utils Signing" sengaja dipertahankan: hanya ada
+  di keychain dan tidak pernah terlihat pengguna, dan menggantinya akan menghapus izin
+  yang sudah diberikan.
+- Label internal (`com.vorssaint.*` di queue/log, `VorssaintBuildCommit`, nama
+  dylib/modul) dibiarkan karena tidak terlihat pengguna.
+
 ## Aturan yang mengikat
 
 - **GPL-3.0-or-later.** Kalau hasil fork disebarkan, source code-nya wajib terbuka

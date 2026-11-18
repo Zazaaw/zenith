@@ -904,6 +904,7 @@ enum UninstallerSupport {
         let lowered = id.lowercased()
         return lowered == "com.vorssaint" || lowered.hasPrefix("com.vorssaint.")
             || lowered.hasPrefix("vorss.")
+            || lowered == "id.satuvisual" || lowered.hasPrefix("id.satuvisual.")
     }
 
     private static func stripKnownSuffix(_ rawName: String) -> String {

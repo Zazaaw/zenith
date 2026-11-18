@@ -27,7 +27,7 @@ final class UpdateService: ObservableObject {
     /// preview. Set alongside `.available`; cleared otherwise.
     @Published private(set) var availableNotes: String?
 
-    private let repository = "vorssaint/vorssaint-utils"
+    private let repository = AppInfo.repositorySlug
     private var downloadURL: URL?
     /// Size the release advertises for the asset, used to bound the download.
     private var downloadExpectedBytes: Int64?
@@ -113,6 +113,13 @@ final class UpdateService: ObservableObject {
             lastChecked = Date()
             return
         }
+        if !AppInfo.updatesEnabled {
+            // Zenith fork: no releases of our own yet (see AppInfo.updatesEnabled).
+            state = .upToDate
+            availableNotes = nil
+            lastChecked = Date()
+            return
+        }
         if case .checking = state { return }
         if case .downloading = state { return }
         if case .installing = state { return }
@@ -124,7 +131,7 @@ final class UpdateService: ObservableObject {
 
         var request = URLRequest(url: URL(string: endpoint)!)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        request.setValue("Vorssaint/\(AppInfo.version)", forHTTPHeaderField: "User-Agent")
+        request.setValue("\(AppInfo.name)/\(AppInfo.version)", forHTTPHeaderField: "User-Agent")
         request.cachePolicy = .reloadIgnoringLocalCacheData
 
         URLSession.shared.dataTask(with: request) { [weak self] data, _, error in
