@@ -16,7 +16,7 @@ rebranding dikerjakan bertahap (lihat di bawah).
 | Repo | [satuvisual/zenith](https://github.com/satuvisual/zenith) |
 | Bundle ID (rencana) | `id.satuvisual.zenith` |
 | Logo | Bintang 8 lengan Satu Visual (monokrom); dipakai untuk ikon app, glyph menu bar, notch idle, About, DMG |
-| Atribusi | "Based on Vorssaint" wajib di About dan README; header copyright upstream tidak boleh dihapus |
+| Atribusi | Kredit ke Vorssaint hanya di README (bagian Credits dan License). Header copyright upstream di file sumber tidak boleh dihapus. UI app tidak menyebut Vorssaint; kalau build Zenith suatu saat disebarkan, tambahkan layar lisensi di app (GPL §5d). |
 
 ## Urutan rebranding
 
@@ -66,14 +66,29 @@ karena memindahkan path ribuan file akan membuat setiap sync konflik.
   tidak berbagi pengaturan dengan Vorssaint kalau keduanya terpasang. Fallback path
   wallpaper memakai bundle ID Zenith.
 
+**Fondasi (branch `feat/foundation`):**
+
+- README Zenith; Vorssaint hanya di bagian Credits dan License. `.gitattributes`
+  membuat README versi kita selalu menang saat merge.
+- Copyright yang terlihat (About, Info.plist) hanya "© 2026 Satu Visual".
+- Nama yang bisa dilihat pengguna memakai `zenith`: aturan sudoers
+  `/etc/sudoers.d/zenith-clamshell` (dan Zenith tidak lagi menghapus aturan
+  Vorssaint), lock file helper kipas `/var/run/zenith-fan-control.*`, file sementara
+  (`.zenith-partial-*`, `.zenith-*.partial`, `zenith-homebrew-*`, `zenith-uninstall-*`,
+  `.zenith-XXXXXX`), proses `zenith-relaunch`, skema `zenith-task`, backup wallpaper
+  `WallpaperIndex.zenith-bak`, kunci file backup `zenithBackupVersion` /
+  `zenithBackupAppVersion` (backup dari Vorssaint tidak bisa di-restore ke Zenith).
+- `Tools/uninstall.sh` sekarang untuk Zenith dan tidak menyentuh Vorssaint.
+- Glyph menu bar dinaikkan ke 17 pt setelah dicek di menu bar sungguhan.
+
 **Sisa yang belum dikerjakan:**
 
-- `Tools/uninstall.sh` masih untuk Vorssaint. **Jangan dijalankan untuk Zenith.**
-- Sumber daya sistem yang namanya sama dengan Vorssaint: aturan sudoers clamshell
-  (`/etc/sudoers.d/vorssaint-clamshell`) dan lock file helper kipas
-  (`/var/run/vorssaint-fan-control.*`). Hanya bermasalah kalau Zenith dan Vorssaint
-  dipakai bersamaan dengan fitur itu aktif.
-- String `communityIntroFollowButton` ("Follow @vorssaint on X") tidak dipakai di UI.
+- Nama internal yang tidak terlihat pengguna dibiarkan: label antrean dan log
+  `com.vorssaint.*`, ID sentinel AirPlay `vorssaint.output.airplay`, simbol
+  `vorssaint_now_playing_*` (penghubung dylib dan `now-playing.pl`), kunci defaults
+  `vorssDisabledSleep`, dan string `communityIntroFollowButton` yang tidak dipakai UI.
+- Dokumen repo bawaan upstream (CONTRIBUTING, SUPPORT, SECURITY, SPONSORS, TRADEMARKS,
+  CHANGELOG, docs/*) masih tentang Vorssaint.
 - Catatan rilis (`ReleaseNotes.swift`, `CHANGELOG.md`) masih riwayat rilis Vorssaint,
   termasuk klaim "Signed with an Apple Developer ID and notarized" yang belum berlaku
   untuk Zenith.
@@ -150,6 +165,7 @@ git branch --set-upstream-to=upstream/main main
 git config rerere.enabled true      # ingat cara menyelesaikan konflik
 git config rerere.autoupdate true
 git config pull.rebase false
+git config merge.ours.driver true   # dipakai .gitattributes: README.md versi kita selalu menang
 ```
 
 ## Sync dari upstream (target: seminggu sekali)
