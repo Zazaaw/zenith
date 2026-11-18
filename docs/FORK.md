@@ -160,6 +160,21 @@ karena memindahkan path ribuan file akan membuat setiap sync konflik.
 - Gambar dan GIF sorotan fitur (`Resources/Images`, `Resources/Gifs`) masih
   screenshot UI Vorssaint.
 
+### Fase 3: design tokens dan redesign UI
+
+Keputusan desain: SF Pro untuk semua teks, kontrol mengikuti warna aksen sistem,
+warna status dan data memakai palet p441z Style Kit (blue info, purple proses, amber
+peringatan, emerald sukses, red error; warna lain jadi abu-abu), gerak mengikuti kurva
+dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
+
+- **3a (selesai):** `Sources/Vorssaint/UI/ZenithTokens.swift` berisi `ZenithStatus`,
+  `ZenithMotion`, `ZenithRadius` dan `ZenithType`. Belum ada view yang memakainya, jadi
+  tampilan belum berubah. Status di mode terang memakai tingkat 600 (bukan 500 seperti
+  Style Kit) supaya teks kecil tetap terbaca di latar putih.
+- `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
+  hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
+  kuning). Dipetakan per pemakaian saat redesign panel menu bar.
+
 ## Branch dan remote
 
 ```
