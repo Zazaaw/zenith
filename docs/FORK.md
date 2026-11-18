@@ -180,6 +180,19 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   Pilihan zona sekarang muncul untuk semua file: Files, AirDrop, dan Optimize media
   (hanya untuk media). `ShelfDropRoutingTests` disesuaikan dan tidak pernah memicu
   AirDrop sungguhan.
+- **AirDrop berdiri sendiri (selesai):** pengaturan `notchAirDropEnabled` (default nyala)
+  di halaman Shelf; tanpa Shelf/Files, drag file "meminjam" halaman Files dengan AirDrop
+  sebagai satu-satunya zona. Teks fitur Zenith ada di `Core/ZenithStrings.swift`
+  (15 bahasa; test upstream mewajibkan apostrof melengkung ’).
+- **Maskot bintang Satu Visual (selesai):** gaya `satuVisual` (default) di
+  `NotchMascotStyle`, geometri `NotchMascotGeometry.star` (fill even-odd untuk potongan X),
+  dua mata kecil di lengan horizontal.
+- **WakaTime (selesai):** bagian notch `.wakatime` dan kartu panel `PanelSectionID.wakatime`,
+  kode di `Services/WakaTime/` dan `UI/WakaTime/`. Hanya muncul kalau `~/.wakatime.cfg` ada.
+  API key WakaTime hanya boleh membaca `status_bar/today`; summaries/stats/durations
+  butuh OAuth, jadi grafik 7 hari dibangun Zenith dari total harian yang dilihatnya
+  (`zenithWakaTimeHistory`, tidak ikut backup). Data diambil hanya saat tampilan terlihat,
+  paling sering tiap 5 menit. Test di `Tests/WakaTimeTests.swift` (suite `wakatime`).
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
