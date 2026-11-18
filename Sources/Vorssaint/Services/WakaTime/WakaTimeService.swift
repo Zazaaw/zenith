@@ -3,12 +3,15 @@
 
 import Foundation
 
-/// Zenith fork: today's coding time from WakaTime, plus the days Zenith has seen.
+/// Zenith fork: coding time from WakaTime.
 ///
-/// Nothing runs in the background. A view that shows WakaTime asks for a
-/// refresh when it appears, and while one is visible the summary refreshes every
-/// `WakaTimeSupport.refreshInterval`. The API key never leaves the request to
-/// WakaTime's own server (or the `api_url` in `~/.wakatime.cfg`).
+/// With a personal token (Keychain) it reads ranges, daily summaries and whether
+/// someone is coding right now. With only the plugin key in `~/.wakatime.cfg` it
+/// reads today and keeps its own seven-day history.
+///
+/// Nothing runs in the background. A visible WakaTime view asks for a refresh
+/// when it appears, and refreshes every `WakaTimeSupport.refreshInterval` while
+/// shown. Credentials only travel to WakaTime (or the `api_url` the config names).
 @MainActor
 final class WakaTimeService: ObservableObject {
     static let shared = WakaTimeService()
@@ -20,24 +23,74 @@ final class WakaTimeService: ObservableObject {
     @Published private(set) var state: State = .idle
     @Published private(set) var today: WakaTimeSupport.Today?
     @Published private(set) var history: [String: Double]
+    @Published private(set) var hasToken: Bool
+    @Published private(set) var range: WakaTimeSupport.Range
+    @Published private(set) var presence: WakaTimeSupport.Presence?
+    @Published private(set) var stats: WakaTimeSupport.StatsResult?
+    @Published private(set) var summaryDays: [WakaTimeSupport.Day] = []
 
     /// One total per day seen, kept on this Mac only (not part of settings backups).
     static let historyKey = "zenithWakaTimeHistory"
+    static let rangeKey = "zenithWakaTimeRange"
 
     private var lastFetch: Date?
     private var request: Task<Void, Never>?
     private var timer: Timer?
     private var viewers = 0
+    private var token: String?
 
     private init() {
         let stored = UserDefaults.standard.dictionary(forKey: Self.historyKey) ?? [:]
         history = stored.compactMapValues { ($0 as? Double) ?? ($0 as? NSNumber)?.doubleValue }
+        token = WakaTimeTokenStore.read()
+        hasToken = token != nil
+        range = (UserDefaults.standard.string(forKey: Self.rangeKey)).flatMap(WakaTimeSupport.Range.init) ?? .today
     }
 
-    /// The last seven days, today last.
+    /// Bars for the chart, oldest first: WakaTime's own days with a token,
+    /// otherwise the days Zenith has seen.
     var days: [WakaTimeSupport.Day] {
-        WakaTimeSupport.lastDays(history, today: Date())
+        if hasToken, !summaryDays.isEmpty { return summaryDays }
+        return WakaTimeSupport.lastDays(history, today: Date())
     }
+
+    /// The range's stats once WakaTime has them.
+    var readyStats: WakaTimeSupport.Stats? {
+        if case .ready(let stats) = stats { return stats }
+        return nil
+    }
+
+    // MARK: Token
+
+    @discardableResult
+    func saveToken(_ value: String) -> Bool {
+        guard WakaTimeTokenStore.save(value) else { return false }
+        token = WakaTimeTokenStore.read()
+        hasToken = token != nil
+        refresh(force: true)
+        return hasToken
+    }
+
+    func removeToken() {
+        WakaTimeTokenStore.delete()
+        token = nil
+        hasToken = false
+        presence = nil
+        stats = nil
+        summaryDays = []
+        if range != .today { select(.today) } else { refresh(force: true) }
+    }
+
+    func select(_ range: WakaTimeSupport.Range) {
+        guard range != self.range else { return }
+        self.range = range
+        UserDefaults.standard.set(range.rawValue, forKey: Self.rangeKey)
+        stats = nil
+        summaryDays = []
+        refresh(force: true)
+    }
+
+    // MARK: Refresh
 
     func viewAppeared() {
         viewers += 1
@@ -64,23 +117,41 @@ final class WakaTimeService: ObservableObject {
         refresh()
     }
 
-    func refresh() {
+    func refresh(force: Bool = false) {
+        if force { request?.cancel(); request = nil }
         guard request == nil else { return }
-        guard let configuration = WakaTimeSupport.loadConfiguration() else {
+        let configuration = WakaTimeSupport.loadConfiguration()
+        guard let authorization = WakaTimeSupport.authorization(token: token, configuration: configuration) else {
             state = .missingKey
             return
         }
         if today == nil { state = .loading }
-        let urlRequest = WakaTimeSupport.todayRequest(configuration,
-                                                      userAgent: "\(AppInfo.name)/\(AppInfo.version)")
+        let base = token != nil ? WakaTimeSupport.tokenAPIURL : (configuration?.apiURL ?? WakaTimeSupport.defaultAPIURL)
+        let agent = "\(AppInfo.name)/\(AppInfo.version)"
+        func make(_ path: String) -> URLRequest {
+            WakaTimeSupport.request(path, base: base, authorization: authorization, userAgent: agent)
+        }
+        let withToken = token != nil
+        let todayKey = WakaTimeSupport.dayKey(Date())
+        let todayRequest = make("users/current/status_bar/today")
+        let userRequest = withToken ? make("users/current") : nil
+        let statsRequest = withToken && range != .today ? make("users/current/stats/\(range.rawValue)") : nil
+        let daysRequest = withToken ? range.summaryRange.map { make("users/current/summaries?range=\($0)") } : nil
         request = Task { [weak self] in
-            let result = try? await URLSession.shared.data(for: urlRequest)
-            guard let self else { return }
+            async let todayData = Self.fetch(todayRequest)
+            async let userData = Self.fetch(userRequest)
+            async let statsData = Self.fetch(statsRequest)
+            async let daysData = Self.fetch(daysRequest)
+            let (todayBody, userBody, statsBody, daysBody) = await (todayData, userData, statsData, daysData)
+            guard let self, !Task.isCancelled else { return }
             self.request = nil
             self.lastFetch = Date()
-            guard let (data, response) = result,
-                  (response as? HTTPURLResponse)?.statusCode == 200,
-                  let today = WakaTimeSupport.today(from: data) else {
+            if let userBody { self.presence = WakaTimeSupport.presence(from: userBody) }
+            if let statsBody { self.stats = WakaTimeSupport.stats(from: statsBody) }
+            if let daysBody, let days = WakaTimeSupport.summaryDays(from: daysBody, today: todayKey) {
+                self.summaryDays = days
+            }
+            guard let todayBody, let today = WakaTimeSupport.today(from: todayBody) else {
                 // Keep showing the last good summary; say so only when there is none.
                 if self.today == nil { self.state = .failed }
                 return
@@ -90,5 +161,12 @@ final class WakaTimeService: ObservableObject {
             UserDefaults.standard.set(self.history, forKey: Self.historyKey)
             self.state = .ready
         }
+    }
+
+    /// The body of a 2xx answer (WakaTime answers 202 while it builds a range).
+    private nonisolated static func fetch(_ request: URLRequest?) async -> Data? {
+        guard let request, let (data, response) = try? await URLSession.shared.data(for: request),
+              let status = (response as? HTTPURLResponse)?.statusCode, (200..<300).contains(status) else { return nil }
+        return data
     }
 }

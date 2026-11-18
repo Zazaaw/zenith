@@ -543,7 +543,10 @@ struct NotchSettings: View {
         case .watch:
             NotchWatchSettingsControls()
                 .toggleStyle(TrailingSwitchToggleStyle())
-        case .mixer, .system, .tools, .wakatime:
+        case .wakatime:
+            // Zenith fork: the personal token that unlocks ranges and coding now.
+            WakaTimeTokenSettings()
+        case .mixer, .system, .tools:
             EmptyView()
         }
     }

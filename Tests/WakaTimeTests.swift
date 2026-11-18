@@ -10,6 +10,71 @@ enum WakaTimeTests {
         today(suite)
         history(suite)
         formatting(suite)
+        token(suite)
+    }
+
+    /// What a personal token unlocks: ranges, daily summaries and the last heartbeat.
+    private static func token(_ suite: TestSuite) {
+        let config = WakaTimeSupport.Configuration(apiKey: "abc", apiURL: WakaTimeSupport.defaultAPIURL)
+        suite.expect(WakaTimeSupport.authorization(token: " waka_tok_xyz \n", configuration: config) == "Bearer waka_tok_xyz"
+                     && WakaTimeSupport.authorization(token: nil, configuration: config) == "Basic YWJj"
+                     && WakaTimeSupport.authorization(token: "", configuration: nil) == nil,
+                     "a personal token goes as Bearer, else the plugin key as Basic, else nothing")
+        suite.expect(WakaTimeSupport.isPersonalToken("waka_tok_123") && !WakaTimeSupport.isPersonalToken("waka_123"),
+                     "only waka_tok_ values are personal tokens")
+        let request = WakaTimeSupport.request("users/current/summaries?range=last_7_days", base: WakaTimeSupport.tokenAPIURL,
+                                              authorization: "Bearer t", userAgent: "Zenith/1")
+        suite.expect(request.url?.absoluteString == "https://wakatime.com/api/v1/users/current/summaries?range=last_7_days",
+                     "paths keep their query")
+
+        let user = """
+            {"data": {"last_heartbeat_at": "2026-11-19T01:00:00.123Z", "last_project": "zenith",
+            "last_language": "Swift", "last_plugin": "wakatime/v2 (darwin) claude-code/2.1 vscode/1.1",
+            "last_plugin_name": "vscode"}}
+            """
+        let presence = WakaTimeSupport.presence(from: Data(user.utf8))
+        let heartbeat = WakaTimeSupport.date(from: "2026-11-19T01:00:00.123Z")!
+        suite.expect(presence?.project == "zenith" && presence?.language == "Swift" && presence?.editor == "Claude Code"
+                     && presence?.lastHeartbeat == heartbeat,
+                     "the last heartbeat gives project, language and a readable editor")
+        suite.expect(presence?.isCoding(at: heartbeat.addingTimeInterval(14 * 60)) == true
+                     && presence?.isCoding(at: heartbeat.addingTimeInterval(16 * 60)) == false,
+                     "coding now means a heartbeat in the last fifteen minutes")
+        suite.expect(WakaTimeSupport.editor(plugin: nil, name: "vscode") == "VS Code"
+                     && WakaTimeSupport.editor(plugin: "", name: "sublime") == "Sublime",
+                     "a plugin name alone still reads as an editor")
+
+        suite.expect(WakaTimeSupport.stats(from: Data(#"{"data": {"is_up_to_date": false}}"#.utf8)) == .pending,
+                     "a range WakaTime is still building says so instead of zero")
+        let statsJSON = """
+            {"data": {"is_up_to_date": true, "total_seconds": 72000, "daily_average": 10285,
+            "best_day": {"date": "2026-11-15", "total_seconds": 21600},
+            "projects": [{"name": "zenith", "total_seconds": 40000, "percent": 55.5}],
+            "languages": [{"name": "Swift", "percent": 60, "total_seconds": 43200},
+                          {"name": "Go", "percent": 0.2, "total_seconds": 144},
+                          {"name": "TS", "percent": 39.8, "total_seconds": 28656}]}}
+            """
+        guard case .ready(let stats)? = WakaTimeSupport.stats(from: Data(statsJSON.utf8)) else {
+            suite.expect(false, "a finished range parses"); return
+        }
+        suite.expect(stats.totalSeconds == 72000 && stats.dailyAverageSeconds == 10285 && stats.bestDay == "2026-11-15"
+                     && stats.bestDaySeconds == 21600 && stats.projects.first?.name == "zenith",
+                     "a range gives its total, daily average, best day and projects")
+        let stacked = WakaTimeSupport.stackedLanguages(stats.languages)
+        suite.expect(stacked.map(\.name) == ["Swift", "TS"],
+                     "slivers under half a percent leave the language bar")
+        let many = (1...7).map { WakaTimeSupport.Share(name: "L\($0)", percent: 10, seconds: 1) }
+        let folded = WakaTimeSupport.stackedLanguages(many)
+        suite.expect(folded.count == 6 && folded.last?.name == "" && folded.last?.percent == 20,
+                     "beyond five languages the rest fold into one share")
+
+        let summaries = """
+            {"data": [{"range": {"date": "2026-11-18"}, "grand_total": {"total_seconds": 3600}},
+            {"range": {"date": "2026-11-19"}, "grand_total": {"total_seconds": 60}}]}
+            """
+        let days = WakaTimeSupport.summaryDays(from: Data(summaries.utf8), today: "2026-11-19")
+        suite.expect(days?.map(\.seconds) == [3600, 60] && days?.last?.isToday == true && days?.first?.isToday == false,
+                     "daily summaries become the chart's days, today marked")
     }
 
     private static func configuration(_ suite: TestSuite) {
