@@ -8,8 +8,15 @@ struct NotchWakaTimeView: View {
     let size: CGSize
 
     var body: some View {
-        WakaTimeSummary(compact: false)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        // Ranges add rows the page height cannot always hold: scroll, as the
+        // queue and lyrics pages do, with the island's soft edges.
+        ScrollView(.vertical, showsIndicators: false) {
+            WakaTimeSummary(compact: false)
+                .padding(.bottom, 8)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .notchScrollEdgeFade()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
