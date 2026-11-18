@@ -22,7 +22,8 @@ struct NotchFilesView: View {
 
     /// Dragging media over the island asks where it goes.
     private var choosesDropDestination: Bool {
-        service.choosingFileDropDestination && AppFeature.mediaTools.isAvailable
+        // Zenith fork: the chooser also opens for AirDrop, without media tools.
+        service.choosingFileDropDestination
     }
 
     private var presentedMediaSession: NotchMediaSession? {
@@ -43,9 +44,14 @@ struct NotchFilesView: View {
             if choosesDropDestination {
                 HStack(spacing: NotchFileToolsSupport.dropSpacing) {
                     dropDestination(FeatureStrings.notch(l10n.language).files, symbol: "tray.and.arrow.down",
-                                    selected: !service.targetsMediaDrop)
-                    dropDestination(text.optimizeMedia, symbol: "wand.and.stars", selected: service.targetsMediaDrop,
-                                    available: archives.canAcceptMediaDrop)
+                                    selected: !service.targetsMediaDrop && !service.targetsAirDrop)
+                    dropDestination("AirDrop", symbol: "dot.radiowaves.left.and.right",
+                                    selected: service.targetsAirDrop, available: service.airDropAvailable,
+                                    unavailableNote: "")
+                    if service.offersMediaDrop {
+                        dropDestination(text.optimizeMedia, symbol: "wand.and.stars", selected: service.targetsMediaDrop,
+                                        available: archives.canAcceptMediaDrop)
+                    }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let session = presentedMediaSession {
@@ -122,11 +128,15 @@ struct NotchFilesView: View {
         if archives.mediaContentHeight != previous { service.refreshPresentation() }
     }
 
-    private func dropDestination(_ title: String, symbol: String, selected: Bool, available: Bool = true) -> some View {
+    private func dropDestination(_ title: String, symbol: String, selected: Bool, available: Bool = true,
+                                 unavailableNote: String? = nil) -> some View {
         VStack(spacing: 12) {
             Image(systemName: symbol).font(.system(size: 28, weight: .light))
             Text(title).font(.callout.weight(.medium)).multilineTextAlignment(.center)
-            if !available { Text(l10n.s.mediaRunning).font(.caption).foregroundStyle(.secondary) }
+            // Zenith fork: AirDrop passes an empty note and is only dimmed when off.
+            if !available, !(unavailableNote ?? l10n.s.mediaRunning).isEmpty {
+                Text(unavailableNote ?? l10n.s.mediaRunning).font(.caption).foregroundStyle(.secondary)
+            }
         }
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

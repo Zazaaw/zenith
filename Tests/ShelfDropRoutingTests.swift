@@ -61,6 +61,12 @@ enum ShelfDropRoutingContract {
         var dragPlaceholder = true
         var choosingFileDropDestination = false
         var targetsMediaDrop = false
+        // Zenith fork: AirDrop drop zone.
+        var targetsAirDrop = false
+        var offersMediaDrop = false
+        var airDropAvailable = false
+        var collapses = 0
+        func collapse() { collapses += 1 }
         var pinned = false
         var geometry = NotchGeometry(screen: CGRect(x: 0, y: 0, width: 1440, height: 900), safeAreaTop: 32, cameraWidth: 180)
         var expandedGeometry: NotchGeometry { geometry }
@@ -217,10 +223,17 @@ enum ShelfDropRoutingTests {
                     board.writeObjects(urls as [NSURL])
                     let notch = Context.Notch()
                     notch.beginFileDrop(board)
-                    suite.expect(notch.choosingFileDropDestination == (tool != nil),
+                    // Zenith fork: every file drag offers AirDrop, so the chooser opens
+                    // for any file batch; only compatible batches add Optimize media.
+                    let hasFiles = !NotchAirDropSupport.fileURLs(in: board).isEmpty
+                    suite.expect(notch.choosingFileDropDestination == (tool != nil || hasFiles)
+                            && notch.offersMediaDrop == (tool != nil),
                            "only complete compatible file batches offer optimization: \(urls.map(\.lastPathComponent))")
                     let area = NotchFileToolsSupport.mediaDropArea(in: notch.geometry, size: notch.surfaceSize)
-                    _ = notch.updateFileDrop(at: optimize ? CGPoint(x: area.midX, y: area.midY) : CGPoint(x: 40, y: area.midY))
+                    // The right-hand column is AirDrop when there is no media column;
+                    // these cases never aim at it, so no test ever sends over AirDrop.
+                    _ = notch.updateFileDrop(at: optimize && tool != nil ? CGPoint(x: area.midX, y: area.midY)
+                                                                         : CGPoint(x: 40, y: area.midY))
                     let accepted = notch.accept(board)
                     let files = Context.NotchFileToolsService.shared
                     suite.expect(accepted && files.mediaSession?.tool == (optimize ? tool : nil),
@@ -232,10 +245,25 @@ enum ShelfDropRoutingTests {
                         suite.expect(Context.ShelfService.shared.ordinaryAccepts == 1 && !notch.pinned,
                                "ordinary drops keep the original shelf delivery path")
                     }
-                    suite.expect(!notch.choosingFileDropDestination && !notch.targetsMediaDrop,
+                    suite.expect(!notch.choosingFileDropDestination && !notch.targetsMediaDrop
+                            && !notch.targetsAirDrop && !notch.offersMediaDrop,
                            "a finished drop removes its transient destinations")
                 }
             }
+            // Zenith fork: the chooser's columns, left to right.
+            let probe = Context.Notch()
+            let content = probe.geometry.contentSize(for: probe.surfaceSize)
+            let left = probe.surfaceSize.width / 2 - content.width / 2
+            func target(_ share: CGFloat, media: Bool) -> NotchDropTarget {
+                NotchAirDropSupport.target(at: CGPoint(x: left + content.width * share, y: 10),
+                                           in: probe.geometry, size: probe.surfaceSize, offersMedia: media)
+            }
+            suite.expect(target(0.1, media: false) == .files && target(0.9, media: false) == .airDrop
+                    && target(0.1, media: true) == .files && target(0.5, media: true) == .airDrop
+                    && target(0.9, media: true) == .media,
+                   "files, AirDrop and, for media, Optimize media sit left to right")
+            suite.expect(target(-1, media: true) == .files && target(2, media: true) == .media,
+                   "points beyond either edge fall to the nearest column")
             reset()
             board.clearContents()
             let text = NSPasteboardItem()

@@ -130,6 +130,10 @@ final class NotchService: ObservableObject {
     @Published private(set) var dragPlaceholder = false
     @Published private(set) var choosingFileDropDestination = false
     @Published private(set) var targetsMediaDrop = false
+    // Zenith fork: AirDrop drop zone (NotchAirDropSupport).
+    @Published private(set) var targetsAirDrop = false
+    @Published private(set) var offersMediaDrop = false
+    @Published private(set) var airDropAvailable = false
     @Published private(set) var selectedMetric: MetricDetailKind?
     @Published private(set) var captureControls: ScreenCaptureSelectionOptions?
     @Published private(set) var captureControlsCollapsed = false
@@ -2291,23 +2295,38 @@ final class NotchService: ObservableObject {
 
     func beginFileDrop(_ pasteboard: NSPasteboard) {
         guard canAcceptFileDrop else { return }
-        choosingFileDropDestination = NotchFileToolsService.shared.mediaDropContent(for: pasteboard) != nil
+        offersMediaDrop = AppFeature.mediaTools.isAvailable
+            && NotchFileToolsService.shared.mediaDropContent(for: pasteboard) != nil
+        let files = NotchAirDropSupport.fileURLs(in: pasteboard)
+        airDropAvailable = NotchAirDropSupport.canSend(files)
+        // Zenith fork: any file drag offers AirDrop, so the chooser opens for files too.
+        choosingFileDropDestination = offersMediaDrop || !files.isEmpty
         targetsMediaDrop = false
+        targetsAirDrop = false
         open(.files, takeFocus: false)
     }
 
     @discardableResult
     func updateFileDrop(at point: CGPoint) -> Bool {
-        let targeted = choosingFileDropDestination
-            && NotchFileToolsSupport.mediaDropArea(in: expandedGeometry, size: surfaceSize).contains(point)
-        if targetsMediaDrop != targeted { targetsMediaDrop = targeted }
-        return !targeted || NotchFileToolsService.shared.canAcceptMediaDrop
+        let target: NotchDropTarget = choosingFileDropDestination
+            ? NotchAirDropSupport.target(at: point, in: expandedGeometry, size: surfaceSize,
+                                         offersMedia: offersMediaDrop)
+            : .files
+        if targetsMediaDrop != (target == .media) { targetsMediaDrop = target == .media }
+        if targetsAirDrop != (target == .airDrop) { targetsAirDrop = target == .airDrop }
+        switch target {
+        case .files: return true
+        case .airDrop: return airDropAvailable
+        case .media: return NotchFileToolsService.shared.canAcceptMediaDrop
+        }
     }
 
     func endFileDrop() {
         let changed = choosingFileDropDestination
         if changed { choosingFileDropDestination = false }
         if targetsMediaDrop { targetsMediaDrop = false }
+        if targetsAirDrop { targetsAirDrop = false }
+        if offersMediaDrop { offersMediaDrop = false }
         if changed, acceptsUserInteraction { refreshPresentation() }
     }
 
@@ -2319,6 +2338,18 @@ final class NotchService: ObservableObject {
     func accept(_ pasteboard: NSPasteboard) -> Bool {
         defer { endFileDrop() }
         guard canAcceptFileDrop else { return false }
+        if choosingFileDropDestination && targetsAirDrop {
+            // Zenith fork: hand the files to the system AirDrop picker and get out of its way.
+            // Drops arrive on the main thread, from the window's drag destination.
+            let urls = NotchAirDropSupport.fileURLs(in: pasteboard)
+            let sent = MainActor.assumeIsolated { NotchAirDropSupport.send(urls) }
+            if sent {
+                heldDrag = false
+                dragPlaceholder = false
+                collapse()
+            }
+            return sent
+        }
         let optimize = choosingFileDropDestination && targetsMediaDrop
         let accepted = optimize
             ? NotchFileToolsService.shared.openMediaDrop(pasteboard)
