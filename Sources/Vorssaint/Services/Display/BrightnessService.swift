@@ -1421,7 +1421,7 @@ final class BrightnessService: ObservableObject {
             shouldStopFunctionKeyThread = false
             pendingFunctionKeyRestart = false
             let thread = Thread { [weak self] in self?.runFunctionKeyTap() }
-            thread.name = "Vorssaint Brightness Keys"
+            thread.name = "Zenith Brightness Keys"
             thread.qualityOfService = .userInteractive
             functionKeyThread = thread
             return thread

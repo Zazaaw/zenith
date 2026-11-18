@@ -1010,15 +1010,15 @@ enum SettingsFeatureTests {
         let configPath: ([String: String], Bool) -> String = {
             SettingsBackupSupport.configFileURL(environment: $0, home: configHome, isDeveloperBuild: $1).path
         }
-        suite.expect(configPath([:], false) == "/Users/someone/.config/vorssaint/settings.plist",
+        suite.expect(configPath([:], false) == "/Users/someone/.config/zenith/settings.plist",
                "without XDG_CONFIG_HOME the settings file lives in ~/.config")
         suite.expect(configPath(["XDG_CONFIG_HOME": "/Users/someone/dotfiles"], false)
-                == "/Users/someone/dotfiles/vorssaint/settings.plist",
+                == "/Users/someone/dotfiles/zenith/settings.plist",
                "an absolute XDG_CONFIG_HOME holds the settings file")
         suite.expect(configPath(["XDG_CONFIG_HOME": ""], false) == configPath([:], false)
                 && configPath(["XDG_CONFIG_HOME": "dotfiles"], false) == configPath([:], false),
                "an empty or relative XDG_CONFIG_HOME is ignored, as the XDG spec asks")
-        suite.expect(configPath([:], true) == "/Users/someone/.config/vorssaint-dev/settings.plist",
+        suite.expect(configPath([:], true) == "/Users/someone/.config/zenith-dev/settings.plist",
                "the Developer build never reads the official app's settings file")
         let binary = "/Applications/Vorssaint.app/Contents/MacOS/Vorssaint"
         suite.expect(SettingsBackupSupport.appliesConfigFile(arguments: [binary])

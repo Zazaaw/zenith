@@ -1312,7 +1312,7 @@ enum UpdateFeatureTests {
         ### Fixed
         - Update preview stays focused on changes.
 
-        Signed with an Apple Developer ID and notarized by Apple, so it downloads and opens normally. Requires macOS 14 or later. Open the .dmg below and drag Vorssaint to Applications.
+        Signed with an Apple Developer ID and notarized by Apple, so it downloads and opens normally. Requires macOS 14 or later. Open the .dmg below and drag Zenith to Applications.
         """
         let inAppUpdateBody = ReleaseNotes.inAppUpdateNotes(from: githubReleaseBodyWithFooter) ?? ""
         suite.expect(!inAppUpdateBody.contains("Signed with an Apple Developer ID"),

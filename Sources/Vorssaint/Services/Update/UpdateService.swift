@@ -284,7 +284,7 @@ final class UpdateService: ObservableObject {
                     }
                     // Move out of the session's scratch space before handing off.
                     let dmgURL = FileManager.default.temporaryDirectory
-                        .appendingPathComponent("Vorssaint-update.dmg")
+                        .appendingPathComponent("Zenith-update.dmg")
                     try? FileManager.default.removeItem(at: dmgURL)
                     do {
                         try FileManager.default.moveItem(at: tempURL, to: dmgURL)
@@ -512,7 +512,7 @@ final class BoundedUpdateDownloadDelegate: NSObject, URLSessionDataDelegate {
         self.progress = progress
         self.completion = completion
         let temporaryFileURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("Vorssaint-update-\(UUID().uuidString).download")
+            .appendingPathComponent("Zenith-update-\(UUID().uuidString).download")
         fileURL = temporaryFileURL
         guard FileManager.default.createFile(atPath: temporaryFileURL.path, contents: nil) else {
             throw CocoaError(.fileWriteUnknown)

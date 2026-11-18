@@ -53,12 +53,30 @@ karena memindahkan path ribuan file akan membuat setiap sync konflik.
   diubah sesuai aturan itu.
 - Judul panel, User-Agent, dan nama klien memakai `AppInfo.name`.
 
-**1b. Belum dikerjakan:**
+**1b. Teks UI (selesai, branch `feat/rebrand-ui-strings`):**
 
-- Teks UI di 15 bahasa (sekitar 1.880 kemunculan "Vorssaint"), termasuk label ikon
-  menu bar `keepAwakeActiveIconVorssaint`.
-- Nama folder backup pengaturan (`SettingsBackupSupport`: "vorssaint").
+- "Vorssaint" → "Zenith" di 1.475 string literal Swift (60 file, 15 bahasa). Diganti
+  dengan pemindai yang paham sintaks string Swift, jadi komentar, header copyright,
+  nama properti (mis. `keepAwakeActiveIconVorssaint`), dan ID huruf kecil tidak tersentuh.
+  Teks UI baru dari upstream bisa disisir dengan cara yang sama (lihat langkah sync 5).
+- Sengaja dikecualikan: `AppInfo.swift` (atribusi), `BundleMigration.swift` (hanya
+  aktif untuk bundle ID yang sama, jadi tidak pernah jalan di Zenith), dan
+  `UpdateInstallerSupport.swift` (update mati).
+- File konfigurasi pindah dari `~/.config/vorssaint/` ke `~/.config/zenith/`, supaya
+  tidak berbagi pengaturan dengan Vorssaint kalau keduanya terpasang. Fallback path
+  wallpaper memakai bundle ID Zenith.
+
+**Sisa yang belum dikerjakan:**
+
 - `Tools/uninstall.sh` masih untuk Vorssaint. **Jangan dijalankan untuk Zenith.**
+- Sumber daya sistem yang namanya sama dengan Vorssaint: aturan sudoers clamshell
+  (`/etc/sudoers.d/vorssaint-clamshell`) dan lock file helper kipas
+  (`/var/run/vorssaint-fan-control.*`). Hanya bermasalah kalau Zenith dan Vorssaint
+  dipakai bersamaan dengan fitur itu aktif.
+- String `communityIntroFollowButton` ("Follow @vorssaint on X") tidak dipakai di UI.
+- Catatan rilis (`ReleaseNotes.swift`, `CHANGELOG.md`) masih riwayat rilis Vorssaint,
+  termasuk klaim "Signed with an Apple Developer ID and notarized" yang belum berlaku
+  untuk Zenith.
 - `UpdateInstallerSupport` masih memverifikasi Team ID Vorssaint. Ganti ke Team ID
   Satu Visual begitu ada Apple Developer Program, lalu nyalakan `updatesEnabled`.
 - Workflow `release.yml` adalah pipeline rilis Vorssaint (signing dan notarisasi
@@ -130,14 +148,18 @@ comm -12 <(git diff --name-only "$BASE" main | sort) \
 #    masih gaya Vorssaint, jadi perlu dicek apakah harus disesuaikan ke desain fork.
 git diff --name-only --diff-filter=A "$BASE" main -- Sources/Vorssaint/UI
 
-# 5. Teks brand "Vorssaint" baru yang dibawa upstream (di luar header copyright),
-#    supaya bisa diarahkan ke file brand Zenith.
+# 5. ID dan URL brand baru yang dibawa upstream (di luar header copyright).
+#    Teks UI ditangani langkah 7; yang di sini perlu dicek manual
+#    (com.vorssaint.*, vorssaint.com, path, sudoers, dll.).
 git diff "$BASE" main -- Sources | grep -E '^\+' | grep -v 'Copyright (C)' | grep -i vorssaint
 
-# 6. Merge ke dev, selesaikan konflik, lalu validasi.
+# 6. Merge ke dev, selesaikan konflik.
 git switch dev
 git merge main
-./build.sh && ./build/Vorssaint --selftest && ./build.sh --test
+
+# 7. Ganti "Vorssaint" di teks UI baru, lalu validasi.
+python3 Tools/zenith-rebrand-strings.py --check || python3 Tools/zenith-rebrand-strings.py --apply
+./build.sh && ./build/Zenith --selftest && ./build.sh --test
 git push origin dev
 ```
 
