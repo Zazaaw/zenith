@@ -1079,9 +1079,9 @@ enum RepositoryFeatureTests {
                 && plainLogin.arguments.last == loginShell.arguments.last,
                "Homebrew's fallback asks for the same dump from a plain login shell")
         let resolvingEnvironment = HomebrewEnvironment.loginShellEnvironment(base: ["HOME": "/Users/test"])
-        suite.expect(HomebrewEnvironment.resolvingVariable == "VORSSAINT_RESOLVING_ENVIRONMENT"
-                && resolvingEnvironment == ["HOME": "/Users/test", "VORSSAINT_RESOLVING_ENVIRONMENT": "1"],
-               "Homebrew runs the login shell with VORSSAINT_RESOLVING_ENVIRONMENT=1 on top of the app's environment")
+        suite.expect(HomebrewEnvironment.resolvingVariable == "ZENITH_RESOLVING_ENVIRONMENT"
+                && resolvingEnvironment == ["HOME": "/Users/test", "ZENITH_RESOLVING_ENVIRONMENT": "1"],
+               "Homebrew runs the login shell with ZENITH_RESOLVING_ENVIRONMENT=1 on top of the app's environment")
         // A real zsh reading startup files from a scratch ZDOTDIR, so the user's own are never touched.
         let zdotdir = FileManager.default.temporaryDirectory
             .appendingPathComponent("vorssaint-login-shell-\(UUID().uuidString)")
@@ -1096,12 +1096,12 @@ enum RepositoryFeatureTests {
                 baseEnvironment: ["HOME": zdotdir.path, "ZDOTDIR": zdotdir.path, "PATH": "/usr/bin:/bin"])
         }
         let zshrcExports = startupExports(zshrc: "export https_proxy=http://127.0.0.1:7890\n"
-                                          + "export HOMEBREW_SEEN_RESOLVING=$VORSSAINT_RESOLVING_ENVIRONMENT\n")
+                                          + "export HOMEBREW_SEEN_RESOLVING=$ZENITH_RESOLVING_ENVIRONMENT\n")
         suite.expect(zshrcExports["HOMEBREW_API_DOMAIN"] == "https://mirror.example/api"
                 && zshrcExports["https_proxy"] == "http://127.0.0.1:7890",
                "Homebrew reads exports from both ~/.zprofile and ~/.zshrc, found \(zshrcExports.keys.sorted())")
         expectEqual(zshrcExports["HOMEBREW_SEEN_RESOLVING"] ?? "", "1",
-                    "Homebrew's login shell exposes VORSSAINT_RESOLVING_ENVIRONMENT to startup files")
+                    "Homebrew's login shell exposes ZENITH_RESOLVING_ENVIRONMENT to startup files")
         // A multiplexer autostart that fails without a terminal and exits, or an exec into another shell.
         for takeover in ["multiplexer_autostart_failed_without_a_terminal=1; exit 0", "exec /bin/sh -c true"] {
             let fallbackExports = startupExports(zshrc: takeover + "\n")

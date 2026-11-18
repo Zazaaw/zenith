@@ -41,10 +41,10 @@ enum HomebrewEnvironment {
 
     /// Set for both runs so a startup file can tell it is only being read for
     /// its exports and skip slow or interactive work, the way editors that read
-    /// the shell environment mark their run: `[[ -n $VORSSAINT_RESOLVING_ENVIRONMENT ]]`.
+    /// the shell environment mark their run: `[[ -n $ZENITH_RESOLVING_ENVIRONMENT ]]`.
     /// The run is a child of this app, so a protected folder a startup file
     /// touches asks for access in Vorssaint's name.
-    static let resolvingVariable = "VORSSAINT_RESOLVING_ENVIRONMENT"
+    static let resolvingVariable = "ZENITH_RESOLVING_ENVIRONMENT"
 
     /// A login shell reads `~/.zprofile`; an interactive one also reads
     /// `~/.zshrc`, which is where a proxy line is just as likely to live, so a
