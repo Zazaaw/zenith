@@ -22,8 +22,6 @@ WORD = re.compile(r"(?<![A-Za-z0-9_])" + OLD + r"(?![A-Za-z0-9_])")
 
 # Files whose literals must keep the upstream name, and why.
 EXCLUDE = {
-    # GPL attribution: "Based on Vorssaint".
-    "Sources/Vorssaint/Core/AppInfo.swift",
     # Only acts on a bundle with Zenith's own ID named "Vorssaint Utils.app": never runs.
     "Sources/Vorssaint/Core/BundleMigration.swift",
     # Verifies Vorssaint's Developer ID; updates are off in Zenith.

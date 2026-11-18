@@ -6,12 +6,13 @@ import Foundation
 
 /// Static identity of the app, shared by UI, notifications and tooling.
 ///
-/// Zenith fork: every brand value lives here. Zenith is based on Vorssaint;
-/// the GPL requires that attribution to stay visible (see `copyright`).
+/// Zenith fork: every brand value lives here. Credit to the upstream project
+/// lives in README.md, and its copyright notices stay in every source file.
+/// If Zenith builds are ever distributed, add an in-app licenses screen (GPL §5d).
 enum AppInfo {
     static let name = "Zenith"
     static let maker = "Satu Visual"
-    static let copyright = "© 2026 Satu Visual · Based on Vorssaint © 2026 Vorssaint"
+    static let copyright = "© 2026 Satu Visual"
     static let websiteURL = URL(string: "https://p441z-satuvisual.vercel.app")!
     static let repositoryURL = URL(string: "https://github.com/satuvisual/zenith")!
     /// `owner/repo` on GitHub, used by the update check.

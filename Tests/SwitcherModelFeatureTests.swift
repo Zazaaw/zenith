@@ -2494,8 +2494,8 @@ enum SwitcherModelFeatureTests {
         // Vorssaint's services. A sync that flips any of these fails here.
         suite.expect(AppInfo.name == "Zenith" && AppInfo.maker == "Satu Visual",
                "the app presents itself as Zenith by Satu Visual")
-        suite.expect(AppInfo.copyright.contains("Vorssaint"),
-               "the copyright line keeps the GPL attribution to Vorssaint")
+        suite.expect(AppInfo.copyright == "© 2026 Satu Visual",
+               "the visible copyright line is Satu Visual's; upstream credit lives in README.md")
         suite.expect(AppInfo.bundleIdentifier == "id.satuvisual.zenith"
                && AppInfo.developerBundleIdentifier == "id.satuvisual.zenith.dev",
                "Zenith uses its own bundle identifiers")
