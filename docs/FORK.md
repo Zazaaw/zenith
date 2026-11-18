@@ -1,11 +1,35 @@
-# Fork ini
+# Zenith by Satu Visual
 
-Fork pribadi dari [vorssaint/vorssaint-utils](https://github.com/vorssaint/vorssaint-utils)
-milik [@Zazaaw](https://github.com/Zazaaw). Tujuannya: memakai bahasa desain sendiri
-(p441z), me-redesign dan menambah fitur notch, dan menambah fitur lain, sambil tetap
-mengikuti update dari upstream.
+Fork dari [vorssaint/vorssaint-utils](https://github.com/vorssaint/vorssaint-utils),
+dikelola [Satu Visual](https://github.com/satuvisual) (@Zazaaw). Tujuannya: memakai
+bahasa desain sendiri (Satu Visual + p441z Style Kit), me-redesign dan menambah fitur
+notch, dan menambah fitur lain, sambil tetap mengikuti update dari upstream.
 
-Status: **pribadi, belum dirilis.** Nama, ikon, dan bundle ID sendiri belum diputuskan.
+Status: **dalam pengembangan, belum dirilis.** Kode masih memakai identitas Vorssaint;
+rebranding dikerjakan bertahap (lihat di bawah).
+
+## Identitas
+
+| | |
+|---|---|
+| Nama | **Zenith**, selalu ditulis "Zenith by Satu Visual" (ada app kecil lain bernama Zenith) |
+| Repo | [satuvisual/zenith](https://github.com/satuvisual/zenith) |
+| Bundle ID (rencana) | `id.satuvisual.zenith` |
+| Logo | Bintang 8 lengan Satu Visual (monokrom); dipakai untuk ikon app, glyph menu bar, notch idle, About, DMG |
+| Atribusi | "Based on Vorssaint" wajib di About dan README; header copyright upstream tidak boleh dihapus |
+
+## Urutan rebranding
+
+1. **Identitas dan keamanan.** Nama, bundle ID (sekitar 20 ID turunan `com.vorssaint.*`),
+   auto-update (sekarang mengarah ke rilis GitHub Vorssaint, jadi bisa menimpa fork),
+   feedback dan sharing (mengirim ke `screenshots.vorssaint.com`), identitas signing,
+   link donasi dan sosial. Identitas dikumpulkan di satu file brand.
+2. **Identitas visual.** Ikon, logo, glyph menu bar, design tokens.
+3. **Redesign per area.** Notch, panel menu bar, lalu Settings.
+4. **Fitur baru.**
+
+Nama internal (folder `Sources/Vorssaint/`, nama modul, nama tipe) **tidak** di-rename,
+karena memindahkan path ribuan file akan membuat setiap sync konflik.
 
 ## Aturan yang mengikat
 
@@ -32,7 +56,7 @@ dev            semua pekerjaan fork
 
 | Remote     | URL                                               |
 |------------|---------------------------------------------------|
-| `origin`   | https://github.com/Zazaaw/vorssaint-utils.git     |
+| `origin`   | https://github.com/satuvisual/zenith.git          |
 | `upstream` | https://github.com/vorssaint/vorssaint-utils.git  |
 
 Konfigurasi lokal (perlu di-set ulang kalau clone baru):
@@ -68,7 +92,11 @@ comm -12 <(git diff --name-only "$BASE" main | sort) \
 #    masih gaya Vorssaint, jadi perlu dicek apakah harus disesuaikan ke desain fork.
 git diff --name-only --diff-filter=A "$BASE" main -- Sources/Vorssaint/UI
 
-# 5. Merge ke dev, selesaikan konflik, lalu validasi.
+# 5. Teks brand "Vorssaint" baru yang dibawa upstream (di luar header copyright),
+#    supaya bisa diarahkan ke file brand Zenith.
+git diff "$BASE" main -- Sources | grep -E '^\+' | grep -v 'Copyright (C)' | grep -i vorssaint
+
+# 6. Merge ke dev, selesaikan konflik, lalu validasi.
 git switch dev
 git merge main
 ./build.sh && ./build/Vorssaint --selftest && ./build.sh --test
@@ -115,7 +143,8 @@ dilewati karena `actool` hanya ada di Xcode 26+, dan Dock memakai AppIcon.icns.
 
 ## Keputusan yang belum diambil
 
-- Nama, ikon, dan bundle ID fork.
+- Auto-update: dimatikan dulu, atau diarahkan ke rilis `satuvisual/zenith`.
+- Feedback dan sharing: dimatikan, atau diganti layanan sendiri.
 - Struktur token desain (nama, skala, tempat file).
 - Lokasi kode khusus fork (folder sendiri atau prefix nama file).
 - Daftar fitur tambahan selain notch.
