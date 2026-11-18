@@ -173,7 +173,7 @@ struct NotchAudioControls: View {
         } label: {
             Image(systemName: mixer.systemOutputMuted == true ? "speaker.slash.fill" : "speaker.wave.2.fill")
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(mixer.systemOutputMuted == true ? Color.red : Color.white)
+                .foregroundStyle(mixer.systemOutputMuted == true ? ZenithStatus.error : Color.white)
                 .contentTransition(.symbolEffect(.replace))
                 .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: mixer.systemOutputMuted)
                 .frame(width: 18, height: 18)
@@ -392,9 +392,9 @@ enum NotchTileAccent {
     var fill: Color {
         switch self {
         case .selection: return .white
-        case .alert: return .red
-        case .awake: return .yellow
-        case .timer: return .orange
+        case .alert: return ZenithStatus.error
+        case .awake: return ZenithStatus.warning
+        case .timer: return ZenithStatus.progress
         }
     }
 

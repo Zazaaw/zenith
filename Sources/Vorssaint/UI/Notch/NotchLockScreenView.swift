@@ -361,7 +361,7 @@ struct NotchLockScreenActivities: View {
             HStack(spacing: 7) {
                 Image(systemName: finished ? "checkmark.circle.fill" : session.isPaused ? "pause.circle.fill"
                       : session.countsUp ? "stopwatch.fill" : "timer")
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.progress)
                 Text(session.mode == .pomodoro && !finished ? text.phase(session.phase) + " " + clock : clock)
             }
             .accessibilityElement(children: .combine)
@@ -402,7 +402,7 @@ struct NotchLockScreenActivities: View {
             // Progress without the file's name, which stays off the lock screen.
             let fraction = downloads.items.first(where: { $0.active && !$0.completed })?.fraction
             HStack(spacing: 7) {
-                Image(systemName: "arrow.down.circle.fill").foregroundStyle(.blue)
+                Image(systemName: "arrow.down.circle.fill").foregroundStyle(ZenithStatus.info)
                 if let fraction {
                     Text(fraction, format: .percent.precision(.fractionLength(0)))
                 } else {

@@ -284,7 +284,7 @@ struct NotchMusicView: View {
                     Text(service.commandFailed ? FeatureStrings.notchMusicExtras(l10n.language).playbackFailed
                          : playback.track.artist ?? playback.track.album ?? text.mediaNowPlaying)
                         .font(.system(size: 13))
-                        .foregroundStyle(service.commandFailed ? .orange : .secondary)
+                        .foregroundStyle(service.commandFailed ? ZenithStatus.warning : .secondary)
                         .lineLimit(1)
                 }
             } accessory: {
@@ -795,7 +795,7 @@ struct NotchMusicControlsView: View {
                          : music.playback?.track.artist ?? music.playback?.track.album
                             ?? (music.awaitingPlayback ? "" : FeatureStrings.notch(l10n.language).musicHint))
                         .font(.system(size: 11))
-                        .foregroundStyle(music.commandFailed ? .orange : .secondary)
+                        .foregroundStyle(music.commandFailed ? ZenithStatus.warning : .secondary)
                         .lineLimit(1)
                 }
             }

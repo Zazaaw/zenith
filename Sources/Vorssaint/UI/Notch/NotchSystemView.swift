@@ -140,7 +140,7 @@ struct NotchSystemView: View {
                 if let detail = card.detail {
                     Text(detail).font(.system(size: 11)).monospacedDigit().foregroundStyle(.secondary).lineLimit(1)
                 } else if let level = card.level {
-                    NotchMeter(value: level, tint: card.wantsAttention ? .orange : .white)
+                    NotchMeter(value: level, tint: card.wantsAttention ? ZenithStatus.warning : .white)
                 }
             }
             .padding(.horizontal, 12)

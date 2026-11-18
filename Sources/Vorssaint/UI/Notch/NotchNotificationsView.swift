@@ -114,7 +114,7 @@ private struct NotchNotificationRow: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
             if let message = feedback ?? (service.unavailableID == item.id ? text.unavailable : nil) {
-                Text(message).font(.caption).foregroundStyle(.orange).lineLimit(1)
+                Text(message).font(.caption).foregroundStyle(ZenithStatus.warning).lineLimit(1)
             }
         }
         .padding(12)

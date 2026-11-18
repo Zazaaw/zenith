@@ -319,7 +319,7 @@ private struct NotchAgentLimitsCard: View {
                     if let note = notes.caption {
                         Text(note)
                             .font(.system(size: 8.5))
-                            .foregroundStyle(account.failure == nil && !stale ? Color.secondary : Color.orange)
+                            .foregroundStyle(account.failure == nil && !stale ? Color.secondary : ZenithStatus.warning)
                             .lineLimit(1)
                     }
                 } else if windows.isEmpty {
@@ -965,7 +965,7 @@ private struct NotchAgentResetsCard: View {
             if summary.available > 0 {
                 // A reset a day from expiring is worth using soon.
                 let soon = summary.nextExpiry.map { $0.timeIntervalSince(now) < 86_400 } ?? false
-                action(summary.nextExpiry.map(expiry) ?? "", tint: soon ? .orange : nil) { useButton }
+                action(summary.nextExpiry.map(expiry) ?? "", tint: soon ? ZenithStatus.warning : nil) { useButton }
             } else {
                 line(text.resetsNone)
             }
@@ -1001,7 +1001,7 @@ private struct NotchAgentResetsCard: View {
     @ViewBuilder private func outcome(_ outcome: AgentCodexServer.Outcome?) -> some View {
         switch outcome {
         case .reset?:
-            line(text.resetDone, symbol: "checkmark.circle.fill", tint: .green)
+            line(text.resetDone, symbol: "checkmark.circle.fill", tint: ZenithStatus.success)
         case .nothingToReset?:
             line(text.resetNotNeeded, symbol: "info.circle.fill", tint: .secondary)
         case .alreadyRedeemed?:
@@ -1009,7 +1009,7 @@ private struct NotchAgentResetsCard: View {
         case .noCredit?:
             line(text.resetsNone)
         case nil:
-            line(text.resetFailed, symbol: "exclamationmark.circle.fill", tint: .orange)
+            line(text.resetFailed, symbol: "exclamationmark.circle.fill", tint: ZenithStatus.warning)
         }
     }
 

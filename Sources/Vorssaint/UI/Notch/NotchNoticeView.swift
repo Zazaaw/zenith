@@ -16,14 +16,14 @@ struct NotchNoticeView: View {
     private var tint: Color {
         switch notice.event {
         // A warning reads as one in any agent's color; other AI notices wear it.
-        case .agents: return notice.symbol.hasPrefix("exclamationmark") ? .orange : notice.agent?.tint ?? .white
+        case .agents: return notice.symbol.hasPrefix("exclamationmark") ? ZenithStatus.warning : notice.agent?.tint ?? .white
         // The timer's notice keeps the orange its strip and page wear.
-        case .timer: return .orange
+        case .timer: return ZenithStatus.progress
         default: return .white
         }
     }
     /// The words of a timer's notice share its orange too.
-    private var textTint: Color { notice.event == .timer ? .orange : .white }
+    private var textTint: Color { notice.event == .timer ? ZenithStatus.progress : .white }
     /// With the companion on, it stands in for the symbol, and reacts unless
     /// its reactions are off.
     private var companionReaction: NotchMascotReaction? {

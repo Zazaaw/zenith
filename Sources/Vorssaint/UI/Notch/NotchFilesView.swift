@@ -245,10 +245,10 @@ struct NotchFilesView: View {
         if archives.isRunning {
             EmptyView()
         } else if let failure = archives.failure {
-            Text(failure).font(.caption).foregroundStyle(.orange).lineLimit(3)
+            Text(failure).font(.caption).foregroundStyle(ZenithStatus.warning).lineLimit(3)
         } else if !archives.outputURLs.isEmpty {
             HStack {
-                Label(text.saved, systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                Label(text.saved, systemImage: "checkmark.circle.fill").foregroundStyle(ZenithStatus.success)
                 Spacer()
                 Button(l10n.s.mediaOpenInFinder) {
                     NSWorkspace.shared.activateFileViewerSelecting(archives.outputURLs)

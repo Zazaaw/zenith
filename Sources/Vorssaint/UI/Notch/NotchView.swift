@@ -637,8 +637,8 @@ enum NotchRestingBattery {
                                            externalConnected: power.externalConnected,
                                            tint: tint, threshold: threshold,
                                            early: early, earlyThreshold: earlyThreshold) {
-        case .low: return .red
-        case .early: return .orange
+        case .low: return ZenithStatus.error
+        case .early: return ZenithStatus.warning
         case .none: return .white.opacity(0.9)
         }
     }

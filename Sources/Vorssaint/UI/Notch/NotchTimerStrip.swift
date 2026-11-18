@@ -50,7 +50,7 @@ struct NotchTimerStrip: View {
                             Image(systemName: timer.session.completed ? "checkmark.circle"
                                   : timer.session.isPaused ? "pause.circle" : timer.session.countsUp ? "stopwatch" : "timer")
                                 .font(.system(size: iconSize, weight: .medium))
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(ZenithStatus.progress)
                         }
                     }
                 }
@@ -85,7 +85,7 @@ struct NotchTimerStrip: View {
                 if geometry.compactActivityWingWidth >= 42 {
                     Text(text)
                         .font(.system(size: textSize, weight: .medium)).monospacedDigit()
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ZenithStatus.progress)
                         .lineLimit(1).minimumScaleFactor(0.65)
                         .modifier(NotchRollingDigits(value: text, countsDown: !timer.session.countsUp, everySecond: false))
                         // A reading that gains or loses a character, like

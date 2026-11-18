@@ -20,7 +20,7 @@ struct NotchQueueView: View {
                     .help(text.refresh).accessibilityLabel(text.refresh)
             }
             if service.queueActionFailed {
-                Text(text.actionFailed).font(.caption).foregroundStyle(.orange)
+                Text(text.actionFailed).font(.caption).foregroundStyle(ZenithStatus.warning)
             }
             if let queue = service.upcoming, !service.upcomingRows.isEmpty {
                 ScrollView {

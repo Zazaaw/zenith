@@ -19,8 +19,8 @@ extension AgentProvider {
 /// Green reads as fine and red as trouble only when it earns it: the agent's
 /// own color while there is room, orange once a window runs low.
 func agentLimitTint(_ provider: AgentProvider, usedFraction: Double) -> Color {
-    if usedFraction >= 0.95 { return .red }
-    if usedFraction >= 0.8 { return .orange }
+    if usedFraction >= 0.95 { return ZenithStatus.error }
+    if usedFraction >= 0.8 { return ZenithStatus.warning }
     return provider.tint
 }
 

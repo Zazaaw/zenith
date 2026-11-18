@@ -174,7 +174,7 @@ private struct NotchWatchAreaCard: View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 if case .finished(let outcome) = watch.state {
                     Image(systemName: outcome == .closed ? "xmark.circle.fill" : "checkmark.circle.fill")
-                        .foregroundStyle(outcome == .closed ? Color.secondary : Color.green)
+                        .foregroundStyle(outcome == .closed ? Color.secondary : ZenithStatus.success)
                     Text(text.outcome(outcome)).font(.system(size: 13, weight: .semibold)).lineLimit(1)
                 } else if lines.isEmpty {
                     Text(text.noText).font(.system(size: 15, weight: .semibold)).foregroundStyle(.secondary)

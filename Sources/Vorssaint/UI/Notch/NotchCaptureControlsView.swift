@@ -107,7 +107,6 @@ private struct NotchRecordingAudioOptions: View {
                 .focused(focusedControl, equals: .microphone)
         }
         .toggleStyle(.switch)
-        .tint(.green)
         .controlSize(.small)
         .fixedSize()
     }

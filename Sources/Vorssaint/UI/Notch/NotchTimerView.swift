@@ -25,7 +25,7 @@ struct NotchTimerView: View {
             else { setup }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .tint(.orange)
+        .tint(ZenithStatus.progress)
         // The island's top row holds what used to head the page: the modes
         // and Start while setting up, the phase and the way out once running.
         .notchBand {
@@ -87,8 +87,8 @@ struct NotchTimerView: View {
                 .lineLimit(1)
                 .padding(.horizontal, NotchTimerSupport.StartButton.padding)
                 .frame(height: NotchLayout.timerStartHeight)
-                .foregroundStyle(.orange)
-                .background(.orange.opacity(0.18), in: Capsule())
+                .foregroundStyle(ZenithStatus.progress)
+                .background(ZenithStatus.progress.opacity(0.18), in: Capsule())
                 .contentShape(Capsule())
         }
         .buttonStyle(NotchButtonStyle(cornerRadius: NotchLayout.timerStartHeight / 2))
@@ -157,7 +157,7 @@ struct NotchTimerView: View {
                         .frame(height: NotchTimerSupport.ModePicker.height)
                         .overlay(alignment: .bottom) {
                             if selected {
-                                Capsule().fill(.orange).frame(height: 2)
+                                Capsule().fill(ZenithStatus.progress).frame(height: 2)
                                     .padding(.horizontal, NotchTimerSupport.ModePicker.labelPadding)
                                     .matchedGeometryEffect(id: "selection", in: modeSelection)
                             }
@@ -216,7 +216,7 @@ struct NotchTimerView: View {
         let progress = service.session.mode == .pomodoro
             ? String(format: text.sessionProgress, service.session.sessionNumber, service.session.configuration.totalSessions)
             : nil
-        let phase = Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(.orange)
+        let phase = Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(ZenithStatus.progress)
         let place = progress.map { Text($0).font(.system(size: 12)).monospacedDigit().foregroundStyle(.secondary) }
         return ViewThatFits(in: .horizontal) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -275,7 +275,7 @@ struct NotchTimerView: View {
                     .lineLimit(1).truncationMode(.tail)
                 HStack(spacing: 3) {
                     Text(display(option, current))
-                        .font(.system(size: 12, weight: .semibold)).monospacedDigit().foregroundStyle(.orange)
+                        .font(.system(size: 12, weight: .semibold)).monospacedDigit().foregroundStyle(ZenithStatus.progress)
                     Image(systemName: "chevron.down").font(.system(size: 7, weight: .semibold)).foregroundStyle(.secondary)
                 }
             }
@@ -325,7 +325,7 @@ struct NotchTimerView: View {
     private func clock(_ value: String, size: CGFloat) -> some View {
         Text(value)
             .font(.system(size: size, weight: .thin)).monospacedDigit()
-            .foregroundStyle(.orange)
+            .foregroundStyle(ZenithStatus.progress)
             .lineLimit(1).minimumScaleFactor(0.5)
     }
 
@@ -333,9 +333,9 @@ struct NotchTimerView: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 23, weight: .semibold))
-                .foregroundStyle(.orange)
+                .foregroundStyle(ZenithStatus.progress)
                 .frame(width: 52, height: 52)
-                .background(Color.orange.opacity(0.28), in: Circle())
+                .background(ZenithStatus.progress.opacity(0.28), in: Circle())
                 .contentShape(Circle())
         }
         .buttonStyle(NotchButtonStyle(cornerRadius: 26))

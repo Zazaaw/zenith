@@ -213,7 +213,7 @@ private struct NotchMasterFader: View {
             } label: {
                 Image(systemName: muted ? "speaker.slash.fill" : "speaker.wave.2.fill")
                     .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(muted ? Color.red : Color.white)
+                    .foregroundStyle(muted ? ZenithStatus.error : Color.white)
                     .contentTransition(.symbolEffect(.replace))
                     .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: muted)
                     .frame(width: 32, height: 32)
@@ -257,7 +257,7 @@ private struct NotchMicrophoneFader: View {
             // plain icon the options row shows.
             if AppFeature.micMute.isAvailable {
                 Button(action: micMute.toggle) {
-                    icon(muted: micMute.isMuted).foregroundStyle(micMute.isMuted ? Color.red : Color.white)
+                    icon(muted: micMute.isMuted).foregroundStyle(micMute.isMuted ? ZenithStatus.error : Color.white)
                 }
                 .buttonStyle(NotchButtonStyle(cornerRadius: 14))
                 .accessibilityLabel(micMute.isMuted ? l10n.s.micUnmuteName : l10n.s.micMuteName)
@@ -424,7 +424,7 @@ private struct NotchMixerOptions: View {
                     Button(action: micMute.toggle) {
                         Image(systemName: micMute.isMuted ? "mic.slash.fill" : "mic.fill")
                             .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(micMute.isMuted ? Color.red : Color.white)
+                            .foregroundStyle(micMute.isMuted ? ZenithStatus.error : Color.white)
                             .frame(width: 18, height: 18)
                             .contentShape(Rectangle())
                     }
@@ -527,12 +527,12 @@ private struct NotchAppFader: View {
             } else {
                 NotchLevelSlider(value: Binding(get: { app.volume }, set: { mixer.setVolume($0, for: app) }),
                                  label: app.name, range: 0...AppVolumeMixer.maxVolume,
-                                 tint: boosting ? .orange : .white, vertical: true, trackThickness: 28, marker: 1,
+                                 tint: boosting ? ZenithStatus.warning : .white, vertical: true, trackThickness: 28, marker: 1,
                                  valueLabel: "\(percent)%")
                     .frame(width: 40, height: NotchMixerFaderLayout.trackHeight(in: height))
                 NotchEditablePercent(percent: percent, maximum: Int(AppVolumeMixer.maxVolume * 100),
                                      editorID: "notch-app:\(app.id)", editingID: $editingVolumeID,
-                                     label: app.name, tint: boosting ? .orange : .secondary,
+                                     label: app.name, tint: boosting ? ZenithStatus.warning : .secondary,
                                      boosting: boosting, height: 28) {
                     mixer.setVolume($0, for: app)
                 }
@@ -541,7 +541,7 @@ private struct NotchAppFader: View {
                     Button { mixer.setVolume(1, for: app) } label: {
                         Image(systemName: "arrow.counterclockwise")
                             .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(boosting ? Color.orange : Color.secondary)
+                            .foregroundStyle(boosting ? ZenithStatus.warning : Color.secondary)
                             .frame(width: 28, height: 28)
                             .contentShape(Rectangle())
                     }
@@ -555,7 +555,7 @@ private struct NotchAppFader: View {
                     Button { mixer.toggleMute(app) } label: {
                         Image(systemName: muted ? "speaker.slash.fill" : "speaker.wave.2.fill")
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(muted ? Color.red : Color.secondary)
+                            .foregroundStyle(muted ? ZenithStatus.error : Color.secondary)
                             .frame(width: 28, height: 28)
                             .contentShape(Rectangle())
                     }
@@ -581,7 +581,7 @@ private struct NotchAppFader: View {
                 .resizable()
                 .frame(width: 28, height: 28)
             if app.isPlaying {
-                Circle().fill(.green).frame(width: 7, height: 7)
+                Circle().fill(ZenithStatus.success).frame(width: 7, height: 7)
                     .overlay(Circle().stroke(.black, lineWidth: 1.2))
                     .offset(x: 1, y: 1)
                     .accessibilityHidden(true)
@@ -594,7 +594,7 @@ private struct NotchAppFader: View {
             if routed {
                 Image(systemName: app.outputDeviceUnavailable ? "exclamationmark.triangle.fill" : "arrow.triangle.branch")
                     .font(.system(size: 7, weight: .bold))
-                    .foregroundStyle(app.outputDeviceUnavailable ? Color.orange : Color.white)
+                    .foregroundStyle(app.outputDeviceUnavailable ? ZenithStatus.warning : Color.white)
                     .frame(width: 12, height: 12)
                     .background(.black, in: Circle())
                     .offset(x: -2, y: 1)

@@ -74,8 +74,8 @@ struct NotchCapsuleNoticeView: View {
     private var tint: Color {
         switch notice.event {
         // A warning reads as one in any agent's color; other AI notices wear it.
-        case .agents: return notice.symbol.hasPrefix("exclamationmark") ? .orange : notice.agent?.tint ?? .white
-        case .timer: return .orange
+        case .agents: return notice.symbol.hasPrefix("exclamationmark") ? ZenithStatus.warning : notice.agent?.tint ?? .white
+        case .timer: return ZenithStatus.progress
         default: return .white
         }
     }
@@ -128,7 +128,7 @@ struct NotchCapsuleNoticeView: View {
             mark
             // A timer's notice keeps the orange its strip wears.
             Text(notice.title).capsuleTitle().layoutPriority(1)
-                .foregroundStyle(notice.event == .timer ? Color.orange : .white)
+                .foregroundStyle(notice.event == .timer ? ZenithStatus.progress : .white)
             if !notice.detail.isEmpty {
                 Text(notice.detail).capsuleDetail()
                     .truncationMode(notice.event == .accessory ? .middle : .tail)
@@ -362,7 +362,7 @@ struct NotchCapsuleTimerStrip: View {
             NotchCapsuleCompanionMark(companion: companion, geometry: geometry)
         } else {
             NotchCapsuleSymbol(name: timer.session.completed ? "checkmark.circle" : timer.session.isPaused ? "pause.circle"
-                               : timer.session.countsUp ? "stopwatch" : "timer", tint: .orange)
+                               : timer.session.countsUp ? "stopwatch" : "timer", tint: ZenithStatus.progress)
         }
     }
 
@@ -371,7 +371,7 @@ struct NotchCapsuleTimerStrip: View {
                                                  locale: Locale(identifier: l10n.language.rawValue))
         return Text(text)
             .font(Font(CapsuleLayout.readingFont as CTFont))
-            .foregroundStyle(.orange)
+            .foregroundStyle(ZenithStatus.progress)
             .lineLimit(1).fixedSize()
             .modifier(NotchRollingDigits(value: text, countsDown: !timer.session.countsUp, everySecond: false))
             // A reading that gains or loses a character, like 10m becoming
@@ -688,14 +688,14 @@ struct NotchCapsuleKeepAwakeStrip: View {
                 // capsule measures it as drawn.
                 Image(systemName: NotchKeepAwakeSupport.symbol)
                     .font(.system(size: CapsuleLayout.symbolSize, weight: .medium))
-                    .foregroundStyle(.yellow)
+                    .foregroundStyle(ZenithStatus.warning)
                     .capsuleCentred(NotchKeepAwakeSupport.symbol)
                 if let end {
                     let text = NotchKeepAwakeSupport.compactText(until: end, now: now,
                                                                 locale: Locale(identifier: l10n.language.rawValue))
                     Text(text)
                         .font(Font(CapsuleLayout.readingFont as CTFont))
-                        .foregroundStyle(.yellow)
+                        .foregroundStyle(ZenithStatus.warning)
                         .lineLimit(1).fixedSize()
                         // A reading that gains or loses a character, like 10m
                         // becoming 9m, resizes the capsule; the service measures the same.
@@ -705,7 +705,7 @@ struct NotchCapsuleKeepAwakeStrip: View {
                 } else {
                     Image(systemName: NotchKeepAwakeSupport.openSymbol)
                         .font(.system(size: CapsuleLayout.readingFont.pointSize, weight: .medium))
-                        .foregroundStyle(.yellow)
+                        .foregroundStyle(ZenithStatus.warning)
                         .capsuleCentred(NotchKeepAwakeSupport.openSymbol, size: CapsuleLayout.readingFont.pointSize)
                 }
             }

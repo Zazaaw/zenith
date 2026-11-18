@@ -63,7 +63,7 @@ struct NotchKeepAwakeStrip: View {
                 .padding(.trailing, geometry.compactActivityEdgeInset(boxHeight: textSize * 0.72, radius: 0))
                 .frame(width: wing, height: height, alignment: .trailing)
             }
-            .foregroundStyle(.yellow)
+            .foregroundStyle(ZenithStatus.warning)
             .frame(height: height)
             .contentShape(Rectangle())
         }

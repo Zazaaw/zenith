@@ -16,7 +16,7 @@ struct NotchDownloadsSettingsControls: View {
                 .disabled(!AppFeature.notchDownloads.isAvailable)
             Text(text.downloadsHint).font(.caption).foregroundStyle(.secondary)
             if downloads.folderUnavailable {
-                Text(text.folderUnavailable).font(.caption).foregroundStyle(.orange)
+                Text(text.folderUnavailable).font(.caption).foregroundStyle(ZenithStatus.warning)
             } else if let name = downloads.folderName {
                 Label(name, systemImage: "folder").font(.caption).lineLimit(1).truncationMode(.middle)
             }
@@ -74,7 +74,7 @@ private struct NotchDownloadsSetupView: View {
         Text(downloads.folderUnavailable ? text.folderUnavailable
              : offersSwitchOnly ? text.downloadsTitle : enabled ? text.downloadsHint : text.downloadsDescription)
             .font(.system(size: 12))
-            .foregroundStyle(downloads.folderUnavailable ? Color.orange : .white.opacity(0.65))
+            .foregroundStyle(downloads.folderUnavailable ? ZenithStatus.warning : .white.opacity(0.65))
             .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -174,7 +174,7 @@ struct NotchDownloadsView: View {
             HStack(spacing: 8) {
                 let fileLabel = HStack(spacing: 8) {
                     Image(systemName: item.completed ? "checkmark.circle.fill" : "arrow.down.circle")
-                        .foregroundStyle(item.completed ? .green : .white)
+                        .foregroundStyle(item.completed ? ZenithStatus.success : .white)
                         .accessibilityHidden(true)
                     Text(item.name).font(.system(size: 12, weight: .medium)).lineLimit(1).truncationMode(.middle)
                         .frame(maxWidth: .infinity, alignment: .leading)

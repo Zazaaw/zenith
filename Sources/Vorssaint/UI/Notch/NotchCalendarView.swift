@@ -326,7 +326,7 @@ struct NotchCalendarView: View {
                 if permissions.requestingCalendar { ProgressView().controlSize(.small) }
             }
             if permissions.calendarRequestFailed {
-                Text(text.requestFailed).font(.caption).foregroundStyle(.orange)
+                Text(text.requestFailed).font(.caption).foregroundStyle(ZenithStatus.warning)
             }
         }
         .buttonStyle(.bordered)
