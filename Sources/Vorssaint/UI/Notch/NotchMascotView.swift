@@ -146,7 +146,9 @@ final class NotchMascotRig: NSObject {
                 eye.shadowOffset = .zero
             }
         } else {
-            fillMask.path = NotchMascotGeometry.body(look.shape, size: size)
+            // Zenith fork: the Satu Visual star keeps its centre cut, hence even-odd.
+            let star = look.style == .satuVisual
+            fillMask.path = star ? NotchMascotGeometry.star(size: size) : NotchMascotGeometry.body(look.shape, size: size)
             for eye in [leftEye, rightEye] {
                 eye.fillColor = NotchMascotColor.ink.cgColor
                 eye.shadowOpacity = 0
@@ -154,7 +156,9 @@ final class NotchMascotRig: NSObject {
         }
         for layer in [ears, antenna, bulb, visor] { layer.isHidden = !robot }
         shine.path = NotchMascotGeometry.shine(look.face, size: size)
-        shine.isHidden = robot
+        // The star's arms leave no surface for a highlight to sit on.
+        shine.isHidden = robot || look.style == .satuVisual
+        fillMask.fillRule = look.style == .satuVisual ? .evenOdd : .nonZero
         let face = look.face
         let side = size * 0.4
         leftEye.frame = CGRect(x: face.leftEye.x * size - side / 2, y: face.leftEye.y * size - side / 2, width: side, height: side)

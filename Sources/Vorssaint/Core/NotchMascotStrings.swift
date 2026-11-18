@@ -68,7 +68,12 @@ struct NotchMascotStrings {
     let keywords: String
 
     func style(_ style: NotchMascotStyle) -> String {
-        style == .robot ? robot : minimal
+        switch style {
+        // Zenith fork: a brand name, the same in every language.
+        case .satuVisual: return "Satu Visual"
+        case .robot: return robot
+        case .minimal: return minimal
+        }
     }
 
     func shape(_ shape: NotchMascotShape) -> String {

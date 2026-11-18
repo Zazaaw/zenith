@@ -12,7 +12,8 @@ import Foundation
 // the second activity sharing the closed island.
 
 enum NotchMascotStyle: String, CaseIterable, Identifiable {
-    case minimal, robot
+    // Zenith fork: satuVisual is the Satu Visual star, Zenith's default companion.
+    case satuVisual, minimal, robot
 
     var id: String { rawValue }
 }
@@ -78,7 +79,7 @@ struct NotchMascotLook: Equatable {
     var shape: NotchMascotShape
     var palette: NotchMascotPalette
 
-    static let standard = NotchMascotLook(style: .minimal, shape: .ball, palette: .pearl)
+    static let standard = NotchMascotLook(style: .satuVisual, shape: .ball, palette: .pearl)
 }
 
 enum NotchMascotMood: String, CaseIterable, Identifiable {
@@ -316,6 +317,15 @@ struct NotchMascotFaceLayout: Equatable {
 
 extension NotchMascotLook {
     var face: NotchMascotFaceLayout {
+        if style == .satuVisual {
+            // Two small eyes on the star's horizontal arm, either side of the
+            // centre cut, clear of the diagonal arms. They fit inside the arm.
+            let y = NotchMascotGeometry.starBox.minY + NotchMascotGeometry.starBox.height * 0.501
+            func x(_ share: CGFloat) -> CGFloat { NotchMascotGeometry.starBox.minX + NotchMascotGeometry.starBox.width * share }
+            return NotchMascotFaceLayout(leftEye: CGPoint(x: x(0.295), y: y), rightEye: CGPoint(x: x(0.705), y: y),
+                                         eyeSize: CGSize(width: 0.042, height: 0.078),
+                                         shineCenter: CGPoint(x: 0.5, y: 0.5), shineRadii: .zero, shineAngle: 0)
+        }
         if style == .robot {
             return NotchMascotFaceLayout(leftEye: CGPoint(x: 0.36, y: 0.63), rightEye: CGPoint(x: 0.64, y: 0.63),
                                          eyeSize: CGSize(width: 0.085, height: 0.16),
@@ -385,6 +395,39 @@ enum NotchMascotGeometry {
         return path
     }
 
+    /// Where the star sits in the companion's box: the ball's box, so it reads
+    /// as the same size and stands on the same line.
+    static let starBox = CGRect(x: 0.08, y: 0.12, width: 0.84, height: 0.84)
+
+    /// The Satu Visual star (Resources/Brand/satuvisual-mark.svg): eight arms and
+    /// the cut X in the middle, which needs the even-odd fill rule.
+    static func star(size: CGFloat) -> CGPath {
+        let side: CGFloat = 203.603
+        let outline: [CGPoint] = [
+            (115.551, 68.1172), (163.717, 19.9512), (183.449, 39.6826), (135.08, 88.0518),
+            (203.603, 88.0518), (203.603, 115.956), (135.485, 115.956), (183.651, 164.122),
+            (163.92, 183.854), (115.551, 135.484), (115.551, 203.603), (87.6465, 203.603),
+            (87.6465, 135.485), (39.4805, 183.651), (19.749, 163.92), (67.7119, 115.956),
+            (0, 115.956), (0, 88.0518), (68.1172, 88.0518), (19.9512, 39.8857),
+            (39.6826, 20.1533), (87.6465, 68.1172), (87.6465, 0), (115.551, 0),
+        ].map { CGPoint(x: $0.0, y: $0.1) }
+        let cut: [CGPoint] = [
+            (102.168, 93.5625), (86.2012, 77.5957), (78.3271, 85.4707), (94.2939, 101.437),
+            (78.3271, 117.404), (86.2012, 125.278), (102.168, 109.311), (118.136, 125.278),
+            (126.01, 117.404), (110.042, 101.437), (126.01, 85.4707), (118.136, 77.5957),
+        ].map { CGPoint(x: $0.0, y: $0.1) }
+        func place(_ point: CGPoint) -> CGPoint {
+            CGPoint(x: (starBox.minX + starBox.width * point.x / side) * size,
+                    y: (starBox.minY + starBox.height * point.y / side) * size)
+        }
+        let path = CGMutablePath()
+        for polygon in [outline, cut] {
+            path.addLines(between: polygon.map(place))
+            path.closeSubpath()
+        }
+        return path
+    }
+
     /// The robot's head, ears, antenna and face plate.
     struct Robot {
         let head: CGPath
@@ -400,7 +443,9 @@ enum NotchMascotGeometry {
     /// wherever it is meant to be centred.
     static func figureOffset(_ look: NotchMascotLook) -> CGFloat {
         let bounds: CGRect
-        if look.style == .robot {
+        if look.style == .satuVisual {
+            bounds = star(size: 1).boundingBoxOfPath
+        } else if look.style == .robot {
             let parts = robot(size: 1)
             bounds = [parts.ears, parts.antenna, parts.bulb]
                 .reduce(parts.head.boundingBoxOfPath) { $0.union($1.boundingBoxOfPath) }
@@ -1261,7 +1306,7 @@ enum NotchMascotSupport {
 
     static func look(in defaults: UserDefaults = .standard) -> NotchMascotLook {
         NotchMascotLook(
-            style: NotchMascotStyle(rawValue: defaults.string(forKey: DefaultsKey.notchMascotStyle) ?? "") ?? .minimal,
+            style: NotchMascotStyle(rawValue: defaults.string(forKey: DefaultsKey.notchMascotStyle) ?? "") ?? .satuVisual,
             shape: NotchMascotShape(rawValue: defaults.string(forKey: DefaultsKey.notchMascotShape) ?? "") ?? .ball,
             palette: NotchMascotPalette(rawValue: defaults.string(forKey: DefaultsKey.notchMascotPalette) ?? "") ?? .pearl)
     }

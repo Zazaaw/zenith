@@ -42,7 +42,10 @@ enum NotchMascotTests {
                     let middle: CGFloat = 15
                     let boxTop = middle - NotchMascotGeometry.figureOffset(look) * size - size / 2
                     let figure: CGRect
-                    if style == .robot {
+                    if style == .satuVisual {
+                        // Zenith fork: the star has its own outline, whatever the shape.
+                        figure = NotchMascotGeometry.star(size: size).boundingBoxOfPath
+                    } else if style == .robot {
                         let parts = NotchMascotGeometry.robot(size: size)
                         figure = [parts.ears, parts.antenna, parts.bulb]
                             .reduce(parts.head.boundingBoxOfPath) { $0.union($1.boundingBoxOfPath) }
@@ -54,7 +57,7 @@ enum NotchMascotTests {
                 }
             }
         }
-        suite.expect(NotchMascotGeometry.figureOffset(.standard) > 0.03,
+        suite.expect(NotchMascotGeometry.figureOffset(NotchMascotLook(style: .minimal, shape: .ball, palette: .pearl)) > 0.03,
                      "a minimal ball sits low in its box, which the placement makes up for")
     }
 
@@ -109,8 +112,8 @@ enum NotchMascotTests {
         suite.expect(!NotchMascotSupport.isEnabled(in: defaults),
                      "installed, it still waits for its switch")
         suite.expect(NotchMascotSupport.look(in: defaults) == .standard
-                     && NotchMascotLook.standard == NotchMascotLook(style: .minimal, shape: .ball, palette: .pearl),
-                     "it starts as a pearl ball with two ink eyes")
+                     && NotchMascotLook.standard == NotchMascotLook(style: .satuVisual, shape: .ball, palette: .pearl),
+                     "it starts as the Satu Visual star in pearl, with two ink eyes")
         defaults.set(true, forKey: DefaultsKey.notchMascotEnabled)
         suite.expect(NotchMascotSupport.isEnabled(in: defaults) && NotchMascotSupport.visits(in: defaults)
                      && NotchMascotSupport.reacts(in: defaults)
