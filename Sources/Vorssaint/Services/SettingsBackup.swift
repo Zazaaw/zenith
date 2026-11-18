@@ -56,7 +56,7 @@ enum SettingsBackup {
                                         withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
             // mkstemp creates a 0600 file on the destination volume before any
             // snippet bytes are written, including in a shared dotfiles folder.
-            var template = Array(directory.appendingPathComponent(".vorssaint-XXXXXX").path.utf8CString)
+            var template = Array(directory.appendingPathComponent(".zenith-XXXXXX").path.utf8CString)
             let descriptor = mkstemp(&template)
             guard descriptor >= 0 else { return false }
             let staged = URL(fileURLWithPath: String(cString: template))

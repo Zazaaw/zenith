@@ -296,7 +296,7 @@ enum SelfUninstall {
         /bin/rm -f "$0"
         """
         let scriptURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("vorssaint-uninstall-\(pid)-\(UUID().uuidString).sh")
+            .appendingPathComponent("zenith-uninstall-\(pid)-\(UUID().uuidString).sh")
         do {
             try script.write(to: scriptURL, atomically: true, encoding: .utf8)
             // Its own session: the script's first act is to wait for this app
