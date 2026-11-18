@@ -81,14 +81,36 @@ karena memindahkan path ribuan file akan membuat setiap sync konflik.
 - `Tools/uninstall.sh` sekarang untuk Zenith dan tidak menyentuh Vorssaint.
 - Glyph menu bar dinaikkan ke 17 pt setelah dicek di menu bar sungguhan.
 
+**Fondasi tahap 2 (branch `feat/foundation-2`):**
+
+- Dokumen repo: `SUPPORT.md` dan `SECURITY.md` ditulis ulang untuk Zenith (merge=ours);
+  `SPONSORS.md`, `TRADEMARKS.md`, `docs/assets/`, `docs/demo.gif` dan
+  `.github/FUNDING.yml` (tombol Sponsor ke akun Vorssaint) dihapus; `CODEOWNERS`
+  jadi `@Zazaaw` (sebelumnya setiap PR meminta review dari akun Vorssaint).
+- `CONTRIBUTING.md`, `docs/*.md` dan template issue/PR diganti namanya oleh
+  `Tools/zenith-rebrand-docs.py` (nama, URL ke `satuvisual/zenith/blob/dev`, ID, path),
+  dengan catatan Zenith di CONTRIBUTING dan PRIVACY.
+- Variabel lingkungan untuk file shell pengguna: `ZENITH_RESOLVING_ENVIRONMENT`.
+- `CHANGELOG.md` di repo tetap versi upstream (diubah upstream tiap rilis); salinan
+  yang dibaca What's New diganti namanya oleh `build.sh` saat build.
+- Tur highlights 3.4.0 dan ajakan star/donasi 3.4.4 milik upstream disembunyikan
+  (`AppInfo.showsUpstreamReleaseIntros = false`), termasuk tombol "Review highlights"
+  di About. What's New biasa tetap tampil.
+- **Versi:** Zenith memakai nomor versi upstream (sekarang 3.4.4). Upstream menaikkannya
+  di `Info.plist` tiap rilis dan test mengunci angkanya, jadi nomor sendiri akan
+  konflik di setiap sync. Build Zenith dikenali dari commit di About.
+
 **Sisa yang belum dikerjakan:**
 
+- Gambar `Resources/Images/highlights-*` tidak dimuat kode mana pun, dan
+  `Resources/Gifs/highlights-notch.gif` hanya dipakai tur highlights yang
+  disembunyikan. Dibiarkan supaya sync tetap mulus.
 - Nama internal yang tidak terlihat pengguna dibiarkan: label antrean dan log
   `com.vorssaint.*`, ID sentinel AirPlay `vorssaint.output.airplay`, simbol
   `vorssaint_now_playing_*` (penghubung dylib dan `now-playing.pl`), kunci defaults
   `vorssDisabledSleep`, dan string `communityIntroFollowButton` yang tidak dipakai UI.
-- Dokumen repo bawaan upstream (CONTRIBUTING, SUPPORT, SECURITY, SPONSORS, TRADEMARKS,
-  CHANGELOG, docs/*) masih tentang Vorssaint.
+- Workflow `release.yml` dan `issue-fix-status.yml` milik pipeline rilis upstream
+  tidak dipakai Zenith.
 - Catatan rilis (`ReleaseNotes.swift`, `CHANGELOG.md`) masih riwayat rilis Vorssaint,
   termasuk klaim "Signed with an Apple Developer ID and notarized" yang belum berlaku
   untuk Zenith.
@@ -199,8 +221,13 @@ git diff "$BASE" main -- Sources | grep -E '^\+' | grep -v 'Copyright (C)' | gre
 git switch dev
 git merge main
 
-# 7. Ganti "Vorssaint" di teks UI baru, lalu validasi.
+# 7. Ganti "Vorssaint" di teks UI dan dokumen baru, lalu validasi.
+#    Dokumen bawaan upstream yang konflik: ambil versi upstream, lalu jalankan
+#    tool dokumen lagi (git checkout --theirs <file>).
+#    File yang dihapus Zenith (SPONSORS.md, TRADEMARKS.md, docs/assets, docs/demo.gif,
+#    .github/FUNDING.yml) dan diubah upstream: cukup `git rm` lagi.
 python3 Tools/zenith-rebrand-strings.py --check || python3 Tools/zenith-rebrand-strings.py --apply
+python3 Tools/zenith-rebrand-docs.py --check || python3 Tools/zenith-rebrand-docs.py --apply
 ./build.sh && ./build/Zenith --selftest && ./build.sh --test
 git push origin dev
 ```
