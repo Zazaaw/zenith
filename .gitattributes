@@ -1,0 +1,3 @@
+# Zenith fork: files where our version always wins when upstream edits them too.
+# Needs `git config merge.ours.driver true` in each clone (see docs/FORK.md).
+README.md merge=ours
