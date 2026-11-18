@@ -97,6 +97,32 @@ karena memindahkan path ribuan file akan membuat setiap sync konflik.
 - File baru tetap memakai header SPDX dan copyright seperti file upstream
   (lihat [CONTRIBUTING.md](../CONTRIBUTING.md)).
 
+### Status fase 2: identitas visual
+
+**Selesai (branch `feat/visual-identity`):**
+
+- Sumber logo: `Resources/Brand/satuvisual-mark.svg` (bintang Satu Visual).
+  `swift Tools/zenith-brand-assets.swift` membangkitkan ulang master
+  `Resources/Brand/logo.png` dan `Resources/Brand/AppIcon-Default.png`; jalankan
+  setiap kali logo atau desain ikon berubah, lalu commit hasilnya.
+- Ikon app: squircle putih (superellipse n=5, body 824 pt di kanvas 1024), gradasi
+  halus, bayangan lembut, bintang `#0A0A0A` setengah lebar body.
+- Glyph menu bar: bintang 14 pt di tengah kanvas 26×20 pt (dicek berdampingan dengan
+  ikon sistem di menu bar terang dan gelap).
+- `BrandMark.png` tetap memakai kotak 640×324 milik upstream (bintang setinggi kotak,
+  di tengah), jadi 10 pemakaian `BrandMark(width:)` tidak perlu diubah.
+- `BrandBadge` (About, What's New) sekarang terang seperti ikon app.
+- Ikon adaptif `AppIcon.icon` (hanya terpakai dengan Xcode 26) memakai SVG bintang,
+  skala 2.0. **Belum pernah dirender**, karena `actool` hanya ada di Xcode 26.
+- DMG: judul "Zenith", teks "Drag Zenith to Applications", panah monokrom, nama
+  file `dist/Zenith-<versi>.dmg`. `make-dmg.sh` belum dijalankan lokal (mengontrol Finder).
+
+**Belum:**
+
+- Design tokens dan redesign UI (fase 3). Latar onboarding masih `Theme.spaceGradient`.
+- Gambar dan GIF sorotan fitur (`Resources/Images`, `Resources/Gifs`) masih
+  screenshot UI Vorssaint.
+
 ## Branch dan remote
 
 ```

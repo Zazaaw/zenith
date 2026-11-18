@@ -274,16 +274,28 @@ struct DiscordMark: View {
     }
 }
 
-/// Squircle badge with the mark on the space gradient — the app's face in the
-/// About tab and onboarding.
+/// Squircle badge with the mark — the app's face in the About tab and onboarding.
+///
+/// Zenith fork: drawn like the app icon (Resources/Brand/AppIcon-Default.png),
+/// a light body with the near-black Satu Visual star, instead of upstream's
+/// mark on the space gradient.
 struct BrandBadge: View {
     var size: CGFloat
 
+    private static let fill = LinearGradient(
+        colors: [Color.white, Color(red: 0.925, green: 0.925, blue: 0.93)],
+        startPoint: .top,
+        endPoint: .bottom
+    )
+
     var body: some View {
+        let shape = RoundedRectangle(cornerRadius: size * 0.26, style: .continuous)
         ZStack {
-            RoundedRectangle(cornerRadius: size * 0.26, style: .continuous)
-                .fill(Theme.spaceGradient)
-            BrandMark(width: size * 0.8)
+            shape.fill(Self.fill)
+            shape.strokeBorder(Color.black.opacity(0.08), lineWidth: max(0.5, size / 512))
+            // BrandMark keeps upstream's 1.97:1 box, so a full-width mark is a
+            // star about half the badge tall, as on the app icon.
+            BrandMark(width: size, tint: Color(white: 0.039))
         }
         .frame(width: size, height: size)
     }

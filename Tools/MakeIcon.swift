@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Vorssaint
+// Copyright (C) 2026 Satu Visual
 
 // Generates all icon assets:
 // - the app iconset and .icns from the exported Default rendition of the
@@ -117,11 +118,15 @@ func renderAppIcon(px: Int) -> Data? {
 // The mark is ~1.97:1, so fitting it into a fixed box made the width the
 // limiting side and left the height unused, rendering it far shorter than the
 // menu bar icons around it. Size from the height and let the width follow.
-let menuBarGlyphHeight: CGFloat = 12.5
+// Zenith fork: the Satu Visual star is square, so it stands nearly as tall as the
+// compact system symbols that share this canvas (~15 pt); a point less balances
+// its heavier strokes against them.
+let menuBarGlyphHeight: CGFloat = 14
 // Centered geometrically the mark reads high, since the thin ring tails carry
 // the bounding box below the planet body. Drop it onto the same visual floor
 // as its neighbours.
-let menuBarGlyphDrop: CGFloat = 1
+// Zenith fork: the star is symmetric, so it sits on the geometric center.
+let menuBarGlyphDrop: CGFloat = 0
 // Taller than the mark needs: the same canvas holds the compact Keep Awake
 // symbols. Keep in sync with BlackHoleGlyph.pointSize in
 // Sources/Vorssaint/App/StatusItemController.swift; `--selftest` enforces it.
@@ -193,8 +198,11 @@ for scale in [1, 2] {
 }
 
 // Trimmed mark for in-app use (panel header, onboarding, About).
+// Zenith fork: keep upstream's 640×324 box (the old mark's ~1.97:1) whatever the
+// mark's own shape, so every BrandMark(width:) call site keeps its geometry. The
+// square star fills the height and sits centered.
 let markWidth = 640
-let markHeight = Int(CGFloat(markWidth) * sourceRect.height / sourceRect.width)
+let markHeight = 324
 if let rep = bitmapCanvas(markWidth, markHeight), let ctx = NSGraphicsContext(bitmapImageRep: rep) {
     rep.size = NSSize(width: markWidth, height: markHeight)
     NSGraphicsContext.saveGraphicsState()

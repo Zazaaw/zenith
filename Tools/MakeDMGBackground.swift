@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Vorssaint
+// Copyright (C) 2026 Satu Visual
 
 // Renders the installer (DMG) window background: a clean light panel with the
 // app title and an arrow pointing from the app icon toward the Applications
@@ -36,7 +37,7 @@ NSGradient(colors: [
 ])?.draw(in: full, angle: -90)
 
 // Title (origin is bottom-left, so high y = near the top).
-let title = "Vorssaint"
+let title = "Zenith"
 let titleAttrs: [NSAttributedString.Key: Any] = [
     .font: NSFont.systemFont(ofSize: 26, weight: .bold),
     .foregroundColor: NSColor(calibratedWhite: 0.12, alpha: 1),
@@ -45,7 +46,7 @@ let titleSize = title.size(withAttributes: titleAttrs)
 title.draw(at: NSPoint(x: (widthPt - titleSize.width) / 2, y: heightPt - 70), withAttributes: titleAttrs)
 
 // Subtitle / instruction.
-let subtitle = "Arraste o app para a pasta Aplicativos · Drag the app to Applications"
+let subtitle = "Drag Zenith to Applications"
 let subAttrs: [NSAttributedString.Key: Any] = [
     .font: NSFont.systemFont(ofSize: 12, weight: .regular),
     .foregroundColor: NSColor(calibratedWhite: 0.45, alpha: 1),
@@ -65,7 +66,8 @@ arrow.line(to: NSPoint(x: 348, y: arrowY))
 arrow.move(to: NSPoint(x: 330, y: arrowY + 16))
 arrow.line(to: NSPoint(x: 350, y: arrowY))
 arrow.line(to: NSPoint(x: 330, y: arrowY - 16))
-NSColor(calibratedRed: 0.40, green: 0.34, blue: 0.78, alpha: 0.9).setStroke()
+// Zenith fork: monochrome, matching the Satu Visual ink.
+NSColor(calibratedWhite: 0.12, alpha: 0.9).setStroke()
 arrow.stroke()
 
 NSGraphicsContext.restoreGraphicsState()
