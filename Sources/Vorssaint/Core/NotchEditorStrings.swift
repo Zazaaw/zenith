@@ -94,6 +94,8 @@ struct NotchEditorStrings {
         case .scratchpad: return scratchpadSummary
         case .agents: return agentsSummary
         case .watch: return watchSummary
+        // Zenith fork: its text lives in ZenithStrings, in the app's language.
+        case .wakatime: return ZenithStrings.wakaTimeSummary(L10n.shared.language)
         }
     }
 }

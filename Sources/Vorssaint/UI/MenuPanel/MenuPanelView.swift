@@ -85,6 +85,7 @@ struct MenuPanelView: View {
     @AppStorage(DefaultsKey.panelShowControls) private var showControls = true
     @AppStorage(DefaultsKey.panelShowToggles) private var showToggles = true
     @AppStorage(DefaultsKey.panelShowWallpaper) private var showWallpaper = true
+    @AppStorage(DefaultsKey.panelShowWakaTime) private var showWakaTime = true
     @AppStorage(DefaultsKey.panelSectionOrder) private var sectionOrderRaw = ""
     @State private var navigableContentHeight: CGFloat = 0
     @State private var metricContentHeight: CGFloat = 0
@@ -304,6 +305,7 @@ struct MenuPanelView: View {
         case .controls: return 360
         case .toggles: return 420
         case .wallpaper: return 480
+        case .wakatime: return 260
         }
     }
 
@@ -347,6 +349,7 @@ struct MenuPanelView: View {
         case .controls: QuickControlsSection(collapsible: collapsible)
         case .toggles: QuickTogglesSection(collapsible: collapsible)
         case .wallpaper: if showWallpaper { WallpaperSection(collapsible: collapsible) }
+        case .wakatime: if showWakaTime { WakaTimeSection(collapsible: collapsible) }
         }
     }
 
