@@ -64,9 +64,14 @@ enum ShelfDropRoutingContract {
         // Zenith fork: AirDrop drop zone.
         var targetsAirDrop = false
         var offersMediaDrop = false
+        var offersFilesDrop = false
+        var offersAirDrop = false
         var airDropAvailable = false
+        var dropPageForced = false
         var collapses = 0
+        var moduleRefreshes = 0
         func collapse() { collapses += 1 }
+        func refreshModules() { moduleRefreshes += 1 }
         var pinned = false
         var geometry = NotchGeometry(screen: CGRect(x: 0, y: 0, width: 1440, height: 900), safeAreaTop: 32, cameraWidth: 180)
         var expandedGeometry: NotchGeometry { geometry }
@@ -246,7 +251,8 @@ enum ShelfDropRoutingTests {
                                "ordinary drops keep the original shelf delivery path")
                     }
                     suite.expect(!notch.choosingFileDropDestination && !notch.targetsMediaDrop
-                            && !notch.targetsAirDrop && !notch.offersMediaDrop,
+                            && !notch.targetsAirDrop && !notch.offersMediaDrop
+                            && !notch.offersFilesDrop && !notch.offersAirDrop && !notch.dropPageForced,
                            "a finished drop removes its transient destinations")
                 }
             }
@@ -254,9 +260,11 @@ enum ShelfDropRoutingTests {
             let probe = Context.Notch()
             let content = probe.geometry.contentSize(for: probe.surfaceSize)
             let left = probe.surfaceSize.width / 2 - content.width / 2
-            func target(_ share: CGFloat, media: Bool) -> NotchDropTarget {
+            func target(_ share: CGFloat, media: Bool, files: Bool = true) -> NotchDropTarget {
                 NotchAirDropSupport.target(at: CGPoint(x: left + content.width * share, y: 10),
-                                           in: probe.geometry, size: probe.surfaceSize, offersMedia: media)
+                                           in: probe.geometry, size: probe.surfaceSize,
+                                           targets: NotchAirDropSupport.targets(files: files, airDrop: true,
+                                                                                media: media))
             }
             suite.expect(target(0.1, media: false) == .files && target(0.9, media: false) == .airDrop
                     && target(0.1, media: true) == .files && target(0.5, media: true) == .airDrop
@@ -264,6 +272,27 @@ enum ShelfDropRoutingTests {
                    "files, AirDrop and, for media, Optimize media sit left to right")
             suite.expect(target(-1, media: true) == .files && target(2, media: true) == .media,
                    "points beyond either edge fall to the nearest column")
+            suite.expect(target(0.1, media: false, files: false) == .airDrop
+                    && target(0.9, media: false, files: false) == .airDrop,
+                   "with the shelf off, the whole island is the AirDrop zone")
+            // The shelf off and Files hidden: AirDrop still takes a file drag on its own.
+            let airDropOnly = Context.Notch()
+            airDropOnly.modules = []
+            board.clearContents()
+            board.writeObjects([image as NSURL])
+            suite.expect(!airDropOnly.acceptsShelfDrop && airDropOnly.acceptsAirDropDrop
+                    && airDropOnly.canAcceptFileDrop,
+                   "AirDrop accepts drops without the island's Files section")
+            airDropOnly.beginFileDrop(board)
+            suite.expect(airDropOnly.choosingFileDropDestination && airDropOnly.offersAirDrop
+                    && !airDropOnly.offersFilesDrop && !airDropOnly.offersMediaDrop
+                    && airDropOnly.targetsAirDrop && airDropOnly.dropPageForced
+                    && airDropOnly.opened == [.files],
+                   "an AirDrop-only drag borrows the Files page with AirDrop as its one target")
+            airDropOnly.endFileDrop()
+            suite.expect(!airDropOnly.dropPageForced && airDropOnly.moduleRefreshes == 1
+                    && !airDropOnly.offersAirDrop && !airDropOnly.targetsAirDrop,
+                   "leaving the drag hands the borrowed page back")
             reset()
             board.clearContents()
             let text = NSPasteboardItem()

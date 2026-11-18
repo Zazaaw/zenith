@@ -14,17 +14,22 @@ enum NotchDropTarget: Equatable {
 /// Zenith fork: the AirDrop drop zone in the notch. Drop files on it and the
 /// system AirDrop picker opens with them, one step instead of a share menu.
 enum NotchAirDropSupport {
-    /// The targets offered for a drag, left to right. Optimize media only appears
-    /// for content it can work on, as upstream's chooser did.
-    static func targets(offersMedia: Bool) -> [NotchDropTarget] {
-        offersMedia ? [.files, .airDrop, .media] : [.files, .airDrop]
+    /// Whether the AirDrop zone is on. It stands on its own: neither the shelf nor
+    /// the island's Files section has to be on. Unset reads as on.
+    static var isEnabled: Bool {
+        UserDefaults.standard.object(forKey: DefaultsKey.notchAirDropEnabled) as? Bool ?? true
+    }
+
+    /// The targets offered for a drag, left to right.
+    static func targets(files: Bool, airDrop: Bool, media: Bool) -> [NotchDropTarget] {
+        (files ? [.files] : []) + (airDrop ? [.airDrop] : []) + (media ? [.media] : [])
     }
 
     /// The target under `point`, splitting the content width into equal columns
     /// separated by `NotchFileToolsSupport.dropSpacing`, as the chooser draws them.
     static func target(at point: CGPoint, in geometry: NotchGeometry, size: CGSize,
-                       offersMedia: Bool) -> NotchDropTarget {
-        let targets = targets(offersMedia: offersMedia)
+                       targets: [NotchDropTarget]) -> NotchDropTarget {
+        guard targets.count > 1 else { return targets.first ?? .files }
         let content = geometry.contentSize(for: size)
         let spacing = NotchFileToolsSupport.dropSpacing
         let count = CGFloat(targets.count)

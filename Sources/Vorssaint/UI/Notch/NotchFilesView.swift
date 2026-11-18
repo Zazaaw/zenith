@@ -43,11 +43,15 @@ struct NotchFilesView: View {
         VStack(spacing: NotchLayout.rowSpacing) {
             if choosesDropDestination {
                 HStack(spacing: NotchFileToolsSupport.dropSpacing) {
-                    dropDestination(FeatureStrings.notch(l10n.language).files, symbol: "tray.and.arrow.down",
-                                    selected: !service.targetsMediaDrop && !service.targetsAirDrop)
-                    dropDestination("AirDrop", symbol: "dot.radiowaves.left.and.right",
-                                    selected: service.targetsAirDrop, available: service.airDropAvailable,
-                                    unavailableNote: "")
+                    if service.offersFilesDrop {
+                        dropDestination(FeatureStrings.notch(l10n.language).files, symbol: "tray.and.arrow.down",
+                                        selected: !service.targetsMediaDrop && !service.targetsAirDrop)
+                    }
+                    if service.offersAirDrop {
+                        dropDestination("AirDrop", symbol: "dot.radiowaves.left.and.right",
+                                        selected: service.targetsAirDrop, available: service.airDropAvailable,
+                                        unavailableNote: "")
+                    }
                     if service.offersMediaDrop {
                         dropDestination(text.optimizeMedia, symbol: "wand.and.stars", selected: service.targetsMediaDrop,
                                         available: archives.canAcceptMediaDrop)

@@ -1749,6 +1749,8 @@ def main():
           + declaration(renderer, "    var feature: AppFeature")
           + declaration(metric_view, "    var detailKind:") + "}\n"
           + "final class Service: State {\n"
+          # Zenith fork: open() may borrow the Files page for an AirDrop drop.
+          + "var dropPageForced = false\n"
           + "func syncWithPreferences() { presentationSyncs += 1; refreshModules(); syncVisibleConsumers(); NotchTimerService.shared.syncWithPreferences() }\n"
           + availability_declaration(notch, "    private func metricIsAvailable(")
           + declaration(notch, "    private func refreshModules(")
@@ -1805,6 +1807,9 @@ def main():
           + declaration("Sources/Vorssaint/Services/Notch/NotchFileToolsService.swift", "    func showMedia(")
           + "}\nfinal class Notch: NotchState {\n"
           + declaration(notch, "    var canAcceptFileDrop:")
+          + declaration(notch, "    var acceptsShelfDrop:")
+          + declaration(notch, "    var acceptsAirDropDrop:")
+          + declaration(notch, "    private var dropTargets:")
           + declaration(notch, "    func beginFileDrop(")
           + declaration(notch, "    func updateFileDrop(")
           + declaration(notch, "    func endFileDrop(")

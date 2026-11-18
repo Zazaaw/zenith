@@ -20,6 +20,7 @@ struct ShelfSettings: View {
     @AppStorage(DefaultsKey.notchShelf) private var opensInIsland = true
     @State private var showingAppPicker = false
     @State private var islandShowsFiles = NotchSupport.showsFiles()
+    @AppStorage(DefaultsKey.notchAirDropEnabled) private var airDrop = true
 
     var body: some View {
         Form {
@@ -44,6 +45,14 @@ struct ShelfSettings: View {
                 bullet("1", l10n.s.shelfStep1)
                 bullet("2", l10n.s.shelfStep2)
                 bullet("3", l10n.s.shelfStep3)
+            }
+
+            // Zenith fork: AirDrop works on its own, with the shelf on or off.
+            Section {
+                Toggle(ZenithStrings.airDrop(l10n.language).toggle, isOn: $airDrop)
+                Text(ZenithStrings.airDrop(l10n.language).caption)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             if enabled {

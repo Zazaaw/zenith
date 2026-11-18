@@ -133,7 +133,11 @@ final class NotchService: ObservableObject {
     // Zenith fork: AirDrop drop zone (NotchAirDropSupport).
     @Published private(set) var targetsAirDrop = false
     @Published private(set) var offersMediaDrop = false
+    @Published private(set) var offersFilesDrop = false
+    @Published private(set) var offersAirDrop = false
     @Published private(set) var airDropAvailable = false
+    /// The Files page opened for a drop although the island hides Files.
+    private var dropPageForced = false
     @Published private(set) var selectedMetric: MetricDetailKind?
     @Published private(set) var captureControls: ScreenCaptureSelectionOptions?
     @Published private(set) var captureControlsCollapsed = false
@@ -1450,7 +1454,9 @@ final class NotchService: ObservableObject {
         guard let panel else { return }
         let reopening = reopeningDestination
         let useReopeningSurface = module == nil && !expanded && !appPanel && !sections && metric == nil
-        let destination = module.flatMap { modules.contains($0) ? $0 : nil } ?? reopening.module
+        // Zenith fork: a drop for AirDrop may borrow the hidden Files page.
+        let destination = module.flatMap { modules.contains($0) || (dropPageForced && $0 == .files) ? $0 : nil }
+            ?? reopening.module
         let appPanel = appPanel || (useReopeningSurface && reopening.appPanel)
         let sections = sections || (useReopeningSurface && reopening.sections)
         if useReopeningSurface && reopening.appPanel { MenuPanelFocus.shared.showNormalPanel() }
@@ -2288,29 +2294,50 @@ final class NotchService: ObservableObject {
     }
 
     var canAcceptFileDrop: Bool {
+        acceptsShelfDrop || acceptsAirDropDrop
+    }
+
+    /// Upstream's drop path: the island shows Files and the shelf is on.
+    var acceptsShelfDrop: Bool {
         acceptsUserInteraction && captureControls == nil && modules.contains(.files)
             && AppFeature.shelf.isAvailable
             && UserDefaults.standard.bool(forKey: DefaultsKey.shelfEnabled)
     }
 
+    /// Zenith fork: the AirDrop zone needs neither the shelf nor the Files section.
+    var acceptsAirDropDrop: Bool {
+        acceptsUserInteraction && captureControls == nil && NotchAirDropSupport.isEnabled
+    }
+
     func beginFileDrop(_ pasteboard: NSPasteboard) {
         guard canAcceptFileDrop else { return }
-        offersMediaDrop = AppFeature.mediaTools.isAvailable
-            && NotchFileToolsService.shared.mediaDropContent(for: pasteboard) != nil
         let files = NotchAirDropSupport.fileURLs(in: pasteboard)
-        airDropAvailable = NotchAirDropSupport.canSend(files)
+        offersFilesDrop = acceptsShelfDrop
+        offersAirDrop = acceptsAirDropDrop && !files.isEmpty
+        offersMediaDrop = offersFilesDrop && AppFeature.mediaTools.isAvailable
+            && NotchFileToolsService.shared.mediaDropContent(for: pasteboard) != nil
+        airDropAvailable = offersAirDrop && NotchAirDropSupport.canSend(files)
+        guard offersFilesDrop || offersAirDrop else { return }
         // Zenith fork: any file drag offers AirDrop, so the chooser opens for files too.
-        choosingFileDropDestination = offersMediaDrop || !files.isEmpty
+        choosingFileDropDestination = offersMediaDrop || offersAirDrop
         targetsMediaDrop = false
-        targetsAirDrop = false
+        // Before the pointer moves, the leftmost zone is the target: Files when the
+        // shelf takes drops, otherwise AirDrop.
+        targetsAirDrop = dropTargets.first == .airDrop
+        // AirDrop alone may open the Files page the island otherwise hides.
+        dropPageForced = !modules.contains(.files)
         open(.files, takeFocus: false)
+    }
+
+    private var dropTargets: [NotchDropTarget] {
+        NotchAirDropSupport.targets(files: offersFilesDrop, airDrop: offersAirDrop, media: offersMediaDrop)
     }
 
     @discardableResult
     func updateFileDrop(at point: CGPoint) -> Bool {
         let target: NotchDropTarget = choosingFileDropDestination
             ? NotchAirDropSupport.target(at: point, in: expandedGeometry, size: surfaceSize,
-                                         offersMedia: offersMediaDrop)
+                                         targets: dropTargets)
             : .files
         if targetsMediaDrop != (target == .media) { targetsMediaDrop = target == .media }
         if targetsAirDrop != (target == .airDrop) { targetsAirDrop = target == .airDrop }
@@ -2327,6 +2354,13 @@ final class NotchService: ObservableObject {
         if targetsMediaDrop { targetsMediaDrop = false }
         if targetsAirDrop { targetsAirDrop = false }
         if offersMediaDrop { offersMediaDrop = false }
+        if offersFilesDrop { offersFilesDrop = false }
+        if offersAirDrop { offersAirDrop = false }
+        if dropPageForced {
+            // The borrowed Files page goes back to a section the island shows.
+            dropPageForced = false
+            refreshModules()
+        }
         if changed, acceptsUserInteraction { refreshPresentation() }
     }
 
@@ -2350,6 +2384,7 @@ final class NotchService: ObservableObject {
             }
             return sent
         }
+        guard acceptsShelfDrop else { return false }
         let optimize = choosingFileDropDestination && targetsMediaDrop
         let accepted = optimize
             ? NotchFileToolsService.shared.openMediaDrop(pasteboard)
@@ -3678,11 +3713,13 @@ final class NotchService: ObservableObject {
             windowHost?.setHoverHandler { [weak self] in self?.hover($0) }
             panel?.title = FeatureStrings.notch(L10n.shared.language).title
         }
-        if modules.contains(.files), AppFeature.shelf.isAvailable {
+        // Zenith fork: the AirDrop zone takes drops even when the island hides Files.
+        if (modules.contains(.files) && AppFeature.shelf.isAvailable) || NotchAirDropSupport.isEnabled {
             windowHost?.setFileDropActions(NotchFileDropActions(
                 canAccept: { [weak self] pasteboard in
-                    self?.canAcceptFileDrop == true && !ShelfService.shared.isInternalDragActive
-                        && ShelfService.shared.canAcceptPasteboard(pasteboard)
+                    guard let self, !ShelfService.shared.isInternalDragActive else { return false }
+                    return (self.acceptsShelfDrop && ShelfService.shared.canAcceptPasteboard(pasteboard))
+                        || (self.acceptsAirDropDrop && !NotchAirDropSupport.fileURLs(in: pasteboard).isEmpty)
                 },
                 enter: { [weak self] in self?.beginFileDrop($0) },
                 accept: { [weak self] in self?.accept($0) == true },

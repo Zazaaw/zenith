@@ -221,6 +221,8 @@ enum DefaultsKey {
     static let shelfRemoveAfterDrop = "shelfRemoveAfterDrop"
     static let shelfClearOnClose = "shelfClearOnClose"
     static let shelfShortcutAddsFinderSelection = "shelfShortcutAddsFinderSelection"
+    // Zenith fork: the AirDrop drop zone in the island, independent of the shelf.
+    static let notchAirDropEnabled = "notchAirDropEnabled"
     static let shelfAutomaticExclusions = "shelfAutomaticExclusions" // [bundle id] blocks automatic opening only
     static let extraBrightnessEnabled = "extraBrightnessEnabled"
     static let extraBrightnessLevel = "extraBrightnessLevel"   // Int percent 0-100
@@ -1397,6 +1399,7 @@ enum Defaults {
         // On by default (owner's call): it costs nothing until the shelf itself
         // is on, and then the shelf lives handily under the menu bar icon.
         DefaultsKey.shelfDropZoneEnabled: true,
+        DefaultsKey.notchAirDropEnabled: true,
         DefaultsKey.shelfDockPlacement: ShelfDockPlacement.menuBar.rawValue,
         // New Shelf behavior stays opt-in for existing users.
         DefaultsKey.shelfEdgeDragEnabled: false,
