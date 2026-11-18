@@ -171,6 +171,15 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   `ZenithMotion`, `ZenithRadius` dan `ZenithType`. Belum ada view yang memakainya, jadi
   tampilan belum berubah. Status di mode terang memakai tingkat 600 (bukan 500 seperti
   Style Kit) supaya teks kecil tetap terbaca di latar putih.
+- **Notch (palet status, selesai):** peringatan/gagal amber, error merah, sukses
+  emerald, timer purple, keep-awake amber; toggle mikrofon ikut aksen sistem. Warna
+  identitas dibiarkan (merek AI agent, bagian Music dan Calendar, aksen kalender, api
+  streak, Watch). `NotchUpdateControl` tidak diubah (dikompilasi ke test tanpa token,
+  dan update mati). Gerak dan radius notch dipertahankan atas keputusan Faiz.
+- **Zona AirDrop di notch (selesai):** `Services/Notch/NotchAirDropSupport.swift`.
+  Pilihan zona sekarang muncul untuk semua file: Files, AirDrop, dan Optimize media
+  (hanya untuk media). `ShelfDropRoutingTests` disesuaikan dan tidak pernah memicu
+  AirDrop sungguhan.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
