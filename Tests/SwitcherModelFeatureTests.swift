@@ -2506,6 +2506,8 @@ enum SwitcherModelFeatureTests {
                "updates stay off until Zenith ships its own signed releases")
         suite.expect(AppInfo.feedbackEndpoint == nil,
                "feedback never reaches Vorssaint's server")
+        suite.expect(!AppInfo.showsUpstreamReleaseIntros,
+               "upstream's release tour and donation invitation stay hidden")
         suite.expect(AppInfo.sharingEndpoint.host?.hasSuffix(".invalid") == true,
                "sharing uploads never reach Vorssaint's server")
         suite.expect(AppInfo.discordURL == nil && AppInfo.coffeeURL == nil && AppInfo.socialURL == nil,

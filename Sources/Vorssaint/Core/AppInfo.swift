@@ -33,6 +33,9 @@ enum AppInfo {
     /// leaving the Mac; sharing uploads go to a reserved `.invalid` host (RFC 2606)
     /// that never resolves, so nothing reaches Vorssaint's servers.
     static let feedbackEndpoint: URL? = nil
+    /// Upstream's one-time release tour (3.4.0 highlights, with screenshots of its
+    /// UI) and its star-and-donate invitation (3.4.4). Not Zenith's to show.
+    static let showsUpstreamReleaseIntros = false
     static let sharingEndpoint = URL(string: "https://sharing.zenith.invalid")!
 
     /// The bundle version. The fallback only applies to the bare binary

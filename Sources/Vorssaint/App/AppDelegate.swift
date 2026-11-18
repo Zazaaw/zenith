@@ -2273,6 +2273,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
     }
 
     private func showUpdateHighlightsIfNeeded() -> Bool {
+        guard AppInfo.showsUpstreamReleaseIntros else { return false }
         guard UpdateHighlightsInfo.shouldShow(
             appVersion: AppInfo.version,
             lastSeenVersion: UserDefaults.standard.string(forKey: DefaultsKey.updateHighlightsSeenVersion)
@@ -2539,6 +2540,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
     }
 
     private func showSupportUpdateIntroIfNeeded() -> Bool {
+        guard AppInfo.showsUpstreamReleaseIntros else { return false }
         // Stable patches share one invitation, even if the first installed
         // version in this release series is a hotfix.
         guard SupportUpdateIntroInfo.shouldShow(
@@ -2550,6 +2552,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
     }
 
     private func showSupportUpdateIntro(isReview: Bool = false) {
+        // Zenith fork: also covers the review that follows a manual What's New.
+        guard AppInfo.showsUpstreamReleaseIntros else { return }
         guard !isTerminating, isReview || !AppInfo.isBeta else { return }
         closePopover()
         if let window = supportIntroWindow {

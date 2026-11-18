@@ -10,6 +10,9 @@ enum UpdateIntroFlowTests {
         static var version = "3.4.0"
         static var isBeta: Bool { version.contains("beta") }
         static var isDeveloperBuild = false
+        // Zenith fork: the real AppInfo turns these intros off (pinned in
+        // SwitcherModelFeatureTests); the flow itself stays under test here.
+        static var showsUpstreamReleaseIntros = true
     }
     enum UserDefaults { static var standard: Foundation.UserDefaults! }
     enum DispatchQueue {

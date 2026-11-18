@@ -782,8 +782,10 @@ struct AboutSettings: View {
                 Button(l10n.s.reviewIntro) {
                     appDelegate()?.showOnboarding()
                 }
-                Button(l10n.s.reviewHighlights) {
-                    appDelegate()?.showUpdateHighlights(isReview: true)
+                if AppInfo.showsUpstreamReleaseIntros {
+                    Button(l10n.s.reviewHighlights) {
+                        appDelegate()?.showUpdateHighlights(isReview: true)
+                    }
                 }
                 Link(l10n.s.viewOnGitHub, destination: AppInfo.repositoryURL)
             }
