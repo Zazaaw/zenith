@@ -118,10 +118,10 @@ func renderAppIcon(px: Int) -> Data? {
 // The mark is ~1.97:1, so fitting it into a fixed box made the width the
 // limiting side and left the height unused, rendering it far shorter than the
 // menu bar icons around it. Size from the height and let the width follow.
-// Zenith fork: the Satu Visual star is square, so it stands nearly as tall as the
-// compact system symbols that share this canvas (~15 pt); a point less balances
-// its heavier strokes against them.
-let menuBarGlyphHeight: CGFloat = 14
+// Zenith fork: the Satu Visual star is square and open, so it needs nearly the
+// full canvas height to read as large as its menu bar neighbours (checked on a
+// real menu bar: 14 pt looked clearly smaller than the system icons).
+let menuBarGlyphHeight: CGFloat = 17
 // Centered geometrically the mark reads high, since the thin ring tails carry
 // the bounding box below the planet body. Drop it onto the same visual floor
 // as its neighbours.
