@@ -5,8 +5,8 @@ import Foundation
 
 /// Zenith fork: recent Vercel deployments and the build on its way.
 ///
-/// It polls only while the island runs, the Vercel section is on and a token
-/// is saved: every `VercelSupport.buildingInterval` while something builds,
+/// It polls only while a token is saved and the island runs with the Vercel
+/// section on, or the lock screen's terminal readout shows its line: every `VercelSupport.buildingInterval` while something builds,
 /// every `VercelSupport.idleInterval` otherwise. The token lives in an
 /// owner-only file (`ZenithSecretStore`, never preferences or backups), is
 /// read only once the section is on (or its page or settings show), and only
@@ -35,6 +35,8 @@ final class VercelService: ObservableObject {
     private var lastFailed = false
     private var result: VercelSupport.Deployment?
     private var resultSince: Date?
+    /// The lock screen's terminal readout, while it shows the Vercel line.
+    private var lockScreenViewers = 0
 
     /// The token's file in Zenith's private secrets folder (ZenithSecretStore).
     static let secretName = "vercel-token"
@@ -94,14 +96,39 @@ final class VercelService: ObservableObject {
 
     /// Called with every island preference sync: starts or stops polling.
     func syncWithPreferences() {
-        let moduleOn = Self.isModuleOn()
-        if moduleOn { loadTokenIfNeeded() }
-        let wanted = moduleOn && token != nil
+        let shown = Self.isModuleOn() || lockScreenViewers > 0
+        if shown { loadTokenIfNeeded() }
+        let wanted = shown && token != nil
         if wanted != polling {
             polling = wanted
-            if wanted { refresh() } else { stopPolling() }
+            if !wanted {
+                stopPolling()
+            } else if isFresh {
+                // A list read moments ago, as on locking right after a look
+                // at the island, waits for its next turn.
+                scheduleNext()
+            } else {
+                refresh()
+            }
         }
         publishActivity()
+    }
+
+    /// The lock screen's terminal readout appeared with a Vercel line.
+    func lockScreenShown() {
+        lockScreenViewers += 1
+        syncWithPreferences()
+    }
+
+    func lockScreenHidden() {
+        guard lockScreenViewers > 0 else { return }
+        lockScreenViewers -= 1
+        syncWithPreferences()
+    }
+
+    private var isFresh: Bool {
+        guard state == .ready, let lastFetch else { return false }
+        return Date().timeIntervalSince(lastFetch) < VercelSupport.staleAfter
     }
 
     func stop() {
@@ -122,8 +149,7 @@ final class VercelService: ObservableObject {
     func viewAppeared() {
         loadTokenIfNeeded()
         guard token != nil else { return }
-        if let lastFetch, state == .ready,
-           Date().timeIntervalSince(lastFetch) < VercelSupport.staleAfter { return }
+        if isFresh { return }
         refresh()
     }
 
@@ -206,7 +232,8 @@ final class VercelService: ObservableObject {
     }
 
     private func publishActivity() {
-        let live = polling && Self.showsLiveActivity()
+        // Polling for the lock screen alone never feeds the closed island.
+        let live = polling && Self.isModuleOn() && Self.showsLiveActivity()
         let next = live ? VercelSupport.activity(deployments: deployments, result: result,
                                                  resultSince: resultSince, now: Date()) : nil
         if next != activity { activity = next }

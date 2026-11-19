@@ -22,6 +22,7 @@ final class NotchLockScreenService {
         var island: CGRect?
         /// The island itself inside its window, at the camera's fitted size.
         var islandSurface: CGRect?
+        var terminal: CGRect? // Zenith fork
     }
 
     private let model = NotchLockScreenModel()
@@ -82,6 +83,11 @@ final class NotchLockScreenService {
         if let screen = (NSScreen.screens.first(where: { $0.notchDisplayID == main }) ?? NSScreen.screens.first)?.frame {
             frames.player = NotchLockScreenLayout.playerFrame(in: screen)
             frames.row = NotchLockScreenLayout.rowFrame(in: screen)
+            // Zenith fork: the terminal readout under the activities; the player keeps the rest.
+            (frames.terminal, frames.player) = NotchLockScreenTerminalLayout.arrange(
+                row: frames.row, player: frames.player, screen: screen,
+                lines: NotchLockScreenTerminal.configuration()?.sources.count ?? 0,
+                music: NotchLockScreenSupport.showsMusic() && NotchLockScreenItem.music.isOn())
         }
         // The island's own reading of its camera, with the fit the person set.
         let geometry = NotchService.shared.geometry
@@ -127,6 +133,14 @@ final class NotchLockScreenService {
         if let frame = frames.row {
             scene.append(Self.makePanel(frame: frame, content: NotchLockScreenActivities(model: model, size: frame.size)))
         }
+        // Zenith fork: the terminal readout, settled as it appears.
+        let terminal = frames.terminal.flatMap { frame in
+            NotchLockScreenTerminal.configuration().map { (frame: frame, configuration: $0) }
+        }
+        if let terminal {
+            scene.append(Self.makePanel(frame: terminal.frame, content: NotchLockScreenTerminalView(
+                configuration: terminal.configuration, size: terminal.frame.size)))
+        }
         let island = frames.island.flatMap { frame in
             frames.islandSurface.map { surface in
                 Self.makePanel(frame: frame, content: NotchLockScreenIsland(
@@ -138,6 +152,7 @@ final class NotchLockScreenService {
         let panels = scene + [island].compactMap { $0 }
         guard !panels.isEmpty else { space.close(); return }
         if !scene.isEmpty { startSources(gates) }
+        if let terminal { NotchLockScreenTerminal.start(terminal.configuration) } // Zenith fork
         // Joined before they are first shown, the windows belong to this
         // Space alone and are drawn over the lock screen with it.
         for panel in panels { space.add(panel) }
@@ -194,8 +209,9 @@ final class NotchLockScreenService {
     }
 
     private func hide(unlocking: Bool, stopsSources: Bool) {
-        // Zenith fork: weather and reminders stop with every hide.
+        // Zenith fork: weather, reminders and the terminal readout stop with every hide.
         NotchLockScreenWidgets.stop()
+        NotchLockScreenTerminal.stop()
         if stopsSources, !scene.isEmpty {
             NotchMusicService.shared.stop()
             NotchDownloadService.shared.stop()

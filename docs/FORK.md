@@ -294,6 +294,65 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     Status: gh tidak ada, belum login (exit 4 / HTTP 401), gagal, masing-masing dengan
     pesan. Polling tiap 5 menit selama bagian tampil, plus saat halaman muncul kalau data
     lebih tua dari 2 menit.
+- **Terminal readout di lock screen (branch `feat/lockscreen-terminal`):** panel status
+  bergaya output terminal di bawah baris aktivitas lock screen. Bukan terminal sungguhan,
+  hanya teks monospace untuk dipantau sekilas saat Mac terkunci. Kode di
+  `Services/Notch/NotchLockScreenTerminalSupport.swift` (logika murni: model baris, urutan,
+  visibilitas, sensor nama, format, layout), `Services/Notch/NotchLockScreenTerminal.swift`
+  (start/stop sumber data bersama lock screen), `UI/Notch/NotchLockScreenTerminalView.swift`,
+  dan `UI/Settings/NotchLockScreenTerminalSettings.swift`. Teks Settings di
+  `Core/ZenithStrings.swift` (15 bahasa). Test di `Tests/LockScreenTerminalTests.swift`
+  (suite `lockscreen-terminal`).
+  - **Default mati** (`notchLockScreenTerminal`). Pengaturannya di Settings → Dynamic Island
+    → Activity → Lock Screen, di bawah saklar item: saklar utama, daftar baris (saklar per
+    baris, tombol naik/turun untuk urutan), dan "Show project names"
+    (`notchLockScreenTerminalProjects`, default mati). Urutan dan pilihan disimpan dalam satu
+    string `notchLockScreenTerminalLines`, mis. `agents,waka,-vercel,-ci,sys,dl,timer`
+    (`-` = mati; nama asing/duplikat dilewati; baris baru dari versi nanti masuk di akhir,
+    mati). Semuanya ikut backup karena terdaftar di `registeredDefaults`.
+  - **Tampilan:** kartu `ZenithRadius.card` hitam 60% dengan garis putih 10% (Reduce
+    Transparency: solid; Increase Contrast: garis 35%), lebar sama dengan panel musik (404 pt),
+    SF Mono 11,5 pt, tinggi baris 16 pt. Tiap baris: prompt `›` redup, label 6 karakter, nilai
+    putih 92%; diakhiri baris prompt dengan kursor blok yang berkedip tiap 0,5 dtk (diam
+    saat mengetik dan saat Reduce Motion). Warna hanya untuk titik kecil `ZenithStatus`:
+    merah untuk build Vercel gagal dan check GitHub gagal, amber untuk baterai ≤ 20% tanpa
+    charger. Label tetap bahasa Inggris di semua bahasa, nilainya juga (gaya output CLI).
+  - **Mengetik masuk:** saat lock screen muncul, baris muncul satu per satu tiap 40 ms
+    (`ZenithMotion.layerStagger`), utuh per baris. Setelah itu nilai berubah di tempat lewat
+    `TimelineView` per detik plus `@ObservedObject` ke tiap service, tanpa mengetik ulang.
+    Reduce Motion: semua langsung tampil.
+  - **Format per baris** (nama project/repo/file hanya kalau "Show project names" nyala):
+    `agents  2 running · claude, codex` (nama → `claude@zenith`), `waka  3h 12m · goal 75%`
+    (+ project teratas hari ini), `vercel  building` / `2 building` / `queued` /
+    `ready · 2h ago` / `failed · 5m ago` (+ project), `ci  1 check failing · 2 pending ·
+    1 review` / `3 checks passing` / `1 open` (+ repo PR yang gagal/pending),
+    `sys  bat 84% · cpu 23%` (`charging` saat mengisi; Mac tanpa baterai hanya `cpu`;
+    belum ada data `cpu --`), `dl  2 files 37%` (rata-rata progres; + nama file pertama),
+    `timer  12:04 left` / `focus 12:04 left` / `03:10 elapsed` / `12:04 paused` / `done`.
+    Baris yang sumbernya kosong disembunyikan, kecuali `sys`. Nama provider agent (claude,
+    codex) tetap tampil seperti item agents lock screen yang sudah ada; yang disensor nama
+    project-nya.
+  - **Sumber data hanya jalan selama readout tampil.** Ketersediaan dicek saat lock screen
+    muncul: agents butuh fitur agents nyala, waka butuh `~/.wakatime.cfg` atau token, dl butuh
+    rute downloads, timer butuh fitur timer; Vercel dan `ci` default mati karena memakai
+    jaringan / menjalankan `gh` (tanpa token atau `gh` barisnya kosong saja). Start/stop di
+    `NotchLockScreenTerminal`: WakaTime lewat `viewAppeared`/`viewDisappeared`; Vercel dan
+    GitHub lewat penghitung penonton baru `lockScreenShown()`/`lockScreenHidden()` (polling
+    jalan kalau bagian island-nya nyala **atau** readout tampil; data yang dibaca < 1 menit
+    (Vercel) / < 2 menit (GitHub) tidak dibaca ulang saat terkunci; polling khusus lock screen
+    tidak pernah memunculkan live activity Vercel di island); `SystemMonitor` lewat konsumen
+    baru `setLockScreenNeeds` (hanya CPU dan baterai); agents dan downloads distart lalu
+    dihentikan bersama scene lock screen seperti item lain.
+  - **Layout:** readout tergantung 10 pt di bawah baris aktivitas; tinggi kartu mengikuti
+    jumlah baris yang dipilih dan tersedia (+ baris kursor). Player musik mengambil sisa ruang
+    di bawahnya; kalau sisa itu kurang dari tinggi minimum player (190 pt) dan musik bisa
+    tampil, readout yang mengalah (tidak tampil), mis. di layar setinggi 800 pt.
+  - Edit di file upstream hanya baris bertanda `// Zenith fork`: `NotchLockScreenService`
+    (frame, panel, start/stop) dan `SystemMonitor` (konsumen lock screen). Test double di
+    `Tests/SystemMonitorPlanTests.swift` ikut diberi `lockScreenNeeds`.
+  - **Belum diverifikasi visual:** tampilan di lock screen sungguhan, efek ketik, kedip
+    kursor, dan tata letak bersama player musik belum dilihat di Mac (app UI tidak dijalankan
+    saat pengerjaan).
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.

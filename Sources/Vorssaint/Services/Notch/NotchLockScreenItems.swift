@@ -81,6 +81,8 @@ struct NotchLockScreenItemToggles: View {
         ForEach(NotchLockScreenItem.allCases.filter { $0 != .wakatime || WakaTimeSupport.hasConfiguration() }) { item in
             NotchLockScreenItemRow(item: item, title: item.title(l10n.language))
         }
+        // The terminal readout under the clock, with its lines and their order.
+        NotchLockScreenTerminalSettings()
     }
 }
 

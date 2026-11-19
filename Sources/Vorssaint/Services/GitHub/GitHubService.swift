@@ -7,7 +7,8 @@ import Foundation
 /// with the GitHub CLI they already signed in with.
 ///
 /// It reads every `GitHubSupport.refreshInterval` while the island runs and
-/// shows the GitHub section, and when the page appears with an inbox older
+/// shows the GitHub section, or the lock screen's terminal readout shows its
+/// checks line, and when the page appears with an inbox older
 /// than `GitHubSupport.staleAfter`. `gh` always runs off the main thread,
 /// and never runs at all when it is not installed. Like the island's own
 /// services it lives on the main thread.
@@ -27,6 +28,8 @@ final class GitHubService: ObservableObject {
     private var request: Task<Void, Never>?
     private var timer: Timer?
     private var lastFetch: Date?
+    /// The lock screen's terminal readout, while it shows the checks line.
+    private var lockScreenViewers = 0
 
     private init() {}
 
@@ -38,11 +41,12 @@ final class GitHubService: ObservableObject {
 
     /// Called with every island preference sync: starts or stops the refresh.
     func syncWithPreferences() {
-        let wanted = Self.isModuleOn()
+        let wanted = Self.isModuleOn() || lockScreenViewers > 0
         guard wanted != polling else { return }
         polling = wanted
         if wanted {
-            refresh()
+            // An inbox read moments ago waits for the next turn.
+            viewAppeared()
             let timer = Timer(timeInterval: GitHubSupport.refreshInterval, repeats: true) { [weak self] _ in
                 self?.refresh()
             }
@@ -60,6 +64,18 @@ final class GitHubService: ObservableObject {
         timer = nil
         request?.cancel()
         request = nil
+    }
+
+    /// The lock screen's terminal readout appeared with a checks line.
+    func lockScreenShown() {
+        lockScreenViewers += 1
+        syncWithPreferences()
+    }
+
+    func lockScreenHidden() {
+        guard lockScreenViewers > 0 else { return }
+        lockScreenViewers -= 1
+        syncWithPreferences()
     }
 
     func viewAppeared() {

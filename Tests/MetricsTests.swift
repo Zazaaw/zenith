@@ -259,6 +259,7 @@ struct MetricsTests {
             // Zenith fork.
             ("wakatime", { WakaTimeTests.run(suite) }),
             ("lockscreen-widgets", { LockScreenWidgetsTests.run(suite) }),
+            ("lockscreen-terminal", { LockScreenTerminalTests.run(suite) }),
             ("vercel", { VercelTests.run(suite) }),
             ("gh", { GitHubTests.run(suite) }),
         ]

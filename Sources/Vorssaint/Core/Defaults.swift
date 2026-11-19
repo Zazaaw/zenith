@@ -1003,6 +1003,10 @@ enum DefaultsKey {
     // Zenith fork: off until switched on, since each needs a permission.
     static let notchLockScreenWeather = "notchLockScreenWeather"
     static let notchLockScreenReminders = "notchLockScreenReminders"
+    // Zenith fork: the terminal readout under the lock screen clock (NotchLockScreenTerminalSupport).
+    static let notchLockScreenTerminal = "notchLockScreenTerminal"
+    static let notchLockScreenTerminalLines = "notchLockScreenTerminalLines" // NotchLockScreenTerminalSelection.stored
+    static let notchLockScreenTerminalProjects = "notchLockScreenTerminalProjects"
     static let wakaTimeDailyGoalMinutes = "wakaTimeDailyGoalMinutes" // Zenith fork, 0 = off
     // Companion: a small friend who rests in the closed island and is the Command Bar's face.
     static let notchMascotEnabled = "notchMascotEnabled"
@@ -1626,6 +1630,9 @@ enum Defaults {
         DefaultsKey.notchLockScreenWakaTime: true,
         DefaultsKey.notchLockScreenWeather: false,
         DefaultsKey.notchLockScreenReminders: false,
+        DefaultsKey.notchLockScreenTerminal: false,
+        DefaultsKey.notchLockScreenTerminalLines: NotchLockScreenTerminalSelection.defaultValue,
+        DefaultsKey.notchLockScreenTerminalProjects: false,
         DefaultsKey.wakaTimeDailyGoalMinutes: 0,
         DefaultsKey.notchMascotEnabled: false,
         DefaultsKey.notchMascotVisits: true,
