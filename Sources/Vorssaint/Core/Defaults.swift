@@ -917,6 +917,13 @@ enum DefaultsKey {
     static let notchVercelEnabled = "notchVercelEnabled"
     static let notchVercelActivity = "notchVercelActivity"
     static let notchVercelFailureAlerts = "notchVercelFailureAlerts" // Zenith fork: notify when a build fails
+    // Zenith fork: long-running terminal commands in the closed island (CommandActivityService).
+    static let notchCommandActivity = "notchCommandActivity"
+    static let notchCommandThreshold = "notchCommandThreshold" // seconds before a command shows: 5, 8, 15 or 30
+    static let notchCommandShowsFolder = "notchCommandShowsFolder"
+    static let notchCommandIgnored = "notchCommandIgnored" // extra programs left out, by name
+    // When the shell hook last wrote; unregistered, so it stays out of backups.
+    static let notchCommandLastEvent = "notchCommandLastEvent"
     static let notchCalendarEnabled = "notchCalendarEnabled"
     static let notchCalendarCountdown = "notchCalendarCountdown"
     static let notchCalendarCountdownLead = "notchCalendarCountdownLead" // minutes before a start, chosen events included
@@ -1584,6 +1591,10 @@ enum Defaults {
         DefaultsKey.notchVercelEnabled: false,
         DefaultsKey.notchVercelActivity: true,
         DefaultsKey.notchVercelFailureAlerts: false, // Zenith fork
+        DefaultsKey.notchCommandActivity: false, // Zenith fork
+        DefaultsKey.notchCommandThreshold: CommandActivitySupport.defaultThreshold, // Zenith fork
+        DefaultsKey.notchCommandShowsFolder: false, // Zenith fork
+        DefaultsKey.notchCommandIgnored: "", // Zenith fork
         DefaultsKey.notchEnabled: false,
         DefaultsKey.notchDisplay: NotchDisplay.automatic.rawValue,
         DefaultsKey.notchSilhouette: NotchSilhouette.capsule.rawValue,
