@@ -21,6 +21,7 @@ struct ShelfSettings: View {
     @State private var showingAppPicker = false
     @State private var islandShowsFiles = NotchSupport.showsFiles()
     @AppStorage(DefaultsKey.notchAirDropEnabled) private var airDrop = true
+    @AppStorage(DefaultsKey.notchPhotoActionsEnabled) private var photoActions = true // Zenith fork
 
     var body: some View {
         Form {
@@ -53,6 +54,21 @@ struct ShelfSettings: View {
                 Text(ZenithStrings.airDrop(l10n.language).caption)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+
+            // Zenith fork: Transform and Remove Background for images dropped on the island.
+            Section {
+                let text = ZenithStrings.photoActions(l10n.language)
+                VStack(alignment: .leading, spacing: 3) {
+                    ZenithSwitchRow(text.toggle, isOn: $photoActions) {
+                        Text(text.toggle)
+                    }
+                    .onChange(of: photoActions) { _, _ in NotchPhotoActionsService.shared.syncWithPreferences() }
+                    Text(text.caption)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
 
             if enabled {
