@@ -353,6 +353,53 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   - **Belum diverifikasi visual:** tampilan di lock screen sungguhan, efek ketik, kedip
     kursor, dan tata letak bersama player musik belum dilihat di Mac (app UI tidak dijalankan
     saat pengerjaan).
+- **Panel menu bar, bahasa desain Settings (branch `feat/panel-redesign`):** panel memakai
+  bahasa p441z.my.id yang sama dengan Settings, diperkecil untuk panel 332 pt. Hanya
+  visual; perilaku, layout, dan daftar section tidak berubah. Komponen baru di
+  `UI/MenuPanel/ZenithPanelChrome.swift`; file upstream hanya diberi kait bertanda
+  `// Zenith fork`, kebanyakan di blok bersama sehingga hampir semua section ikut berubah
+  tanpa diedit satu per satu.
+  - **Judul section** (`PanelSection` di `PanelLayout.swift`, juga kategori Quick Controls):
+    `ZenithPanelSectionLabel`, mono 10 medium, huruf kapital, tracking 0,6, abu-abu. Fungsi
+    global `sectionTitle()` di `Theme.swift` tidak diubah karena juga dipakai Recorder.
+  - **Kartu** (`panelCard()` di `Theme.swift`): `ZenithSurface.cardFill` + garis
+    `ZenithSurface.hairline`, radius `ZenithRadius.card` (12). Dengan Increase Contrast
+    garisnya lebih tebal (`ZenithPanelSurface`). Cabang island (`NotchControlSurface`) tetap.
+    `PanelSurface` tidak diubah karena juga dipakai editor layout panel di Settings dan
+    radial menu. Highlight hover baris ikut radius 9 dan abu-abu tile.
+  - **Tab section:** glyph abu-abu (medium); hanya tab terpilih yang beraksen, sebagai tile
+    10% isi / 20% garis / glyph 100%; hover abu-abu tipis. Wadahnya kartu hairline. Tab di
+    island tetap hitam/putih seperti upstream.
+  - **Chip dan pilihan segmen:** `KeepAwakeChipStyle` meneruskan ke `ZenithPanelChipStyle`
+    (pil bergaris; terpilih aksen 10/20/100). Segmented control native di Fan Control
+    (mode), Homebrew (mode, jenis, filter), dan WakaTime (rentang) diganti
+    `ZenithPanelSegmented`, baris chip yang sama.
+  - **Tombol:** Settings/Quit di footer, tombol kembali di detail metrik, reset di header
+    section, dan tombol satuan jaringan memakai `ZenithPanelOutlineButtonStyle` (garis
+    hairline, abu-abu, terangkat saat hover). Tombol edit section yang aktif jadi pil aksen
+    10/20/100, bukan kotak biru penuh. Tombol `.bordered`/`.borderedProminent` bawaan
+    sistem di dalam section dibiarkan.
+  - **Saklar:** semua saklar panel (baris Quick Controls/Toggles, Keep Awake, opsi, mixer,
+    prioritas audio, brightness, fan, wallpaper) memakai `ZenithSwitchStyle` lewat
+    `.zenithPanelSwitch(_:)`, diskalakan ke ukuran AppKit yang dipakai sebelumnya (regular
+    34×20, small ×0,88, mini ×0,76). Saklar yang punya label sendiri memakai
+    `ZenithPanelLabeledSwitchStyle`. Alasannya sama dengan Settings: NSSwitch yang nilainya
+    berubah dari tempat lain saat terlihat bisa memicu siklus AttributeGraph.
+  - **Warna:** glyph baris abu-abu (bukan aksen); warna hanya untuk arti: perlu tindakan
+    amber, aktif emerald, error merah (`ZenithStatus`). Badge Beta jadi tag mono amber
+    10/20/100 (`ZenithPanelTag`), tag Internal/External di Disk tag mono abu-abu. Warna data
+    (grafik, sparkline, bar) tidak disentuh.
+  - **Angka dan metadata:** hint shortcut dan hitungan kategori memakai mono; status Keep
+    Awake memakai digit monospace. Sel suhu di System jadi garis, bukan blok abu-abu.
+  - **Ikut berubah di island:** chip, saklar, dan segmen juga tampil di panel yang di-host
+    island (section yang sama) serta di halaman WakaTime dan Fan Control island, karena
+    view-nya sama.
+  - **Dibiarkan:** banner update (`UpdateBanner`; update dimatikan di fork), editor otomasi
+    dan pemilih ikon Keep Awake (dipakai juga di Settings), Quick Clipboard (panel terpisah),
+    mixer dan slider, galeri wallpaper. Section WakaTime dan Wallpaper memang tanpa kartu
+    sejak upstream/awal, tetap begitu.
+  - **Belum diverifikasi visual:** app UI tidak dijalankan saat pengerjaan; tampilan terang
+    dan gelap, Increase Contrast, dan panel di island perlu dicek di Mac.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
