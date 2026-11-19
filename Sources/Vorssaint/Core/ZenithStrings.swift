@@ -1434,3 +1434,119 @@ extension ZenithStrings {
         }
     }
 }
+
+struct ZenithLockScreenTerminalStrings {
+    /// The readout’s switch.
+    let title: String
+    let caption: String
+    /// Over the list of lines.
+    let lines: String
+    let showProjects: String
+    let showProjectsCaption: String
+    let moveUp: String
+    let moveDown: String
+    /// The `sys` and `ci` lines; the others take their island section’s name.
+    let system: String
+    let checks: String
+}
+
+extension ZenithStrings {
+    /// The lock screen’s terminal readout and its lines.
+    static func lockScreenTerminal(_ language: AppLanguage) -> ZenithLockScreenTerminalStrings {
+        switch language {
+        case .enUS:
+            return .init(title: "Terminal readout",
+                         caption: "A monospaced status readout under the clock. Lines with nothing to show stay hidden, except Battery and CPU.",
+                         lines: "Lines and order", showProjects: "Show project names",
+                         showProjectsCaption: "When off, the lock screen shows counts and states only, never project, repository or file names.",
+                         moveUp: "Move up", moveDown: "Move down", system: "Battery and CPU", checks: "GitHub checks")
+        case .ptBR:
+            return .init(title: "Leitura de terminal",
+                         caption: "Um resumo de status em fonte monoespaçada abaixo do relógio. Linhas sem nada para mostrar ficam ocultas, exceto Bateria e CPU.",
+                         lines: "Linhas e ordem", showProjects: "Mostrar nomes de projetos",
+                         showProjectsCaption: "Desativado, a tela bloqueada mostra só contagens e estados, nunca nomes de projetos, repositórios ou arquivos.",
+                         moveUp: "Mover para cima", moveDown: "Mover para baixo", system: "Bateria e CPU",
+                         checks: "Verificações do GitHub")
+        case .tr:
+            return .init(title: "Terminal görünümü",
+                         caption: "Saatin altında eş aralıklı yazıyla bir durum özeti. Gösterecek bir şeyi olmayan satırlar gizlenir; Pil ve CPU her zaman görünür.",
+                         lines: "Satırlar ve sıra", showProjects: "Proje adlarını göster",
+                         showProjectsCaption: "Kapalıyken kilit ekranı yalnızca sayıları ve durumları gösterir; proje, depo veya dosya adlarını asla göstermez.",
+                         moveUp: "Yukarı taşı", moveDown: "Aşağı taşı", system: "Pil ve CPU", checks: "GitHub denetimleri")
+        case .ru:
+            return .init(title: "Терминальная сводка",
+                         caption: "Моноширинная сводка состояния под часами. Строки, которым нечего показать, скрыты, кроме «Аккумулятор и ЦП».",
+                         lines: "Строки и порядок", showProjects: "Показывать названия проектов",
+                         showProjectsCaption: "Когда выключено, экран блокировки показывает только количество и состояния, без названий проектов, репозиториев и файлов.",
+                         moveUp: "Переместить вверх", moveDown: "Переместить вниз", system: "Аккумулятор и ЦП",
+                         checks: "Проверки GitHub")
+        case .es:
+            return .init(title: "Lectura de terminal",
+                         caption: "Un resumen de estado en fuente monoespaciada bajo el reloj. Las líneas sin nada que mostrar se ocultan, salvo Batería y CPU.",
+                         lines: "Líneas y orden", showProjects: "Mostrar nombres de proyectos",
+                         showProjectsCaption: "Desactivado, la pantalla bloqueada solo muestra recuentos y estados, nunca nombres de proyectos, repositorios ni archivos.",
+                         moveUp: "Subir", moveDown: "Bajar", system: "Batería y CPU", checks: "Comprobaciones de GitHub")
+        case .sk:
+            return .init(title: "Terminálový prehľad",
+                         caption: "Prehľad stavu neproporcionálnym písmom pod hodinami. Riadky bez obsahu sa skryjú, okrem Batéria a CPU.",
+                         lines: "Riadky a poradie", showProjects: "Zobraziť názvy projektov",
+                         showProjectsCaption: "Keď je vypnuté, uzamknutá obrazovka ukazuje iba počty a stavy, nikdy názvy projektov, repozitárov ani súborov.",
+                         moveUp: "Posunúť nahor", moveDown: "Posunúť nadol", system: "Batéria a CPU", checks: "Kontroly GitHubu")
+        case .de:
+            return .init(title: "Terminal-Anzeige",
+                         caption: "Eine Statusanzeige in Festbreitenschrift unter der Uhr. Zeilen ohne Inhalt bleiben ausgeblendet, außer Batterie und CPU.",
+                         lines: "Zeilen und Reihenfolge", showProjects: "Projektnamen anzeigen",
+                         showProjectsCaption: "Aus: Der Sperrbildschirm zeigt nur Anzahlen und Zustände, nie Projekt-, Repository- oder Dateinamen.",
+                         moveUp: "Nach oben", moveDown: "Nach unten", system: "Batterie und CPU", checks: "GitHub-Checks")
+        case .fr:
+            return .init(title: "Affichage terminal",
+                         caption: "Un état en police à chasse fixe sous l’horloge. Les lignes sans rien à afficher restent masquées, sauf Batterie et CPU.",
+                         lines: "Lignes et ordre", showProjects: "Afficher les noms de projets",
+                         showProjectsCaption: "Désactivé, l’écran verrouillé n’affiche que des nombres et des états, jamais de noms de projets, de dépôts ou de fichiers.",
+                         moveUp: "Monter", moveDown: "Descendre", system: "Batterie et CPU", checks: "Vérifications GitHub")
+        case .it:
+            return .init(title: "Lettura da terminale",
+                         caption: "Un riepilogo di stato a spaziatura fissa sotto l’orologio. Le righe senza nulla da mostrare restano nascoste, tranne Batteria e CPU.",
+                         lines: "Righe e ordine", showProjects: "Mostra i nomi dei progetti",
+                         showProjectsCaption: "Se disattivato, la schermata di blocco mostra solo conteggi e stati, mai nomi di progetti, repository o file.",
+                         moveUp: "Sposta su", moveDown: "Sposta giù", system: "Batteria e CPU", checks: "Controlli GitHub")
+        case .ja:
+            return .init(title: "ターミナル表示",
+                         caption: "時計の下に等幅フォントで状態を表示します。表示する内容がない行は隠れます（バッテリーとCPUは常に表示）。",
+                         lines: "行と順序", showProjects: "プロジェクト名を表示",
+                         showProjectsCaption: "オフのとき、ロック画面には件数と状態だけを表示し、プロジェクト、リポジトリ、ファイルの名前は表示しません。",
+                         moveUp: "上へ移動", moveDown: "下へ移動", system: "バッテリーとCPU", checks: "GitHubのチェック")
+        case .ko:
+            return .init(title: "터미널 표시",
+                         caption: "시계 아래에 고정폭 글꼴로 상태를 보여 줍니다. 보여 줄 내용이 없는 줄은 숨겨지며, 배터리 및 CPU는 항상 표시됩니다.",
+                         lines: "줄과 순서", showProjects: "프로젝트 이름 표시",
+                         showProjectsCaption: "끄면 잠금 화면에 개수와 상태만 표시되고 프로젝트, 저장소, 파일 이름은 표시되지 않습니다.",
+                         moveUp: "위로 이동", moveDown: "아래로 이동", system: "배터리 및 CPU", checks: "GitHub 검사")
+        case .uk:
+            return .init(title: "Термінальне зведення",
+                         caption: "Моноширинне зведення стану під годинником. Рядки, яким нічого показати, приховано, окрім «Акумулятор і ЦП».",
+                         lines: "Рядки й порядок", showProjects: "Показувати назви проєктів",
+                         showProjectsCaption: "Коли вимкнено, екран блокування показує лише кількість і стани, без назв проєктів, репозиторіїв і файлів.",
+                         moveUp: "Перемістити вгору", moveDown: "Перемістити вниз", system: "Акумулятор і ЦП",
+                         checks: "Перевірки GitHub")
+        case .zhHans:
+            return .init(title: "终端读数",
+                         caption: "在时钟下方以等宽字体显示状态。没有内容的行会隐藏，“电池和 CPU”始终显示。",
+                         lines: "行与顺序", showProjects: "显示项目名称",
+                         showProjectsCaption: "关闭时，锁定屏幕只显示数量和状态，从不显示项目、仓库或文件名称。",
+                         moveUp: "上移", moveDown: "下移", system: "电池和 CPU", checks: "GitHub 检查")
+        case .zhTW:
+            return .init(title: "終端機讀數",
+                         caption: "在時鐘下方以等寬字體顯示狀態。沒有內容的行會隱藏，「電池與 CPU」一律顯示。",
+                         lines: "行與順序", showProjects: "顯示專案名稱",
+                         showProjectsCaption: "關閉時，鎖定畫面只顯示數量與狀態，絕不顯示專案、儲存庫或檔案名稱。",
+                         moveUp: "上移", moveDown: "下移", system: "電池與 CPU", checks: "GitHub 檢查")
+        case .zhHK:
+            return .init(title: "終端機讀數",
+                         caption: "在時鐘下方以等寬字體顯示狀態。沒有內容的行會隱藏，「電池與 CPU」一律顯示。",
+                         lines: "行與次序", showProjects: "顯示項目名稱",
+                         showProjectsCaption: "關閉時，鎖定畫面只顯示數量與狀態，絕不顯示項目、儲存庫或檔案名稱。",
+                         moveUp: "上移", moveDown: "下移", system: "電池與 CPU", checks: "GitHub 檢查")
+        }
+    }
+}
