@@ -193,6 +193,42 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   butuh OAuth, jadi grafik 7 hari dibangun Zenith dari total harian yang dilihatnya
   (`zenithWakaTimeHistory`, tidak ikut backup). Data diambil hanya saat tampilan terlihat,
   paling sering tiap 5 menit. Test di `Tests/WakaTimeTests.swift` (suite `wakatime`).
+- **Cuaca dan pengingat di lock screen (branch `feat/lockscreen-weather-reminders`):**
+  dua item baru di baris aktivitas lock screen, masing-masing dengan saklar sendiri di
+  Settings → Dynamic Island → Activity → Lock Screen. Kode di `Services/Weather/`,
+  `Services/Reminders/`, `Services/Notch/NotchLockScreenWidgets.swift` (start/stop
+  bersama lock screen) dan `NotchLockScreenWidgetAccess.swift`; edit di file upstream
+  hanya baris bertanda `// Zenith fork:`. Test di `Tests/LockScreenWidgetsTests.swift`
+  (suite `lockscreen-widgets`).
+  - **Default mati.** Keduanya butuh izin macOS, jadi saklarnya default off
+    (`notchLockScreenWeather`, `notchLockScreenReminders`). Izin hanya diminta saat
+    pengguna menyalakan saklar (saklar itu sendiri hanya terlihat kalau lock screen
+    nyala); tidak pernah saat launch, dari lock screen, atau dari test. Di bawah saklar
+    ada keterangan sumber data, atau tombol "Grant access" / "Open System Settings…"
+    kalau izin belum diberikan atau ditolak. Lock screen hanya membaca data kalau lock
+    screen nyala, saklar nyala, dan izin sudah diberikan.
+  - **Cuaca:** Location Services (`NSLocationUsageDescription`,
+    `NSLocationWhenInUseUsageDescription`, entitlement hardened runtime
+    `com.apple.security.personal-information.location`), akurasi 3 km, sekali minta
+    (`requestLocation`) dengan batas 20 detik. Posisi dibulatkan ke 2 desimal (±1 km);
+    hanya posisi bulat itu yang disimpan (`zenithWeatherLocation`, tidak ikut backup,
+    dihapus kalau izin dicabut) dan dikirim ke Open-Meteo (gratis, tanpa key, selalu
+    Celsius lalu dikonversi sesuai `temperatureUnit`). Posisi dipakai ulang sampai 1 jam.
+    Data dibaca saat lock screen muncul kalau umurnya > 30 menit, lalu tiap 30 menit
+    selama lock screen tetap tampil (5 menit setelah gagal); di luar itu tidak ada
+    jaringan sama sekali. Data yang lebih tua dari 3 jam tidak ditampilkan. Di lock
+    screen: simbol cuaca (siang/malam), suhu sekarang, dan tertinggi/terendah hari ini
+    dengan warna redup. **Nama tempat tidak pernah tampil.**
+  - **Pengingat:** EventKit `requestFullAccessToReminders`
+    (`NSRemindersFullAccessUsageDescription`; entitlement calendars yang sudah ada juga
+    mencakup Reminders). Pengingat belum selesai yang jatuh tempo hari ini atau sudah
+    lewat, paling awal dulu, maksimal 3 (sisanya jadi "+N"). Yang terlewat ditandai ikon
+    `exclamationmark.circle` (tetap putih, semua ikon di baris lock screen putih). Hanya
+    judul yang tampil, tidak pernah catatan; tidak ada yang disimpan ke disk. Dibaca saat
+    lock screen muncul, saat `EKEventStoreChanged`/ganti hari/ganti zona waktu, dan tiap
+    30 menit selama lock screen tampil.
+  - Kedua item ditambahkan paling akhir di `NotchLockScreenActivity`, jadi kalau baris
+    terlalu panjang, `ViewThatFits` membuang keduanya lebih dulu.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
