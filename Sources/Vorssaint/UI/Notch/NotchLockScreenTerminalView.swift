@@ -88,8 +88,18 @@ struct NotchLockScreenTerminalView: View {
     /// A small window: a title bar, then the lines, the last ending in the
     /// cursor. As wide as its longest line, centered in the panel.
     private func card(_ lines: [NotchLockScreenTerminalLine]) -> some View {
-        let shape = RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous)
-        return VStack(alignment: .leading, spacing: 0) {
+        // A max-width frame grows to its limit, so the glass would span the
+        // whole panel: the card takes its own width first, and the panel's
+        // width with truncated lines only when a line is longer than that.
+        ViewThatFits(in: .horizontal) {
+            glass(content(lines).frame(minWidth: Layout.minimumWidth, alignment: .leading)
+                .fixedSize(horizontal: true, vertical: false))
+            glass(content(lines).frame(width: Layout.width, alignment: .leading))
+        }
+    }
+
+    private func content(_ lines: [NotchLockScreenTerminalLine]) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
             header
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(lines) { line in
@@ -101,24 +111,27 @@ struct NotchLockScreenTerminalView: View {
             .padding(.horizontal, Layout.horizontalPadding)
             .padding(.vertical, Layout.verticalPadding)
         }
-        .frame(minWidth: Layout.minimumWidth, alignment: .leading)
-        .frame(maxWidth: Layout.width)
-        .overlay(alignment: .top) {
-            Rectangle().fill(.white.opacity(0.08)).frame(height: 1).padding(.top, Layout.headerHeight)
-        }
-        .background {
-            // Frosted like the music pane: the lock screen's own HUD blur, a light
-            // dark wash over it so the mono text stays legible on bright wallpapers.
-            if reduceTransparency {
-                shape.fill(Color(white: 0.08))
-            } else {
-                ZStack {
-                    NotchLockScreenMaterial(cornerRadius: ZenithRadius.card)
-                    shape.fill(.black.opacity(0.35))
+    }
+
+    private func glass(_ content: some View) -> some View {
+        let shape = RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous)
+        return content
+            .overlay(alignment: .top) {
+                Rectangle().fill(.white.opacity(0.08)).frame(height: 1).padding(.top, Layout.headerHeight)
+            }
+            .background {
+                // Frosted like the music pane: the lock screen's own HUD blur, a light
+                // dark wash over it so the mono text stays legible on bright wallpapers.
+                if reduceTransparency {
+                    shape.fill(Color(white: 0.08))
+                } else {
+                    ZStack {
+                        NotchLockScreenMaterial(cornerRadius: ZenithRadius.card)
+                        shape.fill(.black.opacity(0.35))
+                    }
                 }
             }
-        }
-        .overlay(shape.strokeBorder(.white.opacity(contrast == .increased ? 0.35 : 0.1), lineWidth: 1))
+            .overlay(shape.strokeBorder(.white.opacity(contrast == .increased ? 0.35 : 0.1), lineWidth: 1))
     }
 
     /// Three grey dots and the window's name, like a terminal's title bar.
