@@ -368,7 +368,7 @@ struct NotchLockScreenActivities: View {
             HStack(spacing: 7) {
                 Image(systemName: finished ? "checkmark.circle.fill" : session.isPaused ? "pause.circle.fill"
                       : session.countsUp ? "stopwatch.fill" : "timer")
-                    .foregroundStyle(ZenithStatus.progress)
+                    .foregroundStyle(.white)
                 Text(session.mode == .pomodoro && !finished ? text.phase(session.phase) + " " + clock : clock)
             }
             .accessibilityElement(children: .combine)
@@ -378,7 +378,7 @@ struct NotchLockScreenActivities: View {
             if let countdown = calendar.countdown {
                 let text = FeatureStrings.notchCalendar(l10n.language)
                 HStack(spacing: 7) {
-                    Image(systemName: "calendar").foregroundStyle(countdown.event.color.color)
+                    Image(systemName: "calendar").foregroundStyle(.white)
                     Text(NotchCalendarStrip.displayTitle(countdown.event, untitled: text.untitled))
                         .frame(maxWidth: 240, alignment: .leading)
                         .fixedSize(horizontal: false, vertical: true)
@@ -397,7 +397,7 @@ struct NotchLockScreenActivities: View {
             // a screen anyone can walk up to.
             HStack(spacing: 7) {
                 HStack(spacing: 1) {
-                    ForEach(working) { NotchAgentGlyph(provider: $0, size: 13) }
+                    ForEach(working) { NotchAgentGlyph(provider: $0, size: 13, monochrome: true) }
                 }
                 Text(working.map(\.displayName).joined(separator: " · ") + " " + reading)
             }
@@ -409,7 +409,7 @@ struct NotchLockScreenActivities: View {
             // Progress without the file's name, which stays off the lock screen.
             let fraction = downloads.items.first(where: { $0.active && !$0.completed })?.fraction
             HStack(spacing: 7) {
-                Image(systemName: "arrow.down.circle.fill").foregroundStyle(ZenithStatus.info)
+                Image(systemName: "arrow.down.circle.fill").foregroundStyle(.white)
                 if let fraction {
                     Text(fraction, format: .percent.precision(.fractionLength(0)))
                 } else {
@@ -419,12 +419,11 @@ struct NotchLockScreenActivities: View {
             .accessibilityElement(children: .combine)
         case .wakatime:
             // Zenith fork: today's coding time only; project names stay off the lock screen.
-            let coding = wakaTime.presence?.isCoding(at: date) == true
             let total = WakaTimeSupport.duration(wakaTime.today?.totalSeconds ?? 0,
                                                  locale: Locale(identifier: l10n.language.rawValue))
             HStack(spacing: 7) {
                 Image(systemName: NotchModule.wakatime.symbol)
-                    .foregroundStyle(coding ? ZenithStatus.success : .white.opacity(0.92))
+                    .foregroundStyle(.white)
                 Text(total)
             }
             .accessibilityElement(children: .combine)

@@ -4,21 +4,44 @@
 import Foundation
 import Security
 
-/// Zenith fork: the personal WakaTime token, kept in the login Keychain and
-/// nowhere else (not in preferences, settings backups or the config file).
+/// Zenith fork: the personal WakaTime token, kept by `ZenithSecretStore` as an
+/// owner-only file (see there for why not the Keychain).
+///
+/// Earlier builds kept it in the login Keychain. The first read without a file
+/// moves it over once: that read may ask for the keychain password one last time.
 enum WakaTimeTokenStore {
-    private static let service = "id.satuvisual.zenith.wakatime"
-    private static let account = "personal-token"
-
-    private static var query: [String: Any] {
-        [kSecClass as String: kSecClassGenericPassword,
-         kSecAttrService as String: service,
-         kSecAttrAccount as String: account]
-    }
+    private static let name = "wakatime-token"
+    private static let legacyService = "id.satuvisual.zenith.wakatime"
+    private static let legacyAccount = "personal-token"
 
     static func read() -> String? {
+        if let token = ZenithSecretStore.read(name) { return token }
+        guard let legacy = readLegacyKeychain() else { return nil }
+        if ZenithSecretStore.save(legacy, as: name) { deleteLegacyKeychain() }
+        return legacy
+    }
+
+    @discardableResult
+    static func save(_ token: String) -> Bool {
+        ZenithSecretStore.save(token, as: name)
+    }
+
+    static func delete() {
+        ZenithSecretStore.delete(name)
+        deleteLegacyKeychain()
+    }
+
+    // MARK: Legacy Keychain item
+
+    private static var legacyQuery: [String: Any] {
+        [kSecClass as String: kSecClassGenericPassword,
+         kSecAttrService as String: legacyService,
+         kSecAttrAccount as String: legacyAccount]
+    }
+
+    private static func readLegacyKeychain() -> String? {
         var item: CFTypeRef?
-        var search = query
+        var search = legacyQuery
         search[kSecReturnData as String] = true
         search[kSecMatchLimit as String] = kSecMatchLimitOne
         guard SecItemCopyMatching(search as CFDictionary, &item) == errSecSuccess,
@@ -27,21 +50,7 @@ enum WakaTimeTokenStore {
         return token
     }
 
-    @discardableResult
-    static func save(_ token: String) -> Bool {
-        let value = Data(token.trimmingCharacters(in: .whitespacesAndNewlines).utf8)
-        guard !value.isEmpty else { return false }
-        let update = SecItemUpdate(query as CFDictionary, [kSecValueData as String: value] as CFDictionary)
-        if update == errSecSuccess { return true }
-        guard update == errSecItemNotFound else { return false }
-        var add = query
-        add[kSecValueData as String] = value
-        add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
-        add[kSecAttrLabel as String] = "Zenith WakaTime token"
-        return SecItemAdd(add as CFDictionary, nil) == errSecSuccess
-    }
-
-    static func delete() {
-        SecItemDelete(query as CFDictionary)
+    private static func deleteLegacyKeychain() {
+        SecItemDelete(legacyQuery as CFDictionary)
     }
 }

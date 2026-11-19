@@ -193,6 +193,11 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   butuh OAuth, jadi grafik 7 hari dibangun Zenith dari total harian yang dilihatnya
   (`zenithWakaTimeHistory`, tidak ikut backup). Data diambil hanya saat tampilan terlihat,
   paling sering tiap 5 menit. Test di `Tests/WakaTimeTests.swift` (suite `wakatime`).
+- **Token pribadi (WakaTime, Vercel):** disimpan oleh `Services/ZenithSecretStore.swift` sebagai
+  file `0600` di `<container>/Secrets/` (folder `0700`), bukan Keychain: build self-signed
+  tanpa Team ID membuat macOS mengikat item keychain ke cdhash biner, jadi prompt muncul
+  lagi tiap rebuild walau sudah "Always Allow". Token lama di Keychain dipindah otomatis
+  sekali. Kembali ke Keychain kalau Zenith nanti ditandatangani Developer ID.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
