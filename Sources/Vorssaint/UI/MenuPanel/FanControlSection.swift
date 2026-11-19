@@ -142,8 +142,7 @@ struct FanControlCardContent: View {
             if canConfigure, mode != .system {
                 Toggle(strings.resumeAfterRestart, isOn: $resume)
                     .font(.system(size: 10.5, weight: .medium))
-                    .toggleStyle(.switch)
-                    .controlSize(.mini)
+                    .toggleStyle(ZenithPanelLabeledSwitchStyle()) // Zenith fork
             }
 
             if controlsCanAppear {
@@ -188,13 +187,14 @@ struct FanControlCardContent: View {
     }
 
     private var modePicker: some View {
-        Picker(strings.mode, selection: $mode) {
-            Text(strings.systemControl).tag(FanControlMode.system)
-            Text(strings.manualControl).tag(FanControlMode.manual)
-            Text(strings.customCurve).tag(FanControlMode.curve)
-        }
-        .pickerStyle(.segmented)
-        .controlSize(.small)
+        // Zenith fork: outlined chips instead of the segmented control.
+        ZenithPanelSegmented(selection: $mode, options: [
+            (FanControlMode.system, strings.systemControl),
+            (FanControlMode.manual, strings.manualControl),
+            (FanControlMode.curve, strings.customCurve),
+        ])
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(strings.mode)
         .disabled(isWorking)
     }
 
@@ -230,12 +230,7 @@ struct FanControlCardContent: View {
                 HStack(spacing: 5) {
                     Text(strings.title)
                         .font(.system(size: 12, weight: .semibold))
-                    Text(betaLabel)
-                        .font(.system(size: 7.5, weight: .bold))
-                        .foregroundStyle(Color.white)
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 1)
-                        .background(Capsule().fill(Color.accentColor))
+                    PanelBetaBadge(text: betaLabel) // Zenith fork
                 }
                 Text(statusText)
                     .font(.system(size: 10).monospacedDigit())

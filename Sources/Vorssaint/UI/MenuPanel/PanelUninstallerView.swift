@@ -248,7 +248,8 @@ struct PanelUninstallerView: View {
                                category: AppUninstaller.Category) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label(for: category).uppercased())
-                .font(.system(size: 9, weight: .semibold))
+                .font(ZenithType.mono(9, weight: .medium)) // Zenith fork
+                .tracking(0.6)
                 .foregroundStyle(.tertiary)
             ForEach(group) { item in
                 row(item)

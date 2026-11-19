@@ -92,8 +92,7 @@ struct AudioPriorityDisclosure: View {
             Spacer(minLength: 4)
             Toggle(help, isOn: enabled)
                 .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(.mini)
+                .zenithPanelSwitch(.mini) // Zenith fork
                 .help(help)
                 .accessibilityLabel(help)
         }
@@ -228,14 +227,9 @@ private struct PriorityDeviceList: View {
         .font(.system(size: 9, weight: .semibold))
         .padding(.horizontal, 6)
         .padding(.vertical, 4)
-        .background(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(isCurrent ? Color.accentColor.opacity(0.08) : Color.primary.opacity(0.035))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .stroke(isCurrent ? Color.accentColor.opacity(0.65) : Color.clear, lineWidth: 1)
-        )
+        // Zenith fork: an outlined row; the device in use in the accent's 10% / 20%.
+        .zenithPanelTile(cornerRadius: 7)
+        .zenithPanelSelection(isCurrent, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
         .contentShape(Rectangle())
         .opacity(draggingUID == uid ? 0.45 : 1)
         .onDrag {

@@ -350,10 +350,7 @@ struct SystemSection: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(Color.primary.opacity(0.045))
-        )
+        .zenithPanelTile(cornerRadius: 7) // Zenith fork: an outline, not a grey block
     }
 
     private var displayTemperatureUnit: TemperatureUnit {

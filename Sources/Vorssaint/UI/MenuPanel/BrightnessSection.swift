@@ -42,8 +42,7 @@ struct BrightnessSection: View {
                     Divider()
                     Toggle(strings.osdToggle, isOn: $brightnessOSDEnabled)
                         .font(.system(size: 10.5, weight: .medium))
-                        .toggleStyle(.switch)
-                        .controlSize(.mini)
+                        .toggleStyle(ZenithPanelLabeledSwitchStyle()) // Zenith fork
                         .help(strings.osdCaption)
                         .onChange(of: brightnessOSDEnabled) { _, isOn in
                             if isOn { permissions.requestAccessibility() }
@@ -237,8 +236,7 @@ private struct ExtraBrightnessPanelToggle: View {
     var body: some View {
         Toggle(l10n.s.extraBrightnessName, isOn: $enabled)
             .font(.system(size: 10.5, weight: .medium))
-            .toggleStyle(.switch)
-            .controlSize(.mini)
+            .toggleStyle(ZenithPanelLabeledSwitchStyle()) // Zenith fork
             .disabled(!service.supported && !enabled)
             .help(service.supported ? l10n.s.extraBrightnessCaption : l10n.s.extraBrightnessUnsupported)
             .onChange(of: enabled) { _, _ in service.syncWithPreferences() }

@@ -220,7 +220,8 @@ struct PanelWindowLayoutView: View {
         if !shown.isEmpty {
             VStack(alignment: .leading, spacing: 7) {
                 Text(groupTitle.uppercased())
-                    .font(.system(size: 9.5, weight: .bold))
+                    .font(ZenithType.mono(9.5, weight: .medium)) // Zenith fork
+                    .tracking(0.6)
                     .foregroundStyle(.tertiary)
                 LazyVGrid(columns: columns, alignment: .leading, spacing: 7) {
                     ForEach(shown) { action in

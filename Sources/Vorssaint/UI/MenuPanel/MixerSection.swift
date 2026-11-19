@@ -759,8 +759,7 @@ struct MixerOptionsControls: View {
             Spacer(minLength: 6)
             Toggle(label, isOn: $hideInactiveApps)
                 .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(.mini)
+                .zenithPanelSwitch(.mini) // Zenith fork
                 .accessibilityLabel(label)
         }
     }

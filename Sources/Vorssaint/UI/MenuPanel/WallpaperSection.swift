@@ -106,8 +106,8 @@ struct WallpaperSection: View {
                 get: { service.applyAllDisplays },
                 set: { service.applyAllDisplays = $0 }
             ))
-            .toggleStyle(.switch)
-            .controlSize(.small)
+            .font(.system(size: 11)) // Zenith fork
+            .toggleStyle(ZenithPanelLabeledSwitchStyle(size: .small)) // Zenith fork
 
             HStack(spacing: 8) {
                 Button(text.addImage) { service.addImages(inNotch: inNotch) }
