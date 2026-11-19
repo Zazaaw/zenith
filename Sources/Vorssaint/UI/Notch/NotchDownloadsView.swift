@@ -139,8 +139,9 @@ struct NotchDownloadsView: View {
                     .frame(maxHeight: .infinity)
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 8) {
+                    LazyVStack(spacing: 0) { // Zenith fork: rows parted by hairlines
                         ForEach(downloads.items) { item in
+                            if item.id != downloads.items.first?.id { ZenithBentoDivider(.horizontal) } // Zenith fork
                             downloadCard(item)
                         }
                     }
@@ -173,9 +174,9 @@ struct NotchDownloadsView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 let fileLabel = HStack(spacing: 8) {
-                    Image(systemName: item.completed ? "checkmark.circle.fill" : "arrow.down.circle")
-                        .foregroundStyle(item.completed ? ZenithStatus.success : .white)
-                        .accessibilityHidden(true)
+                    // Zenith fork: a status dot, emerald once saved, purple and glowing while it arrives.
+                    ZenithStatusDot(color: item.completed ? ZenithStatus.success : ZenithStatus.progress,
+                                    live: item.active && !item.completed)
                     Text(item.name).font(.system(size: 12, weight: .medium)).lineLimit(1).truncationMode(.middle)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -199,16 +200,16 @@ struct NotchDownloadsView: View {
                 } else {
                     fileLabel
                     if let fraction = item.fraction {
-                        Text(fraction, format: .percent.precision(.fractionLength(0)))
-                            .zenithIslandMeta(11, weight: .medium) // Zenith fork
+                        ZenithFigure(text: fraction.formatted(.percent.precision(.fractionLength(0))), size: 15) // Zenith fork
                     }
                 }
             }
             if item.completed {
-                Text(text.saved).font(.caption).foregroundStyle(.secondary)
+                Text(text.saved).zenithIslandMeta(10).foregroundStyle(ZenithIsland.meta) // Zenith fork
+                    .padding(.leading, 20) // Zenith fork: under the name
             } else {
                 if let fraction = item.fraction {
-                    NotchMeter(value: fraction)
+                    ZenithDataBar(value: fraction) // Zenith fork: a 3-point level
                 } else if item.active {
                     ProgressView().controlSize(.small)
                 }
@@ -220,12 +221,12 @@ struct NotchDownloadsView: View {
                     } else if item.fraction == nil {
                         Text(text.totalUnknown)
                     }
-                }.zenithIslandMeta(10).foregroundStyle(.secondary).lineLimit(1) // Zenith fork
+                }.zenithIslandMeta(10).foregroundStyle(ZenithIsland.meta).lineLimit(1) // Zenith fork
             }
         }
-        .padding(12)
+        .padding(.horizontal, 8) // Zenith fork: a row, no card
+        .padding(.vertical, 10) // Zenith fork
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .zenithIslandCard(cornerRadius: ZenithRadius.card) // Zenith fork: a hairline card
         .clipped()
         .accessibilityElement(children: .contain)
     }

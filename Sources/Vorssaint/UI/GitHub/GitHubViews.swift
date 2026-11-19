@@ -40,22 +40,21 @@ struct NotchGitHubView: View {
 
     private func list(_ inbox: GitHubSupport.Inbox) -> some View {
         // Two groups can hold more than the page: scroll, with the island's soft edges.
+        // Two groups of rows parted by hairlines, a full-width line between the groups.
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 0) {
                 header(text.reviewRequested, count: inbox.reviewCount, refresh: true)
                 if inbox.reviewRequested.isEmpty {
                     empty(text.nothingToReview)
                 } else {
-                    ForEach(inbox.reviewRequested) { GitHubPullRequestRow(pullRequest: $0, text: text,
-                                                                           language: l10n.language, showsAuthor: true) }
+                    rows(inbox.reviewRequested, showsAuthor: true)
                 }
+                ZenithBentoDivider(.horizontal, gap: 17)
                 header(text.yourPullRequests, count: inbox.mineCount, refresh: false)
-                    .padding(.top, 8)
                 if inbox.mine.isEmpty {
                     empty(text.noneOpen)
                 } else {
-                    ForEach(inbox.mine) { GitHubPullRequestRow(pullRequest: $0, text: text,
-                                                                language: l10n.language, showsAuthor: false) }
+                    rows(inbox.mine, showsAuthor: false)
                 }
             }
             .padding(.bottom, 8)
@@ -63,33 +62,39 @@ struct NotchGitHubView: View {
         .notchScrollEdgeFade()
     }
 
+    private func rows(_ pullRequests: [GitHubSupport.PullRequest], showsAuthor: Bool) -> some View {
+        ForEach(Array(pullRequests.enumerated()), id: \.element.id) { index, pullRequest in
+            if index > 0 { ZenithBentoDivider(.horizontal).padding(.horizontal, 8) }
+            GitHubPullRequestRow(pullRequest: pullRequest, text: text, language: l10n.language, showsAuthor: showsAuthor)
+        }
+    }
+
     private func header(_ title: String, count: Int, refresh: Bool) -> some View {
-        HStack(spacing: 6) {
-            ZenithIslandSectionLabel(text: title)
-            if count > 0 {
-                Text("\(count)").zenithIslandMeta(10, weight: .semibold).foregroundStyle(ZenithIsland.primary)
-            }
-            Spacer(minLength: 0)
-            if refresh {
-                Button { service.refresh(force: true) } label: {
-                    Image(systemName: "arrow.clockwise").font(.system(size: 11, weight: .semibold))
+        ZenithBentoHeader(label: title) {
+            HStack(spacing: 6) {
+                ZenithBentoMeta(text: "\(count)")
+                if refresh {
+                    Button { service.refresh(force: true) } label: {
+                        Image(systemName: "arrow.clockwise").font(.system(size: 11, weight: .medium)).zenithIslandGlyph()
+                            .frame(width: 22, height: 22).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .zenithIslandHoverTracked()
+                    .help(text.retry)
+                    .accessibilityLabel(text.retry)
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .help(text.retry)
-                .accessibilityLabel(text.retry)
             }
         }
         .padding(.horizontal, 8)
-        .padding(.bottom, 2)
+        .padding(.bottom, 6)
     }
 
     private func empty(_ message: String) -> some View {
         Text(message)
             .font(ZenithType.footnote)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(ZenithIsland.secondary)
             .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.vertical, 6)
     }
 }
 
@@ -104,33 +109,27 @@ private struct GitHubPullRequestRow: View {
 
     var body: some View {
         Button { NSWorkspace.shared.open(pullRequest.url) } label: {
-            HStack(alignment: .top, spacing: 10) {
-                Image(systemName: pullRequest.checks.symbol)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Self.tint(pullRequest.checks))
-                    .frame(width: 18, height: 16)
+            HStack(alignment: .top, spacing: 8) {
+                // The checks as a dot in their colour, glowing while they run; the detail line names them.
+                ZenithStatusDot(color: Self.tint(pullRequest.checks), live: pullRequest.checks == .pending)
+                    .frame(height: 18)
                     .help(text.label(pullRequest.checks))
-                    .accessibilityLabel(text.label(pullRequest.checks))
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
-                        Text(pullRequest.title).font(ZenithType.body.weight(.medium)).lineLimit(1).truncationMode(.tail)
+                        Text(pullRequest.title).font(.system(size: 13, weight: .medium)).lineLimit(1).truncationMode(.tail)
                         Spacer(minLength: 4)
-                        Text(VercelStyle.relative(pullRequest.updated, language: language))
-                            .zenithIslandMeta(10)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .fixedSize()
+                        ZenithBentoMeta(text: VercelStyle.relative(pullRequest.updated, language: language))
                     }
                     Text(detail)
-                        .font(ZenithType.caption)
-                        .foregroundStyle(.secondary)
+                        .font(ZenithType.mono(10.5))
+                        .foregroundStyle(ZenithIsland.meta)
                         .lineLimit(1).truncationMode(.middle)
                 }
             }
-            .padding(.vertical, 6)
+            .padding(.vertical, 9)
             .padding(.horizontal, 8)
             .background(RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous)
-                .fill(Color.primary.opacity(hovered ? 0.07 : 0)))
+                .fill(hovered ? ZenithIsland.rowHover : .clear))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
