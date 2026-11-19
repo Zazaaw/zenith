@@ -22,3 +22,10 @@
 "NSNetworkVolumesUsageDescription" = "Zenithは、確認済みのWhatsAppダウンロードを、明示的に選択した保存先フォルダに整理します。スクリーンショットをここに保存している場合、クリーンアップは忘れられたスクリーンショットも探します。";
 "NSRemovableVolumesUsageDescription" = "Zenithは、確認済みのWhatsAppダウンロードを、明示的に選択した保存先フォルダに整理します。スクリーンショットをここに保存している場合、クリーンアップは忘れられたスクリーンショットも探します。";
 "NSCalendarsFullAccessUsageDescription" = "画面上部に今後の予定を表示します。カレンダーの予定がこのMacの外に送信されることはありません。";
+
+/* macOS Location Services permission prompt (Zenith fork: lock screen weather). */
+"NSLocationUsageDescription" = "Zenithはおおよその位置情報を、ロック画面に天気を表示するためだけに使用します。位置は約1キロメートル単位に丸められ、予報を取得するためにOpen-Meteoにのみ送信されます。";
+"NSLocationWhenInUseUsageDescription" = "Zenithはおおよその位置情報を、ロック画面に天気を表示するためだけに使用します。位置は約1キロメートル単位に丸められ、予報を取得するためにOpen-Meteoにのみ送信されます。";
+
+/* macOS Reminders permission prompt (Zenith fork: lock screen reminders). */
+"NSRemindersFullAccessUsageDescription" = "今日が期限のリマインダーをロック画面に表示します。リマインダーはこのMacから出ません。";

@@ -16,6 +16,8 @@ final class NotchLockScreenModel: ObservableObject {
         var timeLeft = false
         // Zenith fork.
         var wakatime = false
+        var weather = false
+        var reminders = false
     }
 
     @Published var gates = Gates()
@@ -306,6 +308,10 @@ struct NotchLockScreenActivities: View {
     @ObservedObject private var downloads = NotchDownloadService.shared
     @ObservedObject private var calendar = NotchCalendarService.shared
     @ObservedObject private var wakaTime = WakaTimeService.shared
+    // Zenith fork: the weather and today's reminders.
+    @ObservedObject private var weather = WeatherService.shared
+    @ObservedObject private var reminders = RemindersService.shared
+    @AppStorage(DefaultsKey.temperatureUnit) private var temperatureUnit = TemperatureUnit.celsius.rawValue
     @ObservedObject private var l10n = L10n.shared
     @AppStorage(DefaultsKey.notchAgentsReadout) private var readout = NotchAgentReadout.elapsed.rawValue
     @AppStorage(DefaultsKey.notchAgentsLimitDisplay) private var display = NotchAgentLimitDisplay.remaining.rawValue
@@ -339,7 +345,14 @@ struct NotchLockScreenActivities: View {
             } == true,
             agents: gates.agents && !usage.snapshot.live.isEmpty,
             downloads: gates.downloads && downloads.items.contains { $0.active && !$0.completed },
-            wakatime: gates.wakatime && (wakaTime.today?.totalSeconds ?? 0) > 0)
+            wakatime: gates.wakatime && (wakaTime.today?.totalSeconds ?? 0) > 0,
+            weather: gates.weather && WeatherSupport.isShowable(weather.snapshot, now: date),
+            reminders: gates.reminders && !reminderSelection(at: date).isEmpty)
+    }
+
+    // Zenith fork: worked out on every tick, so a reminder turns overdue on time.
+    private func reminderSelection(at date: Date) -> RemindersSupport.Selection {
+        RemindersSupport.selection(reminders.items, now: date, calendar: .current)
     }
 
     private func line(_ items: [NotchLockScreenActivity], at date: Date) -> some View {
@@ -368,7 +381,7 @@ struct NotchLockScreenActivities: View {
             HStack(spacing: 7) {
                 Image(systemName: finished ? "checkmark.circle.fill" : session.isPaused ? "pause.circle.fill"
                       : session.countsUp ? "stopwatch.fill" : "timer")
-                    .foregroundStyle(ZenithStatus.progress)
+                    .foregroundStyle(.white)
                 Text(session.mode == .pomodoro && !finished ? text.phase(session.phase) + " " + clock : clock)
             }
             .accessibilityElement(children: .combine)
@@ -378,7 +391,7 @@ struct NotchLockScreenActivities: View {
             if let countdown = calendar.countdown {
                 let text = FeatureStrings.notchCalendar(l10n.language)
                 HStack(spacing: 7) {
-                    Image(systemName: "calendar").foregroundStyle(countdown.event.color.color)
+                    Image(systemName: "calendar").foregroundStyle(.white)
                     Text(NotchCalendarStrip.displayTitle(countdown.event, untitled: text.untitled))
                         .frame(maxWidth: 240, alignment: .leading)
                         .fixedSize(horizontal: false, vertical: true)
@@ -397,7 +410,7 @@ struct NotchLockScreenActivities: View {
             // a screen anyone can walk up to.
             HStack(spacing: 7) {
                 HStack(spacing: 1) {
-                    ForEach(working) { NotchAgentGlyph(provider: $0, size: 13) }
+                    ForEach(working) { NotchAgentGlyph(provider: $0, size: 13, monochrome: true) }
                 }
                 Text(working.map(\.displayName).joined(separator: " · ") + " " + reading)
             }
@@ -409,7 +422,7 @@ struct NotchLockScreenActivities: View {
             // Progress without the file's name, which stays off the lock screen.
             let fraction = downloads.items.first(where: { $0.active && !$0.completed })?.fraction
             HStack(spacing: 7) {
-                Image(systemName: "arrow.down.circle.fill").foregroundStyle(ZenithStatus.info)
+                Image(systemName: "arrow.down.circle.fill").foregroundStyle(.white)
                 if let fraction {
                     Text(fraction, format: .percent.precision(.fractionLength(0)))
                 } else {
@@ -419,17 +432,61 @@ struct NotchLockScreenActivities: View {
             .accessibilityElement(children: .combine)
         case .wakatime:
             // Zenith fork: today's coding time only; project names stay off the lock screen.
-            let coding = wakaTime.presence?.isCoding(at: date) == true
             let total = WakaTimeSupport.duration(wakaTime.today?.totalSeconds ?? 0,
                                                  locale: Locale(identifier: l10n.language.rawValue))
             HStack(spacing: 7) {
                 Image(systemName: NotchModule.wakatime.symbol)
-                    .foregroundStyle(coding ? ZenithStatus.success : .white.opacity(0.92))
+                    .foregroundStyle(.white)
                 Text(total)
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel("WakaTime")
             .accessibilityValue(total)
+        case .weather:
+            // Zenith fork: the sky and the temperature, never the place's name.
+            if let snapshot = weather.snapshot {
+                let unit = TemperatureUnit(rawValue: temperatureUnit) ?? .celsius
+                let text = ZenithStrings.lockScreenWidgets(l10n.language)
+                let current = WeatherSupport.degrees(snapshot.temperature, unit: unit)
+                let range = snapshot.high.flatMap { high in snapshot.low.map { (high, $0) } }
+                HStack(spacing: 7) {
+                    Image(systemName: WeatherSupport.symbol(code: snapshot.code, isDay: snapshot.isDay))
+                    Text(current)
+                    if let range {
+                        Text(WeatherSupport.degrees(range.0, unit: unit) + " / " + WeatherSupport.degrees(range.1, unit: unit))
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(text.weather)
+                .accessibilityValue(range.map {
+                    current + ", " + text.high + " " + WeatherSupport.degrees($0.0, unit: unit) + ", "
+                        + text.low + " " + WeatherSupport.degrees($0.1, unit: unit)
+                } ?? current)
+            }
+        case .reminders:
+            // Zenith fork: titles only, no notes. Icons stay white on the lock
+            // screen; an overdue reminder shows it by its mark's shape alone.
+            let selection = reminderSelection(at: date)
+            let text = ZenithStrings.lockScreenWidgets(l10n.language)
+            let untitled = FeatureStrings.notchCalendar(l10n.language).untitled
+            HStack(spacing: 14) {
+                ForEach(selection.shown) { entry in
+                    HStack(spacing: 6) {
+                        Image(systemName: entry.overdue ? "exclamationmark.circle" : "circle")
+                        Text(entry.item.title.isEmpty ? untitled : entry.item.title)
+                            .frame(maxWidth: 160, alignment: .leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityValue(entry.overdue ? text.overdue : "")
+                }
+                if selection.hidden > 0 {
+                    Text("+\(selection.hidden)").foregroundStyle(.white.opacity(0.7))
+                }
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(text.reminders)
         }
     }
 }

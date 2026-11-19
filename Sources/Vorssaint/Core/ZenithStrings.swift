@@ -174,8 +174,8 @@ extension ZenithStrings {
                          others: "Others",
                          tokenTitle: "Personal token",
                          tokenPlaceholder: "waka_tok_…",
-                         tokenCaption: "With a personal WakaTime token (scope read_stats) Zenith shows whether you are coding now and your time over any range. Without one it shows today only. The token stays in your Keychain.",
-                         tokenSaved: "Saved in your Keychain.",
+                         tokenCaption: "With a personal WakaTime token (scope read_stats) Zenith shows whether you are coding now and your time over any range. Without one it shows today only. The token stays on this Mac, readable only by your account.",
+                         tokenSaved: "Saved on this Mac.",
                          tokenRejected: "That doesn’t look like a personal token (waka_tok_…).",
                          save: "Save",
                          remove: "Remove")
@@ -194,8 +194,8 @@ extension ZenithStrings {
                          others: "Outras",
                          tokenTitle: "Token pessoal",
                          tokenPlaceholder: "waka_tok_…",
-                         tokenCaption: "Com um token pessoal do WakaTime (escopo read_stats), o Zenith mostra se você está programando agora e seu tempo em qualquer período. Sem ele, mostra só hoje. O token fica no seu Keychain.",
-                         tokenSaved: "Salvo no seu Keychain.",
+                         tokenCaption: "Com um token pessoal do WakaTime (escopo read_stats), o Zenith mostra se você está programando agora e seu tempo em qualquer período. Sem ele, mostra só hoje. O token fica neste Mac.",
+                         tokenSaved: "Salvo neste Mac.",
                          tokenRejected: "Isso não parece um token pessoal (waka_tok_…).",
                          save: "Salvar",
                          remove: "Remover")
@@ -214,8 +214,8 @@ extension ZenithStrings {
                          others: "Diğerleri",
                          tokenTitle: "Kişisel token",
                          tokenPlaceholder: "waka_tok_…",
-                         tokenCaption: "Kişisel bir WakaTime token’ı (read_stats kapsamı) ile Zenith şu an kodlayıp kodlamadığını ve her aralıktaki süreni gösterir. Token olmadan yalnızca bugünü gösterir. Token Anahtar Zinciri’nde kalır.",
-                         tokenSaved: "Anahtar Zinciri’ne kaydedildi.",
+                         tokenCaption: "Kişisel bir WakaTime token’ı (read_stats kapsamı) ile Zenith şu an kodlayıp kodlamadığını ve her aralıktaki süreni gösterir. Token olmadan yalnızca bugünü gösterir. Token bu Mac’te kalır.",
+                         tokenSaved: "Bu Mac’e kaydedildi.",
                          tokenRejected: "Bu kişisel bir token’a benzemiyor (waka_tok_…).",
                          save: "Kaydet",
                          remove: "Kaldır")
@@ -234,8 +234,8 @@ extension ZenithStrings {
                          others: "Другие",
                          tokenTitle: "Личный токен",
                          tokenPlaceholder: "waka_tok_…",
-                         tokenCaption: "С личным токеном WakaTime (область read_stats) Zenith показывает, пишете ли вы код прямо сейчас, и ваше время за любой период. Без него — только сегодня. Токен хранится в Связке ключей.",
-                         tokenSaved: "Сохранено в Связке ключей.",
+                         tokenCaption: "С личным токеном WakaTime (область read_stats) Zenith показывает, пишете ли вы код прямо сейчас, и ваше время за любой период. Без него — только сегодня. Токен хранится на этом Mac.",
+                         tokenSaved: "Сохранено на этом Mac.",
                          tokenRejected: "Это не похоже на личный токен (waka_tok_…).",
                          save: "Сохранить",
                          remove: "Удалить")
@@ -254,8 +254,8 @@ extension ZenithStrings {
                          others: "Otros",
                          tokenTitle: "Token personal",
                          tokenPlaceholder: "waka_tok_…",
-                         tokenCaption: "Con un token personal de WakaTime (alcance read_stats), Zenith muestra si estás programando ahora y tu tiempo en cualquier periodo. Sin él, solo muestra hoy. El token se queda en tu Llavero.",
-                         tokenSaved: "Guardado en tu Llavero.",
+                         tokenCaption: "Con un token personal de WakaTime (alcance read_stats), Zenith muestra si estás programando ahora y tu tiempo en cualquier periodo. Sin él, solo muestra hoy. El token se queda en este Mac.",
+                         tokenSaved: "Guardado en este Mac.",
                          tokenRejected: "Eso no parece un token personal (waka_tok_…).",
                          save: "Guardar",
                          remove: "Quitar")
@@ -274,8 +274,8 @@ extension ZenithStrings {
                          others: "Ostatné",
                          tokenTitle: "Osobný token",
                          tokenPlaceholder: "waka_tok_…",
-                         tokenCaption: "S osobným tokenom WakaTime (rozsah read_stats) Zenith ukáže, či práve programujete, a váš čas za ľubovoľné obdobie. Bez neho ukáže iba dnešok. Token zostane v Kľúčenke.",
-                         tokenSaved: "Uložené v Kľúčenke.",
+                         tokenCaption: "S osobným tokenom WakaTime (rozsah read_stats) Zenith ukáže, či práve programujete, a váš čas za ľubovoľné obdobie. Bez neho ukáže iba dnešok. Token zostane v tomto Macu.",
+                         tokenSaved: "Uložené v tomto Macu.",
                          tokenRejected: "Toto nevyzerá ako osobný token (waka_tok_…).",
                          save: "Uložiť",
                          remove: "Odstrániť")
@@ -294,8 +294,8 @@ extension ZenithStrings {
                          others: "Andere",
                          tokenTitle: "Persönliches Token",
                          tokenPlaceholder: "waka_tok_…",
-                         tokenCaption: "Mit einem persönlichen WakaTime-Token (Bereich read_stats) zeigt Zenith, ob du gerade codest, und deine Zeit in jedem Zeitraum. Ohne Token nur heute. Das Token bleibt in deinem Schlüsselbund.",
-                         tokenSaved: "Im Schlüsselbund gesichert.",
+                         tokenCaption: "Mit einem persönlichen WakaTime-Token (Bereich read_stats) zeigt Zenith, ob du gerade codest, und deine Zeit in jedem Zeitraum. Ohne Token nur heute. Das Token bleibt auf diesem Mac.",
+                         tokenSaved: "Auf diesem Mac gesichert.",
                          tokenRejected: "Das sieht nicht nach einem persönlichen Token aus (waka_tok_…).",
                          save: "Sichern",
                          remove: "Entfernen")
@@ -314,8 +314,8 @@ extension ZenithStrings {
                          others: "Autres",
                          tokenTitle: "Jeton personnel",
                          tokenPlaceholder: "waka_tok_…",
-                         tokenCaption: "Avec un jeton personnel WakaTime (portée read_stats), Zenith indique si vous codez en ce moment et votre temps sur n’importe quelle période. Sans jeton, il n’affiche qu’aujourd’hui. Le jeton reste dans votre trousseau.",
-                         tokenSaved: "Enregistré dans votre trousseau.",
+                         tokenCaption: "Avec un jeton personnel WakaTime (portée read_stats), Zenith indique si vous codez en ce moment et votre temps sur n’importe quelle période. Sans jeton, il n’affiche qu’aujourd’hui. Le jeton reste sur ce Mac.",
+                         tokenSaved: "Enregistré sur ce Mac.",
                          tokenRejected: "Cela ne ressemble pas à un jeton personnel (waka_tok_…).",
                          save: "Enregistrer",
                          remove: "Supprimer")
@@ -334,8 +334,8 @@ extension ZenithStrings {
                          others: "Altri",
                          tokenTitle: "Token personale",
                          tokenPlaceholder: "waka_tok_…",
-                         tokenCaption: "Con un token personale di WakaTime (ambito read_stats) Zenith mostra se stai programmando ora e il tuo tempo in qualsiasi periodo. Senza, mostra solo oggi. Il token resta nel tuo Portachiavi.",
-                         tokenSaved: "Salvato nel Portachiavi.",
+                         tokenCaption: "Con un token personale di WakaTime (ambito read_stats) Zenith mostra se stai programmando ora e il tuo tempo in qualsiasi periodo. Senza, mostra solo oggi. Il token resta su questo Mac.",
+                         tokenSaved: "Salvato su questo Mac.",
                          tokenRejected: "Non sembra un token personale (waka_tok_…).",
                          save: "Salva",
                          remove: "Rimuovi")
@@ -354,8 +354,8 @@ extension ZenithStrings {
                          others: "その他",
                          tokenTitle: "個人用トークン",
                          tokenPlaceholder: "waka_tok_…",
-                         tokenCaption: "WakaTimeの個人用トークン（スコープ read_stats）があると、Zenithは今コーディング中かどうかと任意の期間の時間を表示します。ない場合は今日のみ表示します。トークンはキーチェーンに保存されます。",
-                         tokenSaved: "キーチェーンに保存しました。",
+                         tokenCaption: "WakaTimeの個人用トークン（スコープ read_stats）があると、Zenithは今コーディング中かどうかと任意の期間の時間を表示します。ない場合は今日のみ表示します。トークンはこのMacに保存されます。",
+                         tokenSaved: "このMacに保存しました。",
                          tokenRejected: "個人用トークン（waka_tok_…）ではないようです。",
                          save: "保存",
                          remove: "削除")
@@ -374,8 +374,8 @@ extension ZenithStrings {
                          others: "기타",
                          tokenTitle: "개인 토큰",
                          tokenPlaceholder: "waka_tok_…",
-                         tokenCaption: "WakaTime 개인 토큰(범위 read_stats)이 있으면 Zenith가 지금 코딩 중인지와 모든 기간의 시간을 보여 줍니다. 없으면 오늘만 보여 줍니다. 토큰은 키체인에 보관됩니다.",
-                         tokenSaved: "키체인에 저장했습니다.",
+                         tokenCaption: "WakaTime 개인 토큰(범위 read_stats)이 있으면 Zenith가 지금 코딩 중인지와 모든 기간의 시간을 보여 줍니다. 없으면 오늘만 보여 줍니다. 토큰은 이 Mac에 보관됩니다.",
+                         tokenSaved: "이 Mac에 저장했습니다.",
                          tokenRejected: "개인 토큰(waka_tok_…)이 아닌 것 같습니다.",
                          save: "저장",
                          remove: "제거")
@@ -394,8 +394,8 @@ extension ZenithStrings {
                          others: "Інші",
                          tokenTitle: "Особистий токен",
                          tokenPlaceholder: "waka_tok_…",
-                         tokenCaption: "З особистим токеном WakaTime (область read_stats) Zenith показує, чи ви зараз пишете код, і ваш час за будь-який період. Без нього — лише сьогодні. Токен зберігається у В’язці ключів.",
-                         tokenSaved: "Збережено у В’язці ключів.",
+                         tokenCaption: "З особистим токеном WakaTime (область read_stats) Zenith показує, чи ви зараз пишете код, і ваш час за будь-який період. Без нього — лише сьогодні. Токен зберігається на цьому Mac.",
+                         tokenSaved: "Збережено на цьому Mac.",
                          tokenRejected: "Це не схоже на особистий токен (waka_tok_…).",
                          save: "Зберегти",
                          remove: "Видалити")
@@ -414,8 +414,8 @@ extension ZenithStrings {
                          others: "其他",
                          tokenTitle: "个人令牌",
                          tokenPlaceholder: "waka_tok_…",
-                         tokenCaption: "有了 WakaTime 个人令牌（范围 read_stats），Zenith 会显示你是否正在编程，以及任意时间段的编程时间。没有令牌时只显示今天。令牌保存在你的钥匙串中。",
-                         tokenSaved: "已保存到钥匙串。",
+                         tokenCaption: "有了 WakaTime 个人令牌（范围 read_stats），Zenith 会显示你是否正在编程，以及任意时间段的编程时间。没有令牌时只显示今天。令牌保存在这台 Mac 上。",
+                         tokenSaved: "已保存在这台 Mac 上。",
                          tokenRejected: "这看起来不像个人令牌（waka_tok_…）。",
                          save: "保存",
                          remove: "移除")
@@ -434,8 +434,8 @@ extension ZenithStrings {
                          others: "其他",
                          tokenTitle: "個人權杖",
                          tokenPlaceholder: "waka_tok_…",
-                         tokenCaption: "有了 WakaTime 個人權杖（範圍 read_stats），Zenith 會顯示你是否正在寫程式，以及任何期間的時間。沒有權杖時只顯示今天。權杖會保存在你的鑰匙圈中。",
-                         tokenSaved: "已儲存到鑰匙圈。",
+                         tokenCaption: "有了 WakaTime 個人權杖（範圍 read_stats），Zenith 會顯示你是否正在寫程式，以及任何期間的時間。沒有權杖時只顯示今天。權杖會保存在這台 Mac 上。",
+                         tokenSaved: "已儲存在這台 Mac 上。",
                          tokenRejected: "這看起來不像個人權杖（waka_tok_…）。",
                          save: "儲存",
                          remove: "移除")
@@ -454,8 +454,8 @@ extension ZenithStrings {
                          others: "其他",
                          tokenTitle: "個人權杖",
                          tokenPlaceholder: "waka_tok_…",
-                         tokenCaption: "有了 WakaTime 個人權杖（範圍 read_stats），Zenith 會顯示你是否正在編程，以及任何期間的時間。沒有權杖時只顯示今天。權杖會儲存在你的鑰匙圈中。",
-                         tokenSaved: "已儲存到鑰匙圈。",
+                         tokenCaption: "有了 WakaTime 個人權杖（範圍 read_stats），Zenith 會顯示你是否正在編程，以及任何期間的時間。沒有權杖時只顯示今天。權杖會儲存在這部 Mac 上。",
+                         tokenSaved: "已儲存在這台 Mac 上。",
                          tokenRejected: "這看起來不像個人權杖（waka_tok_…）。",
                          save: "儲存",
                          remove: "移除")
@@ -507,6 +507,166 @@ extension ZenithStrings {
             return .init(goalTitle: "每日目標", goalOff: "關閉", goalReachedTitle: "已達成今日寫程式目標", goalReachedBodyFormat: "今天已寫程式 %@。", goalProgressFormat: "/ %@")
         case .zhHK:
             return .init(goalTitle: "每日目標", goalOff: "關閉", goalReachedTitle: "已達成今日編程目標", goalReachedBodyFormat: "今天已編程 %@。", goalProgressFormat: "/ %@")
+        }
+    }
+}
+
+struct ZenithLockScreenWidgetStrings {
+    let weather: String
+    let reminders: String
+    /// Under the Weather switch once location access is granted.
+    let weatherCaption: String
+    /// Under the Reminders switch once access is granted.
+    let remindersCaption: String
+    let locationNeeded: String
+    let locationDenied: String
+    let remindersNeeded: String
+    let remindersDenied: String
+    /// Spoken with the day’s highest and lowest temperatures.
+    let high: String
+    let low: String
+    let overdue: String
+}
+
+extension ZenithStrings {
+    /// The lock screen’s weather and reminders, and their permissions.
+    static func lockScreenWidgets(_ language: AppLanguage) -> ZenithLockScreenWidgetStrings {
+        switch language {
+        case .enUS:
+            return .init(weather: "Weather", reminders: "Reminders",
+                         weatherCaption: "The temperature from Open-Meteo for your approximate location. The place name never shows.",
+                         remindersCaption: "Up to three reminders due today or overdue, by title only.",
+                         locationNeeded: "Weather needs your approximate location.",
+                         locationDenied: "Location access for Zenith is off. Turn it on in System Settings to see the weather.",
+                         remindersNeeded: "Zenith needs access to your reminders to show them.",
+                         remindersDenied: "Reminders access for Zenith is off. Turn it on in System Settings to see them.",
+                         high: "High", low: "Low", overdue: "Overdue")
+        case .ptBR:
+            return .init(weather: "Tempo", reminders: "Lembretes",
+                         weatherCaption: "A temperatura do Open-Meteo para sua localização aproximada. O nome do lugar nunca aparece.",
+                         remindersCaption: "Até três lembretes para hoje ou atrasados, só pelo título.",
+                         locationNeeded: "O tempo precisa da sua localização aproximada.",
+                         locationDenied: "O acesso à localização do Zenith está desativado. Ative-o nos Ajustes do Sistema para ver o tempo.",
+                         remindersNeeded: "O Zenith precisa de acesso aos seus lembretes para mostrá-los.",
+                         remindersDenied: "O acesso aos lembretes do Zenith está desativado. Ative-o nos Ajustes do Sistema para vê-los.",
+                         high: "Máxima", low: "Mínima", overdue: "Atrasado")
+        case .tr:
+            return .init(weather: "Hava Durumu", reminders: "Anımsatıcılar",
+                         weatherCaption: "Yaklaşık konumun için Open-Meteo’dan sıcaklık. Yer adı hiçbir zaman gösterilmez.",
+                         remindersCaption: "Bugün veya gecikmiş en fazla üç anımsatıcı, yalnızca başlıkla.",
+                         locationNeeded: "Hava durumu için yaklaşık konumun gerekiyor.",
+                         locationDenied: "Zenith için konum erişimi kapalı. Hava durumunu görmek için Sistem Ayarları’nda aç.",
+                         remindersNeeded: "Zenith’in anımsatıcılarını gösterebilmesi için erişim gerekiyor.",
+                         remindersDenied: "Zenith için Anımsatıcılar erişimi kapalı. Görmek için Sistem Ayarları’nda aç.",
+                         high: "En yüksek", low: "En düşük", overdue: "Gecikmiş")
+        case .ru:
+            return .init(weather: "Погода", reminders: "Напоминания",
+                         weatherCaption: "Температура от Open-Meteo для вашего примерного местоположения. Название места не показывается.",
+                         remindersCaption: "До трёх напоминаний на сегодня или просроченных, только названия.",
+                         locationNeeded: "Для погоды нужно ваше примерное местоположение.",
+                         locationDenied: "Доступ Zenith к геопозиции выключен. Включите его в Системных настройках, чтобы видеть погоду.",
+                         remindersNeeded: "Zenith нужен доступ к напоминаниям, чтобы показывать их.",
+                         remindersDenied: "Доступ Zenith к напоминаниям выключен. Включите его в Системных настройках, чтобы видеть их.",
+                         high: "Макс.", low: "Мин.", overdue: "Просрочено")
+        case .es:
+            return .init(weather: "Tiempo", reminders: "Recordatorios",
+                         weatherCaption: "La temperatura de Open-Meteo para tu ubicación aproximada. El nombre del lugar nunca aparece.",
+                         remindersCaption: "Hasta tres recordatorios para hoy o vencidos, solo con su título.",
+                         locationNeeded: "El tiempo necesita tu ubicación aproximada.",
+                         locationDenied: "El acceso a la ubicación de Zenith está desactivado. Actívalo en Ajustes del Sistema para ver el tiempo.",
+                         remindersNeeded: "Zenith necesita acceso a tus recordatorios para mostrarlos.",
+                         remindersDenied: "El acceso a Recordatorios de Zenith está desactivado. Actívalo en Ajustes del Sistema para verlos.",
+                         high: "Máxima", low: "Mínima", overdue: "Vencido")
+        case .sk:
+            return .init(weather: "Počasie", reminders: "Pripomienky",
+                         weatherCaption: "Teplota z Open-Meteo pre vašu približnú polohu. Názov miesta sa nikdy nezobrazí.",
+                         remindersCaption: "Najviac tri pripomienky na dnes alebo po termíne, iba s názvom.",
+                         locationNeeded: "Počasie potrebuje vašu približnú polohu.",
+                         locationDenied: "Prístup Zenithu k polohe je vypnutý. Zapnite ho v Systémových nastaveniach, aby ste videli počasie.",
+                         remindersNeeded: "Zenith potrebuje prístup k vašim pripomienkam, aby ich mohol zobraziť.",
+                         remindersDenied: "Prístup Zenithu k pripomienkam je vypnutý. Zapnite ho v Systémových nastaveniach, aby ste ich videli.",
+                         high: "Najvyššia", low: "Najnižšia", overdue: "Po termíne")
+        case .de:
+            return .init(weather: "Wetter", reminders: "Erinnerungen",
+                         weatherCaption: "Die Temperatur von Open-Meteo für deinen ungefähren Standort. Der Ortsname wird nie angezeigt.",
+                         remindersCaption: "Bis zu drei heute fällige oder überfällige Erinnerungen, nur mit Titel.",
+                         locationNeeded: "Für das Wetter wird dein ungefährer Standort benötigt.",
+                         locationDenied: "Der Standortzugriff für Zenith ist aus. Schalte ihn in den Systemeinstellungen ein, um das Wetter zu sehen.",
+                         remindersNeeded: "Zenith braucht Zugriff auf deine Erinnerungen, um sie anzuzeigen.",
+                         remindersDenied: "Der Zugriff auf Erinnerungen ist für Zenith aus. Schalte ihn in den Systemeinstellungen ein, um sie zu sehen.",
+                         high: "Höchstwert", low: "Tiefstwert", overdue: "Überfällig")
+        case .fr:
+            return .init(weather: "Météo", reminders: "Rappels",
+                         weatherCaption: "La température d’Open-Meteo pour votre position approximative. Le nom du lieu n’apparaît jamais.",
+                         remindersCaption: "Jusqu’à trois rappels du jour ou en retard, avec leur titre seulement.",
+                         locationNeeded: "La météo a besoin de votre position approximative.",
+                         locationDenied: "L’accès à la localisation est désactivé pour Zenith. Activez-le dans Réglages Système pour voir la météo.",
+                         remindersNeeded: "Zenith a besoin d’accéder à vos rappels pour les afficher.",
+                         remindersDenied: "L’accès aux rappels est désactivé pour Zenith. Activez-le dans Réglages Système pour les voir.",
+                         high: "Max.", low: "Min.", overdue: "En retard")
+        case .it:
+            return .init(weather: "Meteo", reminders: "Promemoria",
+                         weatherCaption: "La temperatura di Open-Meteo per la tua posizione approssimativa. Il nome del luogo non compare mai.",
+                         remindersCaption: "Fino a tre promemoria di oggi o scaduti, solo con il titolo.",
+                         locationNeeded: "Il meteo ha bisogno della tua posizione approssimativa.",
+                         locationDenied: "L’accesso alla posizione per Zenith è disattivato. Attivalo in Impostazioni di Sistema per vedere il meteo.",
+                         remindersNeeded: "Zenith ha bisogno di accedere ai tuoi promemoria per mostrarli.",
+                         remindersDenied: "L’accesso ai promemoria per Zenith è disattivato. Attivalo in Impostazioni di Sistema per vederli.",
+                         high: "Massima", low: "Minima", overdue: "Scaduto")
+        case .ja:
+            return .init(weather: "天気", reminders: "リマインダー",
+                         weatherCaption: "おおよその位置に基づくOpen-Meteoの気温です。地名は表示されません。",
+                         remindersCaption: "今日が期限または期限切れのリマインダーを最大3件、タイトルだけ表示します。",
+                         locationNeeded: "天気にはおおよその位置情報が必要です。",
+                         locationDenied: "Zenithの位置情報へのアクセスがオフです。天気を表示するにはシステム設定でオンにしてください。",
+                         remindersNeeded: "リマインダーを表示するには、Zenithにリマインダーへのアクセスを許可してください。",
+                         remindersDenied: "Zenithのリマインダーへのアクセスがオフです。表示するにはシステム設定でオンにしてください。",
+                         high: "最高", low: "最低", overdue: "期限切れ")
+        case .ko:
+            return .init(weather: "날씨", reminders: "미리 알림",
+                         weatherCaption: "대략적인 위치를 기준으로 Open-Meteo에서 가져온 기온입니다. 장소 이름은 표시되지 않습니다.",
+                         remindersCaption: "오늘 마감이거나 기한이 지난 미리 알림을 최대 3개까지 제목만 표시합니다.",
+                         locationNeeded: "날씨를 보려면 대략적인 위치가 필요합니다.",
+                         locationDenied: "Zenith의 위치 접근이 꺼져 있습니다. 날씨를 보려면 시스템 설정에서 켜세요.",
+                         remindersNeeded: "미리 알림을 표시하려면 Zenith에 미리 알림 접근 권한이 필요합니다.",
+                         remindersDenied: "Zenith의 미리 알림 접근이 꺼져 있습니다. 보려면 시스템 설정에서 켜세요.",
+                         high: "최고", low: "최저", overdue: "기한 지남")
+        case .uk:
+            return .init(weather: "Погода", reminders: "Нагадування",
+                         weatherCaption: "Температура від Open-Meteo для вашого приблизного місця. Назва місця ніколи не показується.",
+                         remindersCaption: "До трьох нагадувань на сьогодні або прострочених, лише назви.",
+                         locationNeeded: "Для погоди потрібне ваше приблизне місцезнаходження.",
+                         locationDenied: "Доступ Zenith до геолокації вимкнено. Увімкніть його в Системних параметрах, щоб бачити погоду.",
+                         remindersNeeded: "Zenith потрібен доступ до нагадувань, щоб показувати їх.",
+                         remindersDenied: "Доступ Zenith до нагадувань вимкнено. Увімкніть його в Системних параметрах, щоб бачити їх.",
+                         high: "Макс.", low: "Мін.", overdue: "Прострочено")
+        case .zhHans:
+            return .init(weather: "天气", reminders: "提醒事项",
+                         weatherCaption: "根据你的大致位置从 Open-Meteo 获取的气温。不会显示地名。",
+                         remindersCaption: "最多三个今天到期或已逾期的提醒事项，仅显示标题。",
+                         locationNeeded: "天气需要你的大致位置。",
+                         locationDenied: "Zenith 的定位访问已关闭。请在系统设置中打开以查看天气。",
+                         remindersNeeded: "Zenith 需要访问你的提醒事项才能显示它们。",
+                         remindersDenied: "Zenith 的提醒事项访问已关闭。请在系统设置中打开以查看。",
+                         high: "最高", low: "最低", overdue: "已逾期")
+        case .zhTW:
+            return .init(weather: "天氣", reminders: "提醒事項",
+                         weatherCaption: "依據你的大致位置從 Open-Meteo 取得的氣溫。不會顯示地名。",
+                         remindersCaption: "最多三個今天到期或已逾期的提醒事項，只顯示標題。",
+                         locationNeeded: "天氣需要你的大致位置。",
+                         locationDenied: "Zenith 的定位取用權限已關閉。請在系統設定中開啟以查看天氣。",
+                         remindersNeeded: "Zenith 需要取用你的提醒事項才能顯示。",
+                         remindersDenied: "Zenith 的提醒事項取用權限已關閉。請在系統設定中開啟以查看。",
+                         high: "最高", low: "最低", overdue: "已逾期")
+        case .zhHK:
+            return .init(weather: "天氣", reminders: "提醒事項",
+                         weatherCaption: "根據你的大概位置從 Open-Meteo 取得的氣溫。不會顯示地名。",
+                         remindersCaption: "最多三個今天到期或已逾期的提醒事項，只顯示標題。",
+                         locationNeeded: "天氣需要你的大概位置。",
+                         locationDenied: "Zenith 的定位存取權限已關閉。請在系統設定中開啟以查看天氣。",
+                         remindersNeeded: "Zenith 需要存取你的提醒事項才能顯示。",
+                         remindersDenied: "Zenith 的提醒事項存取權限已關閉。請在系統設定中開啟以查看。",
+                         high: "最高", low: "最低", overdue: "已逾期")
         }
     }
 }

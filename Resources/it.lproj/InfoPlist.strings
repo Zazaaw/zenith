@@ -22,3 +22,10 @@
 "NSNetworkVolumesUsageDescription" = "Zenith organizza i download WhatsApp confermati in una cartella di destinazione scelta esplicitamente da te. La Pulizia cerca anche gli screenshot dimenticati se li salvi qui.";
 "NSRemovableVolumesUsageDescription" = "Zenith organizza i download WhatsApp confermati in una cartella di destinazione scelta esplicitamente da te. La Pulizia cerca anche gli screenshot dimenticati se li salvi qui.";
 "NSCalendarsFullAccessUsageDescription" = "Mostra i tuoi prossimi appuntamenti nella parte superiore dello schermo. Gli eventi del calendario restano su questo Mac.";
+
+/* macOS Location Services permission prompt (Zenith fork: lock screen weather). */
+"NSLocationUsageDescription" = "Zenith usa la tua posizione approssimativa solo per mostrare il meteo nella schermata di blocco. Viene arrotondata a circa un chilometro e inviata solo a Open-Meteo per ottenere le previsioni.";
+"NSLocationWhenInUseUsageDescription" = "Zenith usa la tua posizione approssimativa solo per mostrare il meteo nella schermata di blocco. Viene arrotondata a circa un chilometro e inviata solo a Open-Meteo per ottenere le previsioni.";
+
+/* macOS Reminders permission prompt (Zenith fork: lock screen reminders). */
+"NSRemindersFullAccessUsageDescription" = "Mostra nella schermata di blocco i promemoria di oggi. I promemoria restano su questo Mac.";

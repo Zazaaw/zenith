@@ -291,6 +291,10 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Notch/NotchAirDropSupport.swift
         Sources/Vorssaint/Services/WakaTime/WakaTimeSupport.swift
         Sources/Vorssaint/Services/WakaTime/WakaTimeStats.swift
+        Sources/Vorssaint/Services/ZenithSecretStore.swift
+        Sources/Vorssaint/Services/Weather/WeatherSupport.swift
+        Sources/Vorssaint/Services/Reminders/RemindersSupport.swift
+        Sources/Vorssaint/Services/Notch/NotchLockScreenWidgetAccess.swift
         Sources/Vorssaint/Core/ZenithStrings.swift
         Sources/Vorssaint/UI/ZenithTokens.swift
         Sources/Vorssaint/Services/Notch/NotchDownloadSupport.swift

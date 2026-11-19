@@ -22,3 +22,10 @@
 "NSNetworkVolumesUsageDescription" = "Zenith, doğrulanmış WhatsApp indirmelerini açıkça seçtiğiniz bir hedef klasörde düzenler. Ekran görüntülerinizi buraya kaydediyorsanız Temizlik unutulan ekran görüntülerini de arar.";
 "NSRemovableVolumesUsageDescription" = "Zenith, doğrulanmış WhatsApp indirmelerini açıkça seçtiğiniz bir hedef klasörde düzenler. Ekran görüntülerinizi buraya kaydediyorsanız Temizlik unutulan ekran görüntülerini de arar.";
 "NSCalendarsFullAccessUsageDescription" = "Yaklaşan randevularınızı ekranın üst kısmında gösterir. Takvim etkinlikleri bu Mac’te kalır.";
+
+/* macOS Location Services permission prompt (Zenith fork: lock screen weather). */
+"NSLocationUsageDescription" = "Zenith yaklaşık konumunu yalnızca kilit ekranında hava durumunu göstermek için kullanır. Konum yaklaşık bir kilometreye yuvarlanır ve tahmini almak için yalnızca Open-Meteo’ya gönderilir.";
+"NSLocationWhenInUseUsageDescription" = "Zenith yaklaşık konumunu yalnızca kilit ekranında hava durumunu göstermek için kullanır. Konum yaklaşık bir kilometreye yuvarlanır ve tahmini almak için yalnızca Open-Meteo’ya gönderilir.";
+
+/* macOS Reminders permission prompt (Zenith fork: lock screen reminders). */
+"NSRemindersFullAccessUsageDescription" = "Bugün süresi dolan anımsatıcıları kilit ekranında göster. Anımsatıcılar bu Mac’te kalır.";

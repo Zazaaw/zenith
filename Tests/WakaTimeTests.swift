@@ -12,6 +12,32 @@ enum WakaTimeTests {
         formatting(suite)
         token(suite)
         goal(suite)
+        secrets(suite)
+    }
+
+    /// Zenith fork: personal tokens as owner-only files.
+    private static func secrets(_ suite: TestSuite) {
+        suite.expect(ZenithSecretStore.isValidName("wakatime-token") && ZenithSecretStore.isValidName("vercel_token")
+                     && !ZenithSecretStore.isValidName("../escape") && !ZenithSecretStore.isValidName("a/b")
+                     && !ZenithSecretStore.isValidName(""),
+                     "secret names are plain file names that cannot leave their folder")
+        let container = FileManager.default.temporaryDirectory
+            .appendingPathComponent("zenith-secrets-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: container) }
+        suite.expect(ZenithSecretStore.read("token", container: container) == nil,
+                     "a missing secret reads as nil")
+        suite.expect(ZenithSecretStore.save("  waka_tok_abc \n", as: "token", container: container)
+                     && ZenithSecretStore.read("token", container: container) == "waka_tok_abc",
+                     "a saved secret reads back trimmed")
+        let url = ZenithSecretStore.url(for: "token", container: container)!
+        let file = (try? FileManager.default.attributesOfItem(atPath: url.path))?[.posixPermissions] as? Int
+        let folder = (try? FileManager.default.attributesOfItem(atPath: url.deletingLastPathComponent().path))?[.posixPermissions] as? Int
+        suite.expect(file == 0o600 && folder == 0o700, "only the owner can read the secret or list its folder")
+        suite.expect(!ZenithSecretStore.save("   ", as: "token", container: container)
+                     && ZenithSecretStore.read("token", container: container) == "waka_tok_abc",
+                     "a blank value never replaces a saved secret")
+        ZenithSecretStore.delete("token", container: container)
+        suite.expect(ZenithSecretStore.read("token", container: container) == nil, "a deleted secret is gone")
     }
 
     private static func goal(_ suite: TestSuite) {
