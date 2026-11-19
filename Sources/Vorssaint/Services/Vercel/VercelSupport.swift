@@ -289,9 +289,97 @@ enum VercelSupport {
     /// How long until the next refresh: quick while anything is on its way,
     /// slow otherwise, slower after a failure. A failure during a build
     /// still checks back within a minute, so the build is not lost for long.
-    static func pollInterval(deployments: [Deployment], failed: Bool) -> TimeInterval {
+    /// In the background, only for failure alerts, the pace is gentler, and a
+    /// failure waits for the next turn like any other read.
+    static func pollInterval(deployments: [Deployment], failed: Bool, background: Bool = false) -> TimeInterval {
         let building = deployments.contains(where: \.state.inProgress)
+        if background { return building ? backgroundBuildingInterval : backgroundIdleInterval }
         if failed { return building ? failedBuildInterval : failureInterval }
         return building ? buildingInterval : idleInterval
+    }
+
+    // MARK: Failure alerts
+
+    /// With nothing on screen asking, failure alerts read the list every two
+    /// minutes while something builds and every ten otherwise.
+    static let backgroundBuildingInterval: TimeInterval = 2 * 60
+    static let backgroundIdleInterval: TimeInterval = 10 * 60
+    /// A failure Zenith never saw building is announced only this soon after
+    /// it was created; a build seen on its way is followed this long while
+    /// its team drops out of a read.
+    static let failureAlertWindow: TimeInterval = 6 * 60 * 60
+    /// How far the Mac's clock and Vercel's may disagree.
+    static let clockAllowance: TimeInterval = 60
+    /// Deployments already announced, remembered so none is announced twice.
+    static let rememberedFailures = 32
+    /// A read after a long sleep announces no more than this many.
+    static let failureAlertsPerRead = 3
+
+    /// A notification when a build fails, even with the island closed. Off
+    /// until switched on in the section's options.
+    static func sendsFailureAlerts(in defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: DefaultsKey.notchVercelFailureAlerts)
+    }
+
+    /// What failure alerts keep of the last list read.
+    struct FailureBaseline: Equatable, Sendable {
+        /// Deployments seen on their way and not seen to finish since, with
+        /// when each was created.
+        var inProgress: [String: Date]
+        /// Every deployment that list showed.
+        var seen: Set<String>
+        /// When the request for that list went out.
+        var polledAt: Date
+    }
+
+    /// The baseline after reading `current`. A build seen on its way stays
+    /// followed when its team is missing from this read, for up to
+    /// `failureAlertWindow`, so a scope that failed once does not lose it.
+    static func failureBaseline(previous: FailureBaseline?, current: [Deployment], polledAt: Date) -> FailureBaseline {
+        let listed = Set(current.map(\.uid))
+        var inProgress: [String: Date] = [:]
+        for (uid, created) in previous?.inProgress ?? [:]
+        where !listed.contains(uid) && polledAt.timeIntervalSince(created) < failureAlertWindow {
+            inProgress[uid] = created
+        }
+        for deployment in current where deployment.state.inProgress {
+            inProgress[deployment.uid] = deployment.created
+        }
+        return FailureBaseline(inProgress: inProgress, seen: listed, polledAt: polledAt)
+    }
+
+    /// The failed deployments to announce, newest first: one the baseline saw
+    /// on its way, or one it never saw that was created after its read (give
+    /// or take `clockAllowance`) and is already in error. One already
+    /// announced, one seen finished before, or one older than
+    /// `failureAlertWindow` is left alone, so the first read after launch,
+    /// which only sets the baseline, never announces an old failure.
+    static func failureAlerts(since baseline: FailureBaseline, current: [Deployment], polledAt: Date,
+                              notified: Set<String>, limit: Int = failureAlertsPerRead) -> [Deployment] {
+        var picked = Set<String>()
+        return current
+            .filter { deployment in
+                guard deployment.state == .error, !notified.contains(deployment.uid),
+                      picked.insert(deployment.uid).inserted else { return false }
+                if baseline.inProgress[deployment.uid] != nil { return true }
+                guard !baseline.seen.contains(deployment.uid) else { return false }
+                return deployment.created >= baseline.polledAt.addingTimeInterval(-clockAllowance)
+                    && polledAt.timeIntervalSince(deployment.created) < failureAlertWindow
+            }
+            .sorted { $0.created != $1.created ? $0.created > $1.created : $0.uid < $1.uid }
+            .prefix(max(0, limit))
+            .map { $0 }
+    }
+
+    /// The announced deployments, the newest last, at most `rememberedFailures`.
+    static func remembering(_ uids: [String], in notified: [String]) -> [String] {
+        let fresh = uids.reduce(into: [String]()) { list, uid in if !list.contains(uid) { list.append(uid) } }
+        return Array((notified.filter { !fresh.contains($0) } + fresh).suffix(rememberedFailures))
+    }
+
+    /// The notification's body: the project and its branch. Never the commit
+    /// message, as on the lock screen.
+    static func failureBody(_ deployment: Deployment) -> String {
+        [deployment.project, deployment.branch].compactMap { $0 }.joined(separator: " · ")
     }
 }

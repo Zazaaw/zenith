@@ -6,12 +6,17 @@ import Foundation
 /// Zenith fork: recent Vercel deployments and the build on its way.
 ///
 /// It polls only while a token is saved and the island runs with the Vercel
-/// section on, or the lock screen's terminal readout shows its line: every `VercelSupport.buildingInterval` while something builds,
-/// every `VercelSupport.idleInterval` otherwise. The token lives in an
-/// owner-only file (`ZenithSecretStore`, never preferences or backups), is
-/// read only once the section is on (or its page or settings show), and only
-/// ever travels to api.vercel.com. Like the island's own services it lives
-/// on the main thread; only the requests run elsewhere.
+/// section on, or the lock screen's terminal readout shows its line: every
+/// `VercelSupport.buildingInterval` while something builds, every
+/// `VercelSupport.idleInterval` otherwise. With failure alerts on and nothing
+/// else asking, the same loop reads on in the background at a gentler pace
+/// (`VercelSupport.backgroundBuildingInterval`, `backgroundIdleInterval`);
+/// every read, whoever asked for it, is checked for failed builds, so alerts
+/// never cost a request of their own. The token lives in an owner-only file
+/// (`ZenithSecretStore`, never preferences or backups), is read only once the
+/// section or the alerts are on (or its page or settings show), and only ever
+/// travels to api.vercel.com. Like the island's own services it lives on the
+/// main thread; only the requests run elsewhere.
 final class VercelService: ObservableObject {
     static let shared = VercelService()
 
@@ -37,6 +42,14 @@ final class VercelService: ObservableObject {
     private var resultSince: Date?
     /// The lock screen's terminal readout, while it shows the Vercel line.
     private var lockScreenViewers = 0
+    /// The island has synced since it last stopped.
+    private var islandRunning = false
+    /// Polling only for failure alerts, at their gentler pace.
+    private var pollsInBackground = false
+    /// Failure alerts: the last list read while they are on (nil until the
+    /// first, which announces nothing), and the deployments announced so far.
+    private var failureBaseline: VercelSupport.FailureBaseline?
+    private var notifiedFailures: [String] = []
 
     /// The token's file in Zenith's private secrets folder (ZenithSecretStore).
     static let secretName = "vercel-token"
@@ -73,8 +86,11 @@ final class VercelService: ObservableObject {
         guard hasToken else { return false }
         deployments = []
         state = .loading
+        // Another token may see other deployments: its first read only sets the baseline.
+        failureBaseline = nil
         UserDefaults.standard.set(true, forKey: DefaultsKey.notchVercelEnabled)
         refresh(force: true)
+        sync()
         return true
     }
 
@@ -85,9 +101,11 @@ final class VercelService: ObservableObject {
         hasToken = false
         stopPolling()
         polling = false
+        pollsInBackground = false
         deployments = []
         result = nil
         resultSince = nil
+        failureBaseline = nil
         state = .missingToken
         publishActivity()
     }
@@ -96,17 +114,36 @@ final class VercelService: ObservableObject {
 
     /// Called with every island preference sync: starts or stops polling.
     func syncWithPreferences() {
-        let shown = Self.isModuleOn() || lockScreenViewers > 0
-        if shown { loadTokenIfNeeded() }
-        let wanted = shown && token != nil
-        if wanted != polling {
+        islandRunning = true
+        sync()
+    }
+
+    /// At launch, and whenever the alerts switch changes: starts or stops
+    /// the background reads failure alerts need.
+    func syncFailureAlerts() {
+        sync()
+    }
+
+    /// Polls while the island shows the section or the lock screen shows its
+    /// line, at the usual pace; otherwise, with failure alerts on, at theirs.
+    private func sync() {
+        let shown = (islandRunning && Self.isModuleOn()) || lockScreenViewers > 0
+        let alerts = VercelSupport.sendsFailureAlerts()
+        // Turned off, the alerts forget their baseline, so turning them on
+        // again never announces what failed in between.
+        if !alerts { failureBaseline = nil }
+        if shown || alerts { loadTokenIfNeeded() }
+        let wanted = (shown || alerts) && token != nil
+        let background = wanted && !shown
+        if wanted != polling || background != pollsInBackground {
             polling = wanted
+            pollsInBackground = background
             if !wanted {
                 stopPolling()
-            } else if isFresh {
+            } else if isFresh(background: background) {
                 // A list read moments ago, as on locking right after a look
                 // at the island, waits for its next turn.
-                scheduleNext()
+                if request == nil { scheduleNext() }
             } else {
                 refresh()
             }
@@ -117,24 +154,27 @@ final class VercelService: ObservableObject {
     /// The lock screen's terminal readout appeared with a Vercel line.
     func lockScreenShown() {
         lockScreenViewers += 1
-        syncWithPreferences()
+        sync()
     }
 
     func lockScreenHidden() {
         guard lockScreenViewers > 0 else { return }
         lockScreenViewers -= 1
-        syncWithPreferences()
+        sync()
     }
 
-    private var isFresh: Bool {
+    /// Read within the last minute, or, in the background, within its own turn.
+    private func isFresh(background: Bool = false) -> Bool {
         guard state == .ready, let lastFetch else { return false }
-        return Date().timeIntervalSince(lastFetch) < VercelSupport.staleAfter
+        let limit = background ? VercelSupport.pollInterval(deployments: deployments, failed: false, background: true)
+            : VercelSupport.staleAfter
+        return Date().timeIntervalSince(lastFetch) < limit
     }
 
+    /// The island stopped. Failure alerts, when on, carry on in the background.
     func stop() {
-        polling = false
-        stopPolling()
-        publishActivity()
+        islandRunning = false
+        sync()
     }
 
     private func stopPolling() {
@@ -149,7 +189,7 @@ final class VercelService: ObservableObject {
     func viewAppeared() {
         loadTokenIfNeeded()
         guard token != nil else { return }
-        if isFresh { return }
+        if isFresh() { return }
         refresh()
     }
 
@@ -169,18 +209,20 @@ final class VercelService: ObservableObject {
         timer?.invalidate()
         timer = nil
         let agent = "\(AppInfo.name)/\(AppInfo.version)"
+        let started = Date()
         request = Task { @MainActor [weak self] in
             let outcome = await Self.fetch(token: token, userAgent: agent)
             guard let self, !Task.isCancelled else { return }
             self.request = nil
-            self.apply(outcome)
+            self.apply(outcome, polledAt: started)
         }
     }
 
-    private func apply(_ outcome: VercelSupport.Outcome) {
+    private func apply(_ outcome: VercelSupport.Outcome, polledAt: Date) {
         lastFetch = Date()
         switch outcome {
         case .ready(let list):
+            noteFailures(in: list, polledAt: polledAt)
             // A build seen on its way last time and finished now gets its
             // moment in the closed island.
             let ended = VercelSupport.finished(previous: deployments, current: list)
@@ -210,7 +252,8 @@ final class VercelService: ObservableObject {
         timer?.invalidate()
         timer = nil
         guard polling, state != .unauthorized else { return }
-        let interval = VercelSupport.pollInterval(deployments: deployments, failed: lastFailed)
+        let interval = VercelSupport.pollInterval(deployments: deployments, failed: lastFailed,
+                                                  background: pollsInBackground)
         let timer = Timer(timeInterval: interval, repeats: false) { [weak self] _ in
             self?.refresh()
         }
@@ -232,11 +275,38 @@ final class VercelService: ObservableObject {
     }
 
     private func publishActivity() {
-        // Polling for the lock screen alone never feeds the closed island.
-        let live = polling && Self.isModuleOn() && Self.showsLiveActivity()
+        // Polling for the lock screen or the alerts alone never feeds the closed island.
+        let live = polling && islandRunning && Self.isModuleOn() && Self.showsLiveActivity()
         let next = live ? VercelSupport.activity(deployments: deployments, result: result,
                                                  resultSince: resultSince, now: Date()) : nil
         if next != activity { activity = next }
+    }
+
+    // MARK: Failure alerts
+
+    /// Announces the builds that failed since the last read, then keeps this
+    /// read as the baseline. With the alerts off nothing is kept.
+    private func noteFailures(in list: [VercelSupport.Deployment], polledAt: Date) {
+        guard VercelSupport.sendsFailureAlerts() else {
+            failureBaseline = nil
+            return
+        }
+        if let baseline = failureBaseline {
+            let failed = VercelSupport.failureAlerts(since: baseline, current: list, polledAt: polledAt,
+                                                     notified: Set(notifiedFailures))
+            notifiedFailures = VercelSupport.remembering(failed.map(\.uid), in: notifiedFailures)
+            failed.forEach(postFailure)
+        }
+        failureBaseline = VercelSupport.failureBaseline(previous: failureBaseline, current: list, polledAt: polledAt)
+    }
+
+    /// The project and branch, never the commit message; a click opens the
+    /// build log on the dashboard.
+    private func postFailure(_ deployment: VercelSupport.Deployment) {
+        // The notification center aborts a process without a bundle, such as the bare binary.
+        guard Bundle.main.bundleIdentifier != nil else { return }
+        let text = ZenithStrings.vercelAlerts(L10n.shared.language)
+        Notifier.post(title: text.buildFailed, body: VercelSupport.failureBody(deployment), opening: deployment.openURL)
     }
 
     // MARK: Network

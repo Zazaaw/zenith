@@ -916,6 +916,7 @@ enum DefaultsKey {
     // Zenith fork: the Vercel section (off until a token is saved) and its build in the closed island.
     static let notchVercelEnabled = "notchVercelEnabled"
     static let notchVercelActivity = "notchVercelActivity"
+    static let notchVercelFailureAlerts = "notchVercelFailureAlerts" // Zenith fork: notify when a build fails
     static let notchCalendarEnabled = "notchCalendarEnabled"
     static let notchCalendarCountdown = "notchCalendarCountdown"
     static let notchCalendarCountdownLead = "notchCalendarCountdownLead" // minutes before a start, chosen events included
@@ -1582,6 +1583,7 @@ enum Defaults {
         DefaultsKey.notchWatchCondition: NotchWatchCondition.changes.rawValue,
         DefaultsKey.notchVercelEnabled: false,
         DefaultsKey.notchVercelActivity: true,
+        DefaultsKey.notchVercelFailureAlerts: false, // Zenith fork
         DefaultsKey.notchEnabled: false,
         DefaultsKey.notchDisplay: NotchDisplay.automatic.rawValue,
         DefaultsKey.notchSilhouette: NotchSilhouette.capsule.rawValue,

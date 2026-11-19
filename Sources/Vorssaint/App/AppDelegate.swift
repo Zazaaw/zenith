@@ -71,8 +71,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
-        // Zenith fork: a daily WakaTime goal checks in the background, nothing else does.
+        // Zenith fork: a daily WakaTime goal and, when asked, failed Vercel builds check in the background.
         WakaTimeService.shared.syncGoalMonitoring()
+        VercelService.shared.syncFailureAlerts() // Zenith fork
         // Before any window exists, so nothing is ever built with the wrong
         // appearance and then repainted.
         AppAppearanceController.shared.apply()
@@ -2873,6 +2874,9 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             DispatchQueue.main.async {
                 WhatsAppDownloadOrganizer.shared.undoLastRun(transactionID: transactionID)
             }
+        }
+        if let url = Notifier.zenithOpenURL(from: response) { // Zenith fork: a failed Vercel build opens its log.
+            DispatchQueue.main.async { NSWorkspace.shared.open(url) }
         }
         completionHandler()
     }
