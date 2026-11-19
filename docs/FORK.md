@@ -176,6 +176,16 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   identitas dibiarkan (merek AI agent, bagian Music dan Calendar, aksen kalender, api
   streak, Watch). `NotchUpdateControl` tidak diubah (dikompilasi ke test tanpa token,
   dan update mati). Gerak dan radius notch dipertahankan atas keputusan Faiz.
+- **Settings (palet, header, radius, selesai):** status di `UI/Settings/` memakai
+  `ZenithStatus` (aktif/diizinkan/tersimpan emerald; shortcut gagal, izin hilang, gagal,
+  konflik, update menunggu, badge eksperimental/beta amber; error yang dulu merah tetap
+  merah). Warna identitas dibiarkan: tile ikon sidebar, bintang di Support, preview
+  jendela di Appearance, miniatur radial menu dan menu bar, maskot. Halaman redesign
+  dibuka dengan `SettingsPageHeader` (judul tebal + satu baris muted, opsional kontrol
+  di kanan) di `SettingsCard.swift`. Radius kartu, anchor, chip pilihan dan tile memakai
+  `ZenithRadius` dengan nilai yang sama (kartu Settings 16 = `panel`). Halaman `Form`
+  grouped bawaan upstream belum punya header ini; `NotchSettings` belum disentuh.
+  `ZenithTokens.swift` ikut dikompilasi ke test karena `SettingsCard` disalin ke sana.
 - **Zona AirDrop di notch (selesai):** `Services/Notch/NotchAirDropSupport.swift`.
   Pilihan zona sekarang muncul untuk semua file: Files, AirDrop, dan Optimize media
   (hanya untuk media). `ShelfDropRoutingTests` disesuaikan dan tidak pernah memicu

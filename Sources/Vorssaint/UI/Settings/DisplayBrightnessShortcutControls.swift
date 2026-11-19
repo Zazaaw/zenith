@@ -48,7 +48,7 @@ struct DisplayBrightnessShortcutControls: View {
         if enabled, brightness.displayBrightnessShortcutRegistrationFailed {
             Text(l10n.s.shortcutUnavailable)
                 .font(.caption)
-                .foregroundStyle(.red)
+                .foregroundStyle(ZenithStatus.error)
                 .padding(.leading, showsSettingsRow ? settingsRowTextInset : 0)
         }
     }

@@ -44,7 +44,7 @@ struct URLCleanerSettings: View {
                 if enabled, cleaner.isRunning {
                     Label(l10n.s.urlCleanerActiveNow, systemImage: "checkmark.circle.fill")
                         .font(.caption)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(ZenithStatus.success)
                     // The automatic rewrite is silent by design. Naming what it
                     // took out is the only place someone can see that the
                     // rules did anything to a link they copied.

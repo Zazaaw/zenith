@@ -43,7 +43,7 @@ struct ClaudeAccountSettings: View {
             }
             if let entry = entries.first(where: { $0.id == selected }) {
                 if !entry.available {
-                    Text(text.invalidFolder).font(.caption).foregroundStyle(.orange)
+                    Text(text.invalidFolder).font(.caption).foregroundStyle(ZenithStatus.warning)
                 } else if entry.identity == nil {
                     Text(text.unknownAccount).font(.caption).foregroundStyle(.secondary)
                 }

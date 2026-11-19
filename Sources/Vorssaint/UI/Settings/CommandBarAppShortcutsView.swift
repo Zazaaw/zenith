@@ -27,14 +27,7 @@ struct CommandBarAppShortcutsView: View {
         let apps = visibleApps(shortcuts: shortcuts, aliases: aliases, pins: pins)
 
         VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(text.appCenterTitle)
-                    .font(.title2.weight(.semibold))
-                Text(text.appCenterCaption)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            SettingsPageHeader(title: text.appCenterTitle, subtitle: text.appCenterCaption)
 
             HStack(spacing: 12) {
                 HStack(spacing: 6) {
@@ -140,7 +133,7 @@ struct CommandBarAppShortcutsView: View {
             HStack(alignment: .center, spacing: 16) {
                 Text(message ?? text.shortcutCaptureHint)
                     .font(.caption)
-                    .foregroundStyle(message == nil ? Color.secondary : Color.orange)
+                    .foregroundStyle(message == nil ? Color.secondary : ZenithStatus.warning)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer()
                 Button(l10n.s.supportIntroDoneButton) { dismiss() }
@@ -193,7 +186,7 @@ struct CommandBarAppShortcutsView: View {
                 .accessibilityLabel("\(entry.title): \(text.appShortcutLabel)")
             if service.refusedRowShortcutKeys.contains(entry.stableKey) {
                 Image(systemName: "exclamationmark.triangle")
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
                     .help(l10n.s.shortcutUnavailable)
                     .accessibilityLabel(l10n.s.shortcutUnavailable)
             }

@@ -25,7 +25,7 @@ struct GeneralSettings: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text(l10n.s.tabGeneral).font(.title2.bold())
+                SettingsPageHeader(title: l10n.s.tabGeneral, subtitle: text.pageDescription)
                 basicsCard
                 appearanceCard
                 if AppFeature.keepAwake.isAvailable {
@@ -72,7 +72,7 @@ struct GeneralSettings: View {
             } else if let loginError {
                 Text(loginError)
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(ZenithStatus.error)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Divider()
@@ -139,7 +139,7 @@ struct GeneralSettings: View {
             if hotkeyEnabled, hotkeys.registrationFailed {
                 Text(l10n.s.shortcutUnavailable)
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
                     .padding(.leading, settingsRowTextInset)
             }
         }
@@ -216,8 +216,8 @@ private struct AppearanceChoice: View {
             .frame(maxWidth: .infinity)
             .padding(8)
             .background(selected ? Color.accentColor.opacity(0.08) : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        in: RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)

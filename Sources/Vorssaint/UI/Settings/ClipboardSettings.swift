@@ -56,7 +56,7 @@ struct ClipboardSettings: View {
                     if enabled, history.isRunning {
                         Label(text.active, systemImage: "checkmark.circle.fill")
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(ZenithStatus.success)
                     }
                 }
                 .settingsFormSectionAnchor(.clipboardHistory)
@@ -136,7 +136,7 @@ struct ClipboardSettings: View {
                     if pastePlainEnabled, pastePlain.shortcutRegistrationFailed {
                         Text(l10n.s.shortcutUnavailable)
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                     }
                     if pastePlainEnabled, !permissions.accessibility {
                         PermissionRow(kind: .accessibility)
@@ -198,7 +198,7 @@ struct ClipboardSettings: View {
             if enabled, shortcutEnabled, history.shortcutRegistrationFailed {
                 Text(l10n.s.shortcutUnavailable)
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
             }
             Text(text.shortcutCaption)
                 .font(.caption)

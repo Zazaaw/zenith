@@ -310,7 +310,7 @@ private struct KeyboardBrightnessShortcutToggle: View {
         if isEnabled, brightness.keyboardBrightnessShortcutRegistrationFailed {
             Text(l10n.s.shortcutUnavailable)
                 .font(.caption)
-                .foregroundStyle(.orange)
+                .foregroundStyle(ZenithStatus.warning)
         }
     }
 }
@@ -448,7 +448,7 @@ private struct CentralWindowLayoutShortcutRow: View {
             if let errorText {
                 Text(errorText)
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
             } else if isRecording {
                 Text(ShortcutRecordingCaption.text(l10n.s, canClear: true))
                     .font(.caption)

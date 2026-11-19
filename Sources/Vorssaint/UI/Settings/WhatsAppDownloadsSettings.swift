@@ -129,12 +129,12 @@ struct WhatsAppDownloadsSettings: View {
         case .available:
             Label(text.accessReady, systemImage: "checkmark.circle.fill")
                 .font(.caption)
-                .foregroundStyle(.green)
+                .foregroundStyle(ZenithStatus.success)
         case .denied:
             HStack(alignment: .firstTextBaseline) {
                 Label(text.accessDenied, systemImage: "exclamationmark.triangle.fill")
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
                 Spacer()
                 Button(FeatureStrings.hub(l10n.language).openSystemSettings) {
                     permissions.openFilesAndFoldersSettings()
@@ -172,7 +172,7 @@ struct WhatsAppDownloadsSettings: View {
                 HStack {
                     Text(l10n.s.cleanerNotifDenied)
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ZenithStatus.warning)
                     Spacer()
                     Button(l10n.s.cleanerNotifOpenSettings) {
                         permissions.openNotificationSettings()
@@ -217,8 +217,8 @@ struct WhatsAppDownloadsSettings: View {
                     .font(.system(size: 9, weight: .bold))
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)
-                    .foregroundStyle(.orange)
-                    .background(Capsule().fill(Color.orange.opacity(0.14)))
+                    .foregroundStyle(ZenithStatus.warning)
+                    .background(Capsule().fill(ZenithStatus.fill(ZenithStatus.warning)))
             }
             Text(organizerText.description)
                 .font(.caption)
@@ -236,7 +236,7 @@ struct WhatsAppDownloadsSettings: View {
             if organizerEnabled {
                 Text(organizerText.enabledCaption)
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
                 organizerDestinationRow
 
                 Picker(organizerText.organization, selection: $organizerLayout) {
@@ -353,11 +353,11 @@ struct WhatsAppDownloadsSettings: View {
         case let .done(moved, duplicates, failed):
             Text(String(format: organizerText.resultFormat, moved, duplicates, failed))
                 .font(.caption)
-                .foregroundStyle(failed == 0 ? Color.green : Color.orange)
+                .foregroundStyle(failed == 0 ? ZenithStatus.success : ZenithStatus.warning)
         case .failed:
             Text(String(format: organizerText.resultFormat, 0, 0, 1))
                 .font(.caption)
-                .foregroundStyle(.orange)
+                .foregroundStyle(ZenithStatus.warning)
         case .idle, .waiting:
             if organizerLastRun > 0 {
                 Text(String(format: organizerText.lastRunFormat,
@@ -506,7 +506,7 @@ struct WhatsAppDownloadsSettings: View {
             case .failed:
                 Text(text.scanFailed)
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
             }
         } header: {
             Text(l10n.s.urlCleanerManualTitle)
@@ -539,7 +539,7 @@ struct WhatsAppDownloadsSettings: View {
             }
             .frame(maxHeight: 320)
             .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous)
                     .fill(Color.primary.opacity(0.035))
             )
 
@@ -613,7 +613,7 @@ struct WhatsAppDownloadsSettings: View {
     private func cleanupResult(moved: Int, bytes: Int64, failed: Int) -> some View {
         HStack(spacing: 9) {
             Image(systemName: failed == 0 ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                .foregroundStyle(failed == 0 ? Color.green : Color.orange)
+                .foregroundStyle(failed == 0 ? ZenithStatus.success : ZenithStatus.warning)
             Text(String(format: text.notificationFormat, moved, byteString(bytes), failed))
                 .font(.caption)
         }

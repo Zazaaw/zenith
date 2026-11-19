@@ -18,6 +18,7 @@ enum FeatureHubLayoutTests {
     struct Page: View {
         typealias FeatureRuntime = FeatureHubLayoutTests.FeatureRuntime
         typealias SettingsCard<Content: View> = FeatureHubLayoutTests.SettingsCard<Content>
+        typealias SettingsPageHeader<Accessory: View> = FeatureHubLayoutTests.SettingsPageHeader<Accessory>
         typealias PermissionsPortalSections = FeatureHubLayoutTests.PermissionsPortalSections
         enum Tab { case features, permissions }
         @ObservedObject var features = FeatureRuntime.shared

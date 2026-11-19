@@ -46,13 +46,7 @@ struct MonitorSettings: View {
             Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(l10n.s.tabMonitor).font(.title2.bold())
-                        Text(FeatureStrings.settingsPages(l10n.language).monitorDescription)
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                    SettingsPageHeader(title: l10n.s.tabMonitor, subtitle: FeatureStrings.settingsPages(l10n.language).monitorDescription)
                     groupHeading(l10n.s.monitorMenuBarSection, symbol: "menubar.rectangle")
                     menuBarCard
                     menuBarStyleCard
@@ -60,11 +54,11 @@ struct MonitorSettings: View {
                     panelCard
                     if AppFeature.fanControl.isAvailable {
                         fanControlCard
-                            .settingsSectionAnchor(.fanControl, cornerRadius: 16)
+                            .settingsSectionAnchor(.fanControl, cornerRadius: ZenithRadius.panel)
                     }
                     groupHeading(FeatureStrings.monitorLayout(l10n.language).shared, symbol: "slider.horizontal.3")
                     readingsCard
-                    alertsCard.settingsSectionAnchor(.monitorAlerts, cornerRadius: 16)
+                    alertsCard.settingsSectionAnchor(.monitorAlerts, cornerRadius: ZenithRadius.panel)
                 }
                 .frame(maxWidth: 760)
                 .frame(maxWidth: .infinity)
@@ -216,12 +210,12 @@ struct MonitorSettings: View {
                 .padding(.horizontal, 10)
                 .frame(height: 26)
                 .background(selected ? Color.accentColor.opacity(0.12) : Color.secondary.opacity(0.06),
-                            in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            in: RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous)
                         .strokeBorder(selected ? Color.accentColor.opacity(0.7) : .clear, lineWidth: 1)
                 }
-                .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
@@ -282,12 +276,12 @@ private struct MenuBarStyleChoice: View {
             .padding(8)
             .frame(maxWidth: .infinity)
             .background(selected ? Color.accentColor.opacity(0.10) : Color.secondary.opacity(0.05),
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        in: RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous)
                     .strokeBorder(selected ? Color.accentColor.opacity(0.55) : .clear, lineWidth: 1)
             }
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)

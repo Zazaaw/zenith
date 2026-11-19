@@ -24,7 +24,39 @@ struct SettingsCard<Content: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: ZenithRadius.panel, style: .continuous))
+    }
+}
+
+/// How every redesigned Settings page opens: a bold title and one muted line
+/// on what the page is for, with an optional control at the trailing edge.
+struct SettingsPageHeader<Accessory: View>: View {
+    let title: String
+    let subtitle: String
+    let accessory: Accessory
+
+    init(title: String, subtitle: String, @ViewBuilder accessory: () -> Accessory) {
+        self.title = title
+        self.subtitle = subtitle
+        self.accessory = accessory()
+    }
+
+    init(title: String, subtitle: String) where Accessory == EmptyView {
+        self.init(title: title, subtitle: subtitle) { EmptyView() }
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text(title).font(.title2.bold())
+                Text(subtitle)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            accessory
+        }
     }
 }
 

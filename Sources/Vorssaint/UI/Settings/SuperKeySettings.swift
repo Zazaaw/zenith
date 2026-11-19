@@ -55,7 +55,7 @@ struct SuperKeySettings: View {
                     Label(text.mappingFailure(failure),
                           systemImage: "exclamationmark.triangle.fill")
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ZenithStatus.warning)
                 } else if enabled, superKey.isPausedForApplication {
                     Label(FeatureStrings.mouseExceptions(l10n.language).pausedSuperKey,
                           systemImage: "pause.circle")
@@ -64,7 +64,7 @@ struct SuperKeySettings: View {
                 } else if enabled, superKey.isRunning {
                     Label(text.activeNow, systemImage: "checkmark.circle.fill")
                         .font(.caption)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(ZenithStatus.success)
                 }
             }
 

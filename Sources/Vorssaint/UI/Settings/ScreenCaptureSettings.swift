@@ -120,7 +120,7 @@ private struct RecentCapturesShortcutRows: View {
         if enabled, service.shortcutRegistrationFailed {
             Text(l10n.s.shortcutUnavailable)
                 .font(.caption)
-                .foregroundStyle(.orange)
+                .foregroundStyle(ZenithStatus.warning)
         }
     }
 }
@@ -170,7 +170,7 @@ private struct ToolShortcutRows: View {
         if enabled, service.toolShortcutRegistrationFailures.contains(tool) {
             Text(l10n.s.shortcutUnavailable)
                 .font(.caption)
-                .foregroundStyle(.orange)
+                .foregroundStyle(ZenithStatus.warning)
         }
     }
 }

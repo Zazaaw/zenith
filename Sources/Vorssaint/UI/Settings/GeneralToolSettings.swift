@@ -33,23 +33,23 @@ struct GeneralToolSettings: View {
                             }
                         }
                     }
-                    .settingsSectionAnchor(.panelConfiguration, cornerRadius: 16)
+                    .settingsSectionAnchor(.panelConfiguration, cornerRadius: ZenithRadius.panel)
                 case .mixer:
                     MixerSection(settingsMode: true)
-                        .settingsSectionAnchor(.mixer, cornerRadius: 16)
+                        .settingsSectionAnchor(.mixer, cornerRadius: ZenithRadius.panel)
                 case .soundOutputSwitcher:
                     SettingsCard(title: l10n.s.soundOutputSwitcherTitle) {
                         SoundOutputSwitcherControls()
                     }
-                    .settingsSectionAnchor(.soundOutputSwitcher, cornerRadius: 16)
+                    .settingsSectionAnchor(.soundOutputSwitcher, cornerRadius: ZenithRadius.panel)
                 case .audioPriority:
                     SettingsCard(title: l10n.s.audioPrioritySection) {
                         AudioPriorityDisclosure(initiallyExpanded: true, showsHeader: false)
                     }
-                    .settingsSectionAnchor(.audioPriority, cornerRadius: 16)
+                    .settingsSectionAnchor(.audioPriority, cornerRadius: ZenithRadius.panel)
                 case .musicBlocking:
                     MusicBlockingSettings()
-                        .settingsSectionAnchor(.musicBlocking, cornerRadius: 16)
+                        .settingsSectionAnchor(.musicBlocking, cornerRadius: ZenithRadius.panel)
                 default:
                     EmptyView()
                 }
@@ -204,7 +204,7 @@ private struct MenuBarIconNameField: View {
             if !name.isEmpty, BlackHoleGlyph.customMark(named: name) == nil {
                 Text(text.menuBarIconUnknown)
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -252,7 +252,7 @@ private struct MusicBlockingSettings: View {
                 } else if !musicBlocker.isMonitoring {
                     Text(l10n.s.musicBlockUnavailable)
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ZenithStatus.warning)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.leading, settingsRowTextInset)
                 }
@@ -281,7 +281,7 @@ private struct MusicBlockingSettings: View {
                 if replacementRejected {
                     Text(l10n.s.musicBlockReplacementBlocked)
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ZenithStatus.warning)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.leading, settingsRowTextInset)
                 }

@@ -86,7 +86,7 @@ struct TextSnippetsSettings: View {
                     if library.shortcutRegistrationFailed {
                         Text(l10n.s.shortcutUnavailable)
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                     }
                 }
             } header: {
@@ -196,7 +196,7 @@ private struct SnippetRow: View {
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1)
                             .background(
-                                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                RoundedRectangle(cornerRadius: ZenithRadius.small, style: .continuous)
                                     .fill(Color.primary.opacity(0.07))
                             )
                         if !snippet.folder.isEmpty {
@@ -365,7 +365,7 @@ private struct SnippetEditor: View {
                                     onCreate: { replacementEditor.view = $0 })
                         .frame(minHeight: 76)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            RoundedRectangle(cornerRadius: ZenithRadius.medium, style: .continuous)
                                 .strokeBorder(Color.primary.opacity(0.12))
                         )
                     Text(text.variablesHint)
@@ -380,12 +380,12 @@ private struct SnippetEditor: View {
             if triggerTooShort, !snippet.trigger.isEmpty {
                 Text(text.triggerTooShort)
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
             }
             if duplicateTrigger {
                 Text(text.duplicateTrigger)
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
             }
             HStack {
                 if let delete {

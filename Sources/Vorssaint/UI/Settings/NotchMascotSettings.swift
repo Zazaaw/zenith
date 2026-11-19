@@ -66,13 +66,7 @@ struct NotchMascotSettings: View {
     }
 
     private var header: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(text.title).font(.title2.bold())
-                Text(text.hint).font(.callout).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 12)
+        SettingsPageHeader(title: text.title, subtitle: text.hint) {
             Toggle(text.title, isOn: $enabled).labelsHidden().toggleStyle(.switch)
                 .accessibilityLabel(text.title)
         }
@@ -337,7 +331,7 @@ private struct NotchMascotStageCard: View {
                 .opacity(awake ? 1 : 0.45)
         }
         .padding(16)
-        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: ZenithRadius.panel, style: .continuous))
         .onChange(of: awake) { _, awake in
             // A moment still playing ends; switched on, it wakes up with a
             // stretch, and off, it yawns and dozes off. Hidden a moment ago
@@ -738,12 +732,12 @@ private struct NotchMascotChoiceTile<Preview: View>: View {
             .padding(8)
             .foregroundStyle(selected ? Color.accentColor : .primary)
             .background(selected ? Color.accentColor.opacity(0.12) : Color.secondary.opacity(0.06),
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        in: RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous)
                     .strokeBorder(selected ? Color.accentColor.opacity(0.7) : .clear, lineWidth: 1)
             }
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
         }
         .buttonStyle(.plain)
         // The button keeps its own element, so VoiceOver can press it.

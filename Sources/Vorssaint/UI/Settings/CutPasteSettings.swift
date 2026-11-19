@@ -52,7 +52,7 @@ struct CutPasteSettings: View {
                     if enabled, service.isRunning {
                         Label(l10n.s.cutPasteActiveNow, systemImage: "checkmark.circle.fill")
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(ZenithStatus.success)
                     }
                 }
                 .settingsFormSectionAnchor(.finderCutPaste)
@@ -107,7 +107,7 @@ struct CutPasteSettings: View {
                     if let renameError {
                         Text(renameError)
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                     } else if recordingRename {
                         Text(ShortcutRecordingCaption.text(l10n.s, canClear: false))
                             .font(.caption)

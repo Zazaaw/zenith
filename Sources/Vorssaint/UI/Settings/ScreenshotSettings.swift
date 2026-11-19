@@ -93,7 +93,7 @@ struct ScreenshotCaptureSettings: View {
                 if fullScreenShortcutEnabled, service.fullScreenShortcutRegistrationFailed {
                     Text(l10n.s.shortcutUnavailable)
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ZenithStatus.warning)
                 }
                 Toggle(strings.editLastCapture, isOn: $lastCaptureShortcutEnabled)
                     .onChange(of: lastCaptureShortcutEnabled) { _, _ in
@@ -107,7 +107,7 @@ struct ScreenshotCaptureSettings: View {
                    service.lastCaptureShortcutRegistrationFailed {
                     Text(l10n.s.shortcutUnavailable)
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ZenithStatus.warning)
                 }
                 Toggle(strings.editClipboardImage, isOn: $clipboardShortcutEnabled)
                     .onChange(of: clipboardShortcutEnabled) { _, _ in
@@ -120,7 +120,7 @@ struct ScreenshotCaptureSettings: View {
                 if clipboardShortcutEnabled, service.clipboardShortcutRegistrationFailed {
                     Text(l10n.s.shortcutUnavailable)
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ZenithStatus.warning)
                 }
                 if !permissions.screenRecording {
                     PermissionRow(kind: .screenRecording)
@@ -235,7 +235,7 @@ struct ScreenshotCaptureSettings: View {
                         if service.uploadShortcutRegistrationFailed {
                             Text(l10n.s.shortcutUnavailable)
                                 .font(.caption)
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(ZenithStatus.warning)
                         }
                     }
                     Text(strings.shareCaption)

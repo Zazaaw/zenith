@@ -35,7 +35,7 @@ struct KeyboardDebounceSettings: View {
                 if enabled, debounce.isRunning {
                     Label(l10n.s.keyDebounceActiveNow, systemImage: "checkmark.circle.fill")
                         .font(.caption)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(ZenithStatus.success)
                 }
                 Stepper(value: globalWindowBinding,
                         in: Defaults.allowedKeyboardDebounceWindowRange,

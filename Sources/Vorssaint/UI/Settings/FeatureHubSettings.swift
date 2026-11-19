@@ -61,13 +61,7 @@ struct FeatureHubSettings: View {
             VStack(alignment: .leading, spacing: 20) {
                 // Keep the header's identity stable when the notice changes.
                 VStack(alignment: .leading, spacing: 20) {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(hub.pageTitle).font(.title2.bold())
-                        Text(tab == .features ? hub.intro : hub.permissionsIntro)
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                    SettingsPageHeader(title: hub.pageTitle, subtitle: tab == .features ? hub.intro : hub.permissionsIntro)
                     Picker(hub.pageTitle, selection: $tab) {
                         Text(hub.tabFeatures).tag(Tab.features)
                         Text(hub.tabPermissions).tag(Tab.permissions)
@@ -202,7 +196,7 @@ struct FeatureHubSettings: View {
         }
         .padding(16)
         .background(Color.accentColor.opacity(0.12),
-                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    in: RoundedRectangle(cornerRadius: ZenithRadius.panel, style: .continuous))
     }
 
     /// The tally as a bar, with the two bulk actions beside it.
@@ -237,7 +231,7 @@ struct FeatureHubSettings: View {
                 HStack(spacing: 12) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 20))
-                        .foregroundStyle(.green)
+                        .foregroundStyle(ZenithStatus.success)
                         .accessibilityHidden(true)
                     Text(hub.footerNote)
                         .font(.callout)
@@ -640,7 +634,7 @@ private struct PresetCard: View {
         .padding(12)
         .frame(maxWidth: .infinity, minHeight: 138, alignment: .topLeading)
         .background(Color.primary.opacity(0.05),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    in: RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(name). \(caption)")
     }
@@ -760,8 +754,8 @@ private struct FeatureHubRow: View {
                             .font(.system(size: 9, weight: .bold))
                             .padding(.horizontal, 7)
                             .padding(.vertical, 3)
-                            .foregroundStyle(.orange)
-                            .background(Capsule().fill(Color.orange.opacity(0.14)))
+                            .foregroundStyle(ZenithStatus.warning)
+                            .background(Capsule().fill(ZenithStatus.fill(ZenithStatus.warning)))
                             .accessibilityHidden(true)
                     }
                     if feature.isBeta {
@@ -987,7 +981,7 @@ private struct PermissionPortalRow: View {
                 .foregroundStyle(statusColor)
                 .frame(width: 30, height: 30)
                 .background(statusColor.opacity(0.14),
-                            in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            in: RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous))
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
                     Text(permission.name(hub))

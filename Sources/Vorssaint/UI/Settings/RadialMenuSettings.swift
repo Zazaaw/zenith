@@ -71,7 +71,7 @@ struct RadialMenuSettings: View {
                 if service.registrationFailed {
                     Text(l10n.s.shortcutInvalid)
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ZenithStatus.warning)
                 }
                 Picker(text.activationModeLabel, selection: $activationModeRaw) {
                     Text(text.activationModePressOrHold)
@@ -384,7 +384,7 @@ struct RadialMenuSettings: View {
                 ? middleClickTapFingers : 0) == 0 {
             Text(text.trackpadTapConflict)
                 .font(.caption)
-                .foregroundStyle(.orange)
+                .foregroundStyle(ZenithStatus.warning)
         }
     }
 
@@ -540,15 +540,15 @@ struct RadialMenuSettings: View {
         let expected = RadialMenuMouseTrigger.sanitized(triggerRaw).buttonNumber
         let state: (icon: String, tint: Color, message: String) = {
             if !service.isWatchingMouseButton {
-                return ("exclamationmark.circle.fill", .orange, text.buttonTestBlind)
+                return ("exclamationmark.circle.fill", ZenithStatus.warning, text.buttonTestBlind)
             }
             guard let seen else {
                 return ("circle.dashed", .secondary, text.buttonTestWaiting)
             }
             if let expected, Int64(seen) == expected {
-                return ("checkmark.circle.fill", .green, text.buttonTestSeen)
+                return ("checkmark.circle.fill", ZenithStatus.success, text.buttonTestSeen)
             }
-            return ("exclamationmark.circle.fill", .orange, text.buttonTestOther)
+            return ("exclamationmark.circle.fill", ZenithStatus.warning, text.buttonTestOther)
         }()
         return VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
@@ -657,7 +657,7 @@ private struct ProfileShortcutRow: View {
             if let message {
                 Text(message)
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
             }
         }
     }
@@ -887,12 +887,12 @@ private struct RadialItemEditor: View {
             if urlIsInvalid, !item.payload.isEmpty {
                 Text(text.urlInvalid)
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
             }
             if item.kind == .shortcut, let shortcutMessage {
                 Text(shortcutMessage.text)
                     .font(.caption)
-                    .foregroundStyle(shortcutMessage.isProblem ? AnyShapeStyle(.orange)
+                    .foregroundStyle(shortcutMessage.isProblem ? AnyShapeStyle(ZenithStatus.warning)
                                                                : AnyShapeStyle(.secondary))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -999,7 +999,7 @@ private struct RadialItemEditor: View {
                         case .success:
                             HStack(spacing: 4) {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
+                                    .foregroundStyle(ZenithStatus.success)
                                 Text(text.fetchFaviconSuccess)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
@@ -1007,10 +1007,10 @@ private struct RadialItemEditor: View {
                         case .error:
                             HStack(spacing: 4) {
                                 Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundStyle(.orange)
+                                    .foregroundStyle(ZenithStatus.warning)
                                 Text(text.fetchFaviconError)
                                     .font(.caption)
-                                    .foregroundStyle(.orange)
+                                    .foregroundStyle(ZenithStatus.warning)
                             }
                         }
                     }

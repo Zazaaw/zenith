@@ -55,16 +55,10 @@ struct SwitcherSettings: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(l10n.s.tabSwitcher).font(.title2.bold())
-                    Text(pages.switcherDescription)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                SettingsPageHeader(title: l10n.s.tabSwitcher, subtitle: pages.switcherDescription)
                 if AppFeature.switcher.isAvailable {
                     switcherCard
-                        .settingsSectionAnchor(.switcher, cornerRadius: 16)
+                        .settingsSectionAnchor(.switcher, cornerRadius: ZenithRadius.panel)
                     switcherOptionsCard
                         .disabled(!switcherEnabled)
                 }
@@ -344,12 +338,12 @@ struct SwitcherSettings: View {
                             .padding(.horizontal, 10)
                             .frame(height: 28)
                             .background(selected ? Color.accentColor.opacity(0.12) : Color.secondary.opacity(0.06),
-                                        in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                        in: RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous))
                             .overlay {
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous)
                                     .strokeBorder(selected ? Color.accentColor.opacity(0.7) : .clear, lineWidth: 1)
                             }
-                            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .contentShape(RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous))
                     }
                     .buttonStyle(.plain)
                     .accessibilityAddTraits(selected ? .isSelected : [])
@@ -455,12 +449,12 @@ struct WindowPreviewsCard: View {
             .frame(maxWidth: .infinity)
             .padding(8)
             .background(selected ? Color.accentColor.opacity(0.10) : Color.secondary.opacity(0.05),
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        in: RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous)
                     .strokeBorder(selected ? Color.accentColor.opacity(0.55) : .clear, lineWidth: 1)
             }
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
@@ -497,12 +491,12 @@ private struct SwitcherLayoutChoice: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .padding(10)
             .background(selected ? Color.accentColor.opacity(0.10) : Color.secondary.opacity(0.05),
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        in: RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous)
                     .strokeBorder(selected ? Color.accentColor.opacity(0.55) : .clear, lineWidth: 1)
             }
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(title). \(caption)")
