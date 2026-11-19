@@ -103,7 +103,18 @@ struct NotchLockScreenTerminalView: View {
         .padding(.horizontal, Layout.horizontalPadding)
         .padding(.vertical, Layout.verticalPadding)
         .frame(width: Layout.width, alignment: .leading)
-        .background(shape.fill(reduceTransparency ? Color(white: 0.08) : .black.opacity(0.6)))
+        .background {
+            // Frosted like the music pane: the lock screen's own HUD blur, a light
+            // dark wash over it so the mono text stays legible on bright wallpapers.
+            if reduceTransparency {
+                shape.fill(Color(white: 0.08))
+            } else {
+                ZStack {
+                    NotchLockScreenMaterial(cornerRadius: ZenithRadius.card)
+                    shape.fill(.black.opacity(0.22))
+                }
+            }
+        }
         .overlay(shape.strokeBorder(.white.opacity(contrast == .increased ? 0.35 : 0.1), lineWidth: 1))
     }
 

@@ -132,7 +132,8 @@ private struct NotchLockScreenGlass: ViewModifier {
 
 /// The frosted material has to round its own layer: SwiftUI clips what it
 /// draws, not a material blurring what lies behind the window.
-private struct NotchLockScreenMaterial: NSViewRepresentable {
+// Zenith fork: shared with the lock screen terminal readout.
+struct NotchLockScreenMaterial: NSViewRepresentable {
     let cornerRadius: CGFloat
 
     func makeNSView(context: Context) -> NSVisualEffectView {
