@@ -539,7 +539,7 @@ struct WhatsAppDownloadsSettings: View {
             }
             .frame(maxHeight: 320)
             .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous)
                     .fill(Color.primary.opacity(0.035))
             )
 

@@ -34,17 +34,17 @@ struct DockSettings: View {
                 SettingsPageHeader(title: pages.dockTitle, subtitle: pages.dockDescription)
                 if AppFeature.dockPreview.isAvailable {
                     dockPreviewCard
-                        .settingsSectionAnchor(.dock, cornerRadius: 16)
+                        .settingsSectionAnchor(.dock, cornerRadius: ZenithRadius.panel)
                 }
                 // Clicking a Dock icon is its own installable feature in the
                 // hub, so it gets its own card here.
                 if AppFeature.dockClick.isAvailable {
                     dockClickCard
-                        .settingsSectionAnchor(.dockClick, cornerRadius: 16)
+                        .settingsSectionAnchor(.dockClick, cornerRadius: ZenithRadius.panel)
                 }
                 if AppFeature.spacesOrder.isAvailable {
                     spacesOrderCard
-                        .settingsSectionAnchor(.spacesOrder, cornerRadius: 16)
+                        .settingsSectionAnchor(.spacesOrder, cornerRadius: ZenithRadius.panel)
                 }
                 if AppFeature.dockPreview.isAvailable {
                     WindowPreviewsCard(sizeKey: DefaultsKey.previewSize,

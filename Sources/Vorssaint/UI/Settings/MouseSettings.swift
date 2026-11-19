@@ -66,46 +66,46 @@ struct MouseSettings: View {
                 }
                 if AppFeature.scrollInverter.isAvailable || AppFeature.scrollHorizontal.isAvailable {
                     scrollCard
-                        .settingsSectionAnchor(.scrollDirection, cornerRadius: 16)
+                        .settingsSectionAnchor(.scrollDirection, cornerRadius: ZenithRadius.panel)
                 }
                 if AppFeature.scrollZoom.isAvailable {
                     zoomCard
-                        .settingsSectionAnchor(.scrollZoom, cornerRadius: 16)
+                        .settingsSectionAnchor(.scrollZoom, cornerRadius: ZenithRadius.panel)
                 }
                 if AppFeature.focusFollowsMouse.isAvailable {
                     focusFollowsMouseCard
-                        .settingsSectionAnchor(.focusFollowsMouse, cornerRadius: 16)
+                        .settingsSectionAnchor(.focusFollowsMouse, cornerRadius: ZenithRadius.panel)
                 }
                 if AppFeature.smoothScroll.isAvailable {
                     smoothScrollCard
-                        .settingsSectionAnchor(.smoothScroll, cornerRadius: 16)
+                        .settingsSectionAnchor(.smoothScroll, cornerRadius: ZenithRadius.panel)
                 }
                 if AppFeature.linearScroll.isAvailable {
                     linearScrollCard
-                        .settingsSectionAnchor(.linearScroll, cornerRadius: 16)
+                        .settingsSectionAnchor(.linearScroll, cornerRadius: ZenithRadius.panel)
                 }
                 if AppFeature.scrollSpeed.isAvailable {
                     scrollSpeedCard
-                        .settingsSectionAnchor(.scrollSpeed, cornerRadius: 16)
+                        .settingsSectionAnchor(.scrollSpeed, cornerRadius: ZenithRadius.panel)
                 }
                 if AppFeature.mouseAcceleration.isAvailable {
                     accelerationCard
-                        .settingsSectionAnchor(.mouseAcceleration, cornerRadius: 16)
+                        .settingsSectionAnchor(.mouseAcceleration, cornerRadius: ZenithRadius.panel)
                 }
                 if AppFeature.mouseNavigation.isAvailable {
                     navigationCard
-                        .settingsSectionAnchor(.mouseNavigation, cornerRadius: 16)
+                        .settingsSectionAnchor(.mouseNavigation, cornerRadius: ZenithRadius.panel)
                 }
                 if AppFeature.mouseButtonShortcuts.isAvailable {
                     MouseButtonShortcutsSection()
                 }
                 if AppFeature.mouseClickDebounce.isAvailable {
                     clickDebounceCard
-                        .settingsSectionAnchor(.mouseClickDebounce, cornerRadius: 16)
+                        .settingsSectionAnchor(.mouseClickDebounce, cornerRadius: ZenithRadius.panel)
                 }
                 if AppFeature.middleClick.isAvailable {
                     middleClickCard
-                        .settingsSectionAnchor(.middleClick, cornerRadius: 16)
+                        .settingsSectionAnchor(.middleClick, cornerRadius: ZenithRadius.panel)
                 }
                 if accessibilityNoteVisible {
                     SettingsCard(title: l10n.s.permissionRequired) {
@@ -604,12 +604,12 @@ struct MouseSettings: View {
                 .padding(.horizontal, 10)
                 .frame(height: 28)
                 .background(selected ? Color.accentColor.opacity(0.12) : Color.secondary.opacity(0.06),
-                            in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            in: RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous)
                         .strokeBorder(selected ? Color.accentColor.opacity(0.7) : .clear, lineWidth: 1)
                 }
-                .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])

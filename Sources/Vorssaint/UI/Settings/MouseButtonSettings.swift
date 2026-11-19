@@ -116,7 +116,7 @@ struct MouseButtonShortcutsSection: View {
                 MouseExceptionsList(scope: .buttonShortcuts)
             }
         }
-        .settingsSectionAnchor(.mouseButtonShortcuts, cornerRadius: 16)
+        .settingsSectionAnchor(.mouseButtonShortcuts, cornerRadius: ZenithRadius.panel)
         .onDisappear {
             stopCapture()
             stopSpacesCapture()

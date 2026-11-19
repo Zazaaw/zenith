@@ -216,8 +216,8 @@ private struct AppearanceChoice: View {
             .frame(maxWidth: .infinity)
             .padding(8)
             .background(selected ? Color.accentColor.opacity(0.08) : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        in: RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)

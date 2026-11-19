@@ -443,10 +443,10 @@ struct HomebrewSettings: View {
         .padding(.horizontal, 6)
         .padding(.vertical, 6)
         .background(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
+            RoundedRectangle(cornerRadius: ZenithRadius.medium, style: .continuous)
                 .fill(homebrew.selectedPackage?.id == package.id ? Color.accentColor.opacity(0.12) : Color.clear)
         )
-        .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: ZenithRadius.medium, style: .continuous))
         .contextMenu {
             packageContextMenu(package)
         }

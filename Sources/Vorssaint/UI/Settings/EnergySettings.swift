@@ -46,20 +46,20 @@ struct EnergySettings: View {
                 SettingsPageHeader(title: pageTitle, subtitle: pageDescription)
                 if (focus == nil || focus == .keepAwake), AppFeature.keepAwake.isAvailable {
                     keepAwakeCard
-                        .settingsSectionAnchor(.keepAwake, cornerRadius: 16)
+                        .settingsSectionAnchor(.keepAwake, cornerRadius: ZenithRadius.panel)
                     keepAwakeOptionsCard
                 }
                 if (focus == nil || focus == .brightness), AppFeature.brightness.isAvailable {
                     displaysCard
-                        .settingsSectionAnchor(.brightness, cornerRadius: 16)
+                        .settingsSectionAnchor(.brightness, cornerRadius: ZenithRadius.panel)
                 }
                 if (focus == nil || focus == .extraBrightness), AppFeature.extraBrightness.isAvailable {
                     extraBrightnessCard
-                        .settingsSectionAnchor(.extraBrightness, cornerRadius: 16)
+                        .settingsSectionAnchor(.extraBrightness, cornerRadius: ZenithRadius.panel)
                 }
                 if (focus == nil || focus == .bluetoothSleep), AppFeature.bluetoothSleep.isAvailable {
                     bluetoothCard
-                        .settingsSectionAnchor(.bluetoothSleep, cornerRadius: 16)
+                        .settingsSectionAnchor(.bluetoothSleep, cornerRadius: ZenithRadius.panel)
                 }
             }
             .frame(maxWidth: 760)
@@ -199,12 +199,12 @@ struct EnergySettings: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 28)
                 .background(selected ? Color.accentColor.opacity(0.12) : Color.secondary.opacity(0.06),
-                            in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            in: RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous)
                         .strokeBorder(selected ? Color.accentColor.opacity(0.7) : .clear, lineWidth: 1)
                 }
-                .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])

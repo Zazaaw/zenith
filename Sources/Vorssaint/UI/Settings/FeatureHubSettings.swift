@@ -196,7 +196,7 @@ struct FeatureHubSettings: View {
         }
         .padding(16)
         .background(Color.accentColor.opacity(0.12),
-                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    in: RoundedRectangle(cornerRadius: ZenithRadius.panel, style: .continuous))
     }
 
     /// The tally as a bar, with the two bulk actions beside it.
@@ -634,7 +634,7 @@ private struct PresetCard: View {
         .padding(12)
         .frame(maxWidth: .infinity, minHeight: 138, alignment: .topLeading)
         .background(Color.primary.opacity(0.05),
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    in: RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(name). \(caption)")
     }
@@ -981,7 +981,7 @@ private struct PermissionPortalRow: View {
                 .foregroundStyle(statusColor)
                 .frame(width: 30, height: 30)
                 .background(statusColor.opacity(0.14),
-                            in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            in: RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous))
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
                     Text(permission.name(hub))

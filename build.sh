@@ -292,6 +292,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/WakaTime/WakaTimeSupport.swift
         Sources/Vorssaint/Services/WakaTime/WakaTimeStats.swift
         Sources/Vorssaint/Core/ZenithStrings.swift
+        Sources/Vorssaint/UI/ZenithTokens.swift
         Sources/Vorssaint/Services/Notch/NotchDownloadSupport.swift
         Sources/Vorssaint/Services/Notch/NotchDownloadProgressObserver.swift
         Sources/Vorssaint/Core/NotchCalendarStrings.swift

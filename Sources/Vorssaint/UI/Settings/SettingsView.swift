@@ -886,9 +886,9 @@ struct ReleaseNotesSettings: View {
                 Image(nsImage: nsImage)
                     .resizable()
                     .scaledToFit()
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous)
                             .stroke(.quaternary, lineWidth: 1)
                     )
                     .accessibilityLabel(image.alt)
@@ -1263,7 +1263,7 @@ private extension View {
             .padding(.horizontal, 6)
             .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
             .background {
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: ZenithRadius.medium)
                     .fill(isSelected ? Color.accentColor.opacity(0.18) : .clear)
             }
     }
