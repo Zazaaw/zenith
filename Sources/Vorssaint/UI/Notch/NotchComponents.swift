@@ -152,12 +152,10 @@ struct NotchIconButton: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(selected ? .white : .white.opacity(0.55))
                 .contentTransition(.symbolEffect(.replace))
                 .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: symbol)
                 .frame(width: 28, height: 28)
-                .background(.white.opacity(selected ? 0.12 : 0),
-                            in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .modifier(ZenithIslandIconChrome(selected: selected)) // Zenith fork: grey glyph, accent when selected
                 .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         }
         .buttonStyle(NotchButtonStyle(cornerRadius: 9))
@@ -207,9 +205,9 @@ struct NotchEmptyView<Actions: View>: View {
     private var glyph: some View {
         Image(systemName: symbol)
             .font(.system(size: 26, weight: .light))
-            .foregroundStyle(.white.opacity(0.65))
+            .foregroundStyle(ZenithIsland.secondary) // Zenith fork
             .frame(width: 56, height: 56)
-            .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .zenithIslandCard(cornerRadius: ZenithRadius.panel) // Zenith fork: a hairline well
             .accessibilityHidden(true)
     }
 
@@ -238,11 +236,10 @@ struct NotchPillButton: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 12, weight: prominent ? .semibold : .medium))
-                .foregroundStyle(.white.opacity(prominent ? 1 : 0.7))
                 .lineLimit(1)
                 .padding(.horizontal, 14)
                 .frame(height: 28)
-                .background(.white.opacity(prominent ? 0.14 : 0), in: Capsule())
+                .modifier(ZenithIslandPill(prominent: prominent)) // Zenith fork: an outline, never filled
                 .contentShape(Capsule())
         }
         .buttonStyle(NotchButtonStyle(cornerRadius: 14))
@@ -694,7 +691,7 @@ struct NotchControlSurface: ViewModifier {
     @Environment(\.notchGlassSurface) private var glassSurface
 
     func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: ZenithIsland.radius(cornerRadius), style: .continuous) // Zenith fork
         Group {
             if glassSurface {
                 content
@@ -709,10 +706,10 @@ struct NotchControlSurface: ViewModifier {
                     content.background(.white.opacity(selected ? 0.12 : 0.065), in: shape)
                         .glassEffect(.regular.interactive(interactive), in: shape)
                 } else {
-                    content.background(.white.opacity(selected ? 0.12 : 0.065), in: shape)
+                    content.zenithIslandCard(cornerRadius: ZenithIsland.radius(cornerRadius), selected: selected) // Zenith fork
                 }
 #else
-                content.background(.white.opacity(selected ? 0.12 : 0.065), in: shape)
+                content.zenithIslandCard(cornerRadius: ZenithIsland.radius(cornerRadius), selected: selected) // Zenith fork
 #endif
             }
         }

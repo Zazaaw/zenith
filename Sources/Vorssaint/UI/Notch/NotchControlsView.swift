@@ -426,10 +426,10 @@ struct NotchActionTile: View {
         Button(action: action) {
             VStack(spacing: 6) {
                 Image(systemName: symbol).font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(active ? accent.glyph : .white.opacity(0.85))
                     .contentTransition(.symbolEffect(.replace))
                     .frame(width: 40, height: 40)
-                    .background(active ? accent.fill : Color.white.opacity(0.075), in: Circle())
+                    // Zenith fork: a hairline well; active in the accent or its status colour, 10/20/100.
+                    .zenithIslandActionWell(active: active, tint: accent == .selection ? ZenithIsland.accent : accent.fill)
                     .animation(reduceMotion ? nil : .smooth(duration: 0.26), value: symbol)
                 label
                     .frame(maxWidth: .infinity)
