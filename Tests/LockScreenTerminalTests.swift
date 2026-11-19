@@ -302,8 +302,8 @@ enum LockScreenTerminalTests {
             arranged.terminal.map { adjusted.minY == $0.maxY + Layout.gap } == true
                 && adjusted.maxY == player?.maxY && adjusted.height >= NotchLockScreenLayout.minimumPlayerHeight
         } == true, "the player keeps the room over the readout")
-        suite.expect(Layout.height(lines: 2) == 3 * Layout.lineHeight + 2 * Layout.verticalPadding,
-                     "the card holds its lines and the prompt with the cursor")
+        suite.expect(Layout.height(lines: 2) == Layout.headerHeight + 2 * Layout.lineHeight + 2 * Layout.verticalPadding,
+                     "the card holds its title bar and its lines, the cursor ending the last")
         let short = CGRect(x: 0, y: 0, width: 1280, height: 800)
         let shortArranged = Layout.arrange(row: NotchLockScreenLayout.rowFrame(in: short),
                                            player: NotchLockScreenLayout.playerFrame(in: short), screen: short,

@@ -342,22 +342,26 @@ enum NotchLockScreenTerminalSupport {
     }
 }
 
-/// Where the readout sits: at the bottom, just over the login controls, as
-/// wide as the music player's pane. The player keeps the room between the line
-/// of activities and the readout, and when that is too little, the readout
-/// gives way.
+/// Where the readout sits: at the bottom, just over the login controls, in a
+/// panel as wide as the music player's pane. The card inside hugs its longest
+/// line between `minimumWidth` and that width. The player keeps the room
+/// between the line of activities and the readout, and when that is too
+/// little, the readout gives way.
 enum NotchLockScreenTerminalLayout {
-    static let fontSize: CGFloat = 11.5
-    static let lineHeight: CGFloat = 16
-    static let verticalPadding: CGFloat = 10
-    static let horizontalPadding: CGFloat = 14
+    static let fontSize: CGFloat = 12.5
+    static let lineHeight: CGFloat = 18
+    static let verticalPadding: CGFloat = 9
+    static let horizontalPadding: CGFloat = 13
+    /// The title bar: three grey dots and the window's name.
+    static let headerHeight: CGFloat = 24
+    static let minimumWidth: CGFloat = 260
     /// Between the line of activities and the readout, and the readout and the player.
     static let gap: CGFloat = 10
     static var width: CGFloat { NotchLockScreenLayout.paneWidth }
 
-    /// The card for `lines` lines and the prompt with the cursor under them.
+    /// The card for `lines` lines under its title bar; the cursor ends the last line.
     static func height(lines: Int) -> CGFloat {
-        CGFloat(max(0, lines) + 1) * lineHeight + verticalPadding * 2
+        headerHeight + CGFloat(max(0, lines)) * lineHeight + verticalPadding * 2
     }
 
     /// The readout's frame and the player's, given the line of activities and

@@ -85,24 +85,27 @@ struct NotchLockScreenTerminalView: View {
         return readings
     }
 
+    /// A small window: a title bar, then the lines, the last ending in the
+    /// cursor. As wide as its longest line, centered in the panel.
     private func card(_ lines: [NotchLockScreenTerminalLine]) -> some View {
         let shape = RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous)
         return VStack(alignment: .leading, spacing: 0) {
-            ForEach(lines) { line in
-                row(line).frame(height: Layout.lineHeight)
+            header
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(lines) { line in
+                    row(line, cursor: line.id == lines.last?.id).frame(height: Layout.lineHeight)
+                }
             }
-            HStack(spacing: 0) {
-                Text(NotchLockScreenTerminalSupport.prompt + " ").foregroundStyle(.white.opacity(0.4))
-                cursor
-            }
-            .frame(height: Layout.lineHeight)
-            .accessibilityHidden(true)
+            .font(.system(size: Layout.fontSize, weight: .regular, design: .monospaced))
+            .lineLimit(1)
+            .padding(.horizontal, Layout.horizontalPadding)
+            .padding(.vertical, Layout.verticalPadding)
         }
-        .font(.system(size: Layout.fontSize, weight: .regular, design: .monospaced))
-        .lineLimit(1)
-        .padding(.horizontal, Layout.horizontalPadding)
-        .padding(.vertical, Layout.verticalPadding)
-        .frame(width: Layout.width, alignment: .leading)
+        .frame(minWidth: Layout.minimumWidth, alignment: .leading)
+        .frame(maxWidth: Layout.width)
+        .overlay(alignment: .top) {
+            Rectangle().fill(.white.opacity(0.08)).frame(height: 1).padding(.top, Layout.headerHeight)
+        }
         .background {
             // Frosted like the music pane: the lock screen's own HUD blur, a light
             // dark wash over it so the mono text stays legible on bright wallpapers.
@@ -111,24 +114,43 @@ struct NotchLockScreenTerminalView: View {
             } else {
                 ZStack {
                     NotchLockScreenMaterial(cornerRadius: ZenithRadius.card)
-                    shape.fill(.black.opacity(0.22))
+                    shape.fill(.black.opacity(0.35))
                 }
             }
         }
         .overlay(shape.strokeBorder(.white.opacity(contrast == .increased ? 0.35 : 0.1), lineWidth: 1))
     }
 
-    private func row(_ line: NotchLockScreenTerminalLine) -> some View {
+    /// Three grey dots and the window's name, like a terminal's title bar.
+    private var header: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 5) {
+                ForEach(0..<3, id: \.self) { _ in
+                    Circle().fill(.white.opacity(0.22)).frame(width: 7, height: 7)
+                }
+            }
+            Text("zenith — status")
+                .font(.system(size: 10.5, weight: .medium, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.4))
+        }
+        .padding(.horizontal, Layout.horizontalPadding)
+        .frame(height: Layout.headerHeight)
+        .accessibilityHidden(true)
+    }
+
+    private func row(_ line: NotchLockScreenTerminalLine, cursor showsCursor: Bool) -> some View {
         HStack(spacing: 0) {
             Text(NotchLockScreenTerminalSupport.prompt + " ").foregroundStyle(.white.opacity(0.4))
-            Text(NotchLockScreenTerminalSupport.paddedLabel(line.source) + "  ").foregroundStyle(.white.opacity(0.55))
+            Text(NotchLockScreenTerminalSupport.paddedLabel(line.source) + "  ").foregroundStyle(.white.opacity(0.5))
             Text(line.value)
                 .foregroundStyle(.white.opacity(0.92))
                 .truncationMode(.tail)
             if let color = tint(line.tone) {
                 Circle().fill(color).frame(width: 5, height: 5).padding(.leading, 6)
             }
-            Spacer(minLength: 0)
+            if showsCursor {
+                cursor.padding(.leading, 5).accessibilityHidden(true)
+            }
         }
         .accessibilityElement(children: .combine)
     }
@@ -155,6 +177,6 @@ struct NotchLockScreenTerminalView: View {
     private func block(visible: Bool) -> some View {
         Rectangle()
             .fill(.white.opacity(visible ? 0.75 : 0))
-            .frame(width: 7, height: 13)
+            .frame(width: 7.5, height: 14)
     }
 }

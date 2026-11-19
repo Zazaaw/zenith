@@ -118,7 +118,9 @@ final class NotchLockScreenService {
             downloads: NotchSupport.routes(.download) && NotchLockScreenItem.downloads.isOn(),
             countdown: NotchCalendarSupport.showsCountdown() && calendar,
             timeLeft: NotchCalendarSupport.showsTimeLeft() && calendar,
-            wakatime: WakaTimeSupport.hasConfiguration() && NotchLockScreenItem.wakatime.isOn(),
+            // Zenith fork: not twice when the terminal readout shows its waka line.
+            wakatime: WakaTimeSupport.hasConfiguration() && NotchLockScreenItem.wakatime.isOn()
+                && !(frames.terminal != nil && NotchLockScreenTerminal.configuration()?.sources.contains(.waka) == true),
             // Zenith fork: weather and reminders also need their permission.
             weather: NotchLockScreenWidgets.showsWeather(),
             reminders: NotchLockScreenWidgets.showsReminders())
