@@ -60,8 +60,146 @@ struct WakaTimeSummary: View {
         case (_, nil):
             ProgressView().controlSize(.small).frame(maxWidth: .infinity, minHeight: 60)
         case (_, let today?):
-            summary(today)
+            if compact { summary(today) } else { islandSummary(today) }
         }
+    }
+
+    // MARK: Island
+
+    /// The island's page as a bento grid: the live state over the range's
+    /// segmented control, then the total, the top project and language, the
+    /// languages' shares and the day chart, each in its own cell.
+    private func islandSummary(_ today: WakaTimeSupport.Today) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                islandPresence
+                Spacer(minLength: 4)
+                Button { service.refresh(force: true) } label: {
+                    Image(systemName: "arrow.clockwise").font(.system(size: 11, weight: .medium)).zenithIslandGlyph()
+                        .frame(width: 22, height: 22).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .zenithIslandHoverTracked()
+                .help(text.retry)
+                .accessibilityLabel(text.retry)
+            }
+            .padding(.horizontal, 4)
+            if service.hasToken {
+                ZenithSegmented(selection: Binding(get: { service.range }, set: { service.select($0) }),
+                                options: WakaTimeSupport.Range.allCases.map { ($0, title($0)) })
+            }
+            VStack(spacing: 0) {
+                HStack(spacing: 0) {
+                    islandTotal(today)
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                ZenithBentoDivider(.horizontal, gap: 1)
+                islandTops(today)
+                if let languages = languages(today), !languages.isEmpty {
+                    ZenithBentoDivider(.horizontal, gap: 1)
+                    ZenithBentoCell(label: tokenText.languages) {
+                        WakaTimeIslandLanguages(languages: languages, othersTitle: tokenText.others)
+                    }
+                }
+                if !service.days.isEmpty, service.range.summaryRange != nil || !service.hasToken {
+                    ZenithBentoDivider(.horizontal, gap: 1)
+                    ZenithBentoCell(label: service.range == .today ? text.lastSevenDays : title(service.range)) {
+                        WakaTimeIslandChart(days: service.days, locale: locale, height: 52)
+                    }
+                }
+            }
+        }
+        .animation(ZenithMotion.respecting(ZenithMotion.toggle()), value: service.range)
+    }
+
+    /// "● Coding now", or when the last heartbeat came, with the project and editor.
+    @ViewBuilder private var islandPresence: some View {
+        if let presence = service.presence {
+            let coding = presence.isCoding(at: Date())
+            HStack(spacing: 6) {
+                ZenithStatusLine(color: coding ? ZenithStatus.success : Color.white.opacity(0.4),
+                                 text: coding ? tokenText.codingNow : tokenText.lastCoded(relative(presence.lastHeartbeat)),
+                                 live: coding, mono: false, size: 12, emphasised: coding)
+                if let detail = [presence.project, presence.editor].compactMap({ $0 }).joined(separator: " · ").nonEmpty {
+                    Text(detail).font(ZenithType.mono(10.5)).foregroundStyle(ZenithIsland.meta).lineLimit(1)
+                        .truncationMode(.middle)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private func islandTotal(_ today: WakaTimeSupport.Today) -> some View {
+        let stats = service.readyStats
+        let seconds = service.range == .today ? today.totalSeconds : stats?.totalSeconds
+        let goal = service.range == .today && goalMinutes > 0
+            ? ZenithStrings.wakaTimeGoal(l10n.language).progress(WakaTimeSupport.duration(Double(goalMinutes * 60), locale: locale))
+            : nil
+        ZenithBentoCell(label: title(service.range), meta: goal) {
+            HStack(alignment: .center, spacing: 10) {
+                if let seconds {
+                    ZenithFigure(text: WakaTimeSupport.duration(seconds, locale: locale), size: 30)
+                        .contentTransition(.numericText())
+                        .minimumScaleFactor(0.7)
+                } else if service.stats == .pending {
+                    Text(tokenText.calculating).font(ZenithType.mono(11)).foregroundStyle(ZenithIsland.meta)
+                } else {
+                    ProgressView().controlSize(.small)
+                }
+                Spacer(minLength: 4)
+                if service.range == .today,
+                   let progress = WakaTimeSupport.goalProgress(totalSeconds: today.totalSeconds, goalMinutes: goalMinutes) {
+                    WakaTimeGoalRing(progress: progress, size: 22)
+                }
+            }
+            if service.range != .today, let stats {
+                HStack(spacing: 14) {
+                    islandCaption(tokenText.dailyAverage, WakaTimeSupport.duration(stats.dailyAverageSeconds, locale: locale))
+                    if let best = stats.bestDay {
+                        islandCaption(tokenText.bestDay,
+                                      "\(shortDate(best)) · \(WakaTimeSupport.duration(stats.bestDaySeconds, locale: locale))")
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private func islandTops(_ today: WakaTimeSupport.Today) -> some View {
+        let project: (String, Double)? = service.range == .today
+            ? today.projects.first.map { ($0.name, $0.seconds) }
+            : service.readyStats?.projects.first.map { ($0.name, $0.seconds) }
+        let language: (String, Double)? = service.range == .today
+            ? today.languages.first.map { ($0.name, $0.seconds) }
+            : service.readyStats?.languages.first.map { ($0.name, $0.seconds) }
+        if service.range == .today, today.totalSeconds <= 0 {
+            ZenithBentoCell(label: nil) {
+                Text(text.nothingYet).font(ZenithType.footnote).foregroundStyle(ZenithIsland.secondary)
+            }
+        } else {
+            HStack(spacing: 0) {
+                islandStat(text.topProject, project)
+                ZenithBentoDivider(.vertical, gap: 1)
+                islandStat(text.topLanguage, language)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func islandStat(_ title: String, _ entry: (String, Double)?) -> some View {
+        ZenithBentoCell(label: title, meta: entry.map { WakaTimeSupport.duration($0.1, locale: locale) }) {
+            Text(entry?.0 ?? "—")
+                .font(.system(size: 15, weight: .semibold))
+                .tracking(-0.3)
+                .foregroundStyle(ZenithIsland.primary)
+                .lineLimit(1).truncationMode(.tail)
+        }
+    }
+
+    private func islandCaption(_ title: String, _ value: String) -> some View {
+        HStack(spacing: 5) {
+            Text(title).font(ZenithType.caption).foregroundStyle(ZenithIsland.secondary)
+            Text(value).font(ZenithType.mono(10.5)).foregroundStyle(ZenithIsland.primary)
+        }
+        .lineLimit(1)
     }
 
     private func summary(_ today: WakaTimeSupport.Today) -> some View {
@@ -322,6 +460,83 @@ struct WakaTimeDayChart: View {
                         Text(WakaTimeSupport.weekdayInitial(day.date, locale: locale))
                             .font(ZenithType.caption)
                             .foregroundStyle(day.isToday ? .primary : .secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(day.date): \(WakaTimeSupport.duration(day.seconds, locale: locale))")
+            }
+        }
+    }
+}
+
+/// The island's languages: one 3-point stacked bar in steps of grey with
+/// the leading language in emerald, and a legend of small swatches with the
+/// shares in mono.
+struct WakaTimeIslandLanguages: View {
+    let languages: [WakaTimeSupport.Share]
+    let othersTitle: String
+
+    private func shade(_ index: Int) -> Color {
+        index == 0 ? ZenithIsland.muted(ZenithStatus.success) : Color.white.opacity(max(0.14, 0.5 - Double(index - 1) * 0.09))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            GeometryReader { proxy in
+                HStack(spacing: 1.5) {
+                    ForEach(Array(languages.enumerated()), id: \.offset) { index, language in
+                        Rectangle().fill(shade(index))
+                            .frame(width: max(2, proxy.size.width * language.percent / 100))
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(height: 3)
+            .clipShape(Capsule())
+            .accessibilityHidden(true)
+            HStack(spacing: 12) {
+                ForEach(Array(languages.prefix(4).enumerated()), id: \.offset) { index, language in
+                    HStack(spacing: 5) {
+                        RoundedRectangle(cornerRadius: 1.5).fill(shade(index)).frame(width: 6, height: 6)
+                        Text(language.name.isEmpty ? othersTitle : language.name)
+                            .font(.system(size: 11, weight: index == 0 ? .medium : .regular))
+                            .foregroundStyle(index == 0 ? ZenithIsland.primary : ZenithIsland.secondary)
+                        Text("\(Int(language.percent.rounded()))%")
+                            .font(ZenithType.mono(10))
+                            .foregroundStyle(ZenithIsland.meta)
+                    }
+                    .lineLimit(1)
+                }
+            }
+        }
+    }
+}
+
+/// The island's day chart: thin bars with rounded tops in grey, today's
+/// bright, and the weekdays in mono under a week.
+struct WakaTimeIslandChart: View {
+    let days: [WakaTimeSupport.Day]
+    let locale: Locale
+    let height: CGFloat
+
+    var body: some View {
+        let peak = max(days.map(\.seconds).max() ?? 0, 1)
+        let labelled = days.count <= 7
+        HStack(alignment: .bottom, spacing: labelled ? 6 : 2) {
+            ForEach(days) { day in
+                VStack(spacing: 5) {
+                    GeometryReader { proxy in
+                        ZenithChartBar(fraction: day.seconds / peak, highlighted: day.isToday, minimum: 2)
+                            .frame(width: ZenithChart.barWidth(slot: proxy.size.width))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .frame(height: height)
+                    .animation(ZenithMotion.respecting(ZenithMotion.reveal()), value: day.seconds)
+                    if labelled {
+                        Text(WakaTimeSupport.weekdayInitial(day.date, locale: locale))
+                            .font(ZenithType.mono(9.5, weight: day.isToday ? .semibold : .regular))
+                            .foregroundStyle(day.isToday ? ZenithIsland.primary : ZenithIsland.meta)
                     }
                 }
                 .frame(maxWidth: .infinity)

@@ -115,39 +115,21 @@ struct NotchSystemView: View {
     }
 
     private func grid(cards: [Card], rows: [Range<Int>]) -> some View {
-        VStack(spacing: NotchLayout.rowSpacing) {
-            ForEach(rows, id: \.lowerBound) { row in
-                HStack(spacing: NotchLayout.rowSpacing) {
-                    ForEach(Array(cards[row])) { card in
-                        cardButton(card)
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-            }
+        // Zenith fork: a bento grid, hairlines in the gaps the cards kept.
+        ZenithBentoGrid(rows: rows.map { Array(cards[$0]) }, spacing: NotchLayout.rowSpacing,
+                        rowHeight: { _ in NotchLayout.systemCardHeight }) { card in
+            cardButton(card)
         }
     }
 
     private func cardButton(_ card: Card) -> some View {
         Button { select(card.kind) } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                Label(card.title, systemImage: card.symbol)
-                    .modifier(ZenithIslandLabelStyle()).lineLimit(1) // Zenith fork: a mono heading
-                Text(card.value ?? "…")
-                    .font(ZenithType.figures(card.detail == nil ? 22 : 15, weight: .medium)) // Zenith fork
-                    .monospacedDigit().contentTransition(.numericText()).lineLimit(1).minimumScaleFactor(0.75)
-                    .animation(reduceMotion ? nil : .smooth(duration: 0.25), value: card.value)
-                if let detail = card.detail {
-                    Text(detail).zenithIslandMeta(10.5).foregroundStyle(.secondary).lineLimit(1) // Zenith fork
-                } else if let level = card.level {
-                    NotchMeter(value: level, tint: card.wantsAttention ? ZenithStatus.warning : .white)
-                }
-            }
-            .padding(.horizontal, 12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: NotchLayout.systemCardHeight)
-            .modifier(NotchControlSurface(cornerRadius: 18))
+            // Zenith fork: a bento cell: a mono heading, the reading in large mono, a 3-point level.
+            ZenithSystemCell(title: card.title, symbol: card.symbol, value: card.value, detail: card.detail,
+                             level: card.level, attention: card.wantsAttention)
+                .frame(height: NotchLayout.systemCardHeight)
         }
-        .buttonStyle(NotchButtonStyle(cornerRadius: 18))
+        .buttonStyle(ZenithBentoButtonStyle()) // Zenith fork: a wash under the pointer, no lift
         .accessibilityElement(children: .ignore)
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { select(card.kind) }
