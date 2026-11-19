@@ -254,3 +254,59 @@ struct ZenithFlowRow: Layout {
         return rows
     }
 }
+
+// MARK: - Switch row
+
+/// A label at the leading edge and a switch at the trailing one, for rows that
+/// carry their own label. The switch is drawn in SwiftUI: AppKit's NSSwitch,
+/// when its value changed from elsewhere (another row, the defaults), redrew
+/// and laid out the whole window in the middle of SwiftUI's update, which spun
+/// Settings in an AttributeGraph cycle.
+struct ZenithSwitchRow<Label: View>: View {
+    let title: String
+    @Binding var isOn: Bool
+    let label: Label
+
+    init(_ title: String, isOn: Binding<Bool>, @ViewBuilder label: () -> Label) {
+        self.title = title
+        _isOn = isOn
+        self.label = label()
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            label
+            Spacer(minLength: 12)
+            Toggle(title, isOn: $isOn)
+                .labelsHidden()
+                .toggleStyle(ZenithSwitchStyle())
+        }
+    }
+}
+
+/// The switch itself: an accent capsule when on, a grey one when off, and a
+/// white knob that travels on the Style Kit's toggle curve.
+struct ZenithSwitchStyle: ToggleStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        let on = configuration.isOn
+        return ZStack(alignment: on ? .trailing : .leading) {
+            Capsule()
+                .fill(on ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color.primary.opacity(0.16)))
+            Circle()
+                .fill(Color.white)
+                .shadow(color: .black.opacity(0.25), radius: 1, y: 0.5)
+                .padding(2)
+        }
+        .frame(width: 34, height: 20)
+        .opacity(isEnabled ? 1 : 0.45)
+        .contentShape(Capsule())
+        .onTapGesture { configuration.isOn.toggle() }
+        .animation(ZenithMotion.respecting(ZenithMotion.toggle()), value: on)
+        // VoiceOver reads it as the system switch, with the row's title.
+        .accessibilityRepresentation {
+            Toggle(isOn: configuration.$isOn) { configuration.label }
+        }
+    }
+}

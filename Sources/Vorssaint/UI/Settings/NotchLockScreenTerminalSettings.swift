@@ -14,14 +14,13 @@ struct NotchLockScreenTerminalSettings: View {
 
     private var selection: NotchLockScreenTerminalSelection { NotchLockScreenTerminalSelection(stored: stored) }
 
-    // Plain toggles rather than SettingsRow, like the lock screen items above.
+    // Plain switch rows rather than SettingsRow, like the lock screen items above.
     var body: some View {
         let text = ZenithStrings.lockScreenTerminal(l10n.language)
-        Toggle(isOn: $enabled) {
+        ZenithSwitchRow(text.title, isOn: $enabled) {
             Label(text.title, systemImage: "terminal")
                 .foregroundStyle(.secondary)
         }
-        .toggleStyle(TrailingSwitchToggleStyle())
         .padding(.leading, 40)
         .padding(.vertical, 2)
         if enabled {
@@ -37,10 +36,9 @@ struct NotchLockScreenTerminalSettings: View {
                 ForEach(selection.entries) { entry in
                     lineRow(entry, text: text)
                 }
-                Toggle(isOn: $showsProjects) {
+                ZenithSwitchRow(text.showProjects, isOn: $showsProjects) {
                     Text(text.showProjects).foregroundStyle(.secondary)
                 }
-                .toggleStyle(TrailingSwitchToggleStyle())
                 .padding(.top, 4)
                 Text(text.showProjectsCaption)
                     .font(.caption)
@@ -58,7 +56,7 @@ struct NotchLockScreenTerminalSettings: View {
         HStack(spacing: 4) {
             moveButton(entry.source, by: -1, symbol: "chevron.up", title: text.moveUp)
             moveButton(entry.source, by: 1, symbol: "chevron.down", title: text.moveDown)
-            Toggle(isOn: Binding(get: { entry.isOn }, set: { isOn in
+            ZenithSwitchRow(title(entry.source, text: text), isOn: Binding(get: { entry.isOn }, set: { isOn in
                 var next = selection
                 next.set(entry.source, isOn: isOn)
                 stored = next.stored
@@ -71,7 +69,6 @@ struct NotchLockScreenTerminalSettings: View {
                         .foregroundStyle(.tertiary)
                 }
             }
-            .toggleStyle(TrailingSwitchToggleStyle())
             .padding(.leading, 4)
         }
     }

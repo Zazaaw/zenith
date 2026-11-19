@@ -100,11 +100,10 @@ private struct NotchLockScreenItemRow: View {
     // A plain toggle rather than SettingsRow: the titles are the island's own
     // section names, already searchable as those sections.
     var body: some View {
-        Toggle(isOn: $isOn) {
+        ZenithSwitchRow(title, isOn: $isOn) {
             Label(title, systemImage: item.symbol)
                 .foregroundStyle(.secondary)
         }
-        .toggleStyle(TrailingSwitchToggleStyle())
         .padding(.leading, 40)
         .padding(.vertical, 2)
         // The permission is asked for here, when the person turns the item on,

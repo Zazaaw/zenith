@@ -233,6 +233,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             #if VORSSAINT_DEVELOPMENT
+            // Zenith fork: `--open-island-activity` opens Settings on the Dynamic
+            // Island's Activity tab, to reproduce Settings issues from a script.
+            if CommandLine.arguments.contains("--open-island-activity") {
+                SettingsRouter.shared.request(FeatureSettingsDestination(notch: .activity))
+                self.openSettingsWindow()
+                return
+            }
             if CommandLine.arguments.contains("--preview-notch-tour") {
                 self.showUpdateHighlights(isReview: true)
                 return

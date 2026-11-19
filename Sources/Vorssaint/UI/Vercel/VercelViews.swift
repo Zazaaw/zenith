@@ -228,14 +228,13 @@ struct VercelSettings: View {
             Text(text.tokenCaption).font(ZenithType.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             Divider().padding(.vertical, 4)
-            Toggle(isOn: $liveActivity) {
+            ZenithSwitchRow(text.liveActivity, isOn: $liveActivity) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(text.liveActivity)
                     Text(text.liveActivityCaption).font(ZenithType.caption).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .toggleStyle(TrailingSwitchToggleStyle())
         }
         .onAppear { service.loadTokenIfNeeded() }
     }
