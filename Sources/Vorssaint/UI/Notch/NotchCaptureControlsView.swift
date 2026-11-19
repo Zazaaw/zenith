@@ -81,10 +81,10 @@ struct NotchCaptureControlsView: View {
                         .padding(.horizontal, 8)
                     Text("R").frame(width: 28)
                 }
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .zenithIslandMeta(10, weight: .semibold) // Zenith fork
                 .foregroundStyle(.secondary)
                 .frame(height: 26)
-                .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 7))
+                .zenithIslandOutline(RoundedRectangle(cornerRadius: ZenithRadius.medium, style: .continuous)) // Zenith fork
             }
             NotchIconButton(symbol: "chevron.up", title: FeatureStrings.notch(l10n.language).collapse,
                             action: service.collapseCaptureControls)
@@ -106,8 +106,7 @@ private struct NotchRecordingAudioOptions: View {
             Toggle(FeatureStrings.recorder(l10n.language).microphoneTrackLabel, isOn: $options.microphone)
                 .focused(focusedControl, equals: .microphone)
         }
-        .toggleStyle(.switch)
-        .controlSize(.small)
+        .toggleStyle(ZenithIslandSwitchStyle(scale: 0.88)) // Zenith fork
         .fixedSize()
     }
 }

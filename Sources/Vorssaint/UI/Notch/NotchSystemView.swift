@@ -131,14 +131,13 @@ struct NotchSystemView: View {
         Button { select(card.kind) } label: {
             VStack(alignment: .leading, spacing: 6) {
                 Label(card.title, systemImage: card.symbol)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.secondary).lineLimit(1)
+                    .modifier(ZenithIslandLabelStyle()).lineLimit(1) // Zenith fork: a mono heading
                 Text(card.value ?? "…")
-                    .font(.system(size: card.detail == nil ? 22 : 15, weight: .medium, design: .rounded))
+                    .font(ZenithType.figures(card.detail == nil ? 22 : 15, weight: .medium)) // Zenith fork
                     .monospacedDigit().contentTransition(.numericText()).lineLimit(1).minimumScaleFactor(0.75)
                     .animation(reduceMotion ? nil : .smooth(duration: 0.25), value: card.value)
                 if let detail = card.detail {
-                    Text(detail).font(.system(size: 11)).monospacedDigit().foregroundStyle(.secondary).lineLimit(1)
+                    Text(detail).zenithIslandMeta(10.5).foregroundStyle(.secondary).lineLimit(1) // Zenith fork
                 } else if let level = card.level {
                     NotchMeter(value: level, tint: card.wantsAttention ? ZenithStatus.warning : .white)
                 }

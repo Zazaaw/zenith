@@ -263,6 +263,8 @@ struct QuickLauncherView: View {
                     RoundedRectangle(cornerRadius: notchSize == nil ? 12 : 16, style: .continuous)
                         .fill(iconBackground(item, isSelected: isSelected, isHovered: isHovered))
                         .frame(width: notchSize == nil ? 46 : 32, height: notchSize == nil ? 46 : 32)
+                        .zenithIslandOutline(RoundedRectangle(cornerRadius: 16, style: .continuous), // Zenith fork
+                                             emphasised: isSelected || isHovered, visible: notchSize != nil)
                         .overlay(
                             Image(systemName: icon(for: item))
                                 .font(.system(size: notchSize == nil ? 19 : 16, weight: .semibold))
@@ -349,7 +351,7 @@ struct QuickLauncherView: View {
     private var hiddenTray: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(l10n.s.launcherAddSection.uppercased())
-                .font(.system(size: 9, weight: .bold))
+                .font(notchSize != nil ? ZenithType.mono(10, weight: .medium) : .system(size: 9, weight: .bold)) // Zenith fork
                 .foregroundStyle(.secondary)
                 .tracking(0.5)
             FlowLayoutLite(spacing: 6) {
@@ -366,6 +368,7 @@ struct QuickLauncherView: View {
                             .background(
                                 Capsule(style: .continuous).fill(notchSize != nil ? .black : Color.accentColor.opacity(0.13))
                             )
+                            .zenithIslandOutline(Capsule(style: .continuous), visible: notchSize != nil) // Zenith fork
                     }
                     .buttonStyle(.plain)
                 }
@@ -467,6 +470,10 @@ struct QuickLauncherView: View {
                     }
                 }
             case .colorPicker:
+                if notchSize != nil { // Zenith fork: chips on the island's black
+                    ZenithIslandSegmented(selection: $colorFormat,
+                                          options: ColorCopyFormat.allCases.map { ($0.rawValue, $0.label) })
+                } else {
                 Picker(l10n.s.colorPickerFormatLabel, selection: $colorFormat) {
                     ForEach(ColorCopyFormat.allCases) { format in
                         Text(format.label).tag(format.rawValue)
@@ -474,6 +481,7 @@ struct QuickLauncherView: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
+                }
                 if colorFormat == ColorCopyFormat.hex.rawValue {
                     Toggle(l10n.s.colorPickerBareHexToggle, isOn: $colorBareHex)
                 }
@@ -482,13 +490,14 @@ struct QuickLauncherView: View {
             }
         }
         .font(.system(size: 11))
-        .toggleStyle(.switch)
+        .zenithIslandSwitches(notchSize != nil) // Zenith fork
         .controlSize(.small)
         .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(notchSize != nil ? .black : Color.primary.opacity(0.05))
         )
+        .zenithIslandOutline(RoundedRectangle(cornerRadius: 12, style: .continuous), visible: notchSize != nil) // Zenith fork
     }
 
     // MARK: - Item metadata
@@ -555,7 +564,7 @@ struct QuickLauncherView: View {
     }
 
     private func iconBackground(_ item: QuickLauncherItem, isSelected: Bool, isHovered: Bool) -> Color {
-        if notchSize != nil { return .white.opacity(isSelected || isHovered ? 0.14 : 0.065) }
+        if notchSize != nil { return isSelected || isHovered ? ZenithIsland.hoverFill : ZenithIsland.lift } // Zenith fork
         if isActive(item) { return Color.accentColor.opacity(0.18) }
         if isSelected || isHovered { return Color.primary.opacity(0.1) }
         return Color.primary.opacity(0.07)

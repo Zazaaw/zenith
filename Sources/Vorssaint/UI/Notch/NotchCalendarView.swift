@@ -127,10 +127,10 @@ struct NotchCalendarView: View {
             } else {
                 Button { showingMonth.toggle() } label: {
                     title
+                        .foregroundStyle(showingMonth ? ZenithIsland.accent : ZenithIsland.primary) // Zenith fork
                         .padding(.horizontal, 7)
                         .frame(height: 28)
-                        .background(.white.opacity(showingMonth ? 0.12 : 0),
-                                    in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                        .zenithIslandSelection(showingMonth, in: RoundedRectangle(cornerRadius: 9, style: .continuous)) // Zenith fork
                         .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
                 }
                 .buttonStyle(NotchButtonStyle(cornerRadius: 9))
@@ -329,7 +329,7 @@ struct NotchCalendarView: View {
                 Text(text.requestFailed).font(.caption).foregroundStyle(ZenithStatus.warning)
             }
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(ZenithIslandOutlineButtonStyle(prominent: true)) // Zenith fork
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 12)
     }
@@ -355,14 +355,13 @@ private struct NotchCalendarDayLabel: View {
     var body: some View {
         HStack(spacing: 5) {
             if Calendar.current.isDate(day, inSameDayAs: now) {
-                Text(text.today).foregroundStyle(.white)
+                Text(text.today).foregroundStyle(ZenithIsland.primary) // Zenith fork
             } else {
                 Text(day, format: .dateTime.weekday(.abbreviated))
             }
             Text(day, format: .dateTime.day().month(.abbreviated))
         }
-        .font(.system(size: 11, weight: .medium))
-        .foregroundStyle(.white.opacity(0.5))
+        .modifier(ZenithIslandLabelStyle()) // Zenith fork: a mono group heading
         .lineLimit(1)
     }
 }
@@ -384,7 +383,7 @@ private struct NotchCalendarEventRow: View {
 
     var body: some View {
         Button(action: open) { card }
-            .buttonStyle(NotchButtonStyle(cornerRadius: 11, lifts: false))
+            .buttonStyle(NotchButtonStyle(cornerRadius: ZenithRadius.card, lifts: false)) // Zenith fork
             .help(text.openCalendar)
             .accessibilityHint(text.openCalendar)
             .modifier(NotchCountdownChoice(chosen: countdown, text: text, choose: choose))
@@ -394,8 +393,7 @@ private struct NotchCalendarEventRow: View {
         VStack(alignment: .leading, spacing: 4) {
             if ongoing || isNext {
                 Text(ongoing ? text.ongoing : text.next)
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(ongoing ? .mint : .white.opacity(0.7))
+                    .modifier(ZenithIslandLabelStyle(color: ongoing ? ZenithStatus.success : ZenithIsland.secondary)) // Zenith fork
                     .lineLimit(1)
             }
             Text(event.title.isEmpty ? text.untitled : event.title)
@@ -440,12 +438,8 @@ private struct NotchCalendarEventRow: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(event.color.color.opacity(ongoing ? 0.2 : 0.1),
-                    in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .strokeBorder(.white.opacity(contrast == .increased ? 0.5 : ongoing ? 0.16 : 0.05), lineWidth: 0.75)
-        }
+        // Zenith fork: a hairline card; the calendar's colour stays on its bar.
+        .zenithIslandCard(cornerRadius: ZenithRadius.card, selected: ongoing)
         .clipped()
     }
 }
