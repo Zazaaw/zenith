@@ -112,7 +112,10 @@ final class NotchLockScreenService {
             downloads: NotchSupport.routes(.download) && NotchLockScreenItem.downloads.isOn(),
             countdown: NotchCalendarSupport.showsCountdown() && calendar,
             timeLeft: NotchCalendarSupport.showsTimeLeft() && calendar,
-            wakatime: WakaTimeSupport.hasConfiguration() && NotchLockScreenItem.wakatime.isOn())
+            wakatime: WakaTimeSupport.hasConfiguration() && NotchLockScreenItem.wakatime.isOn(),
+            // Zenith fork: weather and reminders also need their permission.
+            weather: NotchLockScreenWidgets.showsWeather(),
+            reminders: NotchLockScreenWidgets.showsReminders())
         if model.gates != gates { model.gates = gates }
         var scene: [NotchLockScreenPanel] = []
         // Without the Music section there is no player to show or to click.
@@ -186,9 +189,13 @@ final class NotchLockScreenService {
             NotchCalendarService.shared.syncWithPreferences()
         }
         if gates.agents { AgentUsageService.shared.syncWithPreferences() }
+        // Zenith fork: weather and reminders read only while the lock screen shows.
+        NotchLockScreenWidgets.start(weather: gates.weather, reminders: gates.reminders)
     }
 
     private func hide(unlocking: Bool, stopsSources: Bool) {
+        // Zenith fork: weather and reminders stop with every hide.
+        NotchLockScreenWidgets.stop()
         if stopsSources, !scene.isEmpty {
             NotchMusicService.shared.stop()
             NotchDownloadService.shared.stop()

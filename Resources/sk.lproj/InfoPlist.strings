@@ -22,3 +22,10 @@
 "NSNetworkVolumesUsageDescription" = "Zenith usporadúva potvrdené stiahnuté súbory z WhatsAppu do cieľového priečinka, ktorý výslovne vyberiete. Čistenie tiež hľadá zabudnuté snímky obrazovky, ak ich sem ukladáte.";
 "NSRemovableVolumesUsageDescription" = "Zenith usporadúva potvrdené stiahnuté súbory z WhatsAppu do cieľového priečinka, ktorý výslovne vyberiete. Čistenie tiež hľadá zabudnuté snímky obrazovky, ak ich sem ukladáte.";
 "NSCalendarsFullAccessUsageDescription" = "Zobrazte svoje nadchádzajúce udalosti v hornej časti obrazovky. Udalosti kalendára ostávajú na tomto Macu.";
+
+/* macOS Location Services permission prompt (Zenith fork: lock screen weather). */
+"NSLocationUsageDescription" = "Zenith používa vašu približnú polohu iba na zobrazenie počasia na uzamknutej obrazovke. Poloha sa zaokrúhli približne na kilometer a posiela sa iba do Open-Meteo kvôli predpovedi.";
+"NSLocationWhenInUseUsageDescription" = "Zenith používa vašu približnú polohu iba na zobrazenie počasia na uzamknutej obrazovke. Poloha sa zaokrúhli približne na kilometer a posiela sa iba do Open-Meteo kvôli predpovedi.";
+
+/* macOS Reminders permission prompt (Zenith fork: lock screen reminders). */
+"NSRemindersFullAccessUsageDescription" = "Zobrazte na uzamknutej obrazovke pripomienky na dnes. Pripomienky zostávajú v tomto Macu.";
