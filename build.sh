@@ -301,6 +301,7 @@ if (( TEST )); then
         Sources/Vorssaint/UI/ZenithTokens.swift
         Sources/Vorssaint/UI/ZenithSwitch.swift
         Sources/Vorssaint/UI/Notch/ZenithIslandChrome.swift
+        Sources/Vorssaint/UI/Notch/ZenithIslandKit.swift
         Sources/Vorssaint/Services/Notch/NotchDownloadSupport.swift
         Sources/Vorssaint/Services/Notch/NotchDownloadProgressObserver.swift
         Sources/Vorssaint/Core/NotchCalendarStrings.swift

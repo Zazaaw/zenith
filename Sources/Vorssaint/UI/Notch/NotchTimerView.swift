@@ -87,11 +87,10 @@ struct NotchTimerView: View {
                 .lineLimit(1)
                 .padding(.horizontal, NotchTimerSupport.StartButton.padding)
                 .frame(height: NotchLayout.timerStartHeight)
-                .foregroundStyle(ZenithStatus.progress)
-                .zenithIslandSelection(true, in: Capsule(), tint: ZenithStatus.progress) // Zenith fork: 10/20/100
+                .modifier(ZenithIslandPrimaryAction()) // Zenith fork: the page's one solid step
                 .contentShape(Capsule())
         }
-        .buttonStyle(NotchButtonStyle(cornerRadius: NotchLayout.timerStartHeight / 2))
+        .buttonStyle(NotchButtonStyle(cornerRadius: NotchLayout.timerStartHeight / 2, lifts: false, highlights: false)) // Zenith fork
         .help(mode == .pomodoro ? text.pomodoroHint : text.start)
     }
 
@@ -145,33 +144,14 @@ struct NotchTimerView: View {
     /// Each label is as wide as its word, so the three fit beside Start in
     /// every language from the compact preset's width on.
     private var modePicker: some View {
-        HStack(spacing: NotchTimerSupport.ModePicker.spacing) {
-            ForEach(NotchTimerMode.allCases, id: \.self) { candidate in
-                let selected = mode == candidate
-                Button { NotchService.shared.selectTimerMode(candidate) } label: {
-                    Text(title(for: candidate))
-                        .font(.system(size: NotchTimerSupport.ModePicker.labelSize, weight: .medium))
-                        .lineLimit(1)
-                        .foregroundStyle(selected ? ZenithIsland.accent : ZenithIsland.secondary) // Zenith fork
-                        .padding(.horizontal, NotchTimerSupport.ModePicker.labelPadding)
-                        .frame(height: NotchTimerSupport.ModePicker.height)
-                        .background {
-                            // Zenith fork: the chosen mode wears the accent's 10/20/100 pill.
-                            if selected {
-                                Capsule().fill(ZenithStatus.fill(ZenithIsland.accent))
-                                    .overlay(Capsule().strokeBorder(ZenithStatus.stroke(ZenithIsland.accent), lineWidth: 0.75))
-                                    .matchedGeometryEffect(id: "selection", in: modeSelection)
-                            }
-                        }
-                        .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                }
-                .buttonStyle(NotchButtonStyle(cornerRadius: 6, lifts: false))
-                .accessibilityAddTraits(selected ? .isSelected : [])
-            }
-        }
-        .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8), value: mode)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(text.timer)
+        // Zenith fork: the modes as the island's segmented control, its block sliding to the chosen one.
+        ZenithSegmented(selection: Binding(get: { mode }, set: { NotchService.shared.selectTimerMode($0) }),
+                        options: NotchTimerMode.allCases.map { ($0, title(for: $0)) },
+                        height: NotchLayout.timerStartHeight, fontSize: NotchTimerSupport.ModePicker.labelSize - 0.5,
+                        fills: false)
+            .fixedSize()
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(text.timer)
     }
 
     private func title(for mode: NotchTimerMode) -> String {
@@ -217,10 +197,13 @@ struct NotchTimerView: View {
         let progress = service.session.mode == .pomodoro
             ? String(format: text.sessionProgress, service.session.sessionNumber, service.session.configuration.totalSessions)
             : nil
-        let phase = Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(ZenithStatus.progress)
-        let place = progress.map { Text($0).font(.system(size: 12)).monospacedDigit().foregroundStyle(.secondary) }
+        let phase = Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(ZenithIsland.primary) // Zenith fork
+        let place = progress.map { Text($0).font(ZenithType.mono(11.5)).foregroundStyle(ZenithIsland.meta) } // Zenith fork
         return ViewThatFits(in: .horizontal) {
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
+            HStack(alignment: .center, spacing: 6) {
+                // Zenith fork: the phase's dot in the timer's purple, glowing while it runs.
+                ZenithStatusDot(color: ZenithStatus.progress, live: service.session.isRunning)
+                    .padding(.horizontal, -3)
                 phase
                 place
             }
@@ -276,7 +259,7 @@ struct NotchTimerView: View {
                     .lineLimit(1).truncationMode(.tail)
                 HStack(spacing: 3) {
                     Text(display(option, current))
-                        .font(.system(size: 12, weight: .semibold)).monospacedDigit().foregroundStyle(ZenithStatus.progress)
+                        .font(ZenithFigure.font(12)).foregroundStyle(ZenithIsland.primary) // Zenith fork: figures in mono
                     Image(systemName: "chevron.down").font(.system(size: 7, weight: .semibold)).foregroundStyle(.secondary)
                 }
             }
@@ -325,21 +308,20 @@ struct NotchTimerView: View {
 
     private func clock(_ value: String, size: CGFloat) -> some View {
         Text(value)
-            .font(.system(size: size, weight: .thin)).monospacedDigit()
-            .foregroundStyle(ZenithStatus.progress)
+            .font(ZenithFigure.font(size == 62 ? 54 : size)).tracking(-0.5) // Zenith fork: the clock in mono
+            .foregroundStyle(ZenithIsland.primary) // Zenith fork
             .lineLimit(1).minimumScaleFactor(0.5)
     }
 
     private func roundButton(symbol: String, title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 23, weight: .semibold))
-                .foregroundStyle(ZenithStatus.progress)
+                .font(.system(size: 21, weight: .medium))
                 .frame(width: 52, height: 52)
-                .zenithIslandSelection(true, in: Circle(), tint: ZenithStatus.progress) // Zenith fork: 10/20/100
+                .modifier(ZenithIslandRoundControl()) // Zenith fork: a hairline circle that lifts under the pointer
                 .contentShape(Circle())
         }
-        .buttonStyle(NotchButtonStyle(cornerRadius: 26))
+        .buttonStyle(NotchButtonStyle(cornerRadius: 26, lifts: false, highlights: false)) // Zenith fork
         .accessibilityLabel(title)
         .help(title)
     }

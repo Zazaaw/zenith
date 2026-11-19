@@ -158,7 +158,7 @@ struct NotchIconButton: View {
                 .modifier(ZenithIslandIconChrome(selected: selected)) // Zenith fork: grey glyph, accent when selected
                 .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         }
-        .buttonStyle(NotchButtonStyle(cornerRadius: 9))
+        .buttonStyle(NotchButtonStyle(cornerRadius: 9, lifts: false, highlights: false)) // Zenith fork: a plain glyph
         .help(title)
         .accessibilityLabel(title)
         .accessibilityAddTraits(selected ? .isSelected : [])
@@ -293,6 +293,8 @@ struct NotchRail<Item: Identifiable, Content: View>: View {
     var leastSpacing: CGFloat? = nil
     var rowSpacing: CGFloat = 8
     var scrollTarget: Item.ID? = nil
+    /// Zenith fork: hairlines between the items and the rows, centred in their gaps, as a bento grid.
+    var dividers = false
     @ViewBuilder let content: (Item) -> Content
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -316,7 +318,12 @@ struct NotchRail<Item: Identifiable, Content: View>: View {
         if let gap {
             let cell = (width - CGFloat(max(0, columns - 1)) * gap) / CGFloat(max(1, columns))
             VStack(spacing: rowSpacing) {
-                ForEach(rowStarts, id: \.self) { start in row(start, cell: cell, gap: gap) }
+                ForEach(rowStarts, id: \.self) { start in
+                    row(start, cell: cell, gap: gap)
+                        .overlay(alignment: .top) { // Zenith fork: a hairline between rows
+                            if dividers, start > 0 { ZenithBentoDivider(.horizontal).offset(y: -rowSpacing / 2 - 0.5) }
+                        }
+                }
             }
         } else {
             ScrollViewReader { proxy in
@@ -324,7 +331,12 @@ struct NotchRail<Item: Identifiable, Content: View>: View {
                 // column cut at the edge is the cue that more follows.
                 ScrollView(.horizontal) {
                     LazyHStack(alignment: .top, spacing: spacing) {
-                        ForEach(starts, id: \.self) { start in column(start).frame(width: itemWidth).id(start) }
+                        ForEach(starts, id: \.self) { start in
+                            column(start).frame(width: itemWidth).id(start)
+                                .overlay(alignment: .leading) { // Zenith fork: a hairline between columns
+                                    if dividers, start > 0 { ZenithBentoDivider(.vertical).offset(x: -spacing / 2 - 0.5) }
+                                }
+                        }
                     }
                     .contentShape(Rectangle())
                 }
@@ -347,6 +359,9 @@ struct NotchRail<Item: Identifiable, Content: View>: View {
         HStack(alignment: .top, spacing: gap) {
             ForEach(items[start..<min(items.count, start + max(1, columns))]) { item in
                 content(item).frame(width: cell)
+                    .overlay(alignment: .leading) { // Zenith fork: a hairline between items
+                        if dividers, item.id != items[start].id { ZenithBentoDivider(.vertical).offset(x: -gap / 2 - 0.5) }
+                    }
             }
         }
         .frame(maxWidth: .infinity)
@@ -356,6 +371,9 @@ struct NotchRail<Item: Identifiable, Content: View>: View {
         VStack(spacing: rowSpacing) {
             ForEach(items[start..<min(items.count, start + max(1, rows))]) { item in
                 content(item)
+                    .overlay(alignment: .top) { // Zenith fork: a hairline between rows
+                        if dividers, item.id != items[start].id { ZenithBentoDivider(.horizontal).offset(y: -rowSpacing / 2 - 0.5) }
+                    }
             }
         }
     }
@@ -745,8 +763,8 @@ struct NotchMenuButton<Label: View>: View {
     @State private var anchor = NotchMenuAnchor()
 
     var body: some View {
-        Button { anchor.popUp(items) } label: { label() }
-            .buttonStyle(NotchButtonStyle(cornerRadius: cornerRadius, lifts: false))
+        Button { anchor.popUp(items) } label: { label().zenithIslandHoverTracked() } // Zenith fork: the label brightens
+            .buttonStyle(NotchButtonStyle(cornerRadius: cornerRadius, lifts: false, highlights: false)) // Zenith fork
             .background(NotchMenuAnchorView(anchor: anchor))
             .accessibilityLabel(title)
     }
@@ -761,19 +779,9 @@ struct NotchBandBackButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 4) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.55))
-                Text(title)
-                    .font(.system(size: 13, weight: .semibold))
-                    .lineLimit(1)
-            }
-            .padding(.horizontal, 7)
-            .frame(height: 28)
-            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            ZenithBandBackLabel(title: title) // Zenith fork: a plain glyph and the page's name, no chrome
         }
-        .buttonStyle(NotchButtonStyle(cornerRadius: 9))
+        .buttonStyle(NotchButtonStyle(cornerRadius: 9, lifts: false, highlights: false)) // Zenith fork
         .help(l10n.s.obBack)
         .accessibilityLabel(l10n.s.obBack)
         .accessibilityValue(title)
@@ -788,18 +796,8 @@ struct NotchBandMenuLabel: View {
     var truncation: Text.TruncationMode = .tail
 
     var body: some View {
-        HStack(spacing: 4) {
-            if let symbol {
-                Image(systemName: symbol).foregroundStyle(.white.opacity(0.55))
-            }
-            Text(title).lineLimit(1).truncationMode(truncation)
-            Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold))
-        }
-        .font(.system(size: 12, weight: .medium))
-        .foregroundStyle(.white.opacity(0.85))
-        .padding(.horizontal, 7)
-        .frame(height: 28)
-        .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+        // Zenith fork: the choice in mono with its chevron, brightening under the pointer, no chrome.
+        ZenithBandMenuTitle(title: title, symbol: symbol, truncation: truncation)
     }
 }
 
@@ -820,7 +818,7 @@ struct NotchDeviceMenu: View {
                 .lineLimit(lines)
                 .multilineTextAlignment(alignment)
                 .truncationMode(lines > 1 ? .tail : .middle)
-                .foregroundStyle(.secondary)
+                .zenithIslandGlyph() // Zenith fork: grey, brighter under the pointer
                 .frame(maxWidth: width, alignment: frameAlignment)
                 .padding(.horizontal, 4)
                 .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))

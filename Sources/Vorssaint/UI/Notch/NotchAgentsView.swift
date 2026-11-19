@@ -97,14 +97,9 @@ struct NotchAgentsView: View {
     }
 
     private func grid(_ rows: [[NotchAgentTile]], now: Date) -> some View {
-        VStack(spacing: NotchAgentSupport.spacing) {
-            ForEach(rows, id: \.first?.id) { row in
-                HStack(spacing: NotchAgentSupport.spacing) {
-                    ForEach(row) { tile in card(tile, now: now) }
-                }
-                .frame(height: NotchAgentSupport.height(of: row))
-            }
-        }
+        // Zenith fork: a bento grid, hairlines in the gaps the cards kept.
+        ZenithBentoGrid(rows: rows, spacing: NotchAgentSupport.spacing,
+                        rowHeight: { NotchAgentSupport.height(of: $0) }) { tile in card(tile, now: now) }
         .frame(maxWidth: .infinity, alignment: .top)
     }
 
@@ -196,8 +191,8 @@ private struct NotchAgentLimitReading: View {
                 if let countdown {
                     Label(countdown, systemImage: "arrow.clockwise")
                         .labelStyle(NotchAgentInlineLabel())
-                        .font(.system(size: 9.5))
-                        .foregroundStyle(.secondary)
+                        .font(ZenithType.mono(9.5)) // Zenith fork: metadata in mono
+                        .foregroundStyle(ZenithIsland.meta) // Zenith fork
                         .fixedSize()
                         .accessibilityIdentifier("notch.agentLimitCountdown")
                 }
@@ -221,8 +216,8 @@ private struct NotchAgentLimitReading: View {
 
     private var reading: some View {
         Text(share)
-            .font(.system(size: 12, weight: .semibold, design: .rounded))
-            .monospacedDigit()
+            .font(ZenithFigure.font(12)) // Zenith fork: figures in mono
+            .tracking(-0.3) // Zenith fork
             .foregroundStyle(tint)
             .fixedSize()
             .contentTransition(.numericText())
@@ -360,8 +355,9 @@ private struct NotchAgentLimitsCard: View {
             NotchAgentLimitReading(title: label(window),
                                   share: NotchAgentSupport.limitShare(window, display: display, text: text),
                                   countdown: reset, tint: tint == provider.tint ? Color.white : tint)
-            NotchAgentMeter(value: fraction, pace: pace.map { remaining ? 1 - $0.elapsed : $0.elapsed },
-                            tint: tint, height: 4)
+            // Zenith fork: a 3-point level, coloured only when it runs low.
+            ZenithDataBar(value: fraction, status: tint == provider.tint ? nil : tint,
+                          pace: pace.map { remaining ? 1 - $0.elapsed : $0.elapsed })
         }
         .help(help(window))
     }
@@ -414,11 +410,10 @@ private struct NotchAgentLimitsCard: View {
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 2)
                     Text(AgentFormat.cost(block.totals.cost))
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        .monospacedDigit()
+                        .font(ZenithFigure.font(12)) // Zenith fork: figures in mono
                 }
-                NotchAgentMeter(value: length > 0 ? now.timeIntervalSince(block.start) / length : 0,
-                                tint: provider.tint, height: 4, dimmed: true)
+                ZenithDataBar(value: length > 0 ? now.timeIntervalSince(block.start) / length : 0) // Zenith fork
+                    .opacity(0.6)
             }
             .help(text.estimated)
             setUpLimits
@@ -441,8 +436,7 @@ private struct NotchAgentLimitsCard: View {
                             .foregroundStyle(.white.opacity(0.85))
                         Spacer(minLength: 2)
                         Text(costText)
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .monospacedDigit()
+                            .font(ZenithFigure.font(12)) // Zenith fork: figures in mono
                     }
                     .help(todayUsage.unpriced > 0 ? text.unpriced : text.valueNote)
                     HStack(spacing: 4) {
@@ -522,23 +516,22 @@ private struct NotchAgentSpendCard: View {
                     if period == .month { multiples(usage) }
                 }
                 HStack(alignment: .firstTextBaseline, spacing: 5) {
-                    Text((usage.fullyPriced ? "" : "≥ ") + AgentFormat.cost(usage.total.cost))
-                        .font(.system(size: 22, weight: .medium, design: .rounded))
-                        .monospacedDigit()
+                    // Zenith fork: the hero figure in mono, its currency and sign smaller.
+                    ZenithFigure(text: (usage.fullyPriced ? "" : "≥ ") + AgentFormat.cost(usage.total.cost), size: 24)
                         .contentTransition(.numericText())
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                     Text(text.apiValue)
-                        .font(.system(size: 9.5))
-                        .foregroundStyle(.secondary)
+                        .font(ZenithType.mono(9.5)) // Zenith fork
+                        .foregroundStyle(ZenithIsland.meta)
                         .lineLimit(1)
                     Spacer(minLength: 0)
                 }
                 .help(usage.fullyPriced ? text.valueNote : text.unpriced)
                 split(usage)
                 Text(footer(usage))
-                    .font(.system(size: 10))
-                    .foregroundStyle(.secondary)
+                    .font(ZenithType.mono(9.5)) // Zenith fork: metadata in mono
+                    .foregroundStyle(ZenithIsland.meta)
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
                     .help(text.saved(AgentFormat.cost(usage.total.savings)))
@@ -571,18 +564,19 @@ private struct NotchAgentSpendCard: View {
             let room = max(0, proxy.size.width - gap * CGFloat(max(0, shown - 1)) - 4 * CGFloat(shown))
             HStack(spacing: gap) {
                 if total <= 0 {
-                    Capsule().fill(.white.opacity(0.13))
+                    Capsule().fill(ZenithIsland.barTrack) // Zenith fork
                 } else {
                     ForEach(providers.indices, id: \.self) { index in
                         if parts[index] > 0 {
-                            Capsule(style: .continuous).fill(providers[index].tint.opacity(0.9))
+                            // Zenith fork: each agent's colour, pulled toward grey.
+                            Capsule(style: .continuous).fill(ZenithIsland.muted(providers[index].tint))
                                 .frame(width: 4 + room * parts[index] / total)
                         }
                     }
                 }
             }
         }
-        .frame(height: 4)
+        .frame(height: 3) // Zenith fork: a 3-point bar
         .accessibilityHidden(true)
     }
 
@@ -609,7 +603,8 @@ private struct NotchAgentLiveCard: View {
                                      tint: live.first?.provider.tint ?? .secondary) {
                     HStack(spacing: 4) {
                         if live.count > 2 { NotchAgentChip(text: "+\(live.count - 2)") }
-                        if let first = live.first { NotchAgentPulse(tint: first.provider.tint, size: 5) }
+                        // Zenith fork: a live dot in emerald, glowing while an agent works.
+                        if !live.isEmpty { ZenithStatusDot(color: ZenithStatus.success, live: true) }
                     }
                 }
                 if live.isEmpty {
@@ -637,9 +632,8 @@ private struct NotchAgentLiveCard: View {
                     .truncationMode(.middle)
                 Spacer(minLength: 4)
                 Text(AgentFormat.clock(now.timeIntervalSince(session.started)))
-                    .font(.system(size: 11, weight: .medium))
-                    .monospacedDigit()
-                    .foregroundStyle(session.provider.tint)
+                    .font(ZenithType.mono(11, weight: .medium)) // Zenith fork: a clock in mono
+                    .foregroundStyle(ZenithIsland.primary)
             }
             // Tokens the agent wrote, as its own window counts them; every
             // call also reads the whole context again, which the tooltip and
@@ -648,8 +642,8 @@ private struct NotchAgentLiveCard: View {
                   session.tokens.output > 0 ? text.written(AgentFormat.tokens(session.tokens.output)) : "",
                   session.cost > 0 ? AgentFormat.cost(session.cost) : ""]
                     .filter { !$0.isEmpty }.joined(separator: " · "))
-                .font(.system(size: 9.5))
-                .foregroundStyle(.secondary)
+                .font(ZenithType.mono(9.5)) // Zenith fork: metadata in mono
+                .foregroundStyle(ZenithIsland.meta)
                 .lineLimit(1)
         }
         .help(text.tokens(AgentFormat.tokens(session.tokens.total)) + " · "
@@ -664,8 +658,8 @@ private struct NotchAgentLiveCard: View {
             Text(snapshot.lastActivity[provider].map {
                 $0.formatted(.relative(presentation: .named, unitsStyle: .abbreviated).locale(locale))
             } ?? text.idle)
-                .font(.system(size: 9.5))
-                .foregroundStyle(.secondary)
+                .font(ZenithType.mono(9.5)) // Zenith fork: metadata in mono
+                .foregroundStyle(ZenithIsland.meta)
                 .lineLimit(1)
         }
     }
@@ -691,9 +685,8 @@ private struct NotchAgentTrendCard: View {
             VStack(alignment: .leading, spacing: 6) {
                 NotchAgentCardHeader(title: text.trendCard, symbol: NotchAgentCard.trend.symbol) {
                     Text(caption(byCost: byCost))
-                        .font(.system(size: 9.5, weight: .medium))
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
+                        .font(ZenithType.mono(9.5)) // Zenith fork: the bento cell's meta
+                        .foregroundStyle(ZenithIsland.meta)
                         .lineLimit(1)
                 }
                 NotchAgentBars(buckets: buckets, providers: providers, byCost: byCost, hovered: $hovered)
@@ -737,8 +730,8 @@ private struct NotchAgentTrendCard: View {
                 }
             }
         }
-        .font(.system(size: 8.5, weight: .medium))
-        .foregroundStyle(.tertiary)
+        .font(ZenithType.mono(8.5)) // Zenith fork: the axis in mono
+        .foregroundStyle(ZenithIsland.meta)
         .lineLimit(1)
         .frame(height: 10)
     }
@@ -779,14 +772,13 @@ private struct NotchAgentShareCard: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Capsule(style: .continuous)
-                .fill(tint.opacity(0.85))
-                .frame(width: max(3, 44 * weight / peak), height: 4)
-                .frame(width: 44, alignment: .leading)
+            // Zenith fork: a 3-point bar on its track; the agent's colour only as a dot.
+            if share.provider != nil { ZenithStatusDot(color: tint, size: 5).frame(width: 6) }
+            ZenithDataBar(value: weight / peak)
+                .frame(width: 44)
             Text(byCost ? AgentFormat.cost(share.totals.cost) : AgentFormat.tokens(share.totals.tokens.total))
-                .font(.system(size: 10, weight: .medium))
-                .monospacedDigit()
-                .foregroundStyle(.secondary)
+                .font(ZenithType.mono(10)) // Zenith fork: figures in mono
+                .foregroundStyle(ZenithIsland.secondary)
                 .frame(minWidth: 40, alignment: .trailing)
         }
         .frame(height: 14)
@@ -848,13 +840,11 @@ private struct NotchAgentActivityCard: View {
         let busiest = active.max { $0.total.weight(byCost: byCost) < $1.total.weight(byCost: byCost) }
         let pointed = hovered.flatMap { date in snapshot.days.first { $0.start == date } }
         return VStack(alignment: .leading, spacing: 2) {
-            Text(value(snapshot.days.reduce(into: AgentTotals()) { $0 += $1.total }, byCost: byCost))
-                .font(.system(size: 17, weight: .medium, design: .rounded))
-                .monospacedDigit()
-                .lineLimit(1)
+            // Zenith fork: the hero figure in mono.
+            ZenithFigure(text: value(snapshot.days.reduce(into: AgentTotals()) { $0 += $1.total }, byCost: byCost), size: 18)
                 .minimumScaleFactor(0.7)
             Text(AgentFormat.span(days: snapshot.days.count, locale: locale))
-                .font(.system(size: 9.5)).foregroundStyle(.secondary).lineLimit(1)
+                .font(ZenithType.mono(9.5)).foregroundStyle(ZenithIsland.meta).lineLimit(1) // Zenith fork
             Spacer(minLength: 4)
             figure(text.activeDays, "\(active.count)")
             if let day = pointed ?? busiest {
@@ -868,7 +858,7 @@ private struct NotchAgentActivityCard: View {
         HStack(spacing: 6) {
             Text(label).foregroundStyle(.secondary).lineLimit(1)
             Spacer(minLength: 4)
-            Text(value).monospacedDigit().lineLimit(1)
+            Text(value).font(ZenithType.mono(10)).lineLimit(1) // Zenith fork: figures in mono
         }
         .font(.system(size: 10, weight: .medium))
         .minimumScaleFactor(0.85)

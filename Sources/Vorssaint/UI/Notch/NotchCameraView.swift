@@ -26,7 +26,7 @@ struct NotchCameraView: View {
                         Text(text.cameraHint).font(.callout).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                         Button(text.startCamera, action: service.showEmbedded)
-                            .buttonStyle(ZenithIslandOutlineButtonStyle(prominent: true)) // Zenith fork
+                            .buttonStyle(ZenithIslandPrimaryButtonStyle()) // Zenith fork: the page's one solid step
                     }
                 }
                 .padding(.horizontal, 12)

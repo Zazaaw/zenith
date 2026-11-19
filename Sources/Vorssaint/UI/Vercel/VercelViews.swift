@@ -84,10 +84,12 @@ struct NotchVercelView: View {
     private var list: some View {
         let mixes = VercelSupport.mixesScopes(service.deployments)
         // More deployments than the page holds: scroll, with the island's soft edges.
+        // A list of rows parted by hairlines, after the island's bento cells.
         return ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 0) {
                 header
-                ForEach(service.deployments) { deployment in
+                ForEach(Array(service.deployments.enumerated()), id: \.element.id) { index, deployment in
+                    if index > 0 { ZenithBentoDivider(.horizontal).padding(.horizontal, 8) }
                     VercelDeploymentRow(deployment: deployment, text: text, language: l10n.language,
                                         showsScope: mixes)
                 }
@@ -100,23 +102,24 @@ struct NotchVercelView: View {
     private var header: some View {
         let building = service.deployments.filter(\.state.inProgress).count
         return HStack(spacing: 6) {
+            Text("Vercel").modifier(ZenithBentoLabelStyle())
             if building > 0 {
-                VercelStateMark(symbol: VercelSupport.symbol, size: 10, tint: ZenithStatus.progress, pulsing: true)
-                Text("\(text.building) · \(building)")
-                    .font(ZenithType.caption.weight(.semibold))
-                    .foregroundStyle(ZenithStatus.progress)
+                ZenithStatusLine(color: ZenithStatus.progress, text: "\(text.building) · \(building)", live: true,
+                                 size: 10, emphasised: true)
             }
             Spacer(minLength: 0)
+            ZenithBentoMeta(text: "\(service.deployments.count)")
             Button { service.refresh(force: true) } label: {
-                Image(systemName: "arrow.clockwise").font(.system(size: 11, weight: .semibold))
+                Image(systemName: "arrow.clockwise").font(.system(size: 11, weight: .medium)).zenithIslandGlyph()
+                    .frame(width: 22, height: 22).contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
+            .zenithIslandHoverTracked()
             .help(text.retry)
             .accessibilityLabel(text.retry)
         }
         .padding(.horizontal, 8)
-        .padding(.bottom, 2)
+        .padding(.bottom, 4)
     }
 }
 
@@ -134,39 +137,37 @@ private struct VercelDeploymentRow: View {
         Button {
             if let url = deployment.openURL { NSWorkspace.shared.open(url) }
         } label: {
-            HStack(alignment: .top, spacing: 10) {
-                VercelStateMark(symbol: deployment.state.symbol, size: 13, tint: VercelStyle.tint(deployment.state),
-                                pulsing: deployment.state.inProgress)
-                    .frame(width: 18, height: 16)
-                VStack(alignment: .leading, spacing: 2) {
+            HStack(alignment: .top, spacing: 8) {
+                // The state as a dot in its colour, glowing while it builds; the words beside it say it too.
+                ZenithStatusDot(color: VercelStyle.tint(deployment.state), live: deployment.state.inProgress)
+                    .frame(height: 18)
+                VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
-                        Text(deployment.project).font(ZenithType.emphasis).lineLimit(1).truncationMode(.tail)
+                        Text(deployment.project).font(.system(size: 13, weight: .semibold)).tracking(-0.2)
+                            .lineLimit(1).truncationMode(.tail)
                         // The target as a mono tag under a hairline, brighter for production.
                         ZenithIslandTag(text: deployment.isProduction ? text.production : text.preview,
-                                        tint: deployment.isProduction ? ZenithIsland.primary : nil)
+                                        emphasised: deployment.isProduction)
                             .fixedSize()
                         Spacer(minLength: 4)
-                        Text(VercelStyle.relative(deployment.created, language: language))
-                            .zenithIslandMeta(10)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .fixedSize()
+                        ZenithBentoMeta(text: VercelStyle.relative(deployment.created, language: language))
                     }
                     HStack(spacing: 4) {
                         Text(text.label(deployment.state))
-                            .foregroundStyle(VercelStyle.tint(deployment.state))
+                            .foregroundStyle(deployment.state.inProgress || deployment.state == .error
+                                             ? VercelStyle.tint(deployment.state) : ZenithIsland.secondary)
                             .fixedSize()
                         if let detail = detail {
-                            Text("· " + detail).foregroundStyle(.secondary).lineLimit(1).truncationMode(.tail)
+                            Text("· " + detail).foregroundStyle(ZenithIsland.meta).lineLimit(1).truncationMode(.tail)
                         }
                     }
-                    .font(ZenithType.caption)
+                    .font(ZenithType.mono(10.5))
                 }
             }
-            .padding(.vertical, 6)
+            .padding(.vertical, 9)
             .padding(.horizontal, 8)
             .background(RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous)
-                .fill(Color.primary.opacity(hovered ? 0.07 : 0)))
+                .fill(hovered ? ZenithIsland.rowHover : .clear))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

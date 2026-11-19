@@ -19,25 +19,32 @@ import SwiftUI
 // so a sync meets few lines. The test executable compiles this file too,
 // since several island declarations are copied into it: keep it free of
 // anything outside SwiftUI, AppKit and `ZenithTokens`/`ZenithSwitch`.
+//
+// The second redesign (bento cells, mono figures, 3-point bars, the
+// segmented well, status dots, the command palette) lives beside this file
+// in `ZenithIslandKit.swift`; the values here were raised to read on the
+// translucent grey of a glass island as well as on black.
 
 /// The island's values on black.
 enum ZenithIsland {
     /// Text and glyphs, in three steps.
-    static let primary = Color.white.opacity(0.92)
+    static let primary = Color.white.opacity(0.95)
     static let secondary = Color.white.opacity(0.55)
     static let tertiary = Color.white.opacity(0.35)
 
     /// A card's or a control's outline, and the one a hovered, highlighted
     /// or emphasised one takes.
-    static let hairline = Color.white.opacity(0.10)
-    static let strongHairline = Color.white.opacity(0.22)
+    /// Strong enough to survive the translucent grey of a glass island.
+    static let hairline = Color.white.opacity(0.12)
+    static let strongHairline = Color.white.opacity(0.28)
     /// Increase Contrast asks for an outline that can be seen.
-    static let contrastHairline = Color.white.opacity(0.45)
+    static let contrastHairline = Color.white.opacity(0.4)
 
-    /// A card's lift, the wash under the pointer and a press.
-    static let lift = Color.white.opacity(0.04)
-    static let hoverFill = Color.white.opacity(0.07)
-    static let pressedFill = Color.white.opacity(0.11)
+    /// A card's lift (none: the second redesign draws no lifted cards), the
+    /// wash under the pointer and a press.
+    static let lift = Color.clear
+    static let hoverFill = Color.white.opacity(0.06)
+    static let pressedFill = Color.white.opacity(0.10)
 
     /// The system accent, read from AppKit: the island tints its controls
     /// white, and the selection must still wear the accent.
@@ -209,10 +216,80 @@ private struct ZenithIslandHoverTracking: ViewModifier {
     }
 }
 
+extension View {
+    /// Tracks the pointer over this view and tells the glyphs inside, for a
+    /// control that draws no wash of its own.
+    func zenithIslandHoverTracked() -> some View {
+        modifier(ZenithIslandHoverState())
+    }
+}
+
+private struct ZenithIslandHoverState: ViewModifier {
+    @State private var hovering = false
+    @Environment(\.isEnabled) private var enabled
+
+    func body(content: Content) -> some View {
+        content.modifier(ZenithIslandHoverTracking(hovering: Binding(get: { hovering && enabled },
+                                                                    set: { hovering = $0 })))
+    }
+}
+
+// MARK: - Header bar
+
+/// The way back in the island's top row: a plain chevron and the page's
+/// name, both brightening under the pointer. Nothing is drawn around them.
+struct ZenithBandBackLabel: View {
+    let title: String
+    @State private var hovering = false
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(hovering ? ZenithIsland.primary : ZenithIsland.secondary)
+            Text(title)
+                .font(.system(size: 13, weight: .semibold))
+                .tracking(-0.2)
+                .foregroundStyle(ZenithIsland.primary)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 6)
+        .frame(height: 28)
+        .contentShape(Rectangle())
+        .onHover { hovering = $0 }
+        .animation(ZenithMotion.respecting(.easeOut(duration: ZenithMotion.fast)), value: hovering)
+    }
+}
+
+/// What a menu in the island's top row reads: its current choice in mono 12
+/// with a chevron, grey at rest and bright under the pointer, no chrome.
+struct ZenithBandMenuTitle: View {
+    let title: String
+    var symbol: String? = nil
+    var truncation: Text.TruncationMode = .tail
+    @Environment(\.zenithIslandHovered) private var hovered
+
+    var body: some View {
+        HStack(spacing: 5) {
+            if let symbol {
+                Image(systemName: symbol).font(.system(size: 11, weight: .medium))
+            }
+            Text(title).font(ZenithType.mono(12, weight: .medium)).lineLimit(1).truncationMode(truncation)
+            Image(systemName: "chevron.down").font(.system(size: 8.5, weight: .semibold)).opacity(0.8)
+        }
+        .foregroundStyle(hovered ? ZenithIsland.primary : Color.white.opacity(0.7))
+        .padding(.horizontal, 6)
+        .frame(height: 28)
+        .contentShape(Rectangle())
+    }
+}
+
 // MARK: - Icon buttons
 
-/// The island's icon button: a grey glyph that lightens under the pointer,
-/// and the accent tile only when the button stands for the current choice.
+/// The island's icon button: a plain glyph at 55% that brightens to 95%
+/// under the pointer, with no box around it. The button that stands for the
+/// current choice (the pin, the player's lyrics or queue) wears the accent
+/// and a small accent mark under the glyph, so it never rests on colour alone.
 struct ZenithIslandIconChrome: ViewModifier {
     let selected: Bool
     var cornerRadius: CGFloat = 9
@@ -220,10 +297,14 @@ struct ZenithIslandIconChrome: ViewModifier {
     @Environment(\.isEnabled) private var enabled
 
     func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         content
             .zenithIslandGlyph(selected: selected)
-            .zenithIslandSelection(selected, in: shape)
+            .overlay(alignment: .bottom) {
+                if selected {
+                    Capsule().fill(ZenithIsland.accent).frame(width: 8, height: 2).padding(.bottom, 2)
+                        .allowsHitTesting(false)
+                }
+            }
             .modifier(ZenithIslandHoverTracking(hovering: Binding(get: { hovering && enabled },
                                                                  set: { hovering = $0 })))
     }
@@ -303,19 +384,24 @@ private struct ZenithIslandActionWell: ViewModifier {
 
 // MARK: - Pills, chips and buttons
 
-/// An empty page's next step, or any word on a pill: an outline, brighter
-/// for the step the page leads to. Nothing is filled.
+/// An empty page's next step, or any word on a pill. The step the page
+/// leads to is the island's one solid action (`ZenithIslandPrimaryAction`);
+/// any other is grey under a hairline.
 struct ZenithIslandPill: ViewModifier {
     var prominent = false
     @Environment(\.colorSchemeContrast) private var contrast
 
-    func body(content: Content) -> some View {
-        content
-            .foregroundStyle(prominent ? ZenithIsland.primary : ZenithIsland.secondary)
-            .overlay {
-                Capsule().strokeBorder(ZenithIsland.outline(contrast, emphasised: prominent), lineWidth: 0.75)
-                    .allowsHitTesting(false)
-            }
+    @ViewBuilder func body(content: Content) -> some View {
+        if prominent {
+            content.modifier(ZenithIslandPrimaryAction())
+        } else {
+            content
+                .foregroundStyle(ZenithIsland.secondary)
+                .overlay {
+                    Capsule().strokeBorder(ZenithIsland.outline(contrast), lineWidth: 1)
+                        .allowsHitTesting(false)
+                }
+        }
     }
 }
 
@@ -445,22 +531,35 @@ struct ZenithIslandFieldChrome: ViewModifier {
 
 // MARK: - Tags
 
-/// A small mono tag, such as an agent's plan or a deployment's target: a
-/// colour's 10/20/100 form when it carries one, otherwise grey under a hairline.
+/// A small mono tag, such as an agent's plan, a multiple or a deployment's
+/// target: an outlined capsule with grey words. A colour that means
+/// something (a provider, a status) shows only as a 5-point dot inside it;
+/// an `emphasised` tag (production) reads a step brighter.
 struct ZenithIslandTag: View {
     let text: String
+    /// The dot's colour, when the tag carries one.
     var tint: Color? = nil
     var uppercase = true
+    var emphasised = false
+    @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
-        Text(uppercase ? text.uppercased() : text)
-            .font(ZenithType.mono(8.5, weight: .semibold))
-            .foregroundStyle(tint ?? ZenithIsland.secondary)
-            .lineLimit(1)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 1.5)
-            .background(Capsule().fill(tint.map(ZenithStatus.fill) ?? Color.clear))
-            .overlay(Capsule().strokeBorder(tint.map(ZenithStatus.stroke) ?? ZenithIsland.hairline, lineWidth: 0.75))
+        HStack(spacing: 4) {
+            if let tint {
+                Circle().fill(tint).frame(width: 5, height: 5).accessibilityHidden(true)
+            }
+            Text(uppercase ? text.uppercased() : text)
+                .font(ZenithType.mono(10, weight: .medium))
+                .foregroundStyle(Color.white.opacity(emphasised ? 0.85 : 0.5))
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 1.5)
+        .overlay {
+            Capsule().strokeBorder(contrast == .increased ? ZenithIsland.contrastHairline
+                                   : Color.white.opacity(emphasised ? 0.3 : 0.15), lineWidth: 1)
+                .allowsHitTesting(false)
+        }
     }
 }
 

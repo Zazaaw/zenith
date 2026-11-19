@@ -219,7 +219,7 @@ struct QuickLauncherView: View {
                       rowSpacing: NotchLayout.toolSpacing,
                       scrollTarget: launcher.keyboardIndex.flatMap { index in
                           launcher.visibleItems.indices.contains(index) ? launcher.visibleItems[index].id : nil
-                      }) { item in
+                      }, dividers: true) { item in // Zenith fork: tools parted by hairlines
                 cell(item, titleInset: titleInset).frame(height: NotchLayout.toolHeight)
             }
         } else {
@@ -263,11 +263,10 @@ struct QuickLauncherView: View {
                     RoundedRectangle(cornerRadius: notchSize == nil ? 12 : 16, style: .continuous)
                         .fill(iconBackground(item, isSelected: isSelected, isHovered: isHovered))
                         .frame(width: notchSize == nil ? 46 : 32, height: notchSize == nil ? 46 : 32)
-                        .zenithIslandOutline(RoundedRectangle(cornerRadius: 16, style: .continuous), // Zenith fork
-                                             emphasised: isSelected || isHovered, visible: notchSize != nil)
                         .overlay(
                             Image(systemName: icon(for: item))
-                                .font(.system(size: notchSize == nil ? 19 : 16, weight: .semibold))
+                                .font(.system(size: notchSize == nil ? 19 : 18, // Zenith fork: a plain glyph in the island
+                                              weight: notchSize == nil ? .semibold : .regular))
                                 .foregroundStyle(iconColor(item))
                         )
                     if launcher.isEditing {
@@ -296,10 +295,14 @@ struct QuickLauncherView: View {
                         }
                     } else {
                         if isActive(item) {
-                            Circle()
-                                .fill(Color.green)
-                                .frame(width: 8, height: 8)
-                                .offset(x: 3, y: -3)
+                            if notchSize != nil { // Zenith fork: a glowing status dot in the island
+                                ZenithStatusDot(color: ZenithStatus.success, live: true).offset(x: 5, y: -5)
+                            } else {
+                                Circle()
+                                    .fill(Color.green)
+                                    .frame(width: 8, height: 8)
+                                    .offset(x: 3, y: -3)
+                            }
                         }
                         // Keys 1-9 activate the first nine tiles; the badge is
                         // the only hint that shortcut exists.
@@ -315,8 +318,8 @@ struct QuickLauncherView: View {
                     }
                 }
                 Text(title(for: item))
-                    .font(.system(size: notchSize == nil ? 10.5 : 10, weight: .medium))
-                    .foregroundStyle(.primary)
+                    .font(notchSize == nil ? .system(size: 10.5, weight: .medium) : ZenithType.mono(10, weight: .medium)) // Zenith fork
+                    .foregroundStyle(notchSize == nil ? Color.primary : ZenithIsland.secondary) // Zenith fork
                     .multilineTextAlignment(.center)
                     .lineLimit(2, reservesSpace: true)
                     .fixedSize(horizontal: false, vertical: true)
@@ -326,13 +329,15 @@ struct QuickLauncherView: View {
             .padding(.vertical, notchSize == nil ? 9 : 4)
             .background(
                 RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .fill(notchSize != nil ? .clear : isSelected ? Color.accentColor.opacity(0.14)
+                    // Zenith fork: the island's keyboard cursor and pointer wash, after the gallery's rows.
+                    .fill(notchSize != nil ? (isSelected ? ZenithIsland.cursorFill : isHovered ? ZenithIsland.rowHover : .clear)
+                          : isSelected ? Color.accentColor.opacity(0.14)
                           : isHovered ? Color.primary.opacity(0.07)
                           : Color.primary.opacity(0.035))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .strokeBorder(notchSize != nil ? .clear
+                    .strokeBorder(notchSize != nil ? (isSelected ? ZenithIsland.cursorStroke : .clear) // Zenith fork
                                   : isSelected ? Color.accentColor.opacity(0.55) : Color.clear,
                                   lineWidth: 1.2)
             )
@@ -564,7 +569,7 @@ struct QuickLauncherView: View {
     }
 
     private func iconBackground(_ item: QuickLauncherItem, isSelected: Bool, isHovered: Bool) -> Color {
-        if notchSize != nil { return isSelected || isHovered ? ZenithIsland.hoverFill : ZenithIsland.lift } // Zenith fork
+        if notchSize != nil { return .clear } // Zenith fork: no well; the cell shows the pointer and the cursor
         if isActive(item) { return Color.accentColor.opacity(0.18) }
         if isSelected || isHovered { return Color.primary.opacity(0.1) }
         return Color.primary.opacity(0.07)

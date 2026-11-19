@@ -104,7 +104,7 @@ struct NotchWatchView: View {
         } else if let started = watch.startedAt {
             Text(text.since(started.formatted(Date.FormatStyle(date: .omitted, time: .shortened)
                 .locale(l10n.language.formattingLocale()))))
-                .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                .font(ZenithType.mono(10)).foregroundStyle(ZenithIsland.meta).lineLimit(1) // Zenith fork: metadata in mono
         }
     }
 }
@@ -138,7 +138,7 @@ private struct NotchWatchAreaCard: View {
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
-        .font(.system(size: 15, weight: .semibold))
+        .font(ZenithFigure.font(15)) // Zenith fork: the watched reading in mono
         .fixedSize()
         .help(text.inIsland)
         .accessibilityLabel(text.inIsland)
@@ -189,9 +189,10 @@ private struct NotchWatchAreaCard: View {
                     .textSelection(.enabled)
             }
         }
-        .padding(10)
+        .padding(.horizontal, 4) // Zenith fork: a bento cell over a hairline, no card
+        .padding(.vertical, 6)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .zenithIslandCard(cornerRadius: ZenithRadius.card) // Zenith fork: a hairline card
+        .modifier(ZenithIslandBand(gap: NotchLayout.rowSpacing)) // Zenith fork
         .accessibilityElement(children: .combine)
     }
 }

@@ -54,8 +54,7 @@ struct NotchMixerView: View {
                         NotchMicrophoneFader(height: faderHeight, editingVolumeID: $editingVolumeID)
                             .frame(width: Self.masterWidth)
                     }
-                    Rectangle().fill(.white.opacity(0.12)).frame(width: 1)
-                        .accessibilityHidden(true)
+                    ZenithBentoDivider(.vertical) // Zenith fork: the bento hairline, stronger with Increase Contrast
                     desk.frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
@@ -177,7 +176,7 @@ private struct NotchEditablePercent: View {
                     Image(systemName: "bolt.fill").font(.system(size: 7, weight: .bold)).foregroundStyle(tint)
                 }
                 Text("\(percent)%")
-                    .font(.system(size: height > 18 ? 12 : 10, weight: .medium)).monospacedDigit()
+                    .font(ZenithType.mono(height > 18 ? 12 : 10, weight: .medium)) // Zenith fork: figures in mono
                     .foregroundStyle(tint)
                     .contentTransition(.numericText())
                     .animation(reduceMotion ? nil : .smooth(duration: 0.2), value: percent)
@@ -581,10 +580,9 @@ private struct NotchAppFader: View {
                 .resizable()
                 .frame(width: 28, height: 28)
             if app.isPlaying {
-                Circle().fill(ZenithStatus.success).frame(width: 7, height: 7)
-                    .overlay(Circle().stroke(.black, lineWidth: 1.2))
-                    .offset(x: 1, y: 1)
-                    .accessibilityHidden(true)
+                // Zenith fork: the live dot, glowing while the app plays.
+                ZenithStatusDot(color: ZenithStatus.success, live: true)
+                    .offset(x: 4, y: 4)
             }
         }
         .overlay(alignment: .bottomLeading) {

@@ -25,6 +25,7 @@ func agentLimitTint(_ provider: AgentProvider, usedFraction: Double) -> Color {
 }
 
 /// A card on the AI page: the same surface as the island's system cards.
+/// Zenith fork: a bento cell, no box; the page's grid draws the hairlines.
 struct NotchAgentCardChrome<Content: View>: View {
     @ViewBuilder let content: Content
 
@@ -33,7 +34,6 @@ struct NotchAgentCardChrome<Content: View>: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .modifier(NotchControlSurface(cornerRadius: 18, interactive: false))
     }
 }
 
@@ -53,12 +53,12 @@ struct NotchAgentCardHeader<Accessory: View>: View {
                     .frame(width: 17, height: 17)
             } else {
                 Image(systemName: symbol)
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(tint)
+                    .font(.system(size: 9.5, weight: .medium))
+                    .foregroundStyle(tint == .secondary ? ZenithIsland.label : tint) // Zenith fork: the bento heading's grey
                     .frame(width: 13)
             }
             Text(title)
-                .modifier(ZenithIslandLabelStyle()) // Zenith fork: a mono card heading
+                .modifier(ZenithBentoLabelStyle()) // Zenith fork: the bento cell's mono heading
                 .lineLimit(1)
             Spacer(minLength: 4)
             accessory
@@ -216,7 +216,8 @@ struct NotchAgentBars: View {
         GeometryReader { proxy in
             let count = CGFloat(max(1, buckets.count))
             let gap: CGFloat = count > 24 ? 2 : 4
-            let width = max(1, (proxy.size.width - gap * (count - 1)) / count)
+            let slot = max(1, (proxy.size.width - gap * (count - 1)) / count)
+            let width = ZenithChart.barWidth(slot: slot) // Zenith fork: thin bars
             HStack(alignment: .bottom, spacing: gap) {
                 ForEach(Array(buckets.enumerated()), id: \.element.id) { index, bucket in
                     let parts = values[index]
@@ -224,21 +225,28 @@ struct NotchAgentBars: View {
                     VStack(spacing: 0) {
                         Spacer(minLength: 0)
                         if total <= 0 {
-                            Capsule().fill(.white.opacity(0.1)).frame(height: 2)
+                            Capsule().fill(ZenithIsland.barTrack).frame(height: 2) // Zenith fork
                         } else {
                             VStack(spacing: 0) {
                                 ForEach(providers.indices.reversed(), id: \.self) { slot in
                                     if parts[slot] > 0 {
                                         Rectangle()
-                                            .fill(providers[slot].tint.opacity(hovered == nil || hovered == bucket.start ? 0.95 : 0.5))
+                                            // Zenith fork: white for one agent, its colour muted for several;
+                                            // the pointed-at or latest bar bright.
+                                            .fill(ZenithChart.agentFill(providers.count > 1 ? providers[slot].tint : nil,
+                                                                        bright: hovered == bucket.start
+                                                                            || (hovered == nil && index == buckets.count - 1)))
                                             .frame(height: max(1, proxy.size.height * parts[slot] / peak))
                                     }
                                 }
                             }
-                            .clipShape(RoundedRectangle(cornerRadius: min(3, width / 2), style: .continuous))
+                            .clipShape(UnevenRoundedRectangle(topLeadingRadius: min(2, width / 2),
+                                                              topTrailingRadius: min(2, width / 2),
+                                                              style: .continuous)) // Zenith fork: rounded tops
                         }
                     }
                     .frame(width: width, height: proxy.size.height)
+                    .frame(width: slot) // Zenith fork: the thin bar centred in its slot
                     .contentShape(Rectangle())
                     .onHover { inside in
                         if inside { hovered = bucket.start } else if hovered == bucket.start { hovered = nil }

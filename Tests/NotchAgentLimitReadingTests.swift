@@ -34,8 +34,9 @@ enum NotchAgentLimitReadingTests {
                 let limit = AgentLimitWindow(id: "reading", kind: .weekly, minutes: 10_080, scope: "Sonnet",
                                              usedPercent: display == .remaining ? 0 : 100, resetsAt: nil)
                 let share = NotchAgentSupport.limitShare(limit, display: display, text: text)
+                // The reading's own face: Zenith sets the share in SF Mono, slightly tightened.
                 let full = NSHostingView(rootView: Text(share)
-                    .font(.system(size: 12, weight: .semibold, design: .rounded)).monospacedDigit().fixedSize())
+                    .font(ZenithFigure.font(12)).tracking(-0.3).fixedSize())
                 let required = full.fittingSize.width
                 for width: CGFloat in [smallestPairedWidth, 183, 223] {
                     for title in [text.session, "\(text.weekly) · Sonnet"] {

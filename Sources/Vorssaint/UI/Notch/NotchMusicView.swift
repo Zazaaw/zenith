@@ -402,7 +402,7 @@ private struct NotchMusicSideButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(size: 16, weight: .medium)) // Zenith fork: a weight lighter
                 .foregroundStyle(active ? tint : .white.opacity(isEnabled ? 0.55 : 0.3))
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: plate, height: plate)
@@ -461,8 +461,8 @@ private struct NotchMusicOutputButton: View {
     var body: some View {
         NotchMenuButton(title: l10n.s.mixerSystemOutputTitle, items: items, cornerRadius: 22) {
             Image(systemName: symbol)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.55))
+                .font(.system(size: 16, weight: .medium)) // Zenith fork: a weight lighter
+                .zenithIslandGlyph() // Zenith fork: a plain glyph, bright under the pointer
                 .frame(width: 44, height: 44)
                 .contentShape(Circle())
         }
@@ -487,7 +487,8 @@ struct NotchMusicIdleTransport: View {
     var body: some View {
         HStack(spacing: slot == nil ? (compact ? 12 : 18) : 0) {
             button("backward.fill", title: text.mediaPrevious, size: compact ? 16 : 19).frame(width: slot)
-            button("play.fill", title: text.mediaPlayPause, size: compact ? 22 : slot == nil ? 26 : 28).frame(width: slot)
+            // Zenith fork: play stands out a little more.
+            button("play.fill", title: text.mediaPlayPause, size: compact ? 24 : slot == nil ? 28 : 30).frame(width: slot)
             button("forward.fill", title: text.mediaNext, size: compact ? 16 : 19).frame(width: slot)
         }
         .frame(height: height)
@@ -496,7 +497,7 @@ struct NotchMusicIdleTransport: View {
     private func button(_ symbol: String, title: String, size: CGFloat) -> some View {
         Button { NotchPreferredPlayer.open() } label: {
             Image(systemName: symbol)
-                .font(.system(size: size, weight: .semibold))
+                .font(.system(size: size, weight: .medium)) // Zenith fork: a weight lighter
                 .foregroundStyle(.white)
                 .frame(width: height, height: height)
                 .contentShape(Circle())
@@ -580,7 +581,8 @@ private struct NotchMusicTransport: View {
             } else { service.requestAutomationAccess() }
         } label: {
             Image(systemName: showsPlaying ? "pause.fill" : "play.fill")
-                .font(.system(size: compact ? 22 : slot == nil ? 26 : 28, weight: .semibold))
+                // Zenith fork: a weight lighter, and a little larger than the skips.
+                .font(.system(size: compact ? 24 : slot == nil ? 28 : 30, weight: .medium))
                 .foregroundStyle(.white)
                 .contentTransition(.symbolEffect(.replace))
                 .animation(reduceMotion ? nil : .smooth(duration: 0.22), value: showsPlaying)
@@ -610,7 +612,7 @@ private struct NotchMusicTransport: View {
     private func playbackButton(_ symbol: String, title: String, command: NotchMusicService.Command) -> some View {
         Button { service.send(command, context: playback.commandContext) } label: {
             Image(systemName: symbol)
-                .font(.system(size: compact ? 16 : 19, weight: .semibold))
+                .font(.system(size: compact ? 16 : 19, weight: .medium)) // Zenith fork: a weight lighter
                 .foregroundStyle(.white)
                 .frame(width: height, height: height)
                 .contentShape(Circle())
@@ -665,9 +667,8 @@ struct NotchMusicTimeline: View {
                         }
                     }
                 }
-                .font(.system(size: 10, weight: .medium))
-                .monospacedDigit()
-                .foregroundStyle(.secondary)
+                .font(ZenithType.mono(10, weight: .medium)) // Zenith fork: the times in mono
+                .foregroundStyle(ZenithIsland.meta) // Zenith fork
             }
             .frame(height: timesBeside ? NotchLayout.musicTimelineHeight : 30)
             .onChange(of: playback.track) { clearScrub() }
@@ -700,6 +701,7 @@ struct NotchMusicTimeline: View {
                 label: FeatureStrings.notch(l10n.language).playbackPosition,
                 range: 0...playback.duration,
                 tint: tint,
+                trackThickness: 3, // Zenith fork: a 3-point capsule, the grab area unchanged
                 valueLabel: timestamp(position),
                 scrollable: false,
                 onEditingChanged: { editing in
@@ -713,7 +715,7 @@ struct NotchMusicTimeline: View {
                 .frame(height: 10)
                 .disabled(service.commandPending)
         } else {
-            NotchMeter(value: position / playback.duration, height: 6, tint: tint)
+            ZenithDataBar(value: position / playback.duration) // Zenith fork: a 3-point capsule
         }
     }
 
@@ -781,7 +783,7 @@ struct NotchMusicControlsView: View {
         .padding(.horizontal, 12)
         .frame(maxWidth: .infinity)
         .frame(height: height)
-        .modifier(NotchControlSurface(cornerRadius: 18))
+        .modifier(ZenithIslandBand()) // Zenith fork: a band under a hairline, no box
         .onAppear { if !preview { music.refreshAutomation() } }
     }
 

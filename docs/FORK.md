@@ -499,6 +499,70 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   - **Belum diverifikasi visual:** app UI tidak dijalankan saat pengerjaan. Perlu dicek di Mac:
     tiap halaman island, hover glyph, sorotan keyboard di galeri, Increase Contrast, Reduce
     Transparency, dan fokus keyboard pada saklar audio capture controls.
+- **Island terbuka v2, komponen bento (branch `feat/island-v2`):** v1 nyaris tidak terasa,
+  apalagi saat island tampil abu-abu tembus pandang di atas wallpaper (nilai 4%/10% hilang). v2
+  mengganti komponennya, bukan sekadar mewarnai ulang, dengan acuan halaman Resume p441z.my.id.
+  Hanya visual; perilaku, ukuran island, siluet, logika hover/buka, urutan dan ketersediaan modul
+  tidak berubah. Island tertutup, live activity, dan lock screen tidak disentuh.
+  - **Komponen baru** di `UI/Notch/ZenithIslandKit.swift` (ikut dikompilasi ke test lewat
+    `TEST_SOURCES`, jadi hanya SwiftUI, AppKit, `ZenithTokens` dan `ZenithIsland`):
+    `ZenithBentoGrid`/`ZenithBentoCell`/`ZenithBentoHeader`/`ZenithBentoMeta` (sel tanpa kotak,
+    dipisah garis 1 pt putih 12% (40% dengan Increase Contrast) yang diletakkan di tengah celah lama,
+    jadi tinggi halaman tetap; header label mono kapital 10 pt tracking 0,6 putih 45%, meta mono
+    putih 35% di kanan), `ZenithBentoDivider`, `ZenithBentoButtonStyle` (wash 6% saat hover, tanpa
+    lift/skala), `ZenithFigure` (angka besar SF Mono semibold tracking −0,5; satuan seperti `%`,
+    `GB`, `h`, `↓`, `$` otomatis lebih kecil dan redup), `ZenithDataBar` (kapsul 3 pt, isi putih 85%
+    di track 10%, warna hanya untuk peringatan/error, tanda pace opsional), `ZenithChartBar` dan
+    `ZenithChart` (batang tipis, atas membulat, putih 25%, batang terkini/ditunjuk 90%),
+    `ZenithSegmented` (wadah putih 7% + garis 8%, padding 3 pt, blok aktif putih 14% + garis, teks
+    95%/50%, tanpa biru, meluncur dengan `matchedGeometryEffect` di kurva toggle, diam saat Reduce
+    Motion), `ZenithStatusDot`/`ZenithStatusLine` (titik 6 pt warna arti, glow saat live, selalu
+    ditemani kata), `ZenithCommandRow` (baris galeri), `zenithDropZone` (garis putus-putus),
+    `ZenithIslandPrimaryAction`/`ZenithIslandPrimaryButtonStyle` (satu-satunya aksi padat: kapsul
+    putih 90%, teks gelap), `ZenithIslandRoundControl`, `ZenithIslandSheet` (scratchpad di atas dot
+    grid), `ZenithIslandTabBlock`, `ZenithIslandShortcutGlyph`, `ZenithIslandBand`, `ZenithSystemCell`.
+  - **Nilai `ZenithIsland` dinaikkan:** teks utama 0,95, hairline 0,12 (kuat 0,28, Increase Contrast
+    0,4), lift kartu 0 (tidak ada lagi), hover 0,06. `ZenithIslandTag` jadi kapsul bergaris mono 10,
+    teks putih 50%, garis 15%; warna provider/status hanya sebagai titik 5 pt di dalamnya.
+    `NotchPillButton` yang `prominent` jadi aksi padat putih.
+  - **Baris atas island:** `NotchIconButton` jadi glyph polos 0,55 → 0,95 saat hover tanpa kotak
+    (yang `selected` memakai aksen + garis kecil di bawahnya), `NotchBandMenuLabel` jadi judul mono 12
+    + chevron tanpa chrome, `NotchBandBackButton` chevron + nama halaman tanpa chrome. `NotchMenuButton`
+    tidak lagi memberi wash; label di dalamnya menerima status hover (`zenithIslandHoverTracked`).
+  - **Galeri section jadi command palette:** baris glyph 16 pt monokrom, nama 13 medium, shortcut mono
+    redup di kanan; dua kolom kalau lebar cukup, satu kolom di lebar tersempit. Hover 6%, section aktif
+    garis aksen 2 pt di kiri + glyph aksen, kursor keyboard isi 10% + garis 1 pt 30%. Konstanta di
+    `NotchLayout` (`NotchSupport.swift`, bertanda `// Zenith fork`): baris 32,5 pt, jarak 2 pt, kolom
+    minimal 170 pt, maksimal 2 kolom, dan `sectionListHeight(budget:)` yang menjaga tinggi galeri sama
+    dengan tiga baris tile upstream (preset: 8 baris = 274 pt), jadi island galeri tidak berubah tinggi.
+    Cari, navigasi keyboard, paging per baris, urutan, ketersediaan tetap. Jarak geser trackpad ikut
+    pitch baris baru (34,5 pt).
+  - **Per halaman:** System dan AI jadi grid bento (angka mono besar, bar 3 pt, chart tipis; warna
+    provider dibuat redup untuk beberapa agent, putih untuk satu; agent yang bekerja = titik emerald
+    menyala). WakaTime di island punya layout sendiri (status line, segmented rentang, sel total,
+    proyek/bahasa teratas, bahasa, grafik hari); kartu panel menu bar tetap. Vercel, GitHub, Downloads
+    dan agenda Calendar jadi baris bergaris dengan titik status; warna kalender tetap di batang 3 pt.
+    Notifications jadi sel bento (rail `NotchRail(dividers: true)`), Home dan Tools jadi glyph polos
+    berlabel mono yang dipisah garis, player di Home di atas hairline. Timer: mode jadi segmented, jam
+    mono putih, fase titik status, jeda/lanjut lingkaran hairline, Start aksi padat. Player musik:
+    timeline kapsul 3 pt, waktu mono, glyph satu tingkat lebih ringan dengan play/pause sedikit lebih
+    besar; layout, ukuran, cover, lirik dan antrean tetap. Files/Shelf: zona drop garis putus-putus.
+    Scratchpad di atas dot grid tipis dengan pad aktif sebagai blok padat. Watch, Mixer, Camera ikut
+    (bacaan mono, titik live, aksi padat). Clipboard tetap kartu (pratinjau konten), hanya chrome-nya
+    ikut nilai baru.
+  - **Tidak memakai bento penuh:** Clipboard (kartu adalah pratinjau isi dan diukur test), Mixer
+    (fader vertikal), Camera (pratinjau gambar), Music (layout diikat kontrak ukuran), Calendar (grid
+    bulan dan agenda punya layout sendiri; agenda jadi timeline bergaris), ruler Timer (gambar AppKit,
+    tetap oranye). Aturan lain (mono, titik, garis, aksi padat) tetap diterapkan di sana.
+  - **Test yang diubah:** `NotchAgentLimitReadingTests` mengukur bacaan dengan font mono baru (tujuan
+    sama: bacaan muat). `NotchTests` (galeri): preset 8 baris bukan 3, 2 kolom (1 di lebar tersempit),
+    8 baris = ruang 3 baris tile upstream, lebar baris minimal pakai `sectionColumnSpacing`.
+    `NotchSectionPagingTests`: jarak geser dinyatakan dengan `NotchSectionScroll.rowStep`/`firstStep`,
+    bukan angka pitch tile lama (94 pt).
+  - **Belum diverifikasi visual:** app UI tidak dijalankan. Perlu dicek di Mac, terutama di island
+    abu-abu tembus pandang: galeri command palette (kolom, kursor keyboard, paging), grid System/AI,
+    WakaTime, segmented Timer di baris atas (ViewThatFits ke menu bila sempit), label mono Home di
+    bahasa panjang, Increase Contrast, Reduce Motion.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.

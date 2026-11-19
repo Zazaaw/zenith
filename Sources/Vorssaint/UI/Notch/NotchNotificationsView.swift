@@ -37,7 +37,8 @@ struct NotchNotificationsView: View {
                                                 perRow: NotchLayout.railCapacity(width: size.width, itemWidth: 240, spacing: 8),
                                                 rowHeight: 120, spacing: 8, height: size.height)
                 let cardHeight = (size.height - CGFloat(rows - 1) * 8) / CGFloat(rows)
-                NotchRail(items: service.items, rows: rows, itemWidth: 240, width: size.width) { item in
+                NotchRail(items: service.items, rows: rows, itemWidth: 240, width: size.width,
+                          dividers: true) { item in // Zenith fork: a bento grid
                     NotchNotificationRow(item: item, service: service, text: text)
                         .frame(height: cardHeight)
                 }
@@ -91,6 +92,7 @@ private struct NotchNotificationRow: View {
                     .lineLimit(1)
                 Spacer(minLength: 4)
                 Text(item.received, format: .dateTime.hour().minute()).zenithIslandMeta(10) // Zenith fork
+                    .foregroundStyle(ZenithIsland.meta).textCase(nil) // Zenith fork
                 if service.openingID == item.id {
                     ProgressView().controlSize(.mini)
                 } else if service.canOpen(item) {
@@ -105,7 +107,7 @@ private struct NotchNotificationRow: View {
                 NotchIconButton(symbol: "xmark", title: text.dismiss) { service.dismiss(item.id) }
                     .disabled(service.openingID == item.id)
             }
-            .font(.system(size: 11)).foregroundStyle(.white.opacity(0.6))
+            .modifier(ZenithBentoLabelStyle()) // Zenith fork: the app as the cell's mono heading
             .frame(height: 22)
             Text(item.content.title).font(.system(size: 13, weight: .semibold)).lineLimit(2)
             if !item.content.subtitle.isEmpty { Text(item.content.subtitle).font(.system(size: 12)).lineLimit(1) }
@@ -118,9 +120,9 @@ private struct NotchNotificationRow: View {
                 Text(message).font(.caption).foregroundStyle(ZenithStatus.warning).lineLimit(1)
             }
         }
-        .padding(12)
+        .padding(.horizontal, 10) // Zenith fork: a bento cell, no card
+        .padding(.vertical, 8) // Zenith fork
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .zenithIslandCard(cornerRadius: ZenithRadius.card) // Zenith fork: a hairline card
         .clipped()
         .accessibilityElement(children: .contain)
     }

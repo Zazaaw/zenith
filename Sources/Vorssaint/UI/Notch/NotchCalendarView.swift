@@ -258,9 +258,10 @@ struct NotchCalendarView: View {
         } else {
             LazyVStack(alignment: .leading, spacing: 14) {
                 ForEach(groups, id: \.day) { group in
-                    VStack(alignment: .leading, spacing: 7) {
+                    VStack(alignment: .leading, spacing: 4) { // Zenith fork: a timeline of rows
                         if selectedDay == nil { dayLabel(group.day, now: now) }
                         ForEach(group.events) { event in
+                            if event.id != group.events.first?.id { ZenithBentoDivider(.horizontal, gap: 3) } // Zenith fork
                             NotchCalendarEventRow(event: event, day: group.day, now: now,
                                                   isNext: event.id == next?.id, text: text,
                                                   countdown: countdownChoice(event, now: now),
@@ -329,7 +330,7 @@ struct NotchCalendarView: View {
                 Text(text.requestFailed).font(.caption).foregroundStyle(ZenithStatus.warning)
             }
         }
-        .buttonStyle(ZenithIslandOutlineButtonStyle(prominent: true)) // Zenith fork
+        .buttonStyle(ZenithIslandPrimaryButtonStyle()) // Zenith fork: the page's one solid step
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 12)
     }
@@ -361,7 +362,7 @@ private struct NotchCalendarDayLabel: View {
             }
             Text(day, format: .dateTime.day().month(.abbreviated))
         }
-        .modifier(ZenithIslandLabelStyle()) // Zenith fork: a mono group heading
+        .modifier(ZenithBentoLabelStyle()) // Zenith fork: a bento heading
         .lineLimit(1)
     }
 }
@@ -383,7 +384,7 @@ private struct NotchCalendarEventRow: View {
 
     var body: some View {
         Button(action: open) { card }
-            .buttonStyle(NotchButtonStyle(cornerRadius: ZenithRadius.card, lifts: false)) // Zenith fork
+            .buttonStyle(ZenithBentoButtonStyle(cornerRadius: ZenithRadius.large)) // Zenith fork: a wash, no lift
             .help(text.openCalendar)
             .accessibilityHint(text.openCalendar)
             .modifier(NotchCountdownChoice(chosen: countdown, text: text, choose: choose))
@@ -392,9 +393,13 @@ private struct NotchCalendarEventRow: View {
     private var card: some View {
         VStack(alignment: .leading, spacing: 4) {
             if ongoing || isNext {
-                Text(ongoing ? text.ongoing : text.next)
-                    .modifier(ZenithIslandLabelStyle(color: ongoing ? ZenithStatus.success : ZenithIsland.secondary)) // Zenith fork
-                    .lineLimit(1)
+                HStack(spacing: 3) { // Zenith fork: a timeline dot, emerald and glowing while it runs
+                    ZenithStatusDot(color: ongoing ? ZenithStatus.success : ZenithIsland.secondary, live: ongoing)
+                        .padding(.leading, -3)
+                    Text(ongoing ? text.ongoing : text.next)
+                        .modifier(ZenithBentoLabelStyle(color: ongoing ? ZenithStatus.success : ZenithIsland.label))
+                        .lineLimit(1)
+                }
             }
             Text(event.title.isEmpty ? text.untitled : event.title)
                 .font(.system(size: 13, weight: .semibold))
@@ -420,10 +425,10 @@ private struct NotchCalendarEventRow: View {
                         .accessibilityLabel(text.countdown)
                 }
             }
-            .font(.system(size: 11)).monospacedDigit()
+            .font(ZenithType.mono(11)) // Zenith fork: times in mono
             .foregroundStyle(.white.opacity(0.75))
             Text(event.calendar)
-                .font(.system(size: 10)).foregroundStyle(.white.opacity(0.5)).lineLimit(1)
+                .font(ZenithType.mono(10)).foregroundStyle(ZenithIsland.meta).lineLimit(1) // Zenith fork
             if !event.location.isEmpty {
                 Label(event.location, systemImage: "mappin")
                     .font(.system(size: 10)).foregroundStyle(.white.opacity(0.6)).lineLimit(1)
@@ -436,10 +441,9 @@ private struct NotchCalendarEventRow: View {
                 .frame(width: 3)
                 .accessibilityHidden(true)
         }
-        .padding(10)
+        .padding(.vertical, 8) // Zenith fork: a row on the island, no card;
+        .padding(.horizontal, 4) // the calendar's colour stays on its 3-point bar.
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        // Zenith fork: a hairline card; the calendar's colour stays on its bar.
-        .zenithIslandCard(cornerRadius: ZenithRadius.card, selected: ongoing)
         .clipped()
     }
 }

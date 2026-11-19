@@ -44,7 +44,7 @@ struct NotchSectionsView: View {
         return HStack(spacing: 0) {
             VStack(spacing: NotchLayout.sectionSpacing) {
                 ForEach(0..<rows, id: \.self) { row in
-                    HStack(spacing: NotchLayout.sectionSpacing) {
+                    HStack(spacing: NotchLayout.sectionColumnSpacing) { // Zenith fork: columns of rows
                         ForEach(0..<columns, id: \.self) { column in
                             let index = row * columns + column
                             if index < sections.count {
@@ -100,39 +100,13 @@ struct NotchSectionsView: View {
     private func tile(_ module: NotchModule, visible: Bool) -> some View {
         let highlighted = service.highlightedSection == module
         let current = service.selected == module
-        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
         return Button { service.select(module) } label: {
-            VStack(spacing: 6) {
-                Image(systemName: module.symbol)
-                    .font(.system(size: 22, weight: .medium))
-                    .zenithIslandGlyph(selected: current) // Zenith fork: monochrome, accent when current
-                    .frame(width: 25, height: 25)
-                Text(module.title(l10n.language))
-                    .font(.system(size: 11, weight: .medium))
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.85)
-                    .multilineTextAlignment(.center)
-                    .frame(height: 27)
-                    .foregroundStyle(ZenithIsland.primary) // Zenith fork
-                Text("⌥⌘" + module.shortcutKey.uppercased())
-                    .zenithIslandMeta(10, weight: .medium) // Zenith fork
-                    .foregroundStyle(ZenithIsland.tertiary) // Zenith fork
-            }
-            .padding(.horizontal, 6)
-            .frame(maxWidth: .infinity)
-            .frame(height: NotchLayout.sectionTileHeight)
-            .zenithIslandSectionTile(highlighted: highlighted, selected: current) // Zenith fork
-            .overlay(alignment: .topTrailing) {
-                if current {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 10))
-                        .foregroundStyle(ZenithIsland.accent) // Zenith fork
-                        .padding(7)
-                }
-            }
-            .contentShape(shape)
+            // Zenith fork: a command palette row: glyph, name and shortcut.
+            ZenithCommandRow(symbol: module.symbol, title: module.title(l10n.language),
+                             shortcut: "⌥⌘" + module.shortcutKey.uppercased(),
+                             highlighted: highlighted, current: current, height: NotchLayout.sectionTileHeight)
         }
-        .buttonStyle(NotchButtonStyle(cornerRadius: 16, lifts: false))
+        .buttonStyle(NotchButtonStyle(cornerRadius: ZenithRadius.large, lifts: false, highlights: false)) // Zenith fork
         .accessibilityLabel(module.title(l10n.language))
         .accessibilityAddTraits(current ? .isSelected : [])
         .accessibilityIdentifier("notch.module.\(module.rawValue)")
