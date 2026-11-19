@@ -2750,25 +2750,32 @@ enum NotchTests {
             suite.expect(geometry.sectionPickerSize(count: 1).height < geometry.sectionPickerSize(count: allModules.count).height,
                    "a short search result shrinks the gallery instead of reserving empty rows")
         }
-        suite.expect(compact.sectionRows(count: allModules.count) == 3 && spacious.sectionRows(count: allModules.count) == 3
+        // Zenith fork: the gallery is a command palette of rows, in the room
+        // upstream's three rows of tiles took on a preset's page.
+        suite.expect(compact.sectionRows(count: allModules.count) == 8 && spacious.sectionRows(count: allModules.count) == 8
                && compact.contentSize(for: compact.sectionPickerSize(count: allModules.count)).height <= compact.pageBudget
                && tall.sectionRows(count: allModules.count) > spacious.sectionRows(count: allModules.count)
                && tall.sectionRows(count: allModules.count)
                    <= NotchSectionPaging.rows(count: allModules.count, columns: tall.sectionColumns),
-               "the gallery is a page: presets show three whole rows and a tall island shows more")
-        suite.expect(compact.sectionColumns == 4 && spacious.sectionColumns == 5
+               "the gallery is a page: presets show eight whole rows and a tall island shows more")
+        let narrow = NotchGeometry(screen: frames[0], safeAreaTop: 32, cameraWidth: 210, layout: .custom,
+                                   customWidth: NotchSize.widthRange.lowerBound)
+        suite.expect(compact.sectionColumns == 2 && spacious.sectionColumns == 2 && narrow.sectionColumns == 1
                && compact.sectionColumns * compact.sectionRows(count: allModules.count) < allModules.count
-               && spacious.sectionColumns * (spacious.sectionRows(count: allModules.count) + 1) >= allModules.count,
-               "a compact island steps rows to reach its last sections and a spacious one steps at most one")
-        suite.expect(NotchLayout.sectionTileHeight * 2 + NotchLayout.sectionSpacing <= NotchLayout.compactContentHeight
-               && NotchLayout.sectionTileHeight * 3 + NotchLayout.sectionSpacing * 2 <= NotchLayout.pageContentHeight,
-               "two rows fit the compact strip and three rows fit the gallery's page exactly or better")
-        for geometry in [compact, spacious, tall] {
+               && NotchSectionPaging.positions(rows: NotchSectionPaging.rows(count: allModules.count,
+                                                                            columns: spacious.sectionColumns),
+                                               visible: spacious.sectionRows(count: allModules.count)) <= 3,
+               "a preset lists the sections in two columns, the narrowest island in one, and steps rows to reach the last ones")
+        suite.expect(NotchLayout.railHeight(rows: 8, rowHeight: NotchLayout.sectionTileHeight, spacing: NotchLayout.sectionSpacing)
+                   == NotchLayout.sectionListHeight(budget: NotchLayout.pageContentHeight)
+               && NotchLayout.sectionListHeight(budget: NotchLayout.pageContentHeight) <= NotchLayout.pageContentHeight,
+               "eight rows fill the room three rows of upstream's tiles took on the gallery's page, and no more")
+        for geometry in [compact, spacious, tall, narrow] {
             let columns = geometry.sectionColumns
             let tileWidth = (geometry.contentWidth - NotchLayout.sectionIndicatorWidth
-                             - CGFloat(columns - 1) * NotchLayout.sectionSpacing) / CGFloat(columns)
+                             - CGFloat(columns - 1) * NotchLayout.sectionColumnSpacing) / CGFloat(columns)
             suite.expect(tileWidth >= NotchLayout.sectionTileWidth,
-                   "gallery tiles keep their readable width beside the row indicator")
+                   "gallery rows keep their readable width beside the row indicator")
             suite.expect(QuickToolsSupport.gridIndex(after: 0, count: allModules.count,
                                                      flow: .rows(columns: columns), direction: .down) == columns,
                    "gallery Down follows the next visible row rather than the old sideways rail")

@@ -32,22 +32,25 @@ enum NotchSectionPagingTests {
         }
         suite.expect(feed(0, began: true) == 0 && feed(-5) == 0 && feed(-10) == 0 && feed(-10) == 1,
                "a short downward movement accumulates into one row below, matching the island's gesture distance")
-        suite.expect(feed(-50) == 0 && feed(-50) == 1,
+        // Zenith fork: distances follow the gallery's row pitch, which the
+        // command palette's rows made shorter than upstream's tiles.
+        let pitch = NotchSectionScroll.rowStep, first = NotchSectionScroll.firstStep
+        suite.expect(pitch > first && feed(-(pitch - 2)) == 0 && feed(-2) == 1,
                "further rows in the same drag follow the row pitch rather than the short first step")
-        suite.expect(feed(-300) == 3, "a long continuous drag steps several rows at once")
+        suite.expect(feed(-3 * pitch) == 3, "a long continuous drag steps several rows at once")
         suite.expect(feed(0, ended: true) == 0 && feed(-400, momentum: true) == 0 && feed(-400, momentum: true) == 0,
                "momentum after lifting the fingers never moves another row")
         suite.expect(feed(-30, began: true) == 1 && feed(30) == -1,
                "turning back answers with the short first step again, revealing the row above")
         for sign in [-1, 1] {
-            for (distance, rows) in [(23.0, 0), (24.0, 1), (25.0, 1), (118.0, 2)] {
+            for (distance, rows) in [(first - 1, 0), (first, 1), (first + 1, 1), (first + pitch, 2)] {
                 suite.expect(feed(Double(sign) * distance, began: true) == -sign * rows
                        && feed(0) == 0 && feed(Double(-sign) * 24) == sign,
                        "reversing resets the first step in either direction, even with zero distance left after \(distance) points")
             }
             suite.expect(feed(Double(sign) * 24, began: true) == -sign
-                   && feed(0) == 0 && feed(Double(sign) * 24) == 0
-                   && feed(Double(sign) * 70) == -sign,
+                   && feed(0) == 0 && feed(Double(sign) * first) == 0
+                   && feed(Double(sign) * (pitch - first)) == -sign,
                    "zero remainder and resting fingers preserve the longer pitch when continuing in the same direction")
         }
         suite.expect(feed(0, ended: true) == 0 && feed(-20, began: true) == 0 && feed(0) == 0 && feed(-3) == 0 && feed(-2) == 1,
@@ -60,7 +63,7 @@ enum NotchSectionPagingTests {
                "a smoothed wheel glide steps once for its notch")
         suite.expect(feed(-8, phased: false, after: 0.5) == 0 && feed(-8, phased: false) == 0 && feed(-8, phased: false) == 1,
                "a paused glide sequence starts over, so the next notch steps its own row")
-        suite.expect(feed(-100, phased: false) == 1 && feed(-100, phased: false, after: -1) == 1,
+        suite.expect(feed(-(pitch + 1), phased: false) == 1 && feed(-(pitch + 1), phased: false, after: -1) == 1,
                "a clock that runs backwards starts a fresh sequence instead of stalling")
         suite.expect(feed(.nan) == 0 && feed(-24, began: true) == 1,
                "an unreadable delta resets the sequence and the next gesture begins cleanly")
