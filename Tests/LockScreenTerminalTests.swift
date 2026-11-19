@@ -325,10 +325,10 @@ enum LockScreenTerminalTests {
                      "project names start hidden")
         suite.expect(Defaults.registeredDefaults[DefaultsKey.notchLockScreenTerminalLines] as? String == Selection.defaultValue,
                      "the lines start in the default order")
-        let defaults = UserDefaults(suiteName: "LockScreenTerminalTests")!
-        defaults.removePersistentDomain(forName: "LockScreenTerminalTests")
+        let defaults = UserDefaults(suiteName: "com.vorssaint.tests.lockscreen-terminal")!
+        defaults.removePersistentDomain(forName: "com.vorssaint.tests.lockscreen-terminal")
         defaults.set(true, forKey: DefaultsKey.notchLockScreenTerminal)
         suite.expect(!Support.isEnabled(in: defaults), "the readout needs the lock screen itself on")
-        defaults.removePersistentDomain(forName: "LockScreenTerminalTests")
+        defaults.removePersistentDomain(forName: "com.vorssaint.tests.lockscreen-terminal")
     }
 }
