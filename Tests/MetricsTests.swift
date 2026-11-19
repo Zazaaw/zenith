@@ -258,6 +258,7 @@ struct MetricsTests {
             ("emoji", { CommandBarEmojiContract.run(suite) }),
             // Zenith fork.
             ("wakatime", { WakaTimeTests.run(suite) }),
+            ("lockscreen-widgets", { LockScreenWidgetsTests.run(suite) }),
         ]
         var selected = Set<String>()
         var listOnly = false

@@ -997,6 +997,9 @@ enum DefaultsKey {
     static let notchLockScreenDownloads = "notchLockScreenDownloads"
     static let notchLockScreenCalendar = "notchLockScreenCalendar"
     static let notchLockScreenWakaTime = "notchLockScreenWakaTime"
+    // Zenith fork: off until switched on, since each needs a permission.
+    static let notchLockScreenWeather = "notchLockScreenWeather"
+    static let notchLockScreenReminders = "notchLockScreenReminders"
     static let wakaTimeDailyGoalMinutes = "wakaTimeDailyGoalMinutes" // Zenith fork, 0 = off
     // Companion: a small friend who rests in the closed island and is the Command Bar's face.
     static let notchMascotEnabled = "notchMascotEnabled"
@@ -1616,6 +1619,8 @@ enum Defaults {
         DefaultsKey.notchLockScreenDownloads: true,
         DefaultsKey.notchLockScreenCalendar: true,
         DefaultsKey.notchLockScreenWakaTime: true,
+        DefaultsKey.notchLockScreenWeather: false,
+        DefaultsKey.notchLockScreenReminders: false,
         DefaultsKey.wakaTimeDailyGoalMinutes: 0,
         DefaultsKey.notchMascotEnabled: false,
         DefaultsKey.notchMascotVisits: true,
