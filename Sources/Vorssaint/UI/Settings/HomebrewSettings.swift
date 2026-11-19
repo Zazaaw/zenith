@@ -61,11 +61,8 @@ struct HomebrewSettings: View {
     }
 
     private var pageHeader: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Label(l10n.s.homebrewName, systemImage: "shippingbox")
-                .font(.system(size: 14, weight: .semibold))
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        SettingsPageHeader(title: l10n.s.homebrewName,
+                           subtitle: FeatureStrings.hub(l10n.language).descHomebrew)
     }
 
     private var content: some View {

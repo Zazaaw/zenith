@@ -27,14 +27,7 @@ struct CommandBarAppShortcutsView: View {
         let apps = visibleApps(shortcuts: shortcuts, aliases: aliases, pins: pins)
 
         VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(text.appCenterTitle)
-                    .font(.title2.weight(.semibold))
-                Text(text.appCenterCaption)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            SettingsPageHeader(title: text.appCenterTitle, subtitle: text.appCenterCaption)
 
             HStack(spacing: 12) {
                 HStack(spacing: 6) {

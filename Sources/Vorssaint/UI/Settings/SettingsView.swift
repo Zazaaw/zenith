@@ -806,15 +806,9 @@ struct ReleaseNotesSettings: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(l10n.s.obWhatsNewTitle)
-                    .font(.title2.bold())
-                Text(versionLine)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 24)
-            .padding(.top, 24)
+            SettingsPageHeader(title: l10n.s.obWhatsNewTitle, subtitle: versionLine)
+                .padding(.horizontal, 24)
+                .padding(.top, 24)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {

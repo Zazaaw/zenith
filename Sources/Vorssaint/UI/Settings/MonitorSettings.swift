@@ -46,13 +46,7 @@ struct MonitorSettings: View {
             Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(l10n.s.tabMonitor).font(.title2.bold())
-                        Text(FeatureStrings.settingsPages(l10n.language).monitorDescription)
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                    SettingsPageHeader(title: l10n.s.tabMonitor, subtitle: FeatureStrings.settingsPages(l10n.language).monitorDescription)
                     groupHeading(l10n.s.monitorMenuBarSection, symbol: "menubar.rectangle")
                     menuBarCard
                     menuBarStyleCard

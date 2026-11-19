@@ -66,13 +66,7 @@ struct NotchMascotSettings: View {
     }
 
     private var header: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(text.title).font(.title2.bold())
-                Text(text.hint).font(.callout).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 12)
+        SettingsPageHeader(title: text.title, subtitle: text.hint) {
             Toggle(text.title, isOn: $enabled).labelsHidden().toggleStyle(.switch)
                 .accessibilityLabel(text.title)
         }

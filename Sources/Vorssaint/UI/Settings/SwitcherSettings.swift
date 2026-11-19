@@ -55,13 +55,7 @@ struct SwitcherSettings: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(l10n.s.tabSwitcher).font(.title2.bold())
-                    Text(pages.switcherDescription)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                SettingsPageHeader(title: l10n.s.tabSwitcher, subtitle: pages.switcherDescription)
                 if AppFeature.switcher.isAvailable {
                     switcherCard
                         .settingsSectionAnchor(.switcher, cornerRadius: 16)

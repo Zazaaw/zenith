@@ -283,6 +283,7 @@ def main():
                     for prefix in ["    private var content:", "    private var restartCard:"])
           + "}\nextension FeatureHubLayoutTests {\n"
           + declaration("Sources/Vorssaint/UI/Settings/SettingsCard.swift", "struct SettingsCard<")
+          + declaration("Sources/Vorssaint/UI/Settings/SettingsCard.swift", "struct SettingsPageHeader<")
           + "}\n"
           + declaration(feature_hub, "private struct FeatureHubScrollAnchor:"))
     write("CleanerLayout.swift", "import SwiftUI\nextension CleanerLayoutTests.Results {\n"
