@@ -158,6 +158,21 @@ extension WakaTimeSupport {
         return rest > 0 ? leaders + [Share(name: "", percent: rest, seconds: 0)] : leaders
     }
 
+    // MARK: Daily goal
+
+    /// Goals offered in Settings, in minutes; 0 is off.
+    static let goalChoices = [0, 60, 120, 180, 240, 300, 360, 480]
+
+    /// Share of the goal done today, capped at 1; nil without a goal.
+    static func goalProgress(totalSeconds: Double, goalMinutes: Int) -> Double? {
+        guard goalMinutes > 0 else { return nil }
+        return min(1, max(0, totalSeconds) / Double(goalMinutes * 60))
+    }
+
+    static func goalReached(totalSeconds: Double, goalMinutes: Int) -> Bool {
+        goalMinutes > 0 && totalSeconds >= Double(goalMinutes * 60)
+    }
+
     // MARK: Helpers
 
     private static func number(_ value: Any?) -> Double? {

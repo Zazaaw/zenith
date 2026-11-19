@@ -8,6 +8,8 @@ import CoreGraphics
 /// gives them up when it runs short.
 enum NotchLockScreenActivity: String, CaseIterable, Identifiable {
     case timer, calendar, agents, downloads
+    // Zenith fork: today's coding time.
+    case wakatime
 
     var id: String { rawValue }
 }
@@ -45,13 +47,15 @@ enum NotchLockScreenSupport {
         session.completed || session.deadline.map { now >= $0 } == true
     }
 
-    static func activities(timer: Bool, calendar: Bool, agents: Bool, downloads: Bool) -> [NotchLockScreenActivity] {
+    static func activities(timer: Bool, calendar: Bool, agents: Bool, downloads: Bool,
+                           wakatime: Bool = false) -> [NotchLockScreenActivity] {
         NotchLockScreenActivity.allCases.filter {
             switch $0 {
             case .timer: return timer
             case .calendar: return calendar
             case .agents: return agents
             case .downloads: return downloads
+            case .wakatime: return wakatime
             }
         }
     }

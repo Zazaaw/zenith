@@ -32,12 +32,17 @@ final class WakaTimeService: ObservableObject {
     /// One total per day seen, kept on this Mac only (not part of settings backups).
     static let historyKey = "zenithWakaTimeHistory"
     static let rangeKey = "zenithWakaTimeRange"
+    /// The day the goal notification last went out, so it comes once a day.
+    static let goalNotifiedKey = "zenithWakaTimeGoalNotifiedDay"
 
     private var lastFetch: Date?
     private var request: Task<Void, Never>?
     private var timer: Timer?
     private var viewers = 0
     private var token: String?
+    private var goalTimer: Timer?
+
+    var goalMinutes: Int { UserDefaults.standard.integer(forKey: DefaultsKey.wakaTimeDailyGoalMinutes) }
 
     private init() {
         let stored = UserDefaults.standard.dictionary(forKey: Self.historyKey) ?? [:]
@@ -88,6 +93,34 @@ final class WakaTimeService: ObservableObject {
         stats = nil
         summaryDays = []
         refresh(force: true)
+    }
+
+    // MARK: Daily goal
+
+    /// With a goal set, checks every ten minutes so the goal notification is on
+    /// time even with no WakaTime view open. Without one, nothing runs.
+    func syncGoalMonitoring() {
+        goalTimer?.invalidate()
+        goalTimer = nil
+        guard goalMinutes > 0, hasToken || WakaTimeSupport.hasConfiguration() else { return }
+        refreshIfStale()
+        let timer = Timer(timeInterval: 10 * 60, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refresh() }
+        }
+        timer.tolerance = 60
+        RunLoop.main.add(timer, forMode: .common)
+        goalTimer = timer
+    }
+
+    private func notifyGoalIfReached(_ today: WakaTimeSupport.Today) {
+        let day = WakaTimeSupport.dayKey(Date())
+        guard WakaTimeSupport.goalReached(totalSeconds: today.totalSeconds, goalMinutes: goalMinutes),
+              UserDefaults.standard.string(forKey: Self.goalNotifiedKey) != day else { return }
+        UserDefaults.standard.set(day, forKey: Self.goalNotifiedKey)
+        let language = L10n.shared.language
+        let text = ZenithStrings.wakaTimeGoal(language)
+        let total = WakaTimeSupport.duration(today.totalSeconds, locale: Locale(identifier: language.rawValue))
+        Notifier.post(title: text.goalReachedTitle, body: text.reachedBody(total))
     }
 
     // MARK: Refresh
@@ -157,6 +190,7 @@ final class WakaTimeService: ObservableObject {
                 return
             }
             self.today = today
+            self.notifyGoalIfReached(today)
             self.history = WakaTimeSupport.recording(today.totalSeconds, for: Date(), in: self.history)
             UserDefaults.standard.set(self.history, forKey: Self.historyKey)
             self.state = .ready

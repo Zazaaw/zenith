@@ -462,3 +462,51 @@ extension ZenithStrings {
         }
     }
 }
+
+struct ZenithWakaTimeGoalStrings {
+    let goalTitle: String
+    let goalOff: String
+    let goalReachedTitle: String
+    let goalReachedBodyFormat: String
+    let goalProgressFormat: String
+
+    func reachedBody(_ total: String) -> String { String(format: goalReachedBodyFormat, total) }
+    func progress(_ goal: String) -> String { String(format: goalProgressFormat, goal) }
+}
+
+extension ZenithStrings {
+    static func wakaTimeGoal(_ language: AppLanguage) -> ZenithWakaTimeGoalStrings {
+        switch language {
+        case .enUS:
+            return .init(goalTitle: "Daily goal", goalOff: "Off", goalReachedTitle: "Daily coding goal reached", goalReachedBodyFormat: "%@ of coding today.", goalProgressFormat: "of %@")
+        case .ptBR:
+            return .init(goalTitle: "Meta diária", goalOff: "Desligada", goalReachedTitle: "Meta diária de código atingida", goalReachedBodyFormat: "%@ de código hoje.", goalProgressFormat: "de %@")
+        case .tr:
+            return .init(goalTitle: "Günlük hedef", goalOff: "Kapalı", goalReachedTitle: "Günlük kodlama hedefine ulaşıldı", goalReachedBodyFormat: "Bugün %@ kodlama.", goalProgressFormat: "/ %@")
+        case .ru:
+            return .init(goalTitle: "Цель на день", goalOff: "Выкл.", goalReachedTitle: "Дневная цель по коду достигнута", goalReachedBodyFormat: "Сегодня %@ за кодом.", goalProgressFormat: "из %@")
+        case .es:
+            return .init(goalTitle: "Meta diaria", goalOff: "Desactivada", goalReachedTitle: "Meta diaria de código alcanzada", goalReachedBodyFormat: "%@ de código hoy.", goalProgressFormat: "de %@")
+        case .sk:
+            return .init(goalTitle: "Denný cieľ", goalOff: "Vypnutý", goalReachedTitle: "Denný cieľ programovania splnený", goalReachedBodyFormat: "Dnes %@ programovania.", goalProgressFormat: "z %@")
+        case .de:
+            return .init(goalTitle: "Tagesziel", goalOff: "Aus", goalReachedTitle: "Tagesziel fürs Programmieren erreicht", goalReachedBodyFormat: "Heute %@ programmiert.", goalProgressFormat: "von %@")
+        case .fr:
+            return .init(goalTitle: "Objectif quotidien", goalOff: "Désactivé", goalReachedTitle: "Objectif de code du jour atteint", goalReachedBodyFormat: "%@ de code aujourd’hui.", goalProgressFormat: "sur %@")
+        case .it:
+            return .init(goalTitle: "Obiettivo giornaliero", goalOff: "No", goalReachedTitle: "Obiettivo di programmazione raggiunto", goalReachedBodyFormat: "%@ di programmazione oggi.", goalProgressFormat: "su %@")
+        case .ja:
+            return .init(goalTitle: "1日の目標", goalOff: "オフ", goalReachedTitle: "今日のコーディング目標を達成しました", goalReachedBodyFormat: "今日は%@コーディングしました。", goalProgressFormat: "/ %@")
+        case .ko:
+            return .init(goalTitle: "일일 목표", goalOff: "끔", goalReachedTitle: "오늘의 코딩 목표 달성", goalReachedBodyFormat: "오늘 %@ 코딩했습니다.", goalProgressFormat: "/ %@")
+        case .uk:
+            return .init(goalTitle: "Ціль на день", goalOff: "Вимк.", goalReachedTitle: "Денну ціль за кодом досягнуто", goalReachedBodyFormat: "Сьогодні %@ за кодом.", goalProgressFormat: "з %@")
+        case .zhHans:
+            return .init(goalTitle: "每日目标", goalOff: "关闭", goalReachedTitle: "已达成今日编程目标", goalReachedBodyFormat: "今天已编程 %@。", goalProgressFormat: "/ %@")
+        case .zhTW:
+            return .init(goalTitle: "每日目標", goalOff: "關閉", goalReachedTitle: "已達成今日寫程式目標", goalReachedBodyFormat: "今天已寫程式 %@。", goalProgressFormat: "/ %@")
+        case .zhHK:
+            return .init(goalTitle: "每日目標", goalOff: "關閉", goalReachedTitle: "已達成今日編程目標", goalReachedBodyFormat: "今天已編程 %@。", goalProgressFormat: "/ %@")
+        }
+    }
+}

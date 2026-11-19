@@ -9,7 +9,7 @@ import SwiftUI
 /// as the starting point (every switch on) and lets each one be turned off for
 /// the lock screen alone, without touching the island.
 enum NotchLockScreenItem: String, CaseIterable, Identifiable {
-    case music, timer, agents, downloads, calendar
+    case music, timer, agents, downloads, calendar, wakatime
 
     var id: String { rawValue }
 
@@ -20,6 +20,7 @@ enum NotchLockScreenItem: String, CaseIterable, Identifiable {
         case .agents: return DefaultsKey.notchLockScreenAgents
         case .downloads: return DefaultsKey.notchLockScreenDownloads
         case .calendar: return DefaultsKey.notchLockScreenCalendar
+        case .wakatime: return DefaultsKey.notchLockScreenWakaTime
         }
     }
 
@@ -31,6 +32,7 @@ enum NotchLockScreenItem: String, CaseIterable, Identifiable {
         case .agents: return .agents
         case .downloads: return .downloads
         case .calendar: return .calendar
+        case .wakatime: return .wakatime
         }
     }
 
@@ -44,7 +46,8 @@ struct NotchLockScreenItemToggles: View {
     @ObservedObject private var l10n = L10n.shared
 
     var body: some View {
-        ForEach(NotchLockScreenItem.allCases) { item in
+        // WakaTime only on a Mac that has it.
+        ForEach(NotchLockScreenItem.allCases.filter { $0 != .wakatime || WakaTimeSupport.hasConfiguration() }) { item in
             NotchLockScreenItemRow(item: item, title: item.module.title(l10n.language))
         }
     }

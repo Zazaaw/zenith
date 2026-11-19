@@ -11,6 +11,20 @@ enum WakaTimeTests {
         history(suite)
         formatting(suite)
         token(suite)
+        goal(suite)
+    }
+
+    private static func goal(_ suite: TestSuite) {
+        suite.expect(WakaTimeSupport.goalProgress(totalSeconds: 3600, goalMinutes: 0) == nil
+                     && WakaTimeSupport.goalProgress(totalSeconds: 3600, goalMinutes: 120) == 0.5
+                     && WakaTimeSupport.goalProgress(totalSeconds: 99999, goalMinutes: 60) == 1,
+                     "goal progress is a capped share, and nothing without a goal")
+        suite.expect(!WakaTimeSupport.goalReached(totalSeconds: 7199, goalMinutes: 120)
+                     && WakaTimeSupport.goalReached(totalSeconds: 7200, goalMinutes: 120)
+                     && !WakaTimeSupport.goalReached(totalSeconds: 99999, goalMinutes: 0),
+                     "a goal is reached at its minute, never when off")
+        suite.expect(WakaTimeSupport.goalChoices.first == 0 && WakaTimeSupport.goalChoices == WakaTimeSupport.goalChoices.sorted(),
+                     "the goal menu starts at off and climbs")
     }
 
     /// What a personal token unlocks: ranges, daily summaries and the last heartbeat.

@@ -38,6 +38,7 @@ struct WakaTimeSummary: View {
     let compact: Bool
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var service = WakaTimeService.shared
+    @AppStorage(DefaultsKey.wakaTimeDailyGoalMinutes) private var goalMinutes = 0
 
     private var text: ZenithWakaTimeStrings { ZenithStrings.wakaTime(l10n.language) }
     private var tokenText: ZenithWakaTimeTokenStrings { ZenithStrings.wakaTimeToken(l10n.language) }
@@ -115,6 +116,11 @@ struct WakaTimeSummary: View {
         let stats = service.readyStats
         let seconds = service.range == .today ? today.totalSeconds : stats?.totalSeconds
         HStack(alignment: .firstTextBaseline, spacing: 8) {
+            if service.range == .today,
+               let progress = WakaTimeSupport.goalProgress(totalSeconds: today.totalSeconds, goalMinutes: goalMinutes) {
+                WakaTimeGoalRing(progress: progress, size: compact ? 18 : 24)
+                    .alignmentGuide(.firstTextBaseline) { $0[.bottom] - 2 }
+            }
             if let seconds {
                 Text(WakaTimeSupport.duration(seconds, locale: locale))
                     .font(ZenithType.figures(compact ? 22 : 30, weight: .bold))
@@ -124,7 +130,10 @@ struct WakaTimeSummary: View {
             } else {
                 ProgressView().controlSize(.small)
             }
-            Text(title(service.range)).font(ZenithType.footnote).foregroundStyle(.secondary)
+            Text(service.range == .today && goalMinutes > 0
+                 ? ZenithStrings.wakaTimeGoal(l10n.language).progress(WakaTimeSupport.duration(Double(goalMinutes * 60), locale: locale))
+                 : title(service.range))
+                .font(ZenithType.footnote).foregroundStyle(.secondary)
             Spacer(minLength: 0)
             Button { service.refresh(force: true) } label: {
                 Image(systemName: "arrow.clockwise").font(.system(size: 11, weight: .semibold))
@@ -237,6 +246,28 @@ struct WakaTimeSummary: View {
     }
 }
 
+/// Progress toward the daily goal: grey until it is reached, then emerald.
+struct WakaTimeGoalRing: View {
+    let progress: Double
+    let size: CGFloat
+
+    var body: some View {
+        let reached = progress >= 1
+        ZStack {
+            Circle().stroke(Color.primary.opacity(0.15), lineWidth: size * 0.14)
+            Circle()
+                .trim(from: 0, to: progress)
+                .stroke(reached ? ZenithStatus.success : Color.primary,
+                        style: StrokeStyle(lineWidth: size * 0.14, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                .animation(ZenithMotion.respecting(ZenithMotion.reveal(ZenithMotion.slow)), value: progress)
+        }
+        .frame(width: size, height: size)
+        .accessibilityElement()
+        .accessibilityValue(Text(progress, format: .percent.precision(.fractionLength(0))))
+    }
+}
+
 /// Languages as one stacked bar with a legend, after the portfolio's card:
 /// the leading language in emerald, the rest in steps of grey.
 struct WakaTimeLanguageBar: View {
@@ -311,6 +342,7 @@ struct WakaTimeDayChart: View {
 struct WakaTimeTokenSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var service = WakaTimeService.shared
+    @AppStorage(DefaultsKey.wakaTimeDailyGoalMinutes) private var goalMinutes = 0
     @State private var draft = ""
     @State private var rejected = false
 
@@ -339,7 +371,21 @@ struct WakaTimeTokenSettings: View {
             }
             Text(text.tokenCaption).font(ZenithType.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+            Divider().padding(.vertical, 4)
+            goalPicker
         }
+    }
+
+    private var goalPicker: some View {
+        let goal = ZenithStrings.wakaTimeGoal(l10n.language)
+        let locale = Locale(identifier: l10n.language.rawValue)
+        return Picker(goal.goalTitle, selection: $goalMinutes) {
+            ForEach(WakaTimeSupport.goalChoices, id: \.self) { minutes in
+                Text(minutes == 0 ? goal.goalOff : WakaTimeSupport.duration(Double(minutes * 60), locale: locale))
+                    .tag(minutes)
+            }
+        }
+        .onChange(of: goalMinutes) { _, _ in service.syncGoalMonitoring() }
     }
 
     private func save() {

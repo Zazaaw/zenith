@@ -14,6 +14,8 @@ final class NotchLockScreenModel: ObservableObject {
         var downloads = false
         var countdown = false
         var timeLeft = false
+        // Zenith fork.
+        var wakatime = false
     }
 
     @Published var gates = Gates()
@@ -57,9 +59,9 @@ struct NotchLockScreenIsland: View {
                     Image(systemName: model.padlockOpen ? "lock.open.fill" : "lock.fill")
                         .font(.system(size: min(13, size.height * 0.42), weight: .semibold))
                         .foregroundStyle(.white)
-                        .contentTransition(.symbolEffect(.replace))
-                        .symbolEffect(.bounce, options: .speed(1.4), value: reduceMotion ? false : model.padlockOpen)
-                        .animation(reduceMotion ? nil : .smooth(duration: 0.25), value: model.padlockOpen)
+                        // Zenith fork: Atoll's padlock motion, the shackle replaced down then up.
+                        .contentTransition(.symbolEffect(.replace.downUp))
+                        .animation(reduceMotion ? nil : .snappy(duration: 0.28), value: model.padlockOpen)
                         .frame(width: padlockSide, height: padlockSide)
                         .padding(.leading, max(0, min(geometry.compactMusicArtworkInset, wing - padlockSide)))
                         .frame(width: wing, height: size.height, alignment: .leading)
@@ -303,6 +305,7 @@ struct NotchLockScreenActivities: View {
     @ObservedObject private var usage = AgentUsageService.shared
     @ObservedObject private var downloads = NotchDownloadService.shared
     @ObservedObject private var calendar = NotchCalendarService.shared
+    @ObservedObject private var wakaTime = WakaTimeService.shared
     @ObservedObject private var l10n = L10n.shared
     @AppStorage(DefaultsKey.notchAgentsReadout) private var readout = NotchAgentReadout.elapsed.rawValue
     @AppStorage(DefaultsKey.notchAgentsLimitDisplay) private var display = NotchAgentLimitDisplay.remaining.rawValue
@@ -322,6 +325,9 @@ struct NotchLockScreenActivities: View {
             .animation(reduceMotion ? nil : .smooth(duration: 0.35), value: items)
         }
         .allowsHitTesting(false)
+        // Zenith fork: WakaTime reads only while a view shows it.
+        .onAppear { if model.gates.wakatime { wakaTime.viewAppeared() } }
+        .onDisappear { if model.gates.wakatime { wakaTime.viewDisappeared() } }
     }
 
     private func available(at date: Date) -> [NotchLockScreenActivity] {
@@ -332,7 +338,8 @@ struct NotchLockScreenActivities: View {
                 ($0.ongoing ? gates.timeLeft : gates.countdown || calendar.isChosen($0.event)) && $0.isShown(at: date, leadTime: calendar.countdownLeadTime)
             } == true,
             agents: gates.agents && !usage.snapshot.live.isEmpty,
-            downloads: gates.downloads && downloads.items.contains { $0.active && !$0.completed })
+            downloads: gates.downloads && downloads.items.contains { $0.active && !$0.completed },
+            wakatime: gates.wakatime && (wakaTime.today?.totalSeconds ?? 0) > 0)
     }
 
     private func line(_ items: [NotchLockScreenActivity], at date: Date) -> some View {
@@ -410,6 +417,19 @@ struct NotchLockScreenActivities: View {
                 }
             }
             .accessibilityElement(children: .combine)
+        case .wakatime:
+            // Zenith fork: today's coding time only; project names stay off the lock screen.
+            let coding = wakaTime.presence?.isCoding(at: date) == true
+            let total = WakaTimeSupport.duration(wakaTime.today?.totalSeconds ?? 0,
+                                                 locale: Locale(identifier: l10n.language.rawValue))
+            HStack(spacing: 7) {
+                Image(systemName: NotchModule.wakatime.symbol)
+                    .foregroundStyle(coding ? ZenithStatus.success : .white.opacity(0.92))
+                Text(total)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("WakaTime")
+            .accessibilityValue(total)
         }
     }
 }
