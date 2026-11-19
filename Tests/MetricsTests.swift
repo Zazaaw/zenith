@@ -263,6 +263,7 @@ struct MetricsTests {
             ("vercel", { VercelTests.run(suite) }),
             ("gh", { GitHubTests.run(suite) }),
             ("command-activity", { CommandActivityTests.run(suite) }),
+            ("photo-actions", { PhotoActionsTests.run(suite) }),
         ]
         var selected = Set<String>()
         var listOnly = false

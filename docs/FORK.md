@@ -627,6 +627,66 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     (`ZDOTDIR` sementara, bukan `~/.zshrc` asli): escape JSON, status exit, baris berawalan spasi, waktu.
     Perlu dicek di Mac: putaran arc dan roll digit di 120 Hz, morph ✓/✗ dan bump, lebar wing saat lewat
     1 jam, kapsul, alert install, dan perilaku di beberapa tab terminal.
+- **Aksi foto di island (branch `feat/notch-transform`):** drag gambar ke island, pilih aksinya di
+  sana. Kode di `Services/Notch/NotchPhotoActionsSupport.swift` (logika murni: target, format,
+  resep, ukuran, nama file, bacaan), `NotchPhotoActionsEncoder.swift` (Image I/O dan Core Image,
+  tanpa dependency baru), `NotchPhotoActionsService.swift` (sesi, antrean kerja, Vision, Shelf,
+  clipboard) dan `UI/Notch/NotchPhotoActionsView.swift`. Teks di `Core/ZenithStrings.swift`
+  (15 bahasa). Test di `Tests/PhotoActionsTests.swift` (suite `photo-actions`) dan tambahan di
+  `ShelfDropRoutingTests`.
+  - **Target drop:** kalau semua item yang di-drag adalah gambar (JPEG, PNG, TIFF, HEIC/HEIF, WebP,
+    BMP, RAW kamera, PSD, AVIF; GIF/SVG/PDF tidak), pemilih zona menambah **Transform** dan, untuk
+    satu gambar saja, **Remove Background**, di kanan zona yang sudah ada (Files, AirDrop, Optimize
+    media). Hanya URL file; promise (mis. dari Photos) dan payload campuran tetap ke Shelf. Maksimal
+    100 file. Non-gambar tidak berubah. `NotchDropTarget` dapat dua case baru;
+    `NotchAirDropSupport.targets(files:airDrop:media:photo:)` menyusun urutannya.
+  - **Syarat:** island menampilkan bagian Files (permukaannya tinggal di halaman Files, jadi tidak
+    "meminjam" halaman seperti AirDrop) dan saklar `notchPhotoActionsEnabled` (default nyala, ikut
+    backup) di Settings → Shelf, di bawah saklar AirDrop, memakai `ZenithSwitchRow`.
+  - **Transform:** satu langkah per kali lewat segmented: Convert (JPG, PNG, WebP kalau Image I/O bisa
+    menulisnya, HEIC; dicek dengan `CGImageDestinationCopyTypeIdentifiers()`, di macOS 15.5 WebP
+    **tidak** bisa ditulis jadi pilihannya JPG/PNG/HEIC), Resize (sisi panjang 1080/2048/4096/Original,
+    tidak pernah memperbesar, format sumber dipertahankan), Compress (JPEG 60/80/90) dan Strip (EXIF,
+    GPS, TIFF, XMP dibuang; untuk format dan ukuran yang sama datanya disalin tanpa encode ulang
+    lewat `CGImageDestinationCopyImageSource`, orientasi disimpan). Chip "Strip EXIF" bisa
+    menyertakan strip di Convert/Resize/Compress. Kualitas lossy 0,9 untuk Convert/Resize.
+  - **Warna:** gambar didekode dengan `MediaImageProcessing.decode` (thumbnail Image I/O yang sudah
+    menerapkan orientasi) dan tetap di ruang warnanya, jadi profil sRGB/Display P3/Adobe RGB ikut
+    tertanam. Ruang yang tidak bisa dibawa format (CMYK, Lab, tanpa tag) dikonversi ke sRGB, ruang
+    extended/HDR ke Display P3. JPEG dengan alpha diletakkan di atas putih. Renderer
+    `MediaService` sengaja tidak dipakai: ia menggambar ke bitmap device RGB yang menghilangkan P3.
+    Yang dipakai ulang dari Media: decoder, batas ukuran render, staging + `installStagedOutput`
+    (tidak pernah menimpa), `makeVisibleIfNeeded`, pembersih nama file.
+  - **Remove Background:** `VNGenerateForegroundInstanceMaskRequest` (macOS 14+, offline), mask
+    seukuran gambar dari `generateScaledMaskForImage`, lalu `CIBlendWithMask` ke latar transparan.
+    Kanvas tetap seukuran aslinya (posisi subjek sama), PNG `nama-cutout.png`. Tanpa subjek: pesan
+    "No subject found" dengan titik amber. Langsung jalan saat di-drop (tidak ada opsi).
+  - **Hasil disimpan di samping file asli** (pola Optimize media), lalu ditambahkan ke Shelf kalau
+    Shelf nyala. Folder yang tidak bisa ditulis atau folder sementara → `~/Downloads`. Nama tidak
+    pernah menimpa: `photo.jpg`, lalu `photo-1.jpg`, `photo-2.jpg`; akhiran `-2048`, `-q80`,
+    `-clean`, `-cutout`. Hasil bisa Reveal in Finder, Copy (URL file; satu hasil juga datanya, supaya
+    bisa di-paste sebagai gambar) dan di-drag keluar dari thumbnail (semua hasil sekaligus).
+  - **Kerja di luar main thread:** antrean serial `userInitiated`; progres per tahap file dikirim ke
+    main thread, cancel di antara tahap. Drop lain ke Files/Optimize menutup hasil; job yang masih
+    jalan diteruskan diam-diam dan hasilnya tetap masuk Shelf.
+  - **Gerak** (semua lewat sistem animasi SwiftUI, hanya transform/opacity/trim/mask, tinggi halaman
+    tidak berubah): zona drop masuk berurutan 40 ms (skala 0,97→1, opacity, glyph naik 5 pt), zona
+    yang ditunjuk spring (response 0,34, damping 0,84) dengan glyph naik 3 pt dan garis lebih terang;
+    thumbnail mendarat dari skala 0,86 dan offset −14 dengan spring (0,36/0,86), lapisan panel kanan
+    menyusul tiap 40 ms; antarfase cross-fade + offset 6 pt di kurva reveal; saat proses ada shimmer
+    (gradien di mask yang digeser offset) dan cincin progres `trim` yang meluncur antar nilai;
+    selesai: centang digambar dengan `trim`, ukuran hasil menghitung naik (view `Animatable`);
+    Remove Background: subjek muncul di atas papan catur (`Canvas` + `.drawingGroup()`) lewat cakram
+    radial lembut yang membesar (satu nilai, 0,75 dtk, sekali per sesi). Tombol: tekan 100 ms ke
+    0,96, lepas dengan spring. Reduce Motion: semuanya jadi cross-fade.
+  - Edit di file upstream bertanda `// Zenith fork`: `NotchService` (properti target foto,
+    `acceptsPhotoDrop`, begin/update/end/accept drop, `canAccept`, `stop`), `NotchFilesView` (zona
+    foto, permukaan aksi, sel zona drop baru `NotchDropZoneCell` untuk semua zona), `ShelfSettings`,
+    `Defaults`.
+  - **Belum diverifikasi visual:** app UI tidak dijalankan. Encode, strip, profil warna dan komposisi
+    cutout dites di suite `photo-actions`; Vision dicoba manual di gambar contoh sistem (bukan di test).
+    Perlu dicek di Mac: lima zona drop di lebar compact (teks dua baris), drop sungguhan dari Finder,
+    animasi di 120 Hz, panel opsi di bahasa panjang, drag hasil keluar, Copy ke Figma/Slack.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.

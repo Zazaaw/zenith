@@ -289,6 +289,8 @@ if (( TEST )); then
         Sources/Vorssaint/Services/CommandBar/CommandBarDropletMotion.swift
         Sources/Vorssaint/Services/Notch/NotchFileToolsSupport.swift
         Sources/Vorssaint/Services/Notch/NotchAirDropSupport.swift
+        Sources/Vorssaint/Services/Notch/NotchPhotoActionsSupport.swift
+        Sources/Vorssaint/Services/Notch/NotchPhotoActionsEncoder.swift
         Sources/Vorssaint/Services/WakaTime/WakaTimeSupport.swift
         Sources/Vorssaint/Services/WakaTime/WakaTimeStats.swift
         Sources/Vorssaint/Services/ZenithSecretStore.swift

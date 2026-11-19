@@ -68,6 +68,10 @@ enum ShelfDropRoutingContract {
         var offersFilesDrop = false
         var offersAirDrop = false
         var airDropAvailable = false
+        // Zenith fork: photo actions; off unless a test turns them on.
+        var acceptsPhotoDrop = false
+        var offersPhotoTargets: [NotchDropTarget] = []
+        var photoDropTarget: NotchDropTarget?
         var dropPageForced = false
         var collapses = 0
         var moduleRefreshes = 0
@@ -85,6 +89,20 @@ enum ShelfDropRoutingContract {
             opened.append(module)
             if pinned { self.pinned = true }
         }
+    }
+    /// Zenith fork: the photo actions' service as the drop path sees it.
+    final class NotchPhotoActionsService {
+        static var shared = NotchPhotoActionsService()
+        var targets: [NotchDropTarget] = []
+        var canAcceptDrop = true
+        var opened: [NotchDropTarget] = []
+        var hides = 0
+        func dropTargets(for pasteboard: NSPasteboard) -> [NotchDropTarget] { targets }
+        func open(_ target: NotchDropTarget, pasteboard: NSPasteboard) -> Bool {
+            opened.append(target)
+            return canAcceptDrop
+        }
+        func hide() { hides += 1 }
     }
     class FileToolsState {
         enum MediaState { case idle, running }
@@ -191,6 +209,60 @@ enum ShelfDropRoutingTests {
         mediaDrops(suite)
     }
 
+    /// Zenith fork: images get Transform and Remove Background after the other zones.
+    private static func photoDrops(_ suite: TestSuite, board: NSPasteboard, image: URL) {
+        Context.ShelfService.shared = Context.ShelfService()
+        Context.NotchFileToolsService.shared = Context.NotchFileToolsService()
+        Context.NotchPhotoActionsService.shared = Context.NotchPhotoActionsService()
+        let photos = Context.NotchPhotoActionsService.shared
+        photos.targets = [.transform, .removeBackground]
+        board.clearContents()
+        board.writeObjects([image as NSURL])
+        let off = Context.Notch()
+        off.beginFileDrop(board)
+        suite.expect(off.offersPhotoTargets.isEmpty && off.photoDropTarget == nil,
+                     "with photo actions off, an image drag keeps the zones it had")
+        off.endFileDrop()
+
+        let notch = Context.Notch()
+        notch.acceptsPhotoDrop = true
+        notch.beginFileDrop(board)
+        suite.expect(notch.choosingFileDropDestination && notch.offersPhotoTargets == [.transform, .removeBackground],
+                     "an image drag offers the photo zones")
+        let content = notch.geometry.contentSize(for: notch.surfaceSize)
+        let left = notch.surfaceSize.width / 2 - content.width / 2
+        let columns = CGFloat(NotchAirDropSupport.targets(files: notch.offersFilesDrop, airDrop: notch.offersAirDrop,
+                                                          media: notch.offersMediaDrop,
+                                                          photo: notch.offersPhotoTargets).count)
+        func point(_ column: CGFloat) -> CGPoint {
+            CGPoint(x: left + content.width * (column + 0.5) / columns, y: 10)
+        }
+        suite.expect(notch.updateFileDrop(at: point(columns - 1)) && notch.photoDropTarget == .removeBackground
+                        && !notch.targetsAirDrop && !notch.targetsMediaDrop,
+                     "the last column is Remove Background")
+        suite.expect(notch.updateFileDrop(at: point(columns - 2)) && notch.photoDropTarget == .transform,
+                     "the one before it is Transform")
+        photos.canAcceptDrop = false
+        suite.expect(!notch.updateFileDrop(at: point(columns - 2)), "a running photo job refuses another drop")
+        photos.canAcceptDrop = true
+        _ = notch.updateFileDrop(at: point(columns - 2))
+        let accepted = notch.accept(board)
+        suite.expect(accepted && photos.opened == [.transform] && notch.opened.last == .files,
+                     "a drop on Transform opens the photo surface on the Files page: \(accepted) \(photos.opened) \(notch.opened)")
+        suite.expect(Context.ShelfService.shared.ordinaryAccepts == 0
+                        && Context.NotchFileToolsService.shared.mediaSession == nil,
+                     "a drop on Transform reaches neither the shelf nor the media tools")
+        suite.expect(notch.offersPhotoTargets.isEmpty && notch.photoDropTarget == nil && !notch.choosingFileDropDestination,
+                     "the drop clears the photo zones")
+
+        let shelfDrop = Context.Notch()
+        shelfDrop.acceptsPhotoDrop = true
+        shelfDrop.beginFileDrop(board)
+        _ = shelfDrop.updateFileDrop(at: CGPoint(x: left + 4, y: 10))
+        suite.expect(shelfDrop.accept(board) && photos.hides == 1 && photos.opened == [.transform],
+                     "a drop on Files puts a photo result away")
+    }
+
     private static func mediaDrops(_ suite: TestSuite) {
         let board = NSPasteboard.withUniqueName()
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("notch-media-drop-\(UUID().uuidString)", isDirectory: true)
@@ -202,6 +274,7 @@ enum ShelfDropRoutingTests {
             Context.NotchSupport.visibleModules = [.files]
             Context.ShelfService.shared = Context.ShelfService()
             Context.NotchFileToolsService.shared = Context.NotchFileToolsService()
+            Context.NotchPhotoActionsService.shared = Context.NotchPhotoActionsService()
         }
         defer {
             board.releaseGlobally()
@@ -253,7 +326,8 @@ enum ShelfDropRoutingTests {
                     }
                     suite.expect(!notch.choosingFileDropDestination && !notch.targetsMediaDrop
                             && !notch.targetsAirDrop && !notch.offersMediaDrop
-                            && !notch.offersFilesDrop && !notch.offersAirDrop && !notch.dropPageForced,
+                            && !notch.offersFilesDrop && !notch.offersAirDrop && !notch.dropPageForced
+                            && notch.offersPhotoTargets.isEmpty && notch.photoDropTarget == nil,
                            "a finished drop removes its transient destinations")
                 }
             }
@@ -294,6 +368,7 @@ enum ShelfDropRoutingTests {
             suite.expect(!airDropOnly.dropPageForced && airDropOnly.moduleRefreshes == 1
                     && !airDropOnly.offersAirDrop && !airDropOnly.targetsAirDrop,
                    "leaving the drag hands the borrowed page back")
+            photoDrops(suite, board: board, image: image)
             reset()
             board.clearContents()
             let text = NSPasteboardItem()

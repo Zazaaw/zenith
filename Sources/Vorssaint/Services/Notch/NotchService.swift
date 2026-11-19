@@ -137,6 +137,9 @@ final class NotchService: ObservableObject {
     @Published private(set) var offersFilesDrop = false
     @Published private(set) var offersAirDrop = false
     @Published private(set) var airDropAvailable = false
+    // Zenith fork: photo actions for image drags (NotchPhotoActionsSupport).
+    @Published private(set) var offersPhotoTargets: [NotchDropTarget] = []
+    @Published private(set) var photoDropTarget: NotchDropTarget?
     /// The Files page opened for a drop although the island hides Files.
     private var dropPageForced = false
     @Published private(set) var selectedMetric: MetricDetailKind?
@@ -1322,6 +1325,7 @@ final class NotchService: ObservableObject {
         if shortcutRegistrationFailed { shortcutRegistrationFailed = false }
         NotchLyricsService.shared.stop()
         NotchFileToolsService.shared.stop()
+        NotchPhotoActionsService.shared.stop() // Zenith fork
         AgentUsageService.shared.stop()
         guard running else { return }
         running = false
@@ -2335,8 +2339,8 @@ final class NotchService: ObservableObject {
         // Leave file drags to the open media card as they cross the island's
         // edge. The Files page keeps its own Shelf / Optimize destination.
         guard !(directMediaDropWorkspace != nil && pasteboard.types?.contains(.fileURL) == true) else { return false }
-        // Zenith fork: the shelf path or the AirDrop zone.
-        return acceptsShelfDrop || acceptsAirDropDrop
+        // Zenith fork: the shelf path, the AirDrop zone or the photo actions.
+        return acceptsShelfDrop || acceptsAirDropDrop || acceptsPhotoDrop
     }
 
     /// Upstream's drop path: the island shows Files and the shelf is on.
@@ -2351,6 +2355,11 @@ final class NotchService: ObservableObject {
         acceptsUserInteraction && captureControls == nil && NotchAirDropSupport.isEnabled
     }
 
+    /// Zenith fork: the photo actions live on the Files page, so they need the island to show it.
+    var acceptsPhotoDrop: Bool {
+        acceptsUserInteraction && captureControls == nil && modules.contains(.files) && NotchPhotoActionsSupport.isEnabled
+    }
+
     func beginFileDrop(_ pasteboard: NSPasteboard) {
         guard canAcceptFileDrop(pasteboard) else { return }
         let files = NotchAirDropSupport.fileURLs(in: pasteboard)
@@ -2359,20 +2368,24 @@ final class NotchService: ObservableObject {
         offersMediaDrop = offersFilesDrop && AppFeature.mediaTools.isAvailable
             && NotchFileToolsService.shared.mediaDropContent(for: pasteboard) != nil
         airDropAvailable = offersAirDrop && NotchAirDropSupport.canSend(files)
-        guard offersFilesDrop || offersAirDrop else { return }
+        // Zenith fork: images also get Transform and, alone, Remove Background.
+        offersPhotoTargets = acceptsPhotoDrop ? NotchPhotoActionsService.shared.dropTargets(for: pasteboard) : []
+        guard offersFilesDrop || offersAirDrop || !offersPhotoTargets.isEmpty else { return }
         // Zenith fork: any file drag offers AirDrop, so the chooser opens for files too.
-        choosingFileDropDestination = offersMediaDrop || offersAirDrop
+        choosingFileDropDestination = offersMediaDrop || offersAirDrop || !offersPhotoTargets.isEmpty
         targetsMediaDrop = false
         // Before the pointer moves, the leftmost zone is the target: Files when the
         // shelf takes drops, otherwise AirDrop.
         targetsAirDrop = dropTargets.first == .airDrop
+        photoDropTarget = dropTargets.first.flatMap { $0.isPhotoAction ? $0 : nil }
         // AirDrop alone may open the Files page the island otherwise hides.
         dropPageForced = !modules.contains(.files)
         open(.files, takeFocus: false)
     }
 
     private var dropTargets: [NotchDropTarget] {
-        NotchAirDropSupport.targets(files: offersFilesDrop, airDrop: offersAirDrop, media: offersMediaDrop)
+        NotchAirDropSupport.targets(files: offersFilesDrop, airDrop: offersAirDrop, media: offersMediaDrop,
+                                   photo: offersPhotoTargets) // Zenith fork
     }
 
     @discardableResult
@@ -2383,10 +2396,13 @@ final class NotchService: ObservableObject {
             : .files
         if targetsMediaDrop != (target == .media) { targetsMediaDrop = target == .media }
         if targetsAirDrop != (target == .airDrop) { targetsAirDrop = target == .airDrop }
+        let photo = target.isPhotoAction ? target : nil // Zenith fork
+        if photoDropTarget != photo { photoDropTarget = photo }
         switch target {
         case .files: return true
         case .airDrop: return airDropAvailable
         case .media: return NotchFileToolsService.shared.canAcceptMediaDrop
+        case .transform, .removeBackground: return NotchPhotoActionsService.shared.canAcceptDrop // Zenith fork
         }
     }
 
@@ -2398,6 +2414,8 @@ final class NotchService: ObservableObject {
         if offersMediaDrop { offersMediaDrop = false }
         if offersFilesDrop { offersFilesDrop = false }
         if offersAirDrop { offersAirDrop = false }
+        if !offersPhotoTargets.isEmpty { offersPhotoTargets = [] } // Zenith fork
+        if photoDropTarget != nil { photoDropTarget = nil }
         if dropPageForced {
             // The borrowed Files page goes back to a section the island shows.
             dropPageForced = false
@@ -2426,6 +2444,17 @@ final class NotchService: ObservableObject {
             }
             return sent
         }
+        if choosingFileDropDestination, let photo = photoDropTarget {
+            // Zenith fork: the photo action surface opens on the Files page with the images.
+            let opened = NotchPhotoActionsService.shared.open(photo, pasteboard: pasteboard)
+            if opened {
+                heldDrag = false
+                dragPlaceholder = false
+                NotchFileToolsService.shared.hideMedia()
+                open(.files)
+            }
+            return opened
+        }
         guard acceptsShelfDrop else { return false }
         let optimize = choosingFileDropDestination && targetsMediaDrop
         let accepted = optimize
@@ -2434,6 +2463,7 @@ final class NotchService: ObservableObject {
         if accepted {
             heldDrag = false
             dragPlaceholder = false
+            NotchPhotoActionsService.shared.hide() // Zenith fork: the new files show, not a photo result
             if !optimize { NotchFileToolsService.shared.hideMedia() }
             open(.files)
             // A little hop for the file it watched come in, once the island rests again.
@@ -3764,9 +3794,11 @@ final class NotchService: ObservableObject {
             windowHost?.setFileDropActions(NotchFileDropActions(
                 canAccept: { [weak self] pasteboard in
                     guard let self, !ShelfService.shared.isInternalDragActive,
+                          !NotchPhotoActionsService.shared.isDraggingOut, // Zenith fork
                           self.canAcceptFileDrop(pasteboard) else { return false }
                     return (self.acceptsShelfDrop && ShelfService.shared.canAcceptPasteboard(pasteboard))
                         || (self.acceptsAirDropDrop && !NotchAirDropSupport.fileURLs(in: pasteboard).isEmpty)
+                        || (self.acceptsPhotoDrop && !NotchPhotoActionsService.shared.dropTargets(for: pasteboard).isEmpty)
                 },
                 enter: { [weak self] in self?.beginFileDrop($0) },
                 accept: { [weak self] in self?.accept($0) == true },

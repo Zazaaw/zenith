@@ -13,6 +13,7 @@ struct NotchFilesView: View {
     @ObservedObject private var features = FeatureRuntime.shared
     @ObservedObject private var archives = NotchFileToolsService.shared
     @ObservedObject private var media = NotchFileToolsService.shared.media
+    @ObservedObject private var photos = NotchPhotoActionsService.shared // Zenith fork
     @State private var actionInputs: [URL] = []
     @State private var supportedTools: [MediaTool] = []
     @State private var showingActions = false
@@ -30,13 +31,17 @@ struct NotchFilesView: View {
         archives.mediaPresented && AppFeature.mediaTools.isAvailable ? archives.mediaSession : nil
     }
 
+    /// Zenith fork: the photo actions' surface, which stands in front of the shelf like the media tools.
+    private var photoSession: NotchPhotoSession? { photos.isPresented ? photos.session : nil }
+
     private var showsTiles: Bool {
-        !choosesDropDestination && presentedMediaSession == nil && !shelf.items.isEmpty
+        !choosesDropDestination && presentedMediaSession == nil && photoSession == nil && !shelf.items.isEmpty
     }
 
     /// An archive's outcome, below whatever the shelf shows.
     private var showsArchiveStatus: Bool {
         !service.choosingFileDropDestination && !archives.mediaPresented && AppFeature.mediaTools.isAvailable
+            && photoSession == nil // Zenith fork
     }
 
     var body: some View {
@@ -45,19 +50,32 @@ struct NotchFilesView: View {
                 HStack(spacing: NotchFileToolsSupport.dropSpacing) {
                     if service.offersFilesDrop {
                         dropDestination(FeatureStrings.notch(l10n.language).files, symbol: "tray.and.arrow.down",
-                                        selected: !service.targetsMediaDrop && !service.targetsAirDrop)
+                                        selected: !service.targetsMediaDrop && !service.targetsAirDrop
+                                            && service.photoDropTarget == nil, // Zenith fork
+                                        index: zoneIndex(.files))
                     }
                     if service.offersAirDrop {
                         dropDestination("AirDrop", symbol: "dot.radiowaves.left.and.right",
                                         selected: service.targetsAirDrop, available: service.airDropAvailable,
-                                        unavailableNote: "")
+                                        unavailableNote: "", index: zoneIndex(.airDrop))
                     }
                     if service.offersMediaDrop {
                         dropDestination(text.optimizeMedia, symbol: "wand.and.stars", selected: service.targetsMediaDrop,
-                                        available: archives.canAcceptMediaDrop)
+                                        available: archives.canAcceptMediaDrop, index: zoneIndex(.media))
+                    }
+                    // Zenith fork: images also get the photo actions.
+                    ForEach(service.offersPhotoTargets, id: \.self) { target in
+                        let photoText = ZenithStrings.photoActions(l10n.language)
+                        dropDestination(target == .transform ? photoText.transform : photoText.removeBackground,
+                                        symbol: target == .transform ? "photo.stack" : "person.and.background.dotted",
+                                        selected: service.photoDropTarget == target, available: photos.canAcceptDrop,
+                                        unavailableNote: photoText.busy, index: zoneIndex(target))
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let session = photoSession {
+                // Zenith fork: the photo actions' options, progress and result.
+                NotchPhotoActionsView(session: session, height: service.contentSize.height)
             } else if let session = presentedMediaSession {
                 MediaWorkspaceView(compact: true, onClose: archives.closeMedia,
                                    media: media, initialInputs: session.inputs,
@@ -132,24 +150,18 @@ struct NotchFilesView: View {
     }
 
     private func dropDestination(_ title: String, symbol: String, selected: Bool, available: Bool = true,
-                                 unavailableNote: String? = nil) -> some View {
-        VStack(spacing: 10) {
-            Image(systemName: symbol).font(.system(size: 24, weight: .light))
-                .foregroundStyle(selected ? ZenithIsland.accent : ZenithIsland.secondary) // Zenith fork
-            Text(title).font(.system(size: 13, weight: .medium)).multilineTextAlignment(.center) // Zenith fork
-                .foregroundStyle(selected ? ZenithIsland.primary : ZenithIsland.secondary) // Zenith fork
-            // Zenith fork: AirDrop passes an empty note and is only dimmed when off.
-            if !available, !(unavailableNote ?? l10n.s.mediaRunning).isEmpty {
-                Text(unavailableNote ?? l10n.s.mediaRunning).font(.caption).foregroundStyle(.secondary)
-            }
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // Zenith fork: a dashed zone; the one under the file brightens and its glyph takes the accent.
-        .zenithDropZone(targeted: selected)
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-        .opacity(available ? 1 : 0.5)
+                                 unavailableNote: String? = nil, index: Int = 0) -> some View {
+        // Zenith fork: a dashed zone that breathes in with the drag; the one under the file brightens,
+        // lifts its glyph and takes the accent. AirDrop passes an empty note and is only dimmed when off.
+        NotchDropZoneCell(title: title, symbol: symbol, selected: selected, available: available,
+                          note: unavailableNote ?? l10n.s.mediaRunning, index: index)
+    }
+
+    /// Zenith fork: a zone's place in the row, for its staggered entrance.
+    private func zoneIndex(_ target: NotchDropTarget) -> Int {
+        NotchAirDropSupport.targets(files: service.offersFilesDrop, airDrop: service.offersAirDrop,
+                                    media: service.offersMediaDrop, photo: service.offersPhotoTargets)
+            .firstIndex(of: target) ?? 0
     }
 
     // A sheet dims the window's transparent margins. A native menu keeps the
