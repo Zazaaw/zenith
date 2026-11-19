@@ -134,12 +134,19 @@ struct NotchLockScreenTerminalView: View {
             .overlay(shape.strokeBorder(.white.opacity(contrast == .increased ? 0.35 : 0.1), lineWidth: 1))
     }
 
-    /// Three grey dots and the window's name, like a terminal's title bar.
+    /// macOS's window buttons, red, yellow and green, as a terminal's title bar has them.
+    private static let trafficLights: [Color] = [
+        Color(red: 1.0, green: 0.373, blue: 0.341),    // #FF5F57
+        Color(red: 0.996, green: 0.737, blue: 0.180),  // #FEBC2E
+        Color(red: 0.157, green: 0.784, blue: 0.251),  // #28C840
+    ]
+
+    /// The window buttons and the window's name, like a terminal's title bar.
     private var header: some View {
         HStack(spacing: 10) {
             HStack(spacing: 5) {
-                ForEach(0..<3, id: \.self) { _ in
-                    Circle().fill(.white.opacity(0.22)).frame(width: 7, height: 7)
+                ForEach(Self.trafficLights.indices, id: \.self) { index in
+                    Circle().fill(Self.trafficLights[index]).frame(width: 7, height: 7)
                 }
             }
             Text("zenith — status")
