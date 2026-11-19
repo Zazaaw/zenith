@@ -261,7 +261,7 @@ struct PanelSection<Content: View>: View {
             if collapsible {
                 Button(action: toggle) {
                     HStack(spacing: 6) {
-                        sectionTitle(title)
+                        ZenithPanelSectionLabel(text: title) // Zenith fork
                         Spacer(minLength: 0)
                         collapseIcon
                     }
@@ -269,7 +269,7 @@ struct PanelSection<Content: View>: View {
                 }
                 .buttonStyle(.plain)
             } else {
-                sectionTitle(title)
+                ZenithPanelSectionLabel(text: title) // Zenith fork
                 Spacer(minLength: 0)
             }
             if supportsEditing {
@@ -311,11 +311,9 @@ struct PanelSection<Content: View>: View {
             }
         }
         .buttonStyle(.plain)
-        .foregroundStyle(isEditing ? Color.white : Color.secondary)
-        .background(
-            RoundedRectangle(cornerRadius: isEditing ? 8 : 6, style: .continuous)
-                .fill(isEditing ? Color.accentColor : Color.clear)
-        )
+        // Zenith fork: editing shows as the accent's 10% / 20% / 100% pill.
+        .foregroundStyle(isEditing ? Color.accentColor : Color.secondary)
+        .zenithPanelSelection(isEditing, in: RoundedRectangle(cornerRadius: isEditing ? 8 : 6, style: .continuous))
         .help(isEditing ? l10n.s.uninstallerDoneTitle : l10n.s.menuEdit)
     }
 
@@ -328,12 +326,7 @@ struct PanelSection<Content: View>: View {
                 .frame(width: 22, height: 22)
                 .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
         }
-        .buttonStyle(.plain)
-        .foregroundStyle(.secondary)
-        .background(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(Color.primary.opacity(0.07))
-        )
+        .buttonStyle(ZenithPanelOutlineButtonStyle(cornerRadius: 7)) // Zenith fork
         .help(l10n.s.mixerOutputDefault)
     }
 

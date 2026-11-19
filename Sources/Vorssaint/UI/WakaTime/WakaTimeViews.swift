@@ -101,14 +101,8 @@ struct WakaTimeSummary: View {
     }
 
     private var rangePicker: some View {
-        Picker("", selection: Binding(get: { service.range }, set: { service.select($0) })) {
-            ForEach(WakaTimeSupport.Range.allCases) { range in
-                Text(title(range)).tag(range)
-            }
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-        .controlSize(.small)
+        ZenithPanelSegmented(selection: Binding(get: { service.range }, set: { service.select($0) }),
+                             options: WakaTimeSupport.Range.allCases.map { ($0, title($0)) })
     }
 
     @ViewBuilder

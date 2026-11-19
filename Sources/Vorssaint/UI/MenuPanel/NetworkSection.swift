@@ -210,16 +210,11 @@ struct NetworkSection: View {
             speedUnit = speedInBits ? .bytes : .bits
         } label: {
             Text(symbol)
-                .font(.system(size: 10.5, weight: .semibold, design: .rounded))
-                .foregroundStyle(.secondary)
+                .font(ZenithType.mono(10.5, weight: .medium)) // Zenith fork: the unit reads as metadata
                 .padding(.horizontal, 7)
                 .frame(height: 22)
-                .background(
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(Color.primary.opacity(0.10))
-                )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ZenithPanelOutlineButtonStyle(cornerRadius: 7)) // Zenith fork
         .fixedSize()
         .help("\(title) · \(speedInBits ? "bit/s → B/s" : "B/s → bit/s")")
         .accessibilityLabel(title)

@@ -136,12 +136,11 @@ struct PanelHomebrewView: View {
     }
 
     private var modePicker: some View {
-        Picker("", selection: $mode) {
-            Text(l10n.s.homebrewSearchButton).tag(PanelHomebrewMode.search)
-            Text("\(l10n.s.homebrewInstalled) \(homebrew.installed.count)").tag(PanelHomebrewMode.installed)
-        }
-        .labelsHidden()
-        .pickerStyle(.segmented)
+        // Zenith fork: outlined chips instead of the segmented control.
+        ZenithPanelSegmented(selection: $mode, options: [
+            (PanelHomebrewMode.search, l10n.s.homebrewSearchButton),
+            (PanelHomebrewMode.installed, "\(l10n.s.homebrewInstalled) \(homebrew.installed.count)"),
+        ])
     }
 
     @ViewBuilder
@@ -194,12 +193,10 @@ struct PanelHomebrewView: View {
                 .controlSize(.small)
                 .disabled(query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || homebrew.isBusy)
             }
-            Picker("", selection: $searchKind) {
-                Text(l10n.s.homebrewCasks).tag(HomebrewPackageKind.cask)
-                Text(l10n.s.homebrewFormulas).tag(HomebrewPackageKind.formula)
-            }
-            .labelsHidden()
-            .pickerStyle(.segmented)
+            ZenithPanelSegmented(selection: $searchKind, options: [ // Zenith fork
+                (HomebrewPackageKind.cask, l10n.s.homebrewCasks),
+                (HomebrewPackageKind.formula, l10n.s.homebrewFormulas),
+            ])
             Text(l10n.s.homebrewKeyboardHint)
                 .font(.system(size: 9))
                 .foregroundStyle(.tertiary)
@@ -211,13 +208,11 @@ struct PanelHomebrewView: View {
 
     private var installedControls: some View {
         VStack(alignment: .leading, spacing: 7) {
-            Picker("", selection: $filter) {
-                Text("\(l10n.s.homebrewAll) \(homebrew.installed.count)").tag(PanelHomebrewFilter.all)
-                Text("\(l10n.s.homebrewCasks) \(installedCaskCount)").tag(PanelHomebrewFilter.cask)
-                Text("\(l10n.s.homebrewFormulas) \(installedFormulaCount)").tag(PanelHomebrewFilter.formula)
-            }
-            .labelsHidden()
-            .pickerStyle(.segmented)
+            ZenithPanelSegmented(selection: $filter, options: [ // Zenith fork
+                (PanelHomebrewFilter.all, "\(l10n.s.homebrewAll) \(homebrew.installed.count)"),
+                (PanelHomebrewFilter.cask, "\(l10n.s.homebrewCasks) \(installedCaskCount)"),
+                (PanelHomebrewFilter.formula, "\(l10n.s.homebrewFormulas) \(installedFormulaCount)"),
+            ])
 
             HStack(spacing: 7) {
                 Button {

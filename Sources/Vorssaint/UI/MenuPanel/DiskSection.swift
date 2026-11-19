@@ -483,12 +483,7 @@ struct DiskSection: View {
     }
 
     private func titleTag(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 9, weight: .medium))
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 2)
-            .background(Capsule().fill(Color.primary.opacity(0.07)))
+        ZenithPanelTag(text: text) // Zenith fork: a mono tag under a hairline
     }
 
     private func blockHeader(_ title: String, editing: Bool, visible: Binding<Bool>) -> some View {
