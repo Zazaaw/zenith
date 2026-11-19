@@ -687,6 +687,43 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     cutout dites di suite `photo-actions`; Vision dicoba manual di gambar contoh sistem (bukan di test).
     Perlu dicek di Mac: lima zona drop di lebar compact (teks dua baris), drop sungguhan dari Finder,
     animasi di 120 Hz, panel opsi di bahasa panjang, drag hasil keluar, Copy ke Figma/Slack.
+- **Halaman About ala portofolio (branch `feat/about-portfolio`):** About dibangun ulang mengikuti
+  p441z.my.id. View di `UI/Settings/ZenithAboutPage.swift`; data dan logika murni (pembuat, tautan,
+  linimasa, stack, langkah decrypt, pemecah kata) di `ZenithAboutSupport.swift`, ikut dikompilasi ke
+  test (suite `settings`, `Tests/ZenithAboutTests.swift`). `AboutSettings` di `SettingsView.swift`
+  tinggal memanggil `ZenithAboutPage`. `ZenithMakerCard` dan `ZenithLinkPill` dihapus;
+  `ZenithLinkCard`, `ZenithFlowRow` dan `ZenithMaker` pindah ke file About.
+  - **Urutan:** hero (foto 96 pt, nama, `@p441z`, chip hijau "Building Zenith"), headline "I build for
+    the web — and I ⟨design/code/shoot/ship⟩" dan subtitle (sengaja **tetap Inggris** di semua
+    bahasa), tombol sosial bulat (situs, GitHub, LinkedIn, Instagram; tanpa email/telepon), tiga angka
+    (4+ tahun, jumlah `AppLanguage` = 15, 3 disiplin), About (bio), Now (linimasa), Stack (marquee),
+    lalu kartu Satu Visual, kartu repo, blok app (ikon, versi, commit khusus build dev, Review
+    introduction) dan copyright.
+  - **Linimasa:** array `ZenithMaker.timeline`, sekarang Satu Visual, Jamaah.net dan Zenith. Pekerjaan
+    utama sengaja tidak dicantumkan. Peran bisa `.custom("…")` kalau tidak perlu diterjemahkan.
+  - **Teks:** `ZenithStrings.maker` (15 bahasa) sekarang berisi chip status, label angka, judul
+    bagian, "Present" dan nama peran; `madeBy` dan `role` dihapus karena tidak terpakai.
+  - **Ikon:** SVG monokrom dari simple-icons 11.15.0 (CC0-1.0) di `Resources/Images/si-*.svg`,
+    dimuat sebagai template (seperti `DiscordMark`) dan diwarnai mengikuti label. SwiftUI tanpa ikon;
+    situs memakai SF Symbol `globe`. Ini logo merek pihak ketiga, jadi hanya dipakai untuk menautkan
+    ke profil/alat itu.
+  - **Gerak:** blok masuk naik 8 pt + opacity di kurva reveal, jeda 60 ms (blok di bawah lipatan
+    menunggu di-scroll, `onScrollVisibilityChange` macOS 15, cadangan 2 dtk). Kata berputar tiap
+    3 dtk dengan efek decrypt (noise `_<>*/#` jadi huruf dari kiri ke kanan, blok hijau di depan,
+    langkah 34 ms, satu `Text`); judul bagian juga decrypt saat muncul. Subtitle punya pita kilau
+    (mask gradien di `keyframeAnimator`). Angka menghitung naik lewat view `Animatable`. Bio naik
+    per kata (blur 4 pt hilang, 6 pt, tersebar 1,2 dtk) lewat `TextRenderer` (macOS 15; macOS 14
+    cukup fade). Linimasa: baris masuk berurutan, rel tumbuh dari atas (`scaleEffect`). Stack: tiga
+    baris marquee `TimelineView(.animation)` + `.drawingGroup()`, baris tengah terbalik, 96–120
+    dtk per putaran, tepi memudar, berhenti saat di-hover. Hover tombol sosial dan kartu naik 2 pt
+    (spring 0,3/0,8). Semua gerak terus-menerus berhenti saat halaman ditinggal atau jendela Settings
+    tertutup/tertutupi (`SettingsWindowVisibility`). Reduce Motion: hanya fade, kata berganti
+    cross-fade, stack jadi baris statis yang membungkus.
+  - **Belum diverifikasi visual di app:** UI app tidak dijalankan. Tata letak dicek lewat render
+    statis (`ImageRenderer`, salinan halaman dengan stub) di 480–640 pt, terang/gelap, Inggris,
+    Prancis, Jepang. Perlu dicek di Mac: semua animasi di 120 Hz, decrypt kata dan judul, kilau
+    subtitle, marquee dan pause saat hover, apakah `onScrollVisibilityChange` memicu blok bawah saat
+    di-scroll, word reveal bersama `textSelection`, ikon app di tile Zenith, tooltip tombol sosial.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
