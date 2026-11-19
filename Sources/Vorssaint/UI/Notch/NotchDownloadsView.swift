@@ -62,9 +62,9 @@ private struct NotchDownloadsSetupView: View {
     private var glyph: some View {
         Image(systemName: downloads.folderUnavailable ? "exclamationmark.triangle" : "arrow.down.circle")
             .font(.system(size: 26, weight: .light))
-            .foregroundStyle(.white.opacity(0.65))
+            .foregroundStyle(ZenithIsland.secondary) // Zenith fork
             .frame(width: 56, height: 56)
-            .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .zenithIslandCard(cornerRadius: ZenithRadius.panel) // Zenith fork: a hairline well
             .accessibilityHidden(true)
     }
 
@@ -87,7 +87,7 @@ private struct NotchDownloadsSetupView: View {
             EmptyView()
         } else if !enabled {
             Toggle(text.downloadsTitle, isOn: $enabled)
-                .toggleStyle(.switch)
+                .toggleStyle(ZenithIslandSwitchStyle()) // Zenith fork
                 .onChange(of: enabled) { NotchService.shared.syncWithPreferences() }
         } else {
             chooseActions
@@ -101,7 +101,7 @@ private struct NotchDownloadsSetupView: View {
                     .font(.system(size: 12, weight: .semibold))
                     .padding(.horizontal, 14)
                     .frame(height: 28)
-                    .background(.white.opacity(0.14), in: Capsule())
+                    .modifier(ZenithIslandPill(prominent: true)) // Zenith fork
                     .contentShape(Capsule())
             }
             .buttonStyle(NotchButtonStyle(cornerRadius: 14))
@@ -109,7 +109,7 @@ private struct NotchDownloadsSetupView: View {
                 Button(action: downloads.forgetFolder) {
                     Text(text.clearFolder)
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(ZenithIsland.secondary) // Zenith fork
                         .padding(.horizontal, 10)
                         .frame(height: 28)
                         .contentShape(Capsule())
@@ -200,7 +200,7 @@ struct NotchDownloadsView: View {
                     fileLabel
                     if let fraction = item.fraction {
                         Text(fraction, format: .percent.precision(.fractionLength(0)))
-                            .font(.caption).monospacedDigit()
+                            .zenithIslandMeta(11, weight: .medium) // Zenith fork
                     }
                 }
             }
@@ -220,12 +220,12 @@ struct NotchDownloadsView: View {
                     } else if item.fraction == nil {
                         Text(text.totalUnknown)
                     }
-                }.font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                }.zenithIslandMeta(10).foregroundStyle(.secondary).lineLimit(1) // Zenith fork
             }
         }
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .zenithIslandCard(cornerRadius: ZenithRadius.card) // Zenith fork: a hairline card
         .clipped()
         .accessibilityElement(children: .contain)
     }

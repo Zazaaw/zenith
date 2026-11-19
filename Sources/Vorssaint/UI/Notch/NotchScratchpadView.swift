@@ -283,11 +283,11 @@ struct NotchScratchpadView: View {
                 .accessibilityLabel(text.closePad)
             }
         }
-        .foregroundStyle(selected ? .white : .white.opacity(0.6))
+        .foregroundStyle(selected ? ZenithIsland.accent : ZenithIsland.secondary) // Zenith fork
         .padding(.leading, 10)
         .padding(.trailing, showsClose ? 5 : selected ? 8 : 10)
         .frame(height: 22)
-        .background(.white.opacity(selected ? 0.14 : 0.05), in: Capsule())
+        .zenithIslandChoice(selected, in: Capsule()) // Zenith fork: an outlined pill, accent when open
         .contentShape(Capsule())
     }
 

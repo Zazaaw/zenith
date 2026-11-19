@@ -105,7 +105,7 @@ struct NotchSectionsView: View {
             VStack(spacing: 6) {
                 Image(systemName: module.symbol)
                     .font(.system(size: 22, weight: .medium))
-                    .foregroundStyle(tint(for: module))
+                    .zenithIslandGlyph(selected: current) // Zenith fork: monochrome, accent when current
                     .frame(width: 25, height: 25)
                 Text(module.title(l10n.language))
                     .font(.system(size: 11, weight: .medium))
@@ -113,22 +113,20 @@ struct NotchSectionsView: View {
                     .minimumScaleFactor(0.85)
                     .multilineTextAlignment(.center)
                     .frame(height: 27)
+                    .foregroundStyle(ZenithIsland.primary) // Zenith fork
                 Text("⌥⌘" + module.shortcutKey.uppercased())
-                    .font(.system(size: 10, weight: .medium, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .zenithIslandMeta(10, weight: .medium) // Zenith fork
+                    .foregroundStyle(ZenithIsland.tertiary) // Zenith fork
             }
             .padding(.horizontal, 6)
             .frame(maxWidth: .infinity)
             .frame(height: NotchLayout.sectionTileHeight)
-            .background(.white.opacity(highlighted ? 0.12 : 0.045), in: shape)
-            .overlay {
-                shape.strokeBorder(.white.opacity(highlighted ? 0.55 : contrast == .increased ? 0.4 : 0.04), lineWidth: 1)
-            }
+            .zenithIslandSectionTile(highlighted: highlighted, selected: current) // Zenith fork
             .overlay(alignment: .topTrailing) {
                 if current {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 10))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(ZenithIsland.accent) // Zenith fork
                         .padding(7)
                 }
             }
@@ -141,15 +139,6 @@ struct NotchSectionsView: View {
         // A stepped-away row sits under the header, clipped; it keeps no
         // tooltip there.
         .help(visible ? module.title(l10n.language) + "  ⌥⌘" + module.shortcutKey.uppercased() : "")
-    }
-
-    private func tint(for module: NotchModule) -> Color {
-        switch module {
-        case .music: return .pink
-        case .calendar: return .red
-        case .timer: return ZenithStatus.progress
-        default: return .white.opacity(0.85)
-        }
     }
 }
 
@@ -208,7 +197,8 @@ struct NotchSectionSearch: View {
         }
         .padding(.trailing, expanded ? 8 : 0)
         .frame(height: 28)
-        .background(.white.opacity(expanded ? 0.07 : 0), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .modifier(ZenithIslandFieldChrome(focused: searching && !service.sectionQuery.isEmpty, visible: expanded,
+                                          cornerRadius: 9)) // Zenith fork: a hairline well
         .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         .clipped()
         .onHover { hovering in

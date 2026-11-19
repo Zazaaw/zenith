@@ -144,11 +144,8 @@ struct NotchFilesView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.white.opacity(selected ? 0.14 : 0.04), in: RoundedRectangle(cornerRadius: 20))
-        .overlay {
-            RoundedRectangle(cornerRadius: 20)
-                .strokeBorder(.white.opacity(selected ? 0.7 : 0.2), lineWidth: selected ? 1.5 : 0.75)
-        }
+        // Zenith fork: a hairline zone; the one under the file wears the accent.
+        .zenithIslandSectionTile(highlighted: selected, selected: selected)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(selected ? .isSelected : [])
         .opacity(available ? 1 : 0.5)

@@ -174,13 +174,8 @@ private struct NotchAgentChip: View {
     var tint: Color = .white
 
     var body: some View {
-        Text(text)
-            .font(.system(size: 9, weight: .semibold))
-            .foregroundStyle(tint.opacity(0.9))
-            .lineLimit(1)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 1.5)
-            .background(tint.opacity(0.14), in: Capsule(style: .continuous))
+        // Zenith fork: a mono tag; an agent's own colour in the 10/20/100 form.
+        ZenithIslandTag(text: text, tint: tint == .white ? nil : tint, uppercase: false)
     }
 }
 
@@ -1042,10 +1037,11 @@ private struct NotchAgentResetsCard: View {
                 Text(title).lineLimit(1).minimumScaleFactor(0.8)
             }
             .font(.system(size: 10.5, weight: .semibold))
-            .foregroundStyle(prominent ? AnyShapeStyle(tint) : AnyShapeStyle(.white.opacity(0.85)))
+            .foregroundStyle(prominent ? AnyShapeStyle(tint) : AnyShapeStyle(ZenithIsland.secondary)) // Zenith fork
             .padding(.horizontal, 9)
             .frame(height: 20)
-            .background(prominent ? tint.opacity(0.2) : .white.opacity(0.1), in: Capsule(style: .continuous))
+            // Zenith fork: the step in its colour's 10/20/100, any other an outline.
+            .zenithIslandChoice(prominent, in: Capsule(style: .continuous), tint: tint)
             .contentShape(Capsule(style: .continuous))
         }
         .buttonStyle(NotchButtonStyle(cornerRadius: 10))

@@ -191,7 +191,7 @@ private struct NotchWatchAreaCard: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .zenithIslandCard(cornerRadius: ZenithRadius.card) // Zenith fork: a hairline card
         .accessibilityElement(children: .combine)
     }
 }
@@ -253,11 +253,7 @@ private struct NotchWatchRuleRow: View {
             .padding(.horizontal, 8)
             .frame(height: 24)
             .frame(maxWidth: 180)
-            .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .strokeBorder(.white.opacity(focused ? 0.34 : 0), lineWidth: 1)
-            }
+            .modifier(ZenithIslandFieldChrome(focused: focused, cornerRadius: ZenithRadius.medium)) // Zenith fork
             .accessibilityLabel(text.condition(watch.condition))
     }
 
@@ -302,9 +298,9 @@ private struct NotchWatchSetupView: View {
     private var glyph: some View {
         Image(systemName: NotchModule.watch.symbol)
             .font(.system(size: 26, weight: .light))
-            .foregroundStyle(.white.opacity(0.65))
+            .foregroundStyle(ZenithIsland.secondary) // Zenith fork
             .frame(width: 56, height: 56)
-            .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .zenithIslandCard(cornerRadius: ZenithRadius.panel) // Zenith fork: a hairline well
             .accessibilityHidden(true)
     }
 
@@ -319,7 +315,7 @@ private struct NotchWatchSetupView: View {
         if !enabled {
             if AppFeature.notchWatch.isAvailable {
                 Toggle(text.title, isOn: $enabled)
-                    .toggleStyle(.switch)
+                    .toggleStyle(ZenithIslandSwitchStyle()) // Zenith fork
                     .onChange(of: enabled) { NotchService.shared.syncWithPreferences() }
             }
         } else if !permissions.screenRecording {

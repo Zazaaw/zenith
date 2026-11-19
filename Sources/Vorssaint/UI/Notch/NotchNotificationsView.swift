@@ -21,9 +21,10 @@ struct NotchNotificationsView: View {
                 }
             } else if service.items.isEmpty {
                 HStack(spacing: 14) {
-                    Image(systemName: "bell").font(.system(size: 26, weight: .light)).foregroundStyle(.white.opacity(0.6))
+                    Image(systemName: "bell").font(.system(size: 26, weight: .light))
+                        .foregroundStyle(ZenithIsland.secondary) // Zenith fork
                         .frame(width: 56, height: 56)
-                        .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .zenithIslandCard(cornerRadius: ZenithRadius.panel) // Zenith fork: a hairline well
                     VStack(alignment: .leading, spacing: 4) {
                         Text(service.monitoring ? text.empty : text.waiting).font(.headline)
                         Text(text.privacy).font(.caption).foregroundStyle(.white.opacity(0.65))
@@ -89,7 +90,7 @@ private struct NotchNotificationRow: View {
                 Text(item.content.app.isEmpty ? text.title : item.content.app)
                     .lineLimit(1)
                 Spacer(minLength: 4)
-                Text(item.received, format: .dateTime.hour().minute()).monospacedDigit()
+                Text(item.received, format: .dateTime.hour().minute()).zenithIslandMeta(10) // Zenith fork
                 if service.openingID == item.id {
                     ProgressView().controlSize(.mini)
                 } else if service.canOpen(item) {
@@ -119,7 +120,7 @@ private struct NotchNotificationRow: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
+        .zenithIslandCard(cornerRadius: ZenithRadius.card) // Zenith fork: a hairline card
         .clipped()
         .accessibilityElement(children: .contain)
     }

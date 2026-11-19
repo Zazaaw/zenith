@@ -59,9 +59,9 @@ struct NotchCalendarMonthView: View {
                 // as 28日 or 28일, which the circle cuts off.
                 Text(calendar.component(.day, from: date), format: .number)
                     .font(.system(size: 11, weight: isToday || selected ? .bold : .medium))
-                    .foregroundStyle(selected && !isToday ? .black : .white.opacity(isToday || inMonth ? 1 : 0.4))
+                    .foregroundStyle(selected && !isToday ? ZenithIsland.accent : .white.opacity(isToday || inMonth ? 1 : 0.4))
                     .frame(width: 24, height: 24)
-                    .background(isToday ? accent : selected ? .white : .clear, in: Circle())
+                    .modifier(ZenithIslandDayMark(today: isToday, selected: selected, todayTint: accent)) // Zenith fork
                     .overlay {
                         Circle().strokeBorder(.white.opacity(selected && isToday ? 0.8 : 0), lineWidth: 1.5)
                     }
@@ -133,9 +133,9 @@ struct NotchCalendarWeekStrip: View {
                     .foregroundStyle(.white.opacity(0.45))
                 Text(calendar.component(.day, from: date), format: .number)
                     .font(.system(size: 12, weight: isToday || selected ? .bold : .medium))
-                    .foregroundStyle(selected && !isToday ? .black : .white)
+                    .foregroundStyle(selected && !isToday ? ZenithIsland.accent : .white)
                     .frame(width: 26, height: 26)
-                    .background(isToday ? accent : selected ? .white : .clear, in: Circle())
+                    .modifier(ZenithIslandDayMark(today: isToday, selected: selected, todayTint: accent)) // Zenith fork
                     .overlay {
                         Circle().strokeBorder(.white.opacity(selected && isToday ? 0.8 : 0), lineWidth: 1.5)
                     }
@@ -222,9 +222,9 @@ struct NotchCalendarMonthGrid: View {
             VStack(spacing: 0) {
                 Text(calendar.component(.day, from: date), format: .number)
                     .font(.system(size: min(11, circle * 0.62), weight: isToday || selected ? .bold : .medium))
-                    .foregroundStyle(selected && !isToday ? .black : .white.opacity(isToday || inMonth ? 1 : 0.4))
+                    .foregroundStyle(selected && !isToday ? ZenithIsland.accent : .white.opacity(isToday || inMonth ? 1 : 0.4))
                     .frame(width: circle, height: circle)
-                    .background(isToday ? accent : selected ? .white : .clear, in: Circle())
+                    .modifier(ZenithIslandDayMark(today: isToday, selected: selected, todayTint: accent)) // Zenith fork
                     .overlay {
                         Circle().strokeBorder(.white.opacity(selected && isToday ? 0.8 : 0), lineWidth: 1.5)
                     }

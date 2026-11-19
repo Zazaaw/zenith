@@ -139,15 +139,15 @@ struct NotchMixerView: View {
     private var permission: some View {
         HStack(spacing: 14) {
             Image(systemName: "waveform.badge.exclamationmark").font(.system(size: 24, weight: .light))
-                .foregroundStyle(.white.opacity(0.65))
+                .foregroundStyle(ZenithIsland.secondary) // Zenith fork
                 .frame(width: 56, height: 56)
-                .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .zenithIslandCard(cornerRadius: ZenithRadius.panel) // Zenith fork: a hairline well
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 8) {
                 Text(l10n.s.mixerPermissionBody).font(.system(size: 12)).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Button(l10n.s.permissionOpenSettings) { Permissions.shared.openAudioCaptureSettings() }
-                    .buttonStyle(.bordered).controlSize(.small)
+                    .buttonStyle(ZenithIslandOutlineButtonStyle(prominent: true)) // Zenith fork
             }
         }
         .padding(.horizontal, 8)

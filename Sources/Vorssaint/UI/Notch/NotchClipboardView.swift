@@ -74,7 +74,7 @@ struct NotchClipboardView: View {
                         enabled = true
                         history.syncWithPreferences()
                     }
-                    .buttonStyle(.bordered).controlSize(.small)
+                    .buttonStyle(ZenithIslandOutlineButtonStyle(prominent: true)) // Zenith fork
                 }
                 .frame(maxHeight: .infinity)
             } else if entries.isEmpty {
@@ -252,7 +252,7 @@ struct NotchClipboardView: View {
             card(entry, lifted: true) { expandedCard(entry, place: place) }
                 .frame(height: height)
                 .background {
-                    let backing = RoundedRectangle(cornerRadius: 14, style: .continuous).inset(by: -1)
+                    let backing = RoundedRectangle(cornerRadius: ZenithIsland.radius(14), style: .continuous).inset(by: -1) // Zenith fork
                     Group {
                         if glassSurface { backing.fill(.ultraThickMaterial) } else { backing.fill(.black) }
                     }
@@ -357,7 +357,7 @@ struct NotchClipboardView: View {
     /// Liquid Glass instead, as an opaque gray would stand out of the glass.
     private func card<Content: View>(_ entry: ClipboardHistoryEntry, lifted: Bool = false,
                                      @ViewBuilder content: () -> Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: ZenithIsland.radius(14), style: .continuous) // Zenith fork
         return content()
             .modifier(NotchControlSurface(cornerRadius: 14, selected: entry.isPinned))
             .background {
@@ -408,10 +408,10 @@ struct NotchClipboardView: View {
                 HStack(spacing: 6) {
                     if entry.isPinned { Image(systemName: "pin.fill").font(.system(size: 9)).foregroundStyle(.secondary) }
                     if place < 9, service.panelIsKey {
-                        Text("⌘\(place + 1)").font(.system(size: 9.5, weight: .medium)).monospacedDigit()
+                        Text("⌘\(place + 1)").zenithIslandMeta(9.5, weight: .medium) // Zenith fork
                             .foregroundStyle(.tertiary).accessibilityHidden(true)
                     }
-                    Text(entry.copiedAt, style: .time).font(.system(size: 9.5)).foregroundStyle(.tertiary).lineLimit(1)
+                    Text(entry.copiedAt, style: .time).zenithIslandMeta().foregroundStyle(.tertiary).lineLimit(1) // Zenith fork
                 }
             }
         }
@@ -449,11 +449,11 @@ struct NotchClipboardView: View {
                 sourceBadge(entry)
                 Text(entry.copiedAt, format: .dateTime.month(.abbreviated).day().hour().minute())
                     .environment(\.locale, l10n.language.formattingLocale())
-                    .font(.system(size: 9.5)).foregroundStyle(.tertiary).lineLimit(1)
+                    .zenithIslandMeta().foregroundStyle(.tertiary).lineLimit(1) // Zenith fork
                 Spacer(minLength: 0)
                 if place < 9, service.panelIsKey {
                     Text("⌘\(place + 1)")
-                        .font(.system(size: 9.5, weight: .medium)).monospacedDigit()
+                        .zenithIslandMeta(9.5, weight: .medium) // Zenith fork
                         .foregroundStyle(.tertiary)
                         .accessibilityHidden(true)
                 }
@@ -511,7 +511,7 @@ struct NotchClipboardView: View {
         .frame(height: NotchLayout.clipboardSearchHeight)
         .modifier(NotchControlSurface(cornerRadius: 14))
         .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: ZenithIsland.radius(14), style: .continuous) // Zenith fork
                 .strokeBorder(.white.opacity(searching ? 0.34 : 0), lineWidth: 1)
                 .allowsHitTesting(false)
         }

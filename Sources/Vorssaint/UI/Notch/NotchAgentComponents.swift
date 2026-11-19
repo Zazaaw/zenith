@@ -58,8 +58,7 @@ struct NotchAgentCardHeader<Accessory: View>: View {
                     .frame(width: 13)
             }
             Text(title)
-                .font(.system(size: 10.5, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.9))
+                .modifier(ZenithIslandLabelStyle()) // Zenith fork: a mono card heading
                 .lineLimit(1)
             Spacer(minLength: 4)
             accessory

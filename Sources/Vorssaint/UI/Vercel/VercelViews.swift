@@ -141,17 +141,13 @@ private struct VercelDeploymentRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         Text(deployment.project).font(ZenithType.emphasis).lineLimit(1).truncationMode(.tail)
-                        Text(deployment.isProduction ? text.production : text.preview)
-                            .font(ZenithType.caption)
-                            .foregroundStyle(deployment.isProduction ? .primary : .secondary)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(Capsule().fill(Color.primary.opacity(deployment.isProduction ? 0.14 : 0.07)))
-                            .lineLimit(1)
+                        // The target as a mono tag under a hairline, brighter for production.
+                        ZenithIslandTag(text: deployment.isProduction ? text.production : text.preview,
+                                        tint: deployment.isProduction ? ZenithIsland.primary : nil)
                             .fixedSize()
                         Spacer(minLength: 4)
                         Text(VercelStyle.relative(deployment.created, language: language))
-                            .font(ZenithType.caption).monospacedDigit()
+                            .zenithIslandMeta(10)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .fixedSize()

@@ -65,9 +65,9 @@ struct NotchGitHubView: View {
 
     private func header(_ title: String, count: Int, refresh: Bool) -> some View {
         HStack(spacing: 6) {
-            Text(title).font(ZenithType.caption.weight(.semibold)).foregroundStyle(.secondary)
+            ZenithIslandSectionLabel(text: title)
             if count > 0 {
-                Text("\(count)").font(ZenithType.caption.weight(.semibold)).monospacedDigit()
+                Text("\(count)").zenithIslandMeta(10, weight: .semibold).foregroundStyle(ZenithIsland.primary)
             }
             Spacer(minLength: 0)
             if refresh {
@@ -116,7 +116,7 @@ private struct GitHubPullRequestRow: View {
                         Text(pullRequest.title).font(ZenithType.body.weight(.medium)).lineLimit(1).truncationMode(.tail)
                         Spacer(minLength: 4)
                         Text(VercelStyle.relative(pullRequest.updated, language: language))
-                            .font(ZenithType.caption).monospacedDigit()
+                            .zenithIslandMeta(10)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .fixedSize()

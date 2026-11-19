@@ -88,7 +88,7 @@ struct NotchTimerView: View {
                 .padding(.horizontal, NotchTimerSupport.StartButton.padding)
                 .frame(height: NotchLayout.timerStartHeight)
                 .foregroundStyle(ZenithStatus.progress)
-                .background(ZenithStatus.progress.opacity(0.18), in: Capsule())
+                .zenithIslandSelection(true, in: Capsule(), tint: ZenithStatus.progress) // Zenith fork: 10/20/100
                 .contentShape(Capsule())
         }
         .buttonStyle(NotchButtonStyle(cornerRadius: NotchLayout.timerStartHeight / 2))
@@ -152,13 +152,14 @@ struct NotchTimerView: View {
                     Text(title(for: candidate))
                         .font(.system(size: NotchTimerSupport.ModePicker.labelSize, weight: .medium))
                         .lineLimit(1)
-                        .foregroundStyle(selected ? .white : .white.opacity(0.5))
+                        .foregroundStyle(selected ? ZenithIsland.accent : ZenithIsland.secondary) // Zenith fork
                         .padding(.horizontal, NotchTimerSupport.ModePicker.labelPadding)
                         .frame(height: NotchTimerSupport.ModePicker.height)
-                        .overlay(alignment: .bottom) {
+                        .background {
+                            // Zenith fork: the chosen mode wears the accent's 10/20/100 pill.
                             if selected {
-                                Capsule().fill(ZenithStatus.progress).frame(height: 2)
-                                    .padding(.horizontal, NotchTimerSupport.ModePicker.labelPadding)
+                                Capsule().fill(ZenithStatus.fill(ZenithIsland.accent))
+                                    .overlay(Capsule().strokeBorder(ZenithStatus.stroke(ZenithIsland.accent), lineWidth: 0.75))
                                     .matchedGeometryEffect(id: "selection", in: modeSelection)
                             }
                         }
@@ -335,7 +336,7 @@ struct NotchTimerView: View {
                 .font(.system(size: 23, weight: .semibold))
                 .foregroundStyle(ZenithStatus.progress)
                 .frame(width: 52, height: 52)
-                .background(ZenithStatus.progress.opacity(0.28), in: Circle())
+                .zenithIslandSelection(true, in: Circle(), tint: ZenithStatus.progress) // Zenith fork: 10/20/100
                 .contentShape(Circle())
         }
         .buttonStyle(NotchButtonStyle(cornerRadius: 26))
