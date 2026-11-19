@@ -190,11 +190,13 @@ private struct VercelDeploymentRow: View {
 // MARK: Settings
 
 /// Zenith fork: the Vercel section's options: the access token, kept in a
-/// private file (ZenithSecretStore), and whether builds show in the closed island.
+/// private file (ZenithSecretStore), whether builds show in the closed island,
+/// and whether a failed build sends a notification.
 struct VercelSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var service = VercelService.shared
     @AppStorage(DefaultsKey.notchVercelActivity) private var liveActivity = true
+    @AppStorage(DefaultsKey.notchVercelFailureAlerts) private var failureAlerts = false
     @State private var draft = ""
     @State private var rejected = false
 
@@ -234,6 +236,19 @@ struct VercelSettings: View {
                     Text(text.liveActivityCaption).font(ZenithType.caption).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+            }
+            let alerts = ZenithStrings.vercelAlerts(l10n.language)
+            ZenithSwitchRow(alerts.failureAlerts, isOn: $failureAlerts) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(alerts.failureAlerts)
+                    Text(alerts.failureAlertsCaption).font(ZenithType.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .onChange(of: failureAlerts) { _, isOn in
+                // Asked only when the person turns the alerts on.
+                if isOn { Notifier.requestPermission() }
+                service.syncFailureAlerts()
             }
         }
         .onAppear { service.loadTokenIfNeeded() }

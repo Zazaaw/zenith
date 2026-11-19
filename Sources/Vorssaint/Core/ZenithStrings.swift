@@ -1658,3 +1658,155 @@ extension ZenithStrings {
         }
     }
 }
+
+struct ZenithLockScreenTerminalTitleStrings {
+    /// Over the field for the readout’s title bar.
+    let windowTitle: String
+    let caption: String
+    /// The button that fills in `<computer name> — status`.
+    let useComputerName: String
+}
+
+extension ZenithStrings {
+    /// The terminal readout’s own name in its title bar.
+    static func lockScreenTerminalTitle(_ language: AppLanguage) -> ZenithLockScreenTerminalTitleStrings {
+        switch language {
+        case .enUS:
+            return .init(windowTitle: "Window title",
+                         caption: "Shown in the readout’s title bar. Leave it empty for the default.",
+                         useComputerName: "Use this Mac’s name")
+        case .ptBR:
+            return .init(windowTitle: "Título da janela",
+                         caption: "Aparece na barra de título da leitura. Deixe vazio para usar o padrão.",
+                         useComputerName: "Usar o nome deste Mac")
+        case .tr:
+            return .init(windowTitle: "Pencere başlığı",
+                         caption: "Görünümün başlık çubuğunda gösterilir. Varsayılan için boş bırakın.",
+                         useComputerName: "Bu Mac’in adını kullan")
+        case .ru:
+            return .init(windowTitle: "Заголовок окна",
+                         caption: "Показывается в заголовке сводки. Оставьте пустым для стандартного.",
+                         useComputerName: "Использовать имя этого Mac")
+        case .es:
+            return .init(windowTitle: "Título de la ventana",
+                         caption: "Se muestra en la barra de título de la lectura. Déjalo vacío para usar el predeterminado.",
+                         useComputerName: "Usar el nombre de este Mac")
+        case .sk:
+            return .init(windowTitle: "Názov okna",
+                         caption: "Zobrazuje sa v záhlaví prehľadu. Ak ho necháte prázdny, použije sa predvolený.",
+                         useComputerName: "Použiť názov tohto Macu")
+        case .de:
+            return .init(windowTitle: "Fenstertitel",
+                         caption: "Steht in der Titelleiste der Anzeige. Leer lassen für den Standardtitel.",
+                         useComputerName: "Namen dieses Mac verwenden")
+        case .fr:
+            return .init(windowTitle: "Titre de la fenêtre",
+                         caption: "Affiché dans la barre de titre de l’affichage. Laissez vide pour le titre par défaut.",
+                         useComputerName: "Utiliser le nom de ce Mac")
+        case .it:
+            return .init(windowTitle: "Titolo della finestra",
+                         caption: "Compare nella barra del titolo. Lascialo vuoto per usare quello predefinito.",
+                         useComputerName: "Usa il nome di questo Mac")
+        case .ja:
+            return .init(windowTitle: "ウインドウのタイトル",
+                         caption: "表示のタイトルバーに表示されます。空欄にするとデフォルトになります。",
+                         useComputerName: "このMacの名前を使用")
+        case .ko:
+            return .init(windowTitle: "윈도우 제목",
+                         caption: "표시의 제목 막대에 나타납니다. 비워 두면 기본값을 사용합니다.",
+                         useComputerName: "이 Mac의 이름 사용")
+        case .uk:
+            return .init(windowTitle: "Заголовок вікна",
+                         caption: "Показується в заголовку зведення. Залиште порожнім для стандартного.",
+                         useComputerName: "Використати назву цього Mac")
+        case .zhHans:
+            return .init(windowTitle: "窗口标题",
+                         caption: "显示在读数的标题栏中。留空则使用默认标题。",
+                         useComputerName: "使用这台 Mac 的名称")
+        case .zhTW:
+            return .init(windowTitle: "視窗標題",
+                         caption: "顯示在讀數的標題列中。留空即使用預設標題。",
+                         useComputerName: "使用這部 Mac 的名稱")
+        case .zhHK:
+            return .init(windowTitle: "視窗標題",
+                         caption: "顯示在讀數的標題列中。留空即使用預設標題。",
+                         useComputerName: "使用這部 Mac 的名稱")
+        }
+    }
+}
+
+struct ZenithVercelAlertStrings {
+    /// The switch in the Vercel section’s options.
+    let failureAlerts: String
+    let failureAlertsCaption: String
+    /// The notification’s title; its body is the project and branch.
+    let buildFailed: String
+}
+
+extension ZenithStrings {
+    /// A notification when a Vercel build fails.
+    static func vercelAlerts(_ language: AppLanguage) -> ZenithVercelAlertStrings {
+        switch language {
+        case .enUS:
+            return .init(failureAlerts: "Notify when a build fails",
+                         failureAlertsCaption: "Checks every 10 minutes, or every 2 while something builds, even with the island closed. The notification names the project and branch, never the commit message.",
+                         buildFailed: "Vercel build failed")
+        case .ptBR:
+            return .init(failureAlerts: "Avisar quando um build falhar",
+                         failureAlertsCaption: "Verifica a cada 10 minutos, ou a cada 2 enquanto algo é criado, mesmo com a ilha fechada. A notificação mostra o projeto e o branch, nunca a mensagem do commit.",
+                         buildFailed: "Build da Vercel falhou")
+        case .tr:
+            return .init(failureAlerts: "Derleme başarısız olunca bildir",
+                         failureAlertsCaption: "Ada kapalıyken bile 10 dakikada bir, bir derleme sürerken 2 dakikada bir denetler. Bildirim projeyi ve dalı gösterir, commit iletisini asla göstermez.",
+                         buildFailed: "Vercel derlemesi başarısız oldu")
+        case .ru:
+            return .init(failureAlerts: "Уведомлять о неудачной сборке",
+                         failureAlertsCaption: "Проверяет каждые 10 минут, а во время сборки каждые 2, даже когда остров закрыт. В уведомлении только проект и ветка, без сообщения коммита.",
+                         buildFailed: "Сборка Vercel не удалась")
+        case .es:
+            return .init(failureAlerts: "Avisar cuando falle una compilación",
+                         failureAlertsCaption: "Comprueba cada 10 minutos, o cada 2 mientras algo se compila, incluso con la isla cerrada. La notificación muestra el proyecto y la rama, nunca el mensaje del commit.",
+                         buildFailed: "Falló la compilación en Vercel")
+        case .sk:
+            return .init(failureAlerts: "Upozorniť, keď zostava zlyhá",
+                         failureAlertsCaption: "Kontroluje každých 10 minút a počas zostavovania každé 2 minúty, aj keď je Dynamic Island zatvorený. Upozornenie ukáže projekt a vetvu, nikdy správu commitu.",
+                         buildFailed: "Zostava vo Verceli zlyhala")
+        case .de:
+            return .init(failureAlerts: "Melden, wenn ein Build fehlschlägt",
+                         failureAlertsCaption: "Prüft alle 10 Minuten, während eines Builds alle 2, auch bei geschlossener Insel. Die Mitteilung nennt Projekt und Branch, nie die Commit-Nachricht.",
+                         buildFailed: "Vercel-Build fehlgeschlagen")
+        case .fr:
+            return .init(failureAlerts: "Prévenir en cas d’échec d’un build",
+                         failureAlertsCaption: "Vérifie toutes les 10 minutes, ou toutes les 2 pendant un build, même l’île fermée. La notification indique le projet et la branche, jamais le message du commit.",
+                         buildFailed: "Échec du build Vercel")
+        case .it:
+            return .init(failureAlerts: "Avvisa quando una build non riesce",
+                         failureAlertsCaption: "Controlla ogni 10 minuti, o ogni 2 durante una build, anche con l’isola chiusa. La notifica indica progetto e branch, mai il messaggio del commit.",
+                         buildFailed: "Build Vercel non riuscita")
+        case .ja:
+            return .init(failureAlerts: "ビルドが失敗したら通知",
+                         failureAlertsCaption: "島を閉じていても10分ごと、ビルド中は2分ごとに確認します。通知にはプロジェクトとブランチだけを表示し、コミットメッセージは表示しません。",
+                         buildFailed: "Vercelのビルドに失敗しました")
+        case .ko:
+            return .init(failureAlerts: "빌드 실패 시 알림",
+                         failureAlertsCaption: "섬이 닫혀 있어도 10분마다, 빌드 중에는 2분마다 확인합니다. 알림에는 프로젝트와 브랜치만 표시되며 커밋 메시지는 표시되지 않습니다.",
+                         buildFailed: "Vercel 빌드 실패")
+        case .uk:
+            return .init(failureAlerts: "Сповіщати про невдалу збірку",
+                         failureAlertsCaption: "Перевіряє кожні 10 хвилин, а під час збірки кожні 2, навіть коли острівець закрито. У сповіщенні лише проєкт і гілка, без повідомлення коміту.",
+                         buildFailed: "Збірка Vercel не вдалася")
+        case .zhHans:
+            return .init(failureAlerts: "构建失败时通知",
+                         failureAlertsCaption: "即使岛已收起，也会每 10 分钟检查一次，构建期间每 2 分钟一次。通知只显示项目和分支，从不显示提交信息。",
+                         buildFailed: "Vercel 构建失败")
+        case .zhTW:
+            return .init(failureAlerts: "建置失敗時通知",
+                         failureAlertsCaption: "即使島已收合，也會每 10 分鐘檢查一次，建置期間每 2 分鐘一次。通知只顯示專案與分支，絕不顯示提交訊息。",
+                         buildFailed: "Vercel 建置失敗")
+        case .zhHK:
+            return .init(failureAlerts: "建置失敗時通知",
+                         failureAlertsCaption: "即使島已收合，亦會每 10 分鐘檢查一次，建置期間每 2 分鐘一次。通知只顯示項目與分支，絕不顯示提交訊息。",
+                         buildFailed: "Vercel 建置失敗")
+        }
+    }
+}

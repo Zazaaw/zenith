@@ -18,7 +18,8 @@ enum NotchLockScreenTerminal {
         let sources = NotchLockScreenTerminalSupport.selection(in: defaults).shown.filter { isAvailable($0, in: defaults) }
         guard !sources.isEmpty else { return nil }
         return NotchLockScreenTerminalConfiguration(sources: sources,
-                                                    showsProjects: NotchLockScreenTerminalSupport.showsProjects(in: defaults))
+                                                    showsProjects: NotchLockScreenTerminalSupport.showsProjects(in: defaults),
+                                                    title: NotchLockScreenTerminalSupport.title(in: defaults))
     }
 
     /// Whether this Mac can fill a line at all. Vercel and GitHub find out

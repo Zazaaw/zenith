@@ -400,6 +400,47 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     sejak upstream/awal, tetap begitu.
   - **Belum diverifikasi visual:** app UI tidak dijalankan saat pengerjaan; tampilan terang
     dan gelap, Increase Contrast, dan panel di island perlu dicek di Mac.
+- **Judul terminal readout dan notifikasi build Vercel gagal (branch
+  `feat/terminal-title-vercel-alerts`):**
+  - **Judul title bar:** `notchLockScreenTerminalTitle` (string, default kosong = `zenith — status`,
+    ikut backup). Di Settings ada `TextField` di bawah "Show project names" dengan placeholder
+    `zenith — status`, tombol ikon `desktopcomputer` yang mengisi `<nama komputer> — status`
+    (dibaca lewat `SCDynamicStoreCopyComputerName` saat tombol ditekan, bukan
+    `Host.current()` yang bisa memblokir), dan satu baris keterangan. Pembersihan ada di fungsi
+    murni `NotchLockScreenTerminalSupport`: `titleInput` (saat mengetik: baris baru/tab/karakter
+    kontrol jadi spasi, maks. 32 karakter) dan `title` (untuk readout: spasi beruntun dirapatkan,
+    ujung di-trim, maks. 32, kosong = default); `computerTitle` memendekkan nama panjang dengan
+    `…` supaya tetap berakhir `— status`. Judul ikut `NotchLockScreenTerminalConfiguration`, jadi
+    dibaca sekali saat lock screen muncul.
+  - **Notifikasi build gagal:** `notchVercelFailureAlerts` (default mati, ikut backup), saklar
+    `ZenithSwitchRow` di opsi Vercel di bawah saklar live activity. Izin notifikasi diminta saat
+    saklar dinyalakan (`Notifier.requestPermission()`, seperti fitur notifikasi lain); kirimnya
+    lewat `Notifier.post`, yang diam-diam membuang notifikasi kalau izin tidak ada (pola WakaTime).
+  - **Polling:** tidak ada loop kedua. `VercelService` tetap satu loop; kalau island atau lock
+    screen sudah polling (15 dtk / 2 menit), alert memakai hasil yang sama. Kalau tidak ada yang
+    menonton, loop jalan "di belakang": tiap 2 menit selama ada deployment
+    QUEUED/INITIALIZING/BUILDING, tiap 10 menit kalau tidak (juga setelah gagal). Disinkronkan dari
+    `AppDelegate.applicationDidFinishLaunching` (`syncFailureAlerts()`, di samping
+    `syncGoalMonitoring()`), saat saklar berubah, dan saat token disimpan/dihapus.
+    `NotchService.stop()` sekarang hanya berarti "island berhenti": alert tetap jalan di belakang.
+    Live activity di island tetap hanya dari polling island.
+  - **Yang dianggap gagal** (fungsi murni `VercelSupport.failureAlerts` + `failureBaseline`):
+    deployment ERROR yang pada baca sebelumnya terlihat QUEUED/INITIALIZING/BUILDING, atau yang belum
+    pernah terlihat, dibuat setelah baca sebelumnya (toleransi jam 60 dtk), dan sudah ERROR. Baca
+    pertama setelah launch, setelah saklar dinyalakan, atau setelah token baru hanya menyimpan
+    baseline, tidak pernah memberi notifikasi. Build yang sedang diikuti tetap diingat sampai 6 jam
+    walau timnya hilang dari satu baca; ERROR yang belum pernah terlihat dan umurnya > 6 jam
+    (mis. setelah Mac tidur lama) diabaikan; maksimal 3 notifikasi per baca. Tiap uid hanya sekali:
+    32 uid terakhir disimpan di memori saja (tidak di UserDefaults; tidak perlu, karena baca
+    pertama setelah launch tidak pernah memberi notifikasi).
+  - **Isi notifikasi:** judul "Vercel build failed" (15 bahasa), isi `project · branch`. Pesan
+    commit dan nama tim tidak pernah tampil. Klik membuka halaman inspector (build log); untuk itu
+    `Notifier` dapat `post(title:body:opening:)` dan `zenithOpenURL(from:)` (hanya https), dan
+    delegate notifikasi di `AppDelegate` membukanya lewat `NSWorkspace`. Edit di file upstream
+    (`Notifier`, `AppDelegate`, `Defaults`) ditandai `// Zenith fork`.
+  - **Belum diverifikasi:** notifikasi sungguhan, klik notifikasi, dan polling ke API Vercel
+    asli belum dicoba (app UI tidak dijalankan, API Vercel tidak dipanggil). Tampilan field judul
+    di Settings dan judul di lock screen juga belum dilihat.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.

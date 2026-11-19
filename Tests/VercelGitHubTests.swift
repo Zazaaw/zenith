@@ -12,6 +12,8 @@ enum VercelTests {
         merging(suite)
         liveActivity(suite)
         polling(suite)
+        failureAlerts(suite)
+        failureNotifications(suite)
         requests(suite)
         island(suite)
         secrets(suite)
@@ -193,6 +195,134 @@ enum VercelTests {
                      && (120...300).contains(VercelSupport.idleInterval)
                      && VercelSupport.failedBuildInterval < VercelSupport.failureInterval,
                      "the cadence stays within 15–20 s building and 2–5 min idle")
+        suite.expect(VercelSupport.pollInterval(deployments: busy, failed: false, background: true) == 2 * 60
+                     && VercelSupport.pollInterval(deployments: idle, failed: false, background: true) == 10 * 60
+                     && VercelSupport.pollInterval(deployments: [], failed: true, background: true) == 10 * 60
+                     && VercelSupport.pollInterval(deployments: busy, failed: true, background: true) == 2 * 60,
+                     "failure alerts alone read every 2 minutes while building and every 10 otherwise")
+        suite.expect(VercelSupport.backgroundBuildingInterval > VercelSupport.buildingInterval
+                     && VercelSupport.backgroundIdleInterval > VercelSupport.idleInterval
+                     && VercelSupport.backgroundIdleInterval >= VercelSupport.failureInterval,
+                     "the background never reads faster than the island")
+    }
+
+    /// Which failed builds a read announces, given the read before it.
+    private static func failureAlerts(_ suite: TestSuite) {
+        let t0: TimeInterval = 1_000_000
+        let first = Date(timeIntervalSince1970: t0)
+        let second = first.addingTimeInterval(120)
+        func baseline(_ list: [VercelSupport.Deployment], at date: Date = first,
+                      previous: VercelSupport.FailureBaseline? = nil) -> VercelSupport.FailureBaseline {
+            VercelSupport.failureBaseline(previous: previous, current: list, polledAt: date)
+        }
+        func alerts(_ base: VercelSupport.FailureBaseline, _ list: [VercelSupport.Deployment], at date: Date = second,
+                    notified: Set<String> = []) -> [String] {
+            VercelSupport.failureAlerts(since: base, current: list, polledAt: date, notified: notified).map(\.uid)
+        }
+
+        // The first read after launch, or after the switch is turned on, only sets the baseline:
+        // what had failed by then is never announced afterwards.
+        let launch = [deployment("old", .error, created: t0 - 3600), deployment("ok", .ready, created: t0 - 600)]
+        let start = baseline(launch)
+        suite.expect(start.seen == ["old", "ok"] && start.inProgress.isEmpty && start.polledAt == first,
+                     "a baseline remembers what the read showed and when it went out")
+        suite.expect(alerts(start, launch).isEmpty, "an old failure seen in the first read is never announced")
+
+        // Seen on its way, then failed: announced.
+        let building = [deployment("b1", .building, created: t0 - 30), deployment("q1", .queued, created: t0 - 10),
+                        deployment("i1", .initializing, created: t0 - 20)]
+        let watching = baseline(building)
+        suite.expect(Set(watching.inProgress.keys) == ["b1", "q1", "i1"],
+                     "queued, initializing and building deployments are followed")
+        let ended = [deployment("b1", .error, created: t0 - 30), deployment("q1", .error, created: t0 - 10),
+                     deployment("i1", .ready, created: t0 - 20)]
+        suite.expect(alerts(watching, ended) == ["q1", "b1"],
+                     "builds seen on their way that end in error are announced, newest first")
+        suite.expect(alerts(watching, [deployment("b1", .canceled, created: t0 - 30)]).isEmpty,
+                     "a canceled build is not a failure")
+        suite.expect(alerts(watching, [deployment("b1", .building, created: t0 - 30)]).isEmpty,
+                     "a build still on its way waits")
+
+        // Never seen building, created after the last read and already failed: announced.
+        let quick = deployment("fast", .error, created: t0 + 60)
+        suite.expect(alerts(start, launch + [quick]) == ["fast"],
+                     "a deployment created since the last read that already failed is announced")
+        let skewed = deployment("skew", .error, created: t0 - 30)
+        suite.expect(alerts(start, [skewed]) == ["skew"],
+                     "a minute of clock difference with Vercel still counts as after the read")
+        let before = deployment("before", .error, created: t0 - VercelSupport.clockAllowance - 60)
+        suite.expect(alerts(start, [before]).isEmpty,
+                     "a failure created before the last read, which that read did not show, is old")
+        suite.expect(alerts(baseline([deployment("seen", .error, created: t0 + 10)], at: second),
+                            [deployment("seen", .error, created: t0 + 10)], at: second.addingTimeInterval(120)).isEmpty,
+                     "a failure the last read already showed is not announced again")
+
+        // Each deployment once.
+        suite.expect(alerts(watching, ended, notified: ["b1"]) == ["q1"], "a deployment already announced stays quiet")
+        let doubled = [deployment("b1", .error, created: t0 - 30), deployment("b1", .error, created: t0 - 30, scope: "Acme")]
+        suite.expect(alerts(watching, doubled) == ["b1"], "a deployment listed twice is announced once")
+
+        // A long sleep: at most a few, and none from long ago.
+        let late = second.addingTimeInterval(VercelSupport.failureAlertWindow + 3600)
+        let many = (0..<6).map { deployment("m\($0)", .error, created: t0 + 300 + Double($0)) }
+        suite.expect(alerts(start, many, at: second) == ["m5", "m4", "m3"],
+                     "one read announces at most three, the newest")
+        suite.expect(VercelSupport.failureAlerts(since: start, current: many, polledAt: second, notified: [], limit: 10).count == 6,
+                     "the cap is the only limit on several new failures")
+        suite.expect(alerts(start, [deployment("stale", .error, created: t0 + 60)], at: late).isEmpty,
+                     "after a long sleep, a failure created hours ago is not announced")
+
+        // A team that drops out of one read does not lose its build.
+        let missing = baseline([deployment("other", .ready, created: t0 - 5)], at: second, previous: watching)
+        suite.expect(missing.inProgress["b1"] != nil && missing.seen == ["other"],
+                     "a build on its way stays followed while its team is missing from a read")
+        suite.expect(alerts(missing, [deployment("b1", .error, created: t0 - 30)], at: second.addingTimeInterval(120)) == ["b1"],
+                     "and is announced when its team comes back with it failed")
+        let finished = baseline([deployment("b1", .ready, created: t0 - 30)], at: second, previous: watching)
+        suite.expect(finished.inProgress["b1"] == nil && finished.inProgress["q1"] != nil,
+                     "a build seen finished is no longer followed; one still missing is")
+        let forgotten = baseline([], at: first.addingTimeInterval(VercelSupport.failureAlertWindow + 1), previous: watching)
+        suite.expect(forgotten.inProgress.isEmpty, "a build missing for hours is let go")
+
+        suite.expect(VercelSupport.remembering(["c", "a"], in: ["a", "b"]) == ["b", "c", "a"],
+                     "announced deployments are remembered, newest last, each once")
+        let full = (0..<40).map { "u\($0)" }
+        let remembered = VercelSupport.remembering(["new"], in: full)
+        suite.expect(remembered.count == VercelSupport.rememberedFailures && remembered.last == "new"
+                     && !remembered.contains("u0"),
+                     "only the last few are remembered")
+    }
+
+    /// What the notification says: the project and branch, never the commit.
+    private static func failureNotifications(_ suite: TestSuite) {
+        let failed = deployments(scope: "Team")[2]
+        suite.expect(VercelSupport.failureBody(failed) == failed.project + (failed.branch.map { " · " + $0 } ?? ""),
+                     "the body is the project and its branch")
+        let withCommit = VercelSupport.Deployment(uid: "x", project: "web", host: "web-x.vercel.app", state: .error,
+                                                  created: Date(timeIntervalSince1970: 0), isProduction: true,
+                                                  branch: "main", commitMessage: "Leak the secret roadmap",
+                                                  inspectorURL: URL(string: "https://vercel.com/team/web/x"), scope: "Acme")
+        let body = VercelSupport.failureBody(withCommit)
+        suite.expect(body == "web · main" && !body.contains("roadmap") && !body.contains("Acme"),
+                     "the commit message never shows, nor the team")
+        suite.expect(VercelSupport.failureBody(deployment("y", .error, created: 0)) == "web",
+                     "without a branch, the project alone")
+        suite.expect(withCommit.openURL?.absoluteString == "https://vercel.com/team/web/x",
+                     "a click opens the failed build's log on the dashboard")
+        suite.expect(Defaults.registeredDefaults[DefaultsKey.notchVercelFailureAlerts] as? Bool == false,
+                     "failure alerts start off")
+        let defaults = UserDefaults(suiteName: "com.vorssaint.tests.vercel-alerts")!
+        defaults.removePersistentDomain(forName: "com.vorssaint.tests.vercel-alerts")
+        suite.expect(!VercelSupport.sendsFailureAlerts(in: defaults), "nothing stored, no alerts")
+        defaults.set(true, forKey: DefaultsKey.notchVercelFailureAlerts)
+        suite.expect(VercelSupport.sendsFailureAlerts(in: defaults), "the switch turns them on")
+        defaults.removePersistentDomain(forName: "com.vorssaint.tests.vercel-alerts")
+        suite.expect(AppLanguage.allCases.allSatisfy { language in
+            let text = ZenithStrings.vercelAlerts(language)
+            return [text.failureAlerts, text.failureAlertsCaption, text.buildFailed]
+                .allSatisfy { !$0.isEmpty && !$0.contains("'") && !$0.contains("\u{2014}") }
+                && text.failureAlertsCaption.contains("10") && text.failureAlertsCaption.contains("2")
+        }, "every language names the switch, says how often it checks, and titles the notification")
     }
 
     private static func requests(_ suite: TestSuite) {

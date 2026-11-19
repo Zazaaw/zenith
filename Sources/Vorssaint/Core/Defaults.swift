@@ -916,6 +916,7 @@ enum DefaultsKey {
     // Zenith fork: the Vercel section (off until a token is saved) and its build in the closed island.
     static let notchVercelEnabled = "notchVercelEnabled"
     static let notchVercelActivity = "notchVercelActivity"
+    static let notchVercelFailureAlerts = "notchVercelFailureAlerts" // Zenith fork: notify when a build fails
     static let notchCalendarEnabled = "notchCalendarEnabled"
     static let notchCalendarCountdown = "notchCalendarCountdown"
     static let notchCalendarCountdownLead = "notchCalendarCountdownLead" // minutes before a start, chosen events included
@@ -1007,6 +1008,7 @@ enum DefaultsKey {
     static let notchLockScreenTerminal = "notchLockScreenTerminal"
     static let notchLockScreenTerminalLines = "notchLockScreenTerminalLines" // NotchLockScreenTerminalSelection.stored
     static let notchLockScreenTerminalProjects = "notchLockScreenTerminalProjects"
+    static let notchLockScreenTerminalTitle = "notchLockScreenTerminalTitle" // Zenith fork, "" = zenith — status
     static let wakaTimeDailyGoalMinutes = "wakaTimeDailyGoalMinutes" // Zenith fork, 0 = off
     // Companion: a small friend who rests in the closed island and is the Command Bar's face.
     static let notchMascotEnabled = "notchMascotEnabled"
@@ -1581,6 +1583,7 @@ enum Defaults {
         DefaultsKey.notchWatchCondition: NotchWatchCondition.changes.rawValue,
         DefaultsKey.notchVercelEnabled: false,
         DefaultsKey.notchVercelActivity: true,
+        DefaultsKey.notchVercelFailureAlerts: false, // Zenith fork
         DefaultsKey.notchEnabled: false,
         DefaultsKey.notchDisplay: NotchDisplay.automatic.rawValue,
         DefaultsKey.notchSilhouette: NotchSilhouette.capsule.rawValue,
@@ -1633,6 +1636,7 @@ enum Defaults {
         DefaultsKey.notchLockScreenTerminal: false,
         DefaultsKey.notchLockScreenTerminalLines: NotchLockScreenTerminalSelection.defaultValue,
         DefaultsKey.notchLockScreenTerminalProjects: false,
+        DefaultsKey.notchLockScreenTerminalTitle: "", // Zenith fork
         DefaultsKey.wakaTimeDailyGoalMinutes: 0,
         DefaultsKey.notchMascotEnabled: false,
         DefaultsKey.notchMascotVisits: true,

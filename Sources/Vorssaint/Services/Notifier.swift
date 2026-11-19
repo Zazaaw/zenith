@@ -32,6 +32,21 @@ enum Notifier {
         post(title: title, body: body, categoryIdentifier: nil, userInfo: [:])
     }
 
+    // Zenith fork: a notification that opens an https link when clicked (a failed Vercel build's log).
+    private static let zenithOpenURLKey = "id.satuvisual.zenith.notification.open-url" // Zenith fork
+
+    static func post(title: String, body: String, opening url: URL?) { // Zenith fork
+        let link = url.flatMap { $0.scheme == "https" ? $0.absoluteString : nil }
+        post(title: title, body: body, categoryIdentifier: nil, userInfo: link.map { [zenithOpenURLKey: $0] } ?? [:])
+    }
+
+    static func zenithOpenURL(from response: UNNotificationResponse) -> URL? { // Zenith fork
+        guard response.actionIdentifier == UNNotificationDefaultActionIdentifier,
+              let raw = response.notification.request.content.userInfo[zenithOpenURLKey] as? String,
+              let url = URL(string: raw), url.scheme == "https" else { return nil }
+        return url
+    }
+
     static func postWhatsAppOrganization(title: String,
                                          body: String,
                                          undoTitle: String,
