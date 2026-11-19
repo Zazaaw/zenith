@@ -262,6 +262,7 @@ struct MetricsTests {
             ("lockscreen-terminal", { LockScreenTerminalTests.run(suite) }),
             ("vercel", { VercelTests.run(suite) }),
             ("gh", { GitHubTests.run(suite) }),
+            ("photo-actions", { PhotoActionsTests.run(suite) }),
         ]
         var selected = Set<String>()
         var listOnly = false

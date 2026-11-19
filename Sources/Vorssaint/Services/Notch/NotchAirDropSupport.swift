@@ -4,11 +4,16 @@
 import AppKit
 
 /// Where files dragged onto the open island land. Zenith adds AirDrop beside
-/// upstream's two targets: the shelf (Files) and Optimize media.
+/// upstream's two targets: the shelf (Files) and Optimize media, and, for
+/// images, the photo actions (NotchPhotoActionsSupport).
 enum NotchDropTarget: Equatable {
     case files
     case airDrop
     case media
+    case transform
+    case removeBackground
+
+    var isPhotoAction: Bool { self == .transform || self == .removeBackground }
 }
 
 /// Zenith fork: the AirDrop drop zone in the notch. Drop files on it and the
@@ -22,7 +27,13 @@ enum NotchAirDropSupport {
 
     /// The targets offered for a drag, left to right.
     static func targets(files: Bool, airDrop: Bool, media: Bool) -> [NotchDropTarget] {
+        targets(files: files, airDrop: airDrop, media: media, photo: [])
+    }
+
+    /// The same, with the photo targets an image drag gets after the others.
+    static func targets(files: Bool, airDrop: Bool, media: Bool, photo: [NotchDropTarget]) -> [NotchDropTarget] {
         (files ? [.files] : []) + (airDrop ? [.airDrop] : []) + (media ? [.media] : [])
+            + photo.filter(\.isPhotoAction)
     }
 
     /// The target under `point`, splitting the content width into equal columns
