@@ -1043,8 +1043,8 @@ private struct PermissionPortalRow: View {
 
     private var statusColor: Color {
         switch status {
-        case .granted: return PanelMetricColor.green(for: colorScheme)
-        case .missing: return PanelMetricColor.orange(for: colorScheme)
+        case .granted: return ZenithStatus.success
+        case .missing: return ZenithStatus.warning
         case .unknown: return .secondary
         }
     }

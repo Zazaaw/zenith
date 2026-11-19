@@ -256,7 +256,7 @@ struct DiskSection: View {
                     rateColumn(icon: "arrow.up",
                                label: l10n.s.diskWrite,
                                value: disk.writeBytesPerSec,
-                               color: PanelMetricColor.pink(for: colorScheme))
+                               color: Color.secondary)
                 }
                 if showGraph, monitor.snapshot.diskReadHistory.count >= 2 {
                     graph
@@ -282,7 +282,7 @@ struct DiskSection: View {
         return ZStack {
             Sparkline(values: read, color: .accentColor, maxValue: peak, showsZeroBaseline: true)
             Sparkline(values: write,
-                      color: PanelMetricColor.pink(for: colorScheme),
+                      color: Color.secondary,
                       maxValue: peak,
                       fillOpacity: 0.08)
         }
@@ -419,8 +419,8 @@ struct DiskSection: View {
 
     private func ejectCaptionColor(for disk: DiskDeviceReading) -> Color {
         switch protection.state(for: disk) {
-        case .ready: return PanelMetricColor.green(for: colorScheme)
-        case .failed: return PanelMetricColor.red(for: colorScheme)
+        case .ready: return ZenithStatus.success
+        case .failed: return ZenithStatus.error
         default: return .secondary
         }
     }
@@ -543,11 +543,11 @@ private struct DiskSelectorEjectButton: View {
         case .ready:
             Image(systemName: "checkmark")
                 .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(PanelMetricColor.green(for: colorScheme))
+                .foregroundStyle(ZenithStatus.success)
         case .failed:
             Image(systemName: "eject.fill")
                 .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(PanelMetricColor.red(for: colorScheme))
+                .foregroundStyle(ZenithStatus.error)
         case .none:
             Image(systemName: "eject.fill")
                 .font(.system(size: 9, weight: .semibold))
@@ -589,8 +589,8 @@ private struct DiskUsageBar: View {
     private var color: Color {
         switch fraction {
         case ..<0.75: return .accentColor
-        case ..<0.9: return PanelMetricColor.yellow(for: colorScheme)
-        default: return PanelMetricColor.red(for: colorScheme)
+        case ..<0.9: return ZenithStatus.warning
+        default: return ZenithStatus.error
         }
     }
 }

@@ -896,7 +896,7 @@ private struct MixerRow: View {
     private var sharingStrings: MixerScreenSharingStrings { .localized(l10n.language) }
 
     /// Warm accent to flag the boost range, darkened in Light Mode for contrast.
-    private var boostColor: Color { PanelMetricColor.orange(for: colorScheme) }
+    private var boostColor: Color { ZenithStatus.warning }
     /// Tie the visual state to the displayed percentage, so "amber" and ">100%"
     /// always agree and the reset hides exactly when the row reads 100%.
     private var isBoosting: Bool { (app.volume * 100).rounded() > 100 }
@@ -915,7 +915,7 @@ private struct MixerRow: View {
                     .frame(width: Self.iconPointSize, height: Self.iconPointSize)
                 if app.isPlaying {
                     Circle()
-                        .fill(PanelMetricColor.green(for: colorScheme))
+                        .fill(ZenithStatus.success)
                         .frame(width: 8, height: 8)
                         .overlay(Circle().stroke(Color(nsColor: .windowBackgroundColor), lineWidth: 1.2))
                         .offset(x: -1, y: -1)
@@ -1011,7 +1011,7 @@ private struct MixerRow: View {
                             Image(systemName: app.volume <= 0.001 ? "speaker.slash.fill" : "speaker.wave.2.fill")
                                 .font(.system(size: 10))
                                 .foregroundStyle(app.volume <= 0.001
-                                                 ? PanelMetricColor.red(for: colorScheme)
+                                                 ? ZenithStatus.error
                                                  : Color.secondary)
                                 .frame(width: 16)
                         }

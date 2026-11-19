@@ -414,7 +414,7 @@ struct SystemSection: View {
                          kind: .gpu, editing: editing, visible: $sysGPU)
                 if graphGPU, monitor.snapshot.gpuHistory.count >= 2 {
                     Sparkline(values: monitor.snapshot.gpuHistory,
-                              color: PanelMetricColor.cyan(for: colorScheme),
+                              color: Color.accentColor,
                               maxValue: 1,
                               showsZeroBaseline: true)
                         .frame(height: 30)
@@ -539,7 +539,7 @@ struct SystemSection: View {
                 let memoryHistory = MonitorMemoryMetric.current.history(in: monitor.snapshot)
                 if graphMemory, memoryHistory.count >= 2 {
                     Sparkline(values: memoryHistory,
-                              color: PanelMetricColor.mint(for: colorScheme),
+                              color: Color.accentColor,
                               maxValue: 1,
                               showsZeroBaseline: true)
                         .frame(height: 30)
@@ -657,8 +657,8 @@ struct UsageBar: View {
     private var barColor: Color {
         switch fraction {
         case ..<0.6: return .accentColor
-        case ..<0.85: return PanelMetricColor.yellow(for: colorScheme)
-        default: return PanelMetricColor.red(for: colorScheme)
+        case ..<0.85: return ZenithStatus.warning
+        default: return ZenithStatus.error
         }
     }
 }
@@ -687,9 +687,9 @@ struct PressureIndicator: View {
 
     private var color: Color {
         switch pressure {
-        case .normal: return PanelMetricColor.green(for: colorScheme)
-        case .warning: return PanelMetricColor.yellow(for: colorScheme)
-        case .critical: return PanelMetricColor.red(for: colorScheme)
+        case .normal: return ZenithStatus.success
+        case .warning: return ZenithStatus.warning
+        case .critical: return ZenithStatus.error
         case .unknown: return .secondary
         }
     }

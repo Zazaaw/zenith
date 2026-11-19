@@ -188,7 +188,7 @@ struct NetworkSection: View {
                     rateColumn(icon: "arrow.up",
                                label: l10n.s.networkUpload,
                                value: monitor.snapshot.netUpBytesPerSec,
-                               color: PanelMetricColor.green(for: colorScheme))
+                               color: Color.secondary)
                     speedUnitToggle
                 }
                 if showGraph, monitor.snapshot.netDownHistory.count >= 2 {
@@ -254,7 +254,7 @@ struct NetworkSection: View {
         return ZStack {
             Sparkline(values: down, color: .accentColor, maxValue: peak, showsZeroBaseline: true)
             Sparkline(values: up,
-                      color: PanelMetricColor.green(for: colorScheme),
+                      color: Color.secondary,
                       maxValue: peak,
                       fillOpacity: 0.08)
         }
@@ -327,7 +327,7 @@ struct NetworkSection: View {
                 if case .failed = speed.phase {
                     Text(l10n.s.speedTestFailed)
                         .font(.system(size: 10))
-                        .foregroundStyle(PanelMetricColor.orange(for: colorScheme))
+                        .foregroundStyle(ZenithStatus.warning)
                 } else if let latency = speed.latencyMs {
                     Text("\(l10n.s.speedTestLatency): \(Int(latency.rounded())) ms")
                         .font(.system(size: 10))

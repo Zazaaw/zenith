@@ -268,7 +268,7 @@ struct MetricDetailView: View {
             ZStack {
                 Sparkline(values: down, color: .accentColor, maxValue: peak, showsZeroBaseline: true)
                 Sparkline(values: up,
-                          color: PanelMetricColor.green(for: colorScheme),
+                          color: Color.secondary,
                           maxValue: peak,
                           fillOpacity: 0.08)
             }
@@ -286,7 +286,7 @@ struct MetricDetailView: View {
             ZStack {
                 Sparkline(values: read, color: summaryColor, maxValue: peak, showsZeroBaseline: true)
                 Sparkline(values: write,
-                          color: PanelMetricColor.pink(for: colorScheme),
+                          color: Color.secondary,
                           maxValue: peak,
                           fillOpacity: 0.08)
             }
@@ -333,7 +333,7 @@ struct MetricDetailView: View {
             if case .failed = speed.phase {
                 Text(l10n.s.speedTestFailed)
                     .font(.system(size: 10))
-                    .foregroundStyle(PanelMetricColor.orange(for: colorScheme))
+                    .foregroundStyle(ZenithStatus.warning)
             } else if let latency = speed.latencyMs {
                 Text("\(l10n.s.speedTestLatency): \(Int(latency.rounded())) ms")
                     .font(.system(size: 10))
@@ -561,17 +561,17 @@ struct MetricDetailView: View {
         case .cpu, .network:
             return .accentColor
         case .gpu:
-            return PanelMetricColor.cyan(for: colorScheme)
+            return Color.accentColor
         case .memory:
-            return PanelMetricColor.mint(for: colorScheme)
+            return Color.accentColor
         case .disk:
-            return PanelMetricColor.yellow(for: colorScheme)
+            return Color.accentColor
         case .battery:
-            return PanelMetricColor.green(for: colorScheme)
+            return Color.accentColor
         case .power:
-            return PanelMetricColor.orange(for: colorScheme)
+            return Color.accentColor
         case .fan, .connectedDevices:
-            return PanelMetricColor.cyan(for: colorScheme)
+            return Color.accentColor
         }
     }
 

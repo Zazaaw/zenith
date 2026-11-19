@@ -184,7 +184,7 @@ struct PortManagerAllInterfacesBadge: View {
     var showsLabel = true
 
     var body: some View {
-        let tint = PanelMetricColor.orange(for: colorScheme)
+        let tint = ZenithStatus.warning
         HStack(spacing: 2.5) {
             Image(systemName: "globe")
             if showsLabel {

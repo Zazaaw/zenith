@@ -146,14 +146,14 @@ struct PowerSection: View {
         case .system:
             if pwrSystem, let watts = power?.systemWatts {
                 VStack(alignment: .leading, spacing: 6) {
-                    row(icon: "bolt.fill", color: PanelMetricColor.orange(for: colorScheme),
+                    row(icon: "bolt.fill", color: Color.secondary,
                         label: l10n.s.powerSystem, value: MetricFormat.watts(watts),
                         visible: $pwrSystem, editing: editing)
                     if showGraph, monitor.snapshot.systemPowerHistory.count >= 2 {
                         let peak = MetricFormat.graphCeiling(monitor.snapshot.systemPowerHistory.max() ?? 0,
                                                              unitStep: 1000)
                         Sparkline(values: monitor.snapshot.systemPowerHistory,
-                                  color: PanelMetricColor.orange(for: colorScheme),
+                                  color: Color.accentColor,
                                   maxValue: peak,
                                   showsZeroBaseline: true)
                             .frame(height: 30)
@@ -179,7 +179,7 @@ struct PowerSection: View {
         case .battery:
             if pwrBattery, power?.hasBattery == true, let flow = power?.batteryWatts {
                 row(icon: flow >= 0 ? "battery.100.bolt" : "battery.50",
-                    color: flow >= 0 ? PanelMetricColor.green(for: colorScheme) : .secondary,
+                    color: flow >= 0 ? ZenithStatus.success : .secondary,
                     label: l10n.s.powerBattery,
                     value: MetricFormat.watts(abs(flow)),
                     caption: flow >= 0 ? l10n.s.powerCharging : l10n.s.powerOnBattery,
@@ -191,7 +191,7 @@ struct PowerSection: View {
             }
         case .health:
             if pwrHealth, let power, let health = power.healthPercent {
-                row(icon: "heart.fill", color: PanelMetricColor.pink(for: colorScheme),
+                row(icon: "heart.fill", color: Color.secondary,
                     label: l10n.s.powerHealth,
                     value: "\(Int(health.rounded()))%",
                     caption: power.cycleCount.map { "\($0) \(l10n.s.powerCycles)" },
@@ -206,7 +206,7 @@ struct PowerSection: View {
                !power.externalConnected, !power.isCharging {
                 let strings = FeatureStrings.batteryTime(l10n.language)
                 let value = power.timeRemainingSeconds.flatMap(BatteryTimeSupport.formatted)
-                row(icon: "clock", color: PanelMetricColor.green(for: colorScheme),
+                row(icon: "clock", color: Color.secondary,
                     label: strings.title,
                     value: value ?? "...",
                     caption: value == nil ? strings.calculating : strings.systemEstimate,
@@ -260,7 +260,7 @@ struct PowerSection: View {
                 }
                 if graphBattery, monitor.snapshot.batteryHistory.count >= 2 {
                     Sparkline(values: monitor.snapshot.batteryHistory,
-                              color: PanelMetricColor.green(for: colorScheme),
+                              color: Color.accentColor,
                               maxValue: 1,
                               showsZeroBaseline: true)
                         .frame(height: 30)
@@ -317,9 +317,9 @@ struct PowerSection: View {
     }
 
     private func chargeTint(_ charge: Int) -> Color {
-        if charge < 20 { return PanelMetricColor.red(for: colorScheme) }
-        if charge < 40 { return PanelMetricColor.yellow(for: colorScheme) }
-        return PanelMetricColor.green(for: colorScheme)
+        if charge < 20 { return ZenithStatus.error }
+        if charge < 40 { return ZenithStatus.warning }
+        return ZenithStatus.success
     }
 
     private func resetPanelDefaults() {

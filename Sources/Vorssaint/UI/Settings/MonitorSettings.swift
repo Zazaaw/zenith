@@ -428,7 +428,7 @@ private struct MenuBarMetricTile: View {
             return AnyView(MonitorTokenOption(
                 symbol: "circle.fill",
                 title: l10n.s.monitorMemoryPressureDot,
-                tint: PanelMetricColor.green(for: colorScheme),
+                tint: ZenithStatus.success,
                 isOn: Binding(get: { Defaults.sanitizedMenuBarMemoryStyle(memoryStyle) != "percent" },
                               set: { memoryStyle = $0 ? "both" : "percent" })))
         case .network:

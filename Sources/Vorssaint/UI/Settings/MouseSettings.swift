@@ -624,10 +624,10 @@ struct MouseSettings: View {
     private func activeBadge(_ text: String) -> some View {
         Label(text, systemImage: "checkmark.circle.fill")
             .font(.caption.weight(.medium))
-            .foregroundStyle(PanelMetricColor.green(for: colorScheme))
+            .foregroundStyle(ZenithStatus.success)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(PanelMetricColor.green(for: colorScheme).opacity(0.12), in: Capsule())
+            .background(ZenithStatus.success.opacity(0.12), in: Capsule())
     }
 
     // MARK: - State
