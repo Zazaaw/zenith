@@ -241,6 +241,7 @@ struct NotchView: View {
             case .music: NotchCapsuleMusicStrip(service: service, size: size, interactive: true)
             case .keepAwake: NotchCapsuleKeepAwakeStrip(service: service, size: size)
             case .vercel: VercelCapsuleStrip(service: service, size: size) // Zenith fork
+            case .command: CommandCapsuleStrip(service: service, size: size) // Zenith fork
             }
         } else {
             // Handed down, the wings stay as they were drawn while a strip
@@ -256,6 +257,7 @@ struct NotchView: View {
             case .music: NotchMusicStrip(service: service, displayGeometry: geometry, interactive: true)
             case .keepAwake: NotchKeepAwakeStrip(service: service, displayGeometry: geometry)
             case .vercel: VercelActivityStrip(service: service, displayGeometry: geometry) // Zenith fork
+            case .command: CommandActivityStrip(service: service, displayGeometry: geometry) // Zenith fork
             }
         }
     }

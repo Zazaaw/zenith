@@ -22,6 +22,7 @@ enum CommandActivityTests {
         hookBlock(suite)
         zshrcText(suite)
         zshrcFile(suite)
+        island(suite)
     }
 
     private static let base = Date(timeIntervalSince1970: 1_763_520_000)
@@ -425,5 +426,27 @@ enum CommandActivityTests {
         suite.expect(Support.editHook(at: damaged, install: block) == .damaged
                      && (try? String(contentsOf: damaged, encoding: .utf8)) == broken,
                      "a damaged file is left exactly as it was")
+    }
+
+    // MARK: Island
+
+    private static func island(_ suite: TestSuite) {
+        suite.expect(NotchSupport.compactActivities(timer: false, downloads: true, agents: true, calendar: true,
+                                                   music: true, vercel: true, command: true)
+                        == [.downloads, .agents, .vercel, .command, .calendar, .music]
+                     && NotchSupport.compactActivity(timer: false, downloads: false, music: true, command: true) == .command,
+                     "a terminal command follows Vercel and comes before an event and music")
+        suite.expect(!NotchSupport.compactActivities(timer: false, downloads: false, agents: false, calendar: false,
+                                                    music: false).contains(.command),
+                     "no command, no activity")
+        suite.expect(NotchCompactActivity.command.module == .controls && NotchCompactActivity.command.symbol == "terminal"
+                     && NotchCompactActivity.command.title(.enUS) == "Terminal",
+                     "the command has no page of its own and opens the island home")
+        for language in AppLanguage.allCases {
+            let text = ZenithStrings.commandActivity(language)
+            suite.expect(text.seconds.contains("%d") && text.lastEvent.contains("%@")
+                         && ![text.toggle, text.section, text.install, text.remove, text.copy].contains { $0.isEmpty },
+                         "\(language.rawValue) has the command activity's text")
+        }
     }
 }

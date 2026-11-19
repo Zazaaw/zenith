@@ -1810,3 +1810,366 @@ extension ZenithStrings {
         }
     }
 }
+
+struct ZenithCommandActivityStrings {
+    /// The activity’s name in the island’s activity picker.
+    let activityTitle: String
+    /// The card in Settings → Dynamic Island → Activity.
+    let section: String
+    let toggle: String
+    let toggleCaption: String
+    let showAfter: String
+    /// A threshold choice; `%d` is the number of seconds.
+    let seconds: String
+    let showFolder: String
+    let showFolderCaption: String
+    let ignore: String
+    let ignorePlaceholder: String
+    let ignoreCaption: String
+    let hook: String
+    let hookCaption: String
+    let install: String
+    let copy: String
+    let copied: String
+    let remove: String
+    let installed: String
+    let notInstalled: String
+    let otherBuild: String
+    let damaged: String
+    /// `%@` is how long ago, such as “2 min ago”.
+    let lastEvent: String
+    let noEvents: String
+    let newTab: String
+    let confirmTitle: String
+    let confirmMessage: String
+    let add: String
+    let cancel: String
+    let editFailed: String
+    /// Read aloud for the strip.
+    let running: String
+    let succeeded: String
+    let failed: String
+}
+
+extension ZenithStrings {
+    /// Long-running terminal commands in the closed island.
+    static func commandActivity(_ language: AppLanguage) -> ZenithCommandActivityStrings {
+        switch language {
+        case .enUS:
+            return .init(activityTitle: "Terminal", section: "Terminal commands",
+                         toggle: "Command activity",
+                         toggleCaption: "A command that runs a while in zsh shows in the closed island with its time, then ✓ or ✗ when it ends. Only the program’s name shows, never its arguments.",
+                         showAfter: "Show after", seconds: "%d s",
+                         showFolder: "Show folder",
+                         showFolderCaption: "Adds the name of the folder the command runs in.",
+                         ignore: "Also ignore", ignorePlaceholder: "make, terraform",
+                         ignoreCaption: "Program names, separated by commas. Editors, pagers, ssh, top, tail -f, REPLs, dev servers and claude are always left out.",
+                         hook: "Shell hook",
+                         hookCaption: "A few lines in ~/.zshrc tell Zenith when a command starts and ends. They use shell builtins only, print nothing, and skip lines typed with a leading space.",
+                         install: "Install shell hook", copy: "Copy snippet", copied: "Copied", remove: "Remove hook",
+                         installed: "Installed in ~/.zshrc", notInstalled: "Not installed",
+                         otherBuild: "Installed for another Zenith build. Install again to use this one.",
+                         damaged: "~/.zshrc has an unfinished Zenith block. Fix it by hand.",
+                         lastEvent: "Last command seen %@", noEvents: "No commands seen yet",
+                         newTab: "Open a new terminal tab for the change to apply.",
+                         confirmTitle: "Add the shell hook to ~/.zshrc?",
+                         confirmMessage: "Zenith adds this block to the end of ~/.zshrc. Nothing else in the file changes.",
+                         add: "Add", cancel: "Cancel", editFailed: "Couldn’t update ~/.zshrc.",
+                         running: "Running", succeeded: "Succeeded", failed: "Failed")
+        case .ptBR:
+            return .init(activityTitle: "Terminal", section: "Comandos do Terminal",
+                         toggle: "Atividade de comandos",
+                         toggleCaption: "Um comando que demora no zsh aparece na ilha fechada com o tempo e, ao terminar, com ✓ ou ✗. Só o nome do programa aparece, nunca os argumentos.",
+                         showAfter: "Mostrar após", seconds: "%d s",
+                         showFolder: "Mostrar pasta",
+                         showFolderCaption: "Inclui o nome da pasta onde o comando roda.",
+                         ignore: "Ignorar também", ignorePlaceholder: "make, terraform",
+                         ignoreCaption: "Nomes de programas separados por vírgulas. Editores, paginadores, ssh, top, tail -f, REPLs, servidores de desenvolvimento e claude ficam sempre de fora.",
+                         hook: "Hook do shell",
+                         hookCaption: "Algumas linhas em ~/.zshrc avisam o Zenith quando um comando começa e termina. Usam só comandos internos do shell, não imprimem nada e ignoram linhas digitadas com espaço no início.",
+                         install: "Instalar hook do shell", copy: "Copiar trecho", copied: "Copiado", remove: "Remover hook",
+                         installed: "Instalado em ~/.zshrc", notInstalled: "Não instalado",
+                         otherBuild: "Instalado para outra versão do Zenith. Instale de novo para usar esta.",
+                         damaged: "~/.zshrc tem um bloco do Zenith incompleto. Corrija-o manualmente.",
+                         lastEvent: "Último comando %@", noEvents: "Nenhum comando visto ainda",
+                         newTab: "Abra uma nova aba do terminal para aplicar a mudança.",
+                         confirmTitle: "Adicionar o hook do shell a ~/.zshrc?",
+                         confirmMessage: "O Zenith adiciona este bloco ao fim de ~/.zshrc. Nada mais no arquivo muda.",
+                         add: "Adicionar", cancel: "Cancelar", editFailed: "Não foi possível atualizar ~/.zshrc.",
+                         running: "Em execução", succeeded: "Concluído", failed: "Falhou")
+        case .tr:
+            return .init(activityTitle: "Terminal", section: "Terminal komutları",
+                         toggle: "Komut etkinliği",
+                         toggleCaption: "zsh’de bir süre çalışan bir komut, kapalı adada süresiyle görünür; bitince ✓ ya da ✗ gösterir. Yalnızca programın adı görünür, argümanları asla.",
+                         showAfter: "Şu süreden sonra göster", seconds: "%d sn",
+                         showFolder: "Klasörü göster",
+                         showFolderCaption: "Komutun çalıştığı klasörün adını ekler.",
+                         ignore: "Bunları da yok say", ignorePlaceholder: "make, terraform",
+                         ignoreCaption: "Virgülle ayrılmış program adları. Düzenleyiciler, sayfalayıcılar, ssh, top, tail -f, REPL’ler, geliştirme sunucuları ve claude her zaman dışarıda kalır.",
+                         hook: "Kabuk kancası",
+                         hookCaption: "~/.zshrc içindeki birkaç satır, bir komut başlayıp bittiğinde Zenith’e haber verir. Yalnızca kabuk yerleşiklerini kullanır, hiçbir şey yazdırmaz ve başında boşluk olan satırları atlar.",
+                         install: "Kabuk kancasını kur", copy: "Parçacığı kopyala", copied: "Kopyalandı", remove: "Kancayı kaldır",
+                         installed: "~/.zshrc içine kuruldu", notInstalled: "Kurulu değil",
+                         otherBuild: "Başka bir Zenith derlemesi için kurulu. Bunu kullanmak için yeniden kur.",
+                         damaged: "~/.zshrc içinde yarım kalmış bir Zenith bloğu var. Elle düzelt.",
+                         lastEvent: "Son komut %@", noEvents: "Henüz komut görülmedi",
+                         newTab: "Değişikliğin geçerli olması için yeni bir terminal sekmesi aç.",
+                         confirmTitle: "Kabuk kancası ~/.zshrc dosyasına eklensin mi?",
+                         confirmMessage: "Zenith bu bloğu ~/.zshrc dosyasının sonuna ekler. Dosyada başka hiçbir şey değişmez.",
+                         add: "Ekle", cancel: "Vazgeç", editFailed: "~/.zshrc güncellenemedi.",
+                         running: "Çalışıyor", succeeded: "Başarılı", failed: "Başarısız")
+        case .ru:
+            return .init(activityTitle: "Терминал", section: "Команды терминала",
+                         toggle: "Активность команд",
+                         toggleCaption: "Долгая команда в zsh появляется на закрытом острове со временем выполнения, а по завершении — с ✓ или ✗. Показывается только имя программы, без аргументов.",
+                         showAfter: "Показывать через", seconds: "%d с",
+                         showFolder: "Показывать папку",
+                         showFolderCaption: "Добавляет имя папки, в которой выполняется команда.",
+                         ignore: "Также игнорировать", ignorePlaceholder: "make, terraform",
+                         ignoreCaption: "Имена программ через запятую. Редакторы, пейджеры, ssh, top, tail -f, REPL, серверы разработки и claude не показываются никогда.",
+                         hook: "Хук оболочки",
+                         hookCaption: "Несколько строк в ~/.zshrc сообщают Zenith, когда команда начинается и заканчивается. Они используют только встроенные команды оболочки, ничего не выводят и пропускают строки, начинающиеся с пробела.",
+                         install: "Установить хук", copy: "Скопировать фрагмент", copied: "Скопировано", remove: "Удалить хук",
+                         installed: "Установлен в ~/.zshrc", notInstalled: "Не установлен",
+                         otherBuild: "Установлен для другой сборки Zenith. Установите снова, чтобы использовать эту.",
+                         damaged: "В ~/.zshrc есть незавершённый блок Zenith. Исправьте его вручную.",
+                         lastEvent: "Последняя команда %@", noEvents: "Команд пока не было",
+                         newTab: "Откройте новую вкладку терминала, чтобы изменение вступило в силу.",
+                         confirmTitle: "Добавить хук оболочки в ~/.zshrc?",
+                         confirmMessage: "Zenith добавит этот блок в конец ~/.zshrc. Больше в файле ничего не изменится.",
+                         add: "Добавить", cancel: "Отменить", editFailed: "Не удалось обновить ~/.zshrc.",
+                         running: "Выполняется", succeeded: "Успешно", failed: "Ошибка")
+        case .es:
+            return .init(activityTitle: "Terminal", section: "Comandos de Terminal",
+                         toggle: "Actividad de comandos",
+                         toggleCaption: "Un comando que tarda en zsh aparece en la isla cerrada con su tiempo y, al terminar, con ✓ o ✗. Solo se muestra el nombre del programa, nunca sus argumentos.",
+                         showAfter: "Mostrar tras", seconds: "%d s",
+                         showFolder: "Mostrar carpeta",
+                         showFolderCaption: "Añade el nombre de la carpeta donde se ejecuta el comando.",
+                         ignore: "Ignorar también", ignorePlaceholder: "make, terraform",
+                         ignoreCaption: "Nombres de programas separados por comas. Editores, paginadores, ssh, top, tail -f, REPL, servidores de desarrollo y claude siempre quedan fuera.",
+                         hook: "Hook de la shell",
+                         hookCaption: "Unas pocas líneas en ~/.zshrc avisan a Zenith cuando un comando empieza y termina. Solo usan órdenes internas de la shell, no imprimen nada y omiten las líneas escritas con un espacio delante.",
+                         install: "Instalar hook de la shell", copy: "Copiar fragmento", copied: "Copiado", remove: "Quitar hook",
+                         installed: "Instalado en ~/.zshrc", notInstalled: "No instalado",
+                         otherBuild: "Instalado para otra compilación de Zenith. Instálalo de nuevo para usar esta.",
+                         damaged: "~/.zshrc tiene un bloque de Zenith incompleto. Corrígelo a mano.",
+                         lastEvent: "Último comando %@", noEvents: "Aún no se ha visto ningún comando",
+                         newTab: "Abre una pestaña nueva de la terminal para aplicar el cambio.",
+                         confirmTitle: "¿Añadir el hook de la shell a ~/.zshrc?",
+                         confirmMessage: "Zenith añade este bloque al final de ~/.zshrc. Nada más del archivo cambia.",
+                         add: "Añadir", cancel: "Cancelar", editFailed: "No se pudo actualizar ~/.zshrc.",
+                         running: "En curso", succeeded: "Correcto", failed: "Falló")
+        case .sk:
+            return .init(activityTitle: "Terminál", section: "Príkazy terminálu",
+                         toggle: "Aktivita príkazov",
+                         toggleCaption: "Príkaz, ktorý v zsh beží dlhšie, sa zobrazí v zatvorenom ostrove s časom a po skončení s ✓ alebo ✗. Zobrazí sa len názov programu, nikdy jeho argumenty.",
+                         showAfter: "Zobraziť po", seconds: "%d s",
+                         showFolder: "Zobraziť priečinok",
+                         showFolderCaption: "Pridá názov priečinka, v ktorom príkaz beží.",
+                         ignore: "Ignorovať aj", ignorePlaceholder: "make, terraform",
+                         ignoreCaption: "Názvy programov oddelené čiarkami. Editory, stránkovače, ssh, top, tail -f, REPL, vývojové servery a claude sa nezobrazujú nikdy.",
+                         hook: "Hook shellu",
+                         hookCaption: "Niekoľko riadkov v ~/.zshrc oznámi Zenithu, kedy príkaz začne a skončí. Používajú len vstavané príkazy shellu, nič nevypisujú a vynechajú riadky začínajúce medzerou.",
+                         install: "Nainštalovať hook shellu", copy: "Kopírovať úryvok", copied: "Skopírované", remove: "Odstrániť hook",
+                         installed: "Nainštalovaný v ~/.zshrc", notInstalled: "Nenainštalovaný",
+                         otherBuild: "Nainštalovaný pre inú zostavu Zenithu. Nainštalujte znova, ak chcete použiť túto.",
+                         damaged: "~/.zshrc obsahuje nedokončený blok Zenithu. Opravte ho ručne.",
+                         lastEvent: "Posledný príkaz %@", noEvents: "Zatiaľ žiadne príkazy",
+                         newTab: "Zmena sa prejaví v novej karte terminálu.",
+                         confirmTitle: "Pridať hook shellu do ~/.zshrc?",
+                         confirmMessage: "Zenith pridá tento blok na koniec ~/.zshrc. Nič iné sa v súbore nezmení.",
+                         add: "Pridať", cancel: "Zrušiť", editFailed: "~/.zshrc sa nepodarilo upraviť.",
+                         running: "Beží", succeeded: "Úspešné", failed: "Zlyhalo")
+        case .de:
+            return .init(activityTitle: "Terminal", section: "Terminal-Befehle",
+                         toggle: "Befehlsaktivität",
+                         toggleCaption: "Ein Befehl, der in zsh länger läuft, erscheint in der geschlossenen Insel mit seiner Zeit und am Ende mit ✓ oder ✗. Nur der Name des Programms wird gezeigt, nie seine Argumente.",
+                         showAfter: "Zeigen nach", seconds: "%d s",
+                         showFolder: "Ordner zeigen",
+                         showFolderCaption: "Ergänzt den Namen des Ordners, in dem der Befehl läuft.",
+                         ignore: "Auch ignorieren", ignorePlaceholder: "make, terraform",
+                         ignoreCaption: "Programmnamen, durch Kommas getrennt. Editoren, Pager, ssh, top, tail -f, REPLs, Entwicklungsserver und claude bleiben immer außen vor.",
+                         hook: "Shell-Hook",
+                         hookCaption: "Ein paar Zeilen in ~/.zshrc melden Zenith, wann ein Befehl beginnt und endet. Sie nutzen nur Shell-Builtins, geben nichts aus und überspringen Zeilen, die mit einem Leerzeichen beginnen.",
+                         install: "Shell-Hook installieren", copy: "Snippet kopieren", copied: "Kopiert", remove: "Hook entfernen",
+                         installed: "In ~/.zshrc installiert", notInstalled: "Nicht installiert",
+                         otherBuild: "Für einen anderen Zenith-Build installiert. Erneut installieren, um diesen zu nutzen.",
+                         damaged: "~/.zshrc enthält einen unvollständigen Zenith-Block. Bitte von Hand korrigieren.",
+                         lastEvent: "Letzter Befehl %@", noEvents: "Noch keine Befehle gesehen",
+                         newTab: "Öffne einen neuen Terminal-Tab, damit die Änderung greift.",
+                         confirmTitle: "Shell-Hook zu ~/.zshrc hinzufügen?",
+                         confirmMessage: "Zenith hängt diesen Block an das Ende von ~/.zshrc an. Sonst ändert sich nichts an der Datei.",
+                         add: "Hinzufügen", cancel: "Abbrechen", editFailed: "~/.zshrc konnte nicht aktualisiert werden.",
+                         running: "Läuft", succeeded: "Erfolgreich", failed: "Fehlgeschlagen")
+        case .fr:
+            return .init(activityTitle: "Terminal", section: "Commandes du Terminal",
+                         toggle: "Activité des commandes",
+                         toggleCaption: "Une commande qui dure dans zsh s’affiche dans l’île fermée avec son temps, puis avec ✓ ou ✗ à la fin. Seul le nom du programme apparaît, jamais ses arguments.",
+                         showAfter: "Afficher après", seconds: "%d s",
+                         showFolder: "Afficher le dossier",
+                         showFolderCaption: "Ajoute le nom du dossier où la commande s’exécute.",
+                         ignore: "Ignorer aussi", ignorePlaceholder: "make, terraform",
+                         ignoreCaption: "Noms de programmes séparés par des virgules. Les éditeurs, pagers, ssh, top, tail -f, REPL, serveurs de développement et claude sont toujours exclus.",
+                         hook: "Hook du shell",
+                         hookCaption: "Quelques lignes dans ~/.zshrc indiquent à Zenith quand une commande commence et se termine. Elles n’utilisent que des commandes internes du shell, n’affichent rien et ignorent les lignes tapées avec une espace au début.",
+                         install: "Installer le hook du shell", copy: "Copier l’extrait", copied: "Copié", remove: "Retirer le hook",
+                         installed: "Installé dans ~/.zshrc", notInstalled: "Non installé",
+                         otherBuild: "Installé pour une autre version de Zenith. Réinstallez-le pour utiliser celle-ci.",
+                         damaged: "~/.zshrc contient un bloc Zenith incomplet. Corrigez-le à la main.",
+                         lastEvent: "Dernière commande %@", noEvents: "Aucune commande vue pour l’instant",
+                         newTab: "Ouvrez un nouvel onglet de terminal pour appliquer le changement.",
+                         confirmTitle: "Ajouter le hook du shell à ~/.zshrc\u{00A0}?",
+                         confirmMessage: "Zenith ajoute ce bloc à la fin de ~/.zshrc. Rien d’autre ne change dans le fichier.",
+                         add: "Ajouter", cancel: "Annuler", editFailed: "Impossible de mettre à jour ~/.zshrc.",
+                         running: "En cours", succeeded: "Réussi", failed: "Échec")
+        case .it:
+            return .init(activityTitle: "Terminale", section: "Comandi del Terminale",
+                         toggle: "Attività dei comandi",
+                         toggleCaption: "Un comando che dura a lungo in zsh appare nell’isola chiusa con il suo tempo e, alla fine, con ✓ o ✗. Si vede solo il nome del programma, mai i suoi argomenti.",
+                         showAfter: "Mostra dopo", seconds: "%d s",
+                         showFolder: "Mostra cartella",
+                         showFolderCaption: "Aggiunge il nome della cartella in cui gira il comando.",
+                         ignore: "Ignora anche", ignorePlaceholder: "make, terraform",
+                         ignoreCaption: "Nomi di programmi separati da virgole. Editor, pager, ssh, top, tail -f, REPL, server di sviluppo e claude restano sempre esclusi.",
+                         hook: "Hook della shell",
+                         hookCaption: "Poche righe in ~/.zshrc dicono a Zenith quando un comando inizia e finisce. Usano solo comandi interni della shell, non stampano nulla e saltano le righe digitate con uno spazio iniziale.",
+                         install: "Installa hook della shell", copy: "Copia snippet", copied: "Copiato", remove: "Rimuovi hook",
+                         installed: "Installato in ~/.zshrc", notInstalled: "Non installato",
+                         otherBuild: "Installato per un’altra build di Zenith. Installalo di nuovo per usare questa.",
+                         damaged: "~/.zshrc contiene un blocco Zenith incompleto. Correggilo a mano.",
+                         lastEvent: "Ultimo comando %@", noEvents: "Nessun comando visto finora",
+                         newTab: "Apri una nuova scheda del terminale per applicare la modifica.",
+                         confirmTitle: "Aggiungere l’hook della shell a ~/.zshrc?",
+                         confirmMessage: "Zenith aggiunge questo blocco alla fine di ~/.zshrc. Nient’altro cambia nel file.",
+                         add: "Aggiungi", cancel: "Annulla", editFailed: "Impossibile aggiornare ~/.zshrc.",
+                         running: "In corso", succeeded: "Riuscito", failed: "Non riuscito")
+        case .ja:
+            return .init(activityTitle: "ターミナル", section: "ターミナルのコマンド",
+                         toggle: "コマンドのアクティビティ",
+                         toggleCaption: "zshで時間のかかるコマンドが、閉じたアイランドに経過時間付きで表示され、終わると✓か✗が出ます。表示されるのはプログラム名だけで、引数は表示されません。",
+                         showAfter: "表示までの時間", seconds: "%d秒",
+                         showFolder: "フォルダを表示",
+                         showFolderCaption: "コマンドを実行しているフォルダの名前を添えます。",
+                         ignore: "ほかに無視する", ignorePlaceholder: "make, terraform",
+                         ignoreCaption: "プログラム名をカンマで区切って入力します。エディタ、ページャ、ssh、top、tail -f、REPL、開発サーバ、claudeは常に除外されます。",
+                         hook: "シェルフック",
+                         hookCaption: "~/.zshrcの数行が、コマンドの開始と終了をZenithに伝えます。シェルの組み込みコマンドだけを使い、何も出力せず、先頭にスペースを付けて入力した行は記録しません。",
+                         install: "シェルフックをインストール", copy: "スニペットをコピー", copied: "コピーしました", remove: "フックを削除",
+                         installed: "~/.zshrcにインストール済み", notInstalled: "未インストール",
+                         otherBuild: "別のZenithビルド用にインストールされています。このビルドで使うには再インストールしてください。",
+                         damaged: "~/.zshrcに不完全なZenithブロックがあります。手動で修正してください。",
+                         lastEvent: "最後のコマンド：%@", noEvents: "まだコマンドを受け取っていません",
+                         newTab: "変更を反映するには、ターミナルで新しいタブを開いてください。",
+                         confirmTitle: "シェルフックを~/.zshrcに追加しますか？",
+                         confirmMessage: "Zenithはこのブロックを~/.zshrcの末尾に追加します。ファイルのほかの部分は変わりません。",
+                         add: "追加", cancel: "キャンセル", editFailed: "~/.zshrcを更新できませんでした。",
+                         running: "実行中", succeeded: "成功", failed: "失敗")
+        case .ko:
+            return .init(activityTitle: "터미널", section: "터미널 명령",
+                         toggle: "명령 활동",
+                         toggleCaption: "zsh에서 오래 걸리는 명령이 닫힌 아일랜드에 경과 시간과 함께 표시되고, 끝나면 ✓ 또는 ✗가 나타납니다. 프로그램 이름만 표시되며 인수는 절대 표시되지 않습니다.",
+                         showAfter: "표시까지", seconds: "%d초",
+                         showFolder: "폴더 표시",
+                         showFolderCaption: "명령이 실행되는 폴더 이름을 함께 표시합니다.",
+                         ignore: "추가로 무시", ignorePlaceholder: "make, terraform",
+                         ignoreCaption: "쉼표로 구분한 프로그램 이름입니다. 편집기, 페이저, ssh, top, tail -f, REPL, 개발 서버, claude는 항상 제외됩니다.",
+                         hook: "셸 훅",
+                         hookCaption: "~/.zshrc의 몇 줄이 명령의 시작과 끝을 Zenith에 알려 줍니다. 셸 내장 명령만 사용하고, 아무것도 출력하지 않으며, 공백으로 시작하는 줄은 건너뜁니다.",
+                         install: "셸 훅 설치", copy: "스니펫 복사", copied: "복사됨", remove: "훅 제거",
+                         installed: "~/.zshrc에 설치됨", notInstalled: "설치되지 않음",
+                         otherBuild: "다른 Zenith 빌드용으로 설치되어 있습니다. 이 빌드를 사용하려면 다시 설치하세요.",
+                         damaged: "~/.zshrc에 끝나지 않은 Zenith 블록이 있습니다. 직접 수정하세요.",
+                         lastEvent: "마지막 명령 %@", noEvents: "아직 받은 명령이 없습니다",
+                         newTab: "변경 사항을 적용하려면 새 터미널 탭을 여세요.",
+                         confirmTitle: "~/.zshrc에 셸 훅을 추가할까요?",
+                         confirmMessage: "Zenith가 이 블록을 ~/.zshrc 끝에 추가합니다. 파일의 다른 부분은 바뀌지 않습니다.",
+                         add: "추가", cancel: "취소", editFailed: "~/.zshrc를 업데이트할 수 없습니다.",
+                         running: "실행 중", succeeded: "성공", failed: "실패")
+        case .uk:
+            return .init(activityTitle: "Термінал", section: "Команди термінала",
+                         toggle: "Активність команд",
+                         toggleCaption: "Довга команда в zsh з’являється на закритому острівці з часом виконання, а після завершення — з ✓ або ✗. Показується лише назва програми, без аргументів.",
+                         showAfter: "Показувати через", seconds: "%d с",
+                         showFolder: "Показувати папку",
+                         showFolderCaption: "Додає назву папки, у якій виконується команда.",
+                         ignore: "Також ігнорувати", ignorePlaceholder: "make, terraform",
+                         ignoreCaption: "Назви програм через кому. Редактори, пейджери, ssh, top, tail -f, REPL, сервери розробки й claude не показуються ніколи.",
+                         hook: "Хук оболонки",
+                         hookCaption: "Кілька рядків у ~/.zshrc повідомляють Zenith, коли команда починається й закінчується. Вони використовують лише вбудовані команди оболонки, нічого не виводять і пропускають рядки, що починаються з пробілу.",
+                         install: "Установити хук", copy: "Скопіювати фрагмент", copied: "Скопійовано", remove: "Видалити хук",
+                         installed: "Установлено в ~/.zshrc", notInstalled: "Не встановлено",
+                         otherBuild: "Установлено для іншої збірки Zenith. Установіть знову, щоб використовувати цю.",
+                         damaged: "У ~/.zshrc є незавершений блок Zenith. Виправте його вручну.",
+                         lastEvent: "Остання команда %@", noEvents: "Команд ще не було",
+                         newTab: "Відкрийте нову вкладку термінала, щоб зміна набула чинності.",
+                         confirmTitle: "Додати хук оболонки до ~/.zshrc?",
+                         confirmMessage: "Zenith додасть цей блок у кінець ~/.zshrc. Більше нічого у файлі не зміниться.",
+                         add: "Додати", cancel: "Скасувати", editFailed: "Не вдалося оновити ~/.zshrc.",
+                         running: "Виконується", succeeded: "Успішно", failed: "Помилка")
+        case .zhHans:
+            return .init(activityTitle: "终端", section: "终端命令",
+                         toggle: "命令活动",
+                         toggleCaption: "在 zsh 中运行较久的命令会显示在收起的岛上并计时，结束时显示 ✓ 或 ✗。只显示程序名，从不显示参数。",
+                         showAfter: "显示时机", seconds: "%d 秒",
+                         showFolder: "显示文件夹",
+                         showFolderCaption: "附上命令所在文件夹的名称。",
+                         ignore: "另外忽略", ignorePlaceholder: "make, terraform",
+                         ignoreCaption: "用逗号分隔的程序名。编辑器、分页器、ssh、top、tail -f、REPL、开发服务器和 claude 始终不显示。",
+                         hook: "Shell 钩子",
+                         hookCaption: "~/.zshrc 中的几行会在命令开始和结束时通知 Zenith。它们只使用 shell 内建命令，不输出任何内容，并跳过以空格开头的输入行。",
+                         install: "安装 Shell 钩子", copy: "拷贝代码片段", copied: "已拷贝", remove: "移除钩子",
+                         installed: "已安装到 ~/.zshrc", notInstalled: "未安装",
+                         otherBuild: "已为另一个 Zenith 版本安装。重新安装即可用于当前版本。",
+                         damaged: "~/.zshrc 中有不完整的 Zenith 代码块，请手动修复。",
+                         lastEvent: "上一条命令：%@", noEvents: "尚未收到命令",
+                         newTab: "打开新的终端标签页后更改才会生效。",
+                         confirmTitle: "要将 Shell 钩子添加到 ~/.zshrc 吗？",
+                         confirmMessage: "Zenith 会将此代码块添加到 ~/.zshrc 末尾，文件的其他内容不会改变。",
+                         add: "添加", cancel: "取消", editFailed: "无法更新 ~/.zshrc。",
+                         running: "运行中", succeeded: "成功", failed: "失败")
+        case .zhTW:
+            return .init(activityTitle: "終端機", section: "終端機指令",
+                         toggle: "指令動態",
+                         toggleCaption: "在 zsh 中執行較久的指令會顯示在收合的島上並計時，結束時顯示 ✓ 或 ✗。只顯示程式名稱，絕不顯示參數。",
+                         showAfter: "顯示時機", seconds: "%d 秒",
+                         showFolder: "顯示檔案夾",
+                         showFolderCaption: "附上指令所在檔案夾的名稱。",
+                         ignore: "另外忽略", ignorePlaceholder: "make, terraform",
+                         ignoreCaption: "以逗號分隔的程式名稱。編輯器、分頁器、ssh、top、tail -f、REPL、開發伺服器和 claude 一律不顯示。",
+                         hook: "Shell 掛鉤",
+                         hookCaption: "~/.zshrc 中的幾行會在指令開始與結束時通知 Zenith。它們只使用 shell 內建指令，不輸出任何內容，並略過以空格開頭的輸入行。",
+                         install: "安裝 Shell 掛鉤", copy: "拷貝程式碼片段", copied: "已拷貝", remove: "移除掛鉤",
+                         installed: "已安裝到 ~/.zshrc", notInstalled: "未安裝",
+                         otherBuild: "已為另一個 Zenith 版本安裝。重新安裝即可用於目前的版本。",
+                         damaged: "~/.zshrc 中有不完整的 Zenith 區塊，請手動修正。",
+                         lastEvent: "上一個指令：%@", noEvents: "尚未收到指令",
+                         newTab: "打開新的終端機標籤頁後變更才會生效。",
+                         confirmTitle: "要將 Shell 掛鉤加入 ~/.zshrc 嗎？",
+                         confirmMessage: "Zenith 會將此區塊加到 ~/.zshrc 結尾，檔案的其他內容不會改變。",
+                         add: "加入", cancel: "取消", editFailed: "無法更新 ~/.zshrc。",
+                         running: "執行中", succeeded: "成功", failed: "失敗")
+        case .zhHK:
+            return .init(activityTitle: "終端機", section: "終端機指令",
+                         toggle: "指令動態",
+                         toggleCaption: "在 zsh 中執行較久的指令會顯示在收合的島上並計時，完成時顯示 ✓ 或 ✗。只顯示程式名稱，絕不顯示參數。",
+                         showAfter: "顯示時機", seconds: "%d 秒",
+                         showFolder: "顯示資料夾",
+                         showFolderCaption: "附上指令所在資料夾的名稱。",
+                         ignore: "另外忽略", ignorePlaceholder: "make, terraform",
+                         ignoreCaption: "以逗號分隔的程式名稱。編輯器、分頁器、ssh、top、tail -f、REPL、開發伺服器和 claude 一律不顯示。",
+                         hook: "Shell 掛鈎",
+                         hookCaption: "~/.zshrc 中的幾行會在指令開始與結束時通知 Zenith。它們只使用 shell 內建指令，不輸出任何內容，並略過以空格開頭的輸入行。",
+                         install: "安裝 Shell 掛鈎", copy: "拷貝程式碼片段", copied: "已拷貝", remove: "移除掛鈎",
+                         installed: "已安裝到 ~/.zshrc", notInstalled: "未安裝",
+                         otherBuild: "已為另一個 Zenith 版本安裝。重新安裝即可用於目前的版本。",
+                         damaged: "~/.zshrc 中有不完整的 Zenith 區塊，請手動修正。",
+                         lastEvent: "上一個指令：%@", noEvents: "尚未收到指令",
+                         newTab: "開啟新的終端機分頁後變更才會生效。",
+                         confirmTitle: "要將 Shell 掛鈎加入 ~/.zshrc 嗎？",
+                         confirmMessage: "Zenith 會將此區塊加到 ~/.zshrc 結尾，檔案的其他內容不會改變。",
+                         add: "加入", cancel: "取消", editFailed: "無法更新 ~/.zshrc。",
+                         running: "執行中", succeeded: "成功", failed: "失敗")
+        }
+    }
+}

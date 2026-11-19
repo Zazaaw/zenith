@@ -572,6 +572,12 @@ final class NotchService: ObservableObject {
         modules.contains(.vercel) && VercelService.shared.activity != nil
     }
 
+    /// Zenith fork: a terminal command that has run a while, or how it just
+    /// ended. The service publishes one only while its switch is on.
+    var hasCommandActivity: Bool {
+        CommandActivityService.shared.activity != nil
+    }
+
     var compactActivity: NotchCompactActivity? {
         // A new song waiting for its notice is not drawn yet.
         activitySelection.current(available: awaitsTrackNotice ? compactActivities.filter { $0 != .music } : compactActivities)
@@ -581,7 +587,7 @@ final class NotchService: ObservableObject {
         NotchSupport.compactActivities(timer: hasTimerActivity, watch: hasWatchActivity, downloads: hasDownloadActivity,
                                       agents: hasAgentActivity, calendar: hasCalendarActivity,
                                       music: hasMusicActivity, keepAwake: hasKeepAwakeActivity,
-                                      vercel: hasVercelActivity)
+                                      vercel: hasVercelActivity, command: hasCommandActivity)
     }
 
     var showsCompactActivityPicker: Bool {
@@ -709,6 +715,7 @@ final class NotchService: ObservableObject {
         case .keepAwake: return geometry.compactTimerGeometry(showsDownloads: false, wing: keepAwakeStripWing(in: geometry))
         // Zenith fork: a mark and a reading, like the watch, so it takes the watch's wings.
         case .vercel: return geometry.compactWatchGeometry(wing: vercelStripWing(in: geometry))
+        case .command: return geometry.compactWatchGeometry(wing: commandStripWing(in: geometry)) // Zenith fork
         default: return geometry
         }
     }
@@ -730,6 +737,11 @@ final class NotchService: ObservableObject {
     /// Zenith fork: the wider of the state's mark and word or the project's name.
     private func vercelStripWing(in geometry: NotchGeometry) -> CGFloat {
         VercelActivityLayout.stripWing(VercelService.shared.activity, language: L10n.shared.language, in: geometry)
+    }
+
+    /// Zenith fork: the wider of the mark and its clock or the program's name.
+    private func commandStripWing(in geometry: NotchGeometry) -> CGFloat {
+        CommandActivityLayout.stripWing(CommandActivityService.shared.activity, in: geometry)
     }
 
     private func keepAwakeStripWing(in geometry: NotchGeometry) -> CGFloat {
@@ -1136,6 +1148,8 @@ final class NotchService: ObservableObject {
             return layout.keepAwakeSurface(reading: reading, geometry: geometry)
         case .vercel: // Zenith fork
             return VercelActivityLayout.capsuleSurface(VercelService.shared.activity, language: language, geometry: geometry)
+        case .command: // Zenith fork
+            return CommandActivityLayout.capsuleSurface(CommandActivityService.shared.activity, geometry: geometry)
         }
     }
 
@@ -1218,6 +1232,7 @@ final class NotchService: ObservableObject {
         // Zenith fork: Vercel and GitHub poll only while their sections show.
         VercelService.shared.syncWithPreferences()
         GitHubService.shared.syncWithPreferences()
+        CommandActivityService.shared.syncWithPreferences() // Zenith fork: watches only while its switch is on.
         followsPointer = displayPreference == .pointer || displayPreference == .all
         showsOnAllDisplays = displayPreference == .all
         updateFullscreenDisplays()
@@ -1315,6 +1330,7 @@ final class NotchService: ObservableObject {
         NotchWatchService.shared.stop()
         VercelService.shared.stop() // Zenith fork
         GitHubService.shared.stop()
+        CommandActivityService.shared.stop() // Zenith fork
         let cancelCapture = captureControlsCancel
         endCaptureControls()
         cancelCapture?()
@@ -4402,6 +4418,15 @@ final class NotchService: ObservableObject {
                     self?.refreshPresentation()
                 }.store(in: &subscriptions)
         }
+        // Zenith fork: a command showing, passing the hour or ending, which
+        // changes the strip and the wings it needs. Bound whatever the switch
+        // says: turned off, the service never publishes.
+        CommandActivityService.shared.$activity.removeDuplicates().dropFirst().receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.syncMenuSpaceMonitoring()
+                self?.objectWillChange.send()
+                self?.refreshPresentation()
+            }.store(in: &subscriptions)
         if NotchSupport.routes(.agents) {
             AgentUsageService.shared.events.receive(on: DispatchQueue.main)
                 .sink { [weak self] in self?.showAgentEvent($0) }
