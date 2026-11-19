@@ -441,6 +441,64 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   - **Belum diverifikasi:** notifikasi sungguhan, klik notifikasi, dan polling ke API Vercel
     asli belum dicoba (app UI tidak dijalankan, API Vercel tidak dipanggil). Tampilan field judul
     di Settings dan judul di lock screen juga belum dilihat.
+- **Island terbuka, bahasa desain Settings (branch `feat/island-redesign`):** area terakhir
+  yang masih bergaya upstream. Bahasa p441z.my.id diterjemahkan ke latar hitam island. Hanya
+  visual; perilaku, layout, ukuran siluet, urutan dan daftar modul tidak berubah. Komponen di
+  `UI/Notch/ZenithIslandChrome.swift`; file upstream hanya diberi kait bertanda
+  `// Zenith fork`, kebanyakan di komponen bersama sehingga hampir semua halaman ikut berubah.
+  File ini ikut dikompilasi ke test (`build.sh`, `TEST_SOURCES`) karena beberapa deklarasi
+  island disalin ke test, jadi hanya boleh bergantung pada SwiftUI, AppKit, `ZenithTokens` dan
+  `ZenithSwitch` (tidak boleh memakai `ZenithPanel*` atau tipe Notch).
+  - **Nilai di atas hitam** (`ZenithIsland`): teks putih 0,92 / 0,55 / 0,35; garis putih 10%
+    (22% saat hover/ditekankan, 45% dengan Increase Contrast); lift kartu putih 4%, hover 7%.
+    Aksen diambil dari `NSColor.controlAccentColor`, karena island memberi `.tint(.white)`.
+  - **Komponen bersama:** `NotchIconButton` jadi glyph abu-abu 0,55 → 0,92 saat hover, tile
+    aksen 10/20/100 hanya kalau `selected` (pin, extra musik). `NotchPillButton` jadi pil
+    bergaris (yang `prominent` garis lebih terang, tidak pernah diisi). Glyph `NotchEmptyView`
+    di sumur hairline. `NotchControlSurface` (kartu System, AI, clipboard, kartu musik di Home,
+    scratchpad, juga kartu panel yang di-host island dan preview island di Settings) jadi kartu
+    hairline; entri clipboard yang di-pin memakai garis lebih terang (status, bukan pilihan, jadi
+    tetap abu-abu). Cabang Liquid Glass macOS 26 tidak diubah.
+  - **Radius:** radius kartu `NotchControlSurface` dipetakan ke langkah `ZenithRadius`
+    (`ZenithIsland.radius`: 18 → 16, 14 → 12, 12 → 12). Ini mengganti keputusan lama "radius notch
+    dipertahankan" khusus untuk kartu; bentuk island dan tombol tidak berubah. Clipboard ikut
+    memetakan bentuk overlay-nya supaya sudut garis sorot sama dengan kartunya.
+  - **Galeri section (pemilih modul):** glyph monokrom (warna identitas Music pink, Calendar merah,
+    Timer ungu di galeri dihapus), section aktif memakai tile aksen 10/20/100 dengan centang aksen.
+    Sorotan keyboard tetap terlihat: garis putih 40%, atau garis aksen 50% di tile aktif
+    (penyimpangan kecil dari 20% supaya kursor terbaca). Shortcut ⌥⌘ mono 0,35, kolom cari jadi
+    sumur hairline.
+  - **Home:** sumur glyph shortcut jadi lingkaran hairline; yang aktif memakai aksen (pilihan
+    tool di capture controls) atau warna statusnya dalam bentuk 10/20/100 (rekam dan mikrofon
+    mati merah, Keep Awake amber, timer ungu), bukan lingkaran penuh.
+  - **Halaman:** kartu yang mengisi abu-abu sendiri (Downloads, Notifications, Watch, event
+    Calendar) jadi kartu hairline; tombol `.bordered`/`.borderedProminent` (izin Calendar,
+    clipboard mati, Mixer, Camera) jadi `ZenithIslandOutlineButtonStyle`. Pilihan memakai aksen
+    hanya saat dipilih: mode Timer (dulu garis bawah ungu), pad Scratchpad, zona drop Shelf di
+    bawah file, hari terpilih di grid bulan dan strip minggu, tombol bulan, format warna di Tools
+    (segmented native jadi `ZenithIslandSegmented`, hanya di island). Judul kartu AI, kartu System,
+    label hari Calendar dan header GitHub jadi label mono kapital. Waktu, ukuran, persen, jumlah,
+    dan hint ⌘N clipboard memakai mono. Start dan tombol bulat Timer jadi ungu 10/20/100.
+  - **Saklar:** Downloads, Watch, audio capture controls (×0,88), dan opsi Tools di island
+    memakai `ZenithIslandSwitchStyle` (`ZenithSwitch` diskalakan ke ukuran AppKit). Tools di HUD
+    terpisah tetap NSSwitch (`zenithIslandSwitches(_:)`).
+  - **Warna yang dibiarkan:** warna data dan arti tetap (`ZenithStatus`, warna kalender di batang
+    event, lingkaran merah hari ini, mark dan tag agent dalam warna providernya (sekarang
+    10/20/100), mark deployment Vercel, sampul album, maskot, visualisasi musik). Event yang
+    sedang berlangsung memakai emerald (`ZenithStatus.success`, dulu `.mint`).
+  - **Dibiarkan:** island tertutup dan live activity (termasuk `NotchActivityPicker`), lock
+    screen, siluet, logika hover/buka, layout player musik, preview notifikasi yang dibuka dari
+    strip (tinggi tombolnya diukur), tile Shelf (`UI/Shelf`, dipakai juga di luar island), tab
+    panel yang di-host island (cabang notch ada di `MenuPanel/ZenithPanelChrome.swift`, di luar
+    cakupan), halaman WakaTime (sudah memakai token dan chip panel), track Mixer, wash hover
+    `NotchButtonStyle`, `NotchMeter`, label pengaturan Pomodoro (mono kapital terlalu lebar untuk
+    barisnya), angka rounded di halaman AI (test `NotchAgentLimitReadingTests` mengukur lebar dengan
+    font itu; angkanya sudah digit monospace).
+  - Tidak ada test yang diubah. 51 pesan "AttributeGraph: cycle detected" di suite notch juga
+    muncul di `dev` tanpa perubahan ini.
+  - **Belum diverifikasi visual:** app UI tidak dijalankan saat pengerjaan. Perlu dicek di Mac:
+    tiap halaman island, hover glyph, sorotan keyboard di galeri, Increase Contrast, Reduce
+    Transparency, dan fokus keyboard pada saklar audio capture controls.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
