@@ -670,3 +670,767 @@ extension ZenithStrings {
         }
     }
 }
+
+// MARK: Vercel (Zenith fork)
+
+struct ZenithVercelStrings {
+    let tokenTitle: String
+    let tokenPlaceholder: String
+    let tokenCaption: String
+    let tokenSaved: String
+    let tokenRejected: String
+    let save: String
+    let remove: String
+    let liveActivity: String
+    let liveActivityCaption: String
+    let missingToken: String
+    let unauthorized: String
+    let failed: String
+    let retry: String
+    let empty: String
+    let production: String
+    let preview: String
+    let queued: String
+    let initializing: String
+    let building: String
+    let ready: String
+    let error: String
+    let canceled: String
+
+    func label(_ state: VercelSupport.State) -> String {
+        switch state {
+        case .queued: return queued
+        case .initializing: return initializing
+        case .building: return building
+        case .ready: return ready
+        case .error: return error
+        case .canceled: return canceled
+        case .unknown: return "—"
+        }
+    }
+}
+
+extension ZenithStrings {
+    static func vercel(_ language: AppLanguage) -> ZenithVercelStrings {
+        switch language {
+        case .enUS:
+            return .init(tokenTitle: "Access token",
+                         tokenPlaceholder: "Paste a Vercel access token",
+                         tokenCaption: "Create one at vercel.com/account/tokens. Zenith uses it only to read your recent deployments, and keeps it in a private file on this Mac.",
+                         tokenSaved: "Saved on this Mac.",
+                         tokenRejected: "That doesn’t look like a Vercel token.",
+                         save: "Save",
+                         remove: "Remove",
+                         liveActivity: "Show builds in the closed island",
+                         liveActivityCaption: "While a deployment builds, the closed island follows it, then shows for a moment how it ended.",
+                         missingToken: "Add a Vercel access token in this section’s settings.",
+                         unauthorized: "Vercel didn’t accept the token. Add a new one in this section’s settings.",
+                         failed: "Couldn’t reach Vercel.",
+                         retry: "Try again",
+                         empty: "No deployments yet.",
+                         production: "Production",
+                         preview: "Preview",
+                         queued: "Queued",
+                         initializing: "Initializing",
+                         building: "Building",
+                         ready: "Ready",
+                         error: "Error",
+                         canceled: "Canceled")
+        case .ptBR:
+            return .init(tokenTitle: "Token de acesso",
+                         tokenPlaceholder: "Cole um token de acesso da Vercel",
+                         tokenCaption: "Crie um em vercel.com/account/tokens. O Zenith o usa só para ler suas implantações recentes e o guarda em um arquivo privado neste Mac.",
+                         tokenSaved: "Salvo neste Mac.",
+                         tokenRejected: "Isso não parece um token da Vercel.",
+                         save: "Salvar",
+                         remove: "Remover",
+                         liveActivity: "Mostrar builds na ilha fechada",
+                         liveActivityCaption: "Enquanto uma implantação é criada, a ilha fechada a acompanha e depois mostra por um momento como terminou.",
+                         missingToken: "Adicione um token de acesso da Vercel nos ajustes desta seção.",
+                         unauthorized: "A Vercel não aceitou o token. Adicione um novo nos ajustes desta seção.",
+                         failed: "Não foi possível acessar a Vercel.",
+                         retry: "Tentar novamente",
+                         empty: "Nenhuma implantação ainda.",
+                         production: "Produção",
+                         preview: "Prévia",
+                         queued: "Na fila",
+                         initializing: "Iniciando",
+                         building: "Criando",
+                         ready: "Pronta",
+                         error: "Erro",
+                         canceled: "Cancelada")
+        case .tr:
+            return .init(tokenTitle: "Erişim belirteci",
+                         tokenPlaceholder: "Vercel erişim belirtecini yapıştır",
+                         tokenCaption: "vercel.com/account/tokens adresinden oluştur. Zenith onu yalnızca son dağıtımlarını okumak için kullanır ve bu Mac’te özel bir dosyada saklar.",
+                         tokenSaved: "Bu Mac’e kaydedildi.",
+                         tokenRejected: "Bu bir Vercel belirteci gibi görünmüyor.",
+                         save: "Kaydet",
+                         remove: "Kaldır",
+                         liveActivity: "Derlemeleri kapalı adada göster",
+                         liveActivityCaption: "Bir dağıtım derlenirken kapalı ada onu izler, ardından nasıl bittiğini kısa bir süre gösterir.",
+                         missingToken: "Bu bölümün ayarlarına bir Vercel erişim belirteci ekle.",
+                         unauthorized: "Vercel belirteci kabul etmedi. Bu bölümün ayarlarına yenisini ekle.",
+                         failed: "Vercel’e ulaşılamadı.",
+                         retry: "Tekrar dene",
+                         empty: "Henüz dağıtım yok.",
+                         production: "Üretim",
+                         preview: "Önizleme",
+                         queued: "Sırada",
+                         initializing: "Başlatılıyor",
+                         building: "Derleniyor",
+                         ready: "Hazır",
+                         error: "Hata",
+                         canceled: "İptal edildi")
+        case .ru:
+            return .init(tokenTitle: "Токен доступа",
+                         tokenPlaceholder: "Вставьте токен доступа Vercel",
+                         tokenCaption: "Создайте его на vercel.com/account/tokens. Zenith использует его только для чтения последних развёртываний и хранит в закрытом файле на этом Mac.",
+                         tokenSaved: "Сохранено на этом Mac.",
+                         tokenRejected: "Это не похоже на токен Vercel.",
+                         save: "Сохранить",
+                         remove: "Удалить",
+                         liveActivity: "Показывать сборки в закрытом острове",
+                         liveActivityCaption: "Пока идёт сборка развёртывания, закрытый остров следит за ней, а затем ненадолго показывает результат.",
+                         missingToken: "Добавьте токен доступа Vercel в настройках этого раздела.",
+                         unauthorized: "Vercel не принял токен. Добавьте новый в настройках этого раздела.",
+                         failed: "Не удалось связаться с Vercel.",
+                         retry: "Повторить",
+                         empty: "Развёртываний пока нет.",
+                         production: "Продакшен",
+                         preview: "Превью",
+                         queued: "В очереди",
+                         initializing: "Запуск",
+                         building: "Сборка",
+                         ready: "Готово",
+                         error: "Ошибка",
+                         canceled: "Отменено")
+        case .es:
+            return .init(tokenTitle: "Token de acceso",
+                         tokenPlaceholder: "Pega un token de acceso de Vercel",
+                         tokenCaption: "Crea uno en vercel.com/account/tokens. Zenith solo lo usa para leer tus despliegues recientes y lo guarda en un archivo privado en este Mac.",
+                         tokenSaved: "Guardado en este Mac.",
+                         tokenRejected: "Eso no parece un token de Vercel.",
+                         save: "Guardar",
+                         remove: "Eliminar",
+                         liveActivity: "Mostrar compilaciones en la isla cerrada",
+                         liveActivityCaption: "Mientras se compila un despliegue, la isla cerrada lo sigue y luego muestra un momento cómo terminó.",
+                         missingToken: "Añade un token de acceso de Vercel en los ajustes de esta sección.",
+                         unauthorized: "Vercel no aceptó el token. Añade uno nuevo en los ajustes de esta sección.",
+                         failed: "No se pudo conectar con Vercel.",
+                         retry: "Reintentar",
+                         empty: "Todavía no hay despliegues.",
+                         production: "Producción",
+                         preview: "Vista previa",
+                         queued: "En cola",
+                         initializing: "Iniciando",
+                         building: "Compilando",
+                         ready: "Listo",
+                         error: "Error",
+                         canceled: "Cancelado")
+        case .sk:
+            return .init(tokenTitle: "Prístupový token",
+                         tokenPlaceholder: "Vložte prístupový token Vercel",
+                         tokenCaption: "Vytvorte ho na vercel.com/account/tokens. Zenith ho používa len na čítanie vašich posledných nasadení a uchováva ho v súkromnom súbore v tomto Macu.",
+                         tokenSaved: "Uložené v tomto Macu.",
+                         tokenRejected: "Toto nevyzerá ako token Vercel.",
+                         save: "Uložiť",
+                         remove: "Odstrániť",
+                         liveActivity: "Zobrazovať zostavy v zatvorenom Dynamic Island",
+                         liveActivityCaption: "Kým sa nasadenie zostavuje, zatvorený Dynamic Island ho sleduje a potom na chvíľu ukáže, ako skončilo.",
+                         missingToken: "Pridajte prístupový token Vercel v nastaveniach tejto sekcie.",
+                         unauthorized: "Vercel token neprijal. Pridajte nový v nastaveniach tejto sekcie.",
+                         failed: "Nepodarilo sa spojiť s Vercel.",
+                         retry: "Skúsiť znova",
+                         empty: "Zatiaľ žiadne nasadenia.",
+                         production: "Produkcia",
+                         preview: "Náhľad",
+                         queued: "V poradí",
+                         initializing: "Spúšťa sa",
+                         building: "Zostavuje sa",
+                         ready: "Hotovo",
+                         error: "Chyba",
+                         canceled: "Zrušené")
+        case .de:
+            return .init(tokenTitle: "Zugriffstoken",
+                         tokenPlaceholder: "Vercel-Zugriffstoken einfügen",
+                         tokenCaption: "Erstelle eines unter vercel.com/account/tokens. Zenith nutzt es nur, um deine letzten Deployments zu lesen, und bewahrt es in einer privaten Datei auf diesem Mac auf.",
+                         tokenSaved: "Auf diesem Mac gesichert.",
+                         tokenRejected: "Das sieht nicht wie ein Vercel-Token aus.",
+                         save: "Sichern",
+                         remove: "Entfernen",
+                         liveActivity: "Builds in der geschlossenen Insel zeigen",
+                         liveActivityCaption: "Während ein Deployment gebaut wird, folgt ihm die geschlossene Insel und zeigt danach kurz, wie es ausging.",
+                         missingToken: "Füge in den Einstellungen dieses Bereichs ein Vercel-Zugriffstoken hinzu.",
+                         unauthorized: "Vercel hat das Token nicht akzeptiert. Füge in den Einstellungen dieses Bereichs ein neues hinzu.",
+                         failed: "Vercel ist nicht erreichbar.",
+                         retry: "Erneut versuchen",
+                         empty: "Noch keine Deployments.",
+                         production: "Produktion",
+                         preview: "Vorschau",
+                         queued: "Wartend",
+                         initializing: "Startet",
+                         building: "Wird gebaut",
+                         ready: "Bereit",
+                         error: "Fehler",
+                         canceled: "Abgebrochen")
+        case .fr:
+            return .init(tokenTitle: "Jeton d’accès",
+                         tokenPlaceholder: "Collez un jeton d’accès Vercel",
+                         tokenCaption: "Créez-en un sur vercel.com/account/tokens. Zenith ne s’en sert que pour lire vos déploiements récents et le garde dans un fichier privé sur ce Mac.",
+                         tokenSaved: "Enregistré sur ce Mac.",
+                         tokenRejected: "Cela ne ressemble pas à un jeton Vercel.",
+                         save: "Enregistrer",
+                         remove: "Supprimer",
+                         liveActivity: "Afficher les builds dans l’île fermée",
+                         liveActivityCaption: "Pendant la construction d’un déploiement, l’île fermée le suit, puis montre un instant comment il s’est terminé.",
+                         missingToken: "Ajoutez un jeton d’accès Vercel dans les réglages de cette section.",
+                         unauthorized: "Vercel n’a pas accepté le jeton. Ajoutez-en un nouveau dans les réglages de cette section.",
+                         failed: "Impossible de joindre Vercel.",
+                         retry: "Réessayer",
+                         empty: "Aucun déploiement pour l’instant.",
+                         production: "Production",
+                         preview: "Aperçu",
+                         queued: "En file",
+                         initializing: "Initialisation",
+                         building: "Construction",
+                         ready: "Prêt",
+                         error: "Erreur",
+                         canceled: "Annulé")
+        case .it:
+            return .init(tokenTitle: "Token di accesso",
+                         tokenPlaceholder: "Incolla un token di accesso Vercel",
+                         tokenCaption: "Creane uno su vercel.com/account/tokens. Zenith lo usa solo per leggere i tuoi deployment recenti e lo conserva in un file privato su questo Mac.",
+                         tokenSaved: "Salvato su questo Mac.",
+                         tokenRejected: "Non sembra un token Vercel.",
+                         save: "Salva",
+                         remove: "Rimuovi",
+                         liveActivity: "Mostra le build nell’isola chiusa",
+                         liveActivityCaption: "Mentre un deployment viene compilato, l’isola chiusa lo segue, poi mostra per un attimo com’è finito.",
+                         missingToken: "Aggiungi un token di accesso Vercel nelle impostazioni di questa sezione.",
+                         unauthorized: "Vercel non ha accettato il token. Aggiungine uno nuovo nelle impostazioni di questa sezione.",
+                         failed: "Impossibile raggiungere Vercel.",
+                         retry: "Riprova",
+                         empty: "Ancora nessun deployment.",
+                         production: "Produzione",
+                         preview: "Anteprima",
+                         queued: "In coda",
+                         initializing: "Avvio",
+                         building: "In compilazione",
+                         ready: "Pronto",
+                         error: "Errore",
+                         canceled: "Annullato")
+        case .ja:
+            return .init(tokenTitle: "アクセストークン",
+                         tokenPlaceholder: "Vercelのアクセストークンを貼り付け",
+                         tokenCaption: "vercel.com/account/tokensで作成してください。Zenithは最近のデプロイの読み取りにのみ使用し、このMac上の非公開ファイルに保存します。",
+                         tokenSaved: "このMacに保存しました。",
+                         tokenRejected: "Vercelのトークンではないようです。",
+                         save: "保存",
+                         remove: "削除",
+                         liveActivity: "閉じた島にビルドを表示",
+                         liveActivityCaption: "デプロイのビルド中は閉じた島が追跡し、終了後に結果を少しの間表示します。",
+                         missingToken: "このセクションの設定でVercelのアクセストークンを追加してください。",
+                         unauthorized: "Vercelがトークンを受け付けませんでした。このセクションの設定で新しいトークンを追加してください。",
+                         failed: "Vercelに接続できませんでした。",
+                         retry: "再試行",
+                         empty: "まだデプロイはありません。",
+                         production: "本番",
+                         preview: "プレビュー",
+                         queued: "待機中",
+                         initializing: "初期化中",
+                         building: "ビルド中",
+                         ready: "完了",
+                         error: "エラー",
+                         canceled: "キャンセル")
+        case .ko:
+            return .init(tokenTitle: "액세스 토큰",
+                         tokenPlaceholder: "Vercel 액세스 토큰 붙여넣기",
+                         tokenCaption: "vercel.com/account/tokens에서 만드세요. Zenith는 최근 배포를 읽는 데만 사용하며 이 Mac의 비공개 파일에 보관합니다.",
+                         tokenSaved: "이 Mac에 저장되었습니다.",
+                         tokenRejected: "Vercel 토큰이 아닌 것 같습니다.",
+                         save: "저장",
+                         remove: "제거",
+                         liveActivity: "닫힌 섬에 빌드 표시",
+                         liveActivityCaption: "배포가 빌드되는 동안 닫힌 섬이 따라가고, 끝나면 결과를 잠시 보여줍니다.",
+                         missingToken: "이 섹션의 설정에서 Vercel 액세스 토큰을 추가하세요.",
+                         unauthorized: "Vercel이 토큰을 받아들이지 않았습니다. 이 섹션의 설정에서 새 토큰을 추가하세요.",
+                         failed: "Vercel에 연결할 수 없습니다.",
+                         retry: "다시 시도",
+                         empty: "아직 배포가 없습니다.",
+                         production: "프로덕션",
+                         preview: "미리보기",
+                         queued: "대기 중",
+                         initializing: "초기화 중",
+                         building: "빌드 중",
+                         ready: "준비됨",
+                         error: "오류",
+                         canceled: "취소됨")
+        case .uk:
+            return .init(tokenTitle: "Токен доступу",
+                         tokenPlaceholder: "Вставте токен доступу Vercel",
+                         tokenCaption: "Створіть його на vercel.com/account/tokens. Zenith використовує його лише для читання останніх розгортань і зберігає в закритому файлі на цьому Mac.",
+                         tokenSaved: "Збережено на цьому Mac.",
+                         tokenRejected: "Це не схоже на токен Vercel.",
+                         save: "Зберегти",
+                         remove: "Видалити",
+                         liveActivity: "Показувати збірки в закритому острівці",
+                         liveActivityCaption: "Поки розгортання збирається, закритий острівець стежить за ним, а потім ненадовго показує результат.",
+                         missingToken: "Додайте токен доступу Vercel у налаштуваннях цього розділу.",
+                         unauthorized: "Vercel не прийняв токен. Додайте новий у налаштуваннях цього розділу.",
+                         failed: "Не вдалося зв’язатися з Vercel.",
+                         retry: "Повторити",
+                         empty: "Розгортань поки немає.",
+                         production: "Продакшн",
+                         preview: "Прев’ю",
+                         queued: "У черзі",
+                         initializing: "Запуск",
+                         building: "Збірка",
+                         ready: "Готово",
+                         error: "Помилка",
+                         canceled: "Скасовано")
+        case .zhHans:
+            return .init(tokenTitle: "访问令牌",
+                         tokenPlaceholder: "粘贴 Vercel 访问令牌",
+                         tokenCaption: "在 vercel.com/account/tokens 创建一个。Zenith 仅用它读取你最近的部署，并将其保存在这台 Mac 上的私有文件中。",
+                         tokenSaved: "已保存在这台 Mac 上。",
+                         tokenRejected: "这看起来不像 Vercel 令牌。",
+                         save: "保存",
+                         remove: "移除",
+                         liveActivity: "在收起的岛中显示构建",
+                         liveActivityCaption: "部署构建时，收起的岛会跟踪它，结束后短暂显示结果。",
+                         missingToken: "请在此部分的设置中添加 Vercel 访问令牌。",
+                         unauthorized: "Vercel 未接受该令牌。请在此部分的设置中添加新令牌。",
+                         failed: "无法连接 Vercel。",
+                         retry: "重试",
+                         empty: "还没有部署。",
+                         production: "生产",
+                         preview: "预览",
+                         queued: "排队中",
+                         initializing: "初始化中",
+                         building: "构建中",
+                         ready: "就绪",
+                         error: "错误",
+                         canceled: "已取消")
+        case .zhTW:
+            return .init(tokenTitle: "存取權杖",
+                         tokenPlaceholder: "貼上 Vercel 存取權杖",
+                         tokenCaption: "在 vercel.com/account/tokens 建立一個。Zenith 只用它讀取你最近的部署，並將它保存在這台 Mac 上的私人檔案中。",
+                         tokenSaved: "已儲存在這台 Mac 上。",
+                         tokenRejected: "這看起來不像 Vercel 權杖。",
+                         save: "儲存",
+                         remove: "移除",
+                         liveActivity: "在收合的島中顯示建置",
+                         liveActivityCaption: "部署建置時，收合的島會追蹤它，結束後短暫顯示結果。",
+                         missingToken: "請在此區塊的設定中加入 Vercel 存取權杖。",
+                         unauthorized: "Vercel 不接受此權杖。請在此區塊的設定中加入新的權杖。",
+                         failed: "無法連線至 Vercel。",
+                         retry: "再試一次",
+                         empty: "尚無部署。",
+                         production: "正式環境",
+                         preview: "預覽",
+                         queued: "排隊中",
+                         initializing: "初始化中",
+                         building: "建置中",
+                         ready: "就緒",
+                         error: "錯誤",
+                         canceled: "已取消")
+        case .zhHK:
+            return .init(tokenTitle: "存取權杖",
+                         tokenPlaceholder: "貼上 Vercel 存取權杖",
+                         tokenCaption: "在 vercel.com/account/tokens 建立一個。Zenith 只用它讀取你最近的部署，並將它保存在這部 Mac 上的私人檔案中。",
+                         tokenSaved: "已儲存在這部 Mac 上。",
+                         tokenRejected: "這看起來不像 Vercel 權杖。",
+                         save: "儲存",
+                         remove: "移除",
+                         liveActivity: "在收合的島中顯示建置",
+                         liveActivityCaption: "部署建置時，收合的島會追蹤它，結束後短暫顯示結果。",
+                         missingToken: "請在此區塊的設定中加入 Vercel 存取權杖。",
+                         unauthorized: "Vercel 不接受此權杖。請在此區塊的設定中加入新的權杖。",
+                         failed: "無法連線至 Vercel。",
+                         retry: "再試一次",
+                         empty: "尚未有部署。",
+                         production: "正式環境",
+                         preview: "預覽",
+                         queued: "排隊中",
+                         initializing: "初始化中",
+                         building: "建置中",
+                         ready: "就緒",
+                         error: "錯誤",
+                         canceled: "已取消")
+        }
+    }
+}
+
+extension ZenithStrings {
+    /// The Vercel section’s line in the island’s content editor.
+    static func vercelSummary(_ language: AppLanguage) -> String {
+        switch language {
+        case .enUS: return "Your latest deployments, and builds live in the closed island, from Vercel."
+        case .ptBR: return "Suas implantações mais recentes e builds ao vivo na ilha fechada, da Vercel."
+        case .tr: return "Vercel’den son dağıtımların ve kapalı adada canlı derlemeler."
+        case .ru: return "Последние развёртывания и сборки в реальном времени в закрытом острове из Vercel."
+        case .es: return "Tus despliegues más recientes y compilaciones en vivo en la isla cerrada, desde Vercel."
+        case .sk: return "Vaše posledné nasadenia a zostavy naživo v zatvorenom Dynamic Island z Vercel."
+        case .de: return "Deine letzten Deployments und laufende Builds in der geschlossenen Insel, von Vercel."
+        case .fr: return "Vos derniers déploiements et les builds en direct dans l’île fermée, depuis Vercel."
+        case .it: return "I tuoi deployment più recenti e le build dal vivo nell’isola chiusa, da Vercel."
+        case .ja: return "Vercelの最新のデプロイと、閉じた島でのライブビルド。"
+        case .ko: return "Vercel의 최근 배포와 닫힌 섬의 실시간 빌드입니다."
+        case .uk: return "Останні розгортання та збірки наживо в закритому острівці з Vercel."
+        case .zhHans: return "来自 Vercel 的最新部署，以及收起的岛中的实时构建。"
+        case .zhTW: return "來自 Vercel 的最新部署，以及收合的島中的即時建置。"
+        case .zhHK: return "來自 Vercel 的最新部署，以及收合的島中的即時建置。"
+        }
+    }
+}
+
+// MARK: GitHub (Zenith fork)
+
+struct ZenithGitHubStrings {
+    let reviewRequested: String
+    let yourPullRequests: String
+    let missingCLI: String
+    let notSignedIn: String
+    let failed: String
+    let retry: String
+    let nothingToReview: String
+    let noneOpen: String
+    let checksPassed: String
+    let checksFailed: String
+    let checksPending: String
+    let noChecks: String
+    let draft: String
+    let cliFoundFormat: String
+    let cliMissing: String
+    let lookAgain: String
+    let signedInFormat: String
+    let caption: String
+
+    func cliFound(_ path: String) -> String { String(format: cliFoundFormat, path) }
+    func signedIn(_ login: String) -> String { String(format: signedInFormat, login) }
+
+    func label(_ checks: GitHubSupport.Checks) -> String {
+        switch checks {
+        case .success: return checksPassed
+        case .failure: return checksFailed
+        case .pending: return checksPending
+        case .none: return noChecks
+        }
+    }
+}
+
+extension ZenithStrings {
+    static func gitHub(_ language: AppLanguage) -> ZenithGitHubStrings {
+        switch language {
+        case .enUS:
+            return .init(reviewRequested: "Review requested",
+                         yourPullRequests: "Your pull requests",
+                         missingCLI: "Install the GitHub CLI (gh) to see your pull requests.",
+                         notSignedIn: "Run gh auth login in Terminal, then try again.",
+                         failed: "Couldn’t reach GitHub.",
+                         retry: "Try again",
+                         nothingToReview: "Nothing waiting for your review.",
+                         noneOpen: "You have no open pull requests.",
+                         checksPassed: "Checks passed",
+                         checksFailed: "Checks failed",
+                         checksPending: "Checks running",
+                         noChecks: "No checks",
+                         draft: "Draft",
+                         cliFoundFormat: "Using %@",
+                         cliMissing: "GitHub CLI not found.",
+                         lookAgain: "Look again",
+                         signedInFormat: "Signed in as %@",
+                         caption: "Zenith asks the GitHub CLI you already use, so it needs no token of its own. It refreshes every 5 minutes while this section is on.")
+        case .ptBR:
+            return .init(reviewRequested: "Revisão solicitada",
+                         yourPullRequests: "Seus pull requests",
+                         missingCLI: "Instale o GitHub CLI (gh) para ver seus pull requests.",
+                         notSignedIn: "Execute gh auth login no Terminal e tente novamente.",
+                         failed: "Não foi possível acessar o GitHub.",
+                         retry: "Tentar novamente",
+                         nothingToReview: "Nada aguardando sua revisão.",
+                         noneOpen: "Você não tem pull requests abertos.",
+                         checksPassed: "Verificações aprovadas",
+                         checksFailed: "Verificações falharam",
+                         checksPending: "Verificações em andamento",
+                         noChecks: "Sem verificações",
+                         draft: "Rascunho",
+                         cliFoundFormat: "Usando %@",
+                         cliMissing: "GitHub CLI não encontrado.",
+                         lookAgain: "Procurar de novo",
+                         signedInFormat: "Conectado como %@",
+                         caption: "O Zenith consulta o GitHub CLI que você já usa, então não precisa de um token próprio. Ele atualiza a cada 5 minutos enquanto esta seção está ativa.")
+        case .tr:
+            return .init(reviewRequested: "İnceleme istendi",
+                         yourPullRequests: "Pull request’lerin",
+                         missingCLI: "Pull request’lerini görmek için GitHub CLI’ı (gh) yükle.",
+                         notSignedIn: "Terminal’de gh auth login komutunu çalıştır, sonra tekrar dene.",
+                         failed: "GitHub’a ulaşılamadı.",
+                         retry: "Tekrar dene",
+                         nothingToReview: "İncelemeni bekleyen bir şey yok.",
+                         noneOpen: "Açık pull request’in yok.",
+                         checksPassed: "Denetimler geçti",
+                         checksFailed: "Denetimler başarısız",
+                         checksPending: "Denetimler sürüyor",
+                         noChecks: "Denetim yok",
+                         draft: "Taslak",
+                         cliFoundFormat: "Kullanılan: %@",
+                         cliMissing: "GitHub CLI bulunamadı.",
+                         lookAgain: "Yeniden ara",
+                         signedInFormat: "%@ olarak oturum açıldı",
+                         caption: "Zenith zaten kullandığın GitHub CLI’a sorar, bu yüzden kendi belirtecine ihtiyaç duymaz. Bu bölüm açıkken 5 dakikada bir yenilenir.")
+        case .ru:
+            return .init(reviewRequested: "Запрошен обзор",
+                         yourPullRequests: "Ваши pull requests",
+                         missingCLI: "Установите GitHub CLI (gh), чтобы видеть свои pull requests.",
+                         notSignedIn: "Выполните gh auth login в Терминале и повторите попытку.",
+                         failed: "Не удалось связаться с GitHub.",
+                         retry: "Повторить",
+                         nothingToReview: "Ничего не ждёт вашего обзора.",
+                         noneOpen: "У вас нет открытых pull requests.",
+                         checksPassed: "Проверки пройдены",
+                         checksFailed: "Проверки не пройдены",
+                         checksPending: "Проверки выполняются",
+                         noChecks: "Нет проверок",
+                         draft: "Черновик",
+                         cliFoundFormat: "Используется %@",
+                         cliMissing: "GitHub CLI не найден.",
+                         lookAgain: "Искать снова",
+                         signedInFormat: "Вход выполнен как %@",
+                         caption: "Zenith обращается к GitHub CLI, которым вы уже пользуетесь, поэтому собственный токен не нужен. Обновляется каждые 5 минут, пока раздел включён.")
+        case .es:
+            return .init(reviewRequested: "Revisión solicitada",
+                         yourPullRequests: "Tus pull requests",
+                         missingCLI: "Instala GitHub CLI (gh) para ver tus pull requests.",
+                         notSignedIn: "Ejecuta gh auth login en Terminal y vuelve a intentarlo.",
+                         failed: "No se pudo conectar con GitHub.",
+                         retry: "Reintentar",
+                         nothingToReview: "Nada espera tu revisión.",
+                         noneOpen: "No tienes pull requests abiertos.",
+                         checksPassed: "Comprobaciones superadas",
+                         checksFailed: "Comprobaciones fallidas",
+                         checksPending: "Comprobaciones en curso",
+                         noChecks: "Sin comprobaciones",
+                         draft: "Borrador",
+                         cliFoundFormat: "Usando %@",
+                         cliMissing: "No se encontró GitHub CLI.",
+                         lookAgain: "Buscar de nuevo",
+                         signedInFormat: "Sesión iniciada como %@",
+                         caption: "Zenith consulta el GitHub CLI que ya usas, así que no necesita un token propio. Se actualiza cada 5 minutos mientras esta sección está activada.")
+        case .sk:
+            return .init(reviewRequested: "Vyžiadaná kontrola",
+                         yourPullRequests: "Vaše pull requesty",
+                         missingCLI: "Nainštalujte GitHub CLI (gh), aby ste videli svoje pull requesty.",
+                         notSignedIn: "Spustite gh auth login v Termináli a skúste znova.",
+                         failed: "Nepodarilo sa spojiť s GitHubom.",
+                         retry: "Skúsiť znova",
+                         nothingToReview: "Nič nečaká na vašu kontrolu.",
+                         noneOpen: "Nemáte žiadne otvorené pull requesty.",
+                         checksPassed: "Kontroly prešli",
+                         checksFailed: "Kontroly zlyhali",
+                         checksPending: "Kontroly prebiehajú",
+                         noChecks: "Bez kontrol",
+                         draft: "Koncept",
+                         cliFoundFormat: "Používa sa %@",
+                         cliMissing: "GitHub CLI sa nenašlo.",
+                         lookAgain: "Hľadať znova",
+                         signedInFormat: "Prihlásený ako %@",
+                         caption: "Zenith sa pýta GitHub CLI, ktoré už používate, takže nepotrebuje vlastný token. Obnovuje sa každých 5 minút, kým je táto sekcia zapnutá.")
+        case .de:
+            return .init(reviewRequested: "Review angefragt",
+                         yourPullRequests: "Deine Pull Requests",
+                         missingCLI: "Installiere die GitHub CLI (gh), um deine Pull Requests zu sehen.",
+                         notSignedIn: "Führe gh auth login im Terminal aus und versuche es dann erneut.",
+                         failed: "GitHub ist nicht erreichbar.",
+                         retry: "Erneut versuchen",
+                         nothingToReview: "Nichts wartet auf dein Review.",
+                         noneOpen: "Du hast keine offenen Pull Requests.",
+                         checksPassed: "Checks bestanden",
+                         checksFailed: "Checks fehlgeschlagen",
+                         checksPending: "Checks laufen",
+                         noChecks: "Keine Checks",
+                         draft: "Entwurf",
+                         cliFoundFormat: "Verwendet %@",
+                         cliMissing: "GitHub CLI nicht gefunden.",
+                         lookAgain: "Erneut suchen",
+                         signedInFormat: "Angemeldet als %@",
+                         caption: "Zenith fragt die GitHub CLI, die du bereits nutzt, und braucht daher kein eigenes Token. Solange dieser Bereich aktiv ist, wird alle 5 Minuten aktualisiert.")
+        case .fr:
+            return .init(reviewRequested: "Revue demandée",
+                         yourPullRequests: "Vos pull requests",
+                         missingCLI: "Installez GitHub CLI (gh) pour voir vos pull requests.",
+                         notSignedIn: "Exécutez gh auth login dans Terminal, puis réessayez.",
+                         failed: "Impossible de joindre GitHub.",
+                         retry: "Réessayer",
+                         nothingToReview: "Rien n’attend votre revue.",
+                         noneOpen: "Vous n’avez aucune pull request ouverte.",
+                         checksPassed: "Vérifications réussies",
+                         checksFailed: "Vérifications échouées",
+                         checksPending: "Vérifications en cours",
+                         noChecks: "Aucune vérification",
+                         draft: "Brouillon",
+                         cliFoundFormat: "Utilise %@",
+                         cliMissing: "GitHub CLI introuvable.",
+                         lookAgain: "Chercher à nouveau",
+                         signedInFormat: "Connecté en tant que %@",
+                         caption: "Zenith interroge le GitHub CLI que vous utilisez déjà, il n’a donc pas besoin de son propre jeton. Il se met à jour toutes les 5 minutes tant que cette section est activée.")
+        case .it:
+            return .init(reviewRequested: "Revisione richiesta",
+                         yourPullRequests: "Le tue pull request",
+                         missingCLI: "Installa GitHub CLI (gh) per vedere le tue pull request.",
+                         notSignedIn: "Esegui gh auth login nel Terminale, poi riprova.",
+                         failed: "Impossibile raggiungere GitHub.",
+                         retry: "Riprova",
+                         nothingToReview: "Niente attende la tua revisione.",
+                         noneOpen: "Non hai pull request aperte.",
+                         checksPassed: "Controlli superati",
+                         checksFailed: "Controlli non riusciti",
+                         checksPending: "Controlli in corso",
+                         noChecks: "Nessun controllo",
+                         draft: "Bozza",
+                         cliFoundFormat: "In uso: %@",
+                         cliMissing: "GitHub CLI non trovato.",
+                         lookAgain: "Cerca di nuovo",
+                         signedInFormat: "Accesso come %@",
+                         caption: "Zenith interroga il GitHub CLI che usi già, quindi non ha bisogno di un token proprio. Si aggiorna ogni 5 minuti mentre questa sezione è attiva.")
+        case .ja:
+            return .init(reviewRequested: "レビュー依頼",
+                         yourPullRequests: "自分のプルリクエスト",
+                         missingCLI: "プルリクエストを表示するにはGitHub CLI（gh）をインストールしてください。",
+                         notSignedIn: "ターミナルでgh auth loginを実行してから、もう一度お試しください。",
+                         failed: "GitHubに接続できませんでした。",
+                         retry: "再試行",
+                         nothingToReview: "レビュー待ちはありません。",
+                         noneOpen: "オープン中のプルリクエストはありません。",
+                         checksPassed: "チェック成功",
+                         checksFailed: "チェック失敗",
+                         checksPending: "チェック実行中",
+                         noChecks: "チェックなし",
+                         draft: "ドラフト",
+                         cliFoundFormat: "使用中: %@",
+                         cliMissing: "GitHub CLIが見つかりません。",
+                         lookAgain: "もう一度探す",
+                         signedInFormat: "%@ としてサインイン中",
+                         caption: "Zenithは既に使っているGitHub CLIに問い合わせるため、専用のトークンは不要です。このセクションがオンの間、5分ごとに更新します。")
+        case .ko:
+            return .init(reviewRequested: "리뷰 요청됨",
+                         yourPullRequests: "내 풀 리퀘스트",
+                         missingCLI: "풀 리퀘스트를 보려면 GitHub CLI(gh)를 설치하세요.",
+                         notSignedIn: "터미널에서 gh auth login을 실행한 다음 다시 시도하세요.",
+                         failed: "GitHub에 연결할 수 없습니다.",
+                         retry: "다시 시도",
+                         nothingToReview: "리뷰를 기다리는 항목이 없습니다.",
+                         noneOpen: "열린 풀 리퀘스트가 없습니다.",
+                         checksPassed: "검사 통과",
+                         checksFailed: "검사 실패",
+                         checksPending: "검사 진행 중",
+                         noChecks: "검사 없음",
+                         draft: "초안",
+                         cliFoundFormat: "사용 중: %@",
+                         cliMissing: "GitHub CLI를 찾을 수 없습니다.",
+                         lookAgain: "다시 찾기",
+                         signedInFormat: "%@(으)로 로그인됨",
+                         caption: "Zenith는 이미 사용 중인 GitHub CLI에 묻기 때문에 별도의 토큰이 필요 없습니다. 이 섹션이 켜져 있는 동안 5분마다 새로 고칩니다.")
+        case .uk:
+            return .init(reviewRequested: "Запит на рев’ю",
+                         yourPullRequests: "Ваші pull requests",
+                         missingCLI: "Установіть GitHub CLI (gh), щоб бачити свої pull requests.",
+                         notSignedIn: "Виконайте gh auth login у Терміналі й спробуйте ще раз.",
+                         failed: "Не вдалося зв’язатися з GitHub.",
+                         retry: "Повторити",
+                         nothingToReview: "Ніщо не чекає на ваше рев’ю.",
+                         noneOpen: "У вас немає відкритих pull requests.",
+                         checksPassed: "Перевірки пройдено",
+                         checksFailed: "Перевірки не пройдено",
+                         checksPending: "Перевірки тривають",
+                         noChecks: "Без перевірок",
+                         draft: "Чернетка",
+                         cliFoundFormat: "Використовується %@",
+                         cliMissing: "GitHub CLI не знайдено.",
+                         lookAgain: "Шукати знову",
+                         signedInFormat: "Вхід як %@",
+                         caption: "Zenith звертається до GitHub CLI, яким ви вже користуєтеся, тож власний токен не потрібен. Оновлюється кожні 5 хвилин, поки розділ увімкнено.")
+        case .zhHans:
+            return .init(reviewRequested: "请求审查",
+                         yourPullRequests: "你的拉取请求",
+                         missingCLI: "安装 GitHub CLI（gh）以查看你的拉取请求。",
+                         notSignedIn: "在终端中运行 gh auth login，然后重试。",
+                         failed: "无法连接 GitHub。",
+                         retry: "重试",
+                         nothingToReview: "没有等待你审查的内容。",
+                         noneOpen: "你没有打开的拉取请求。",
+                         checksPassed: "检查通过",
+                         checksFailed: "检查失败",
+                         checksPending: "检查进行中",
+                         noChecks: "无检查",
+                         draft: "草稿",
+                         cliFoundFormat: "正在使用 %@",
+                         cliMissing: "未找到 GitHub CLI。",
+                         lookAgain: "重新查找",
+                         signedInFormat: "已登录为 %@",
+                         caption: "Zenith 会询问你已在使用的 GitHub CLI，因此不需要单独的令牌。此部分开启时每 5 分钟刷新一次。")
+        case .zhTW:
+            return .init(reviewRequested: "已要求審查",
+                         yourPullRequests: "你的提取要求",
+                         missingCLI: "安裝 GitHub CLI（gh）以查看你的提取要求。",
+                         notSignedIn: "在終端機中執行 gh auth login，然後再試一次。",
+                         failed: "無法連線至 GitHub。",
+                         retry: "再試一次",
+                         nothingToReview: "沒有等待你審查的項目。",
+                         noneOpen: "你沒有開啟中的提取要求。",
+                         checksPassed: "檢查通過",
+                         checksFailed: "檢查失敗",
+                         checksPending: "檢查進行中",
+                         noChecks: "沒有檢查",
+                         draft: "草稿",
+                         cliFoundFormat: "正在使用 %@",
+                         cliMissing: "找不到 GitHub CLI。",
+                         lookAgain: "重新尋找",
+                         signedInFormat: "已登入為 %@",
+                         caption: "Zenith 會詢問你已在使用的 GitHub CLI，因此不需要另外的權杖。此區塊開啟時每 5 分鐘重新整理一次。")
+        case .zhHK:
+            return .init(reviewRequested: "已要求審查",
+                         yourPullRequests: "你的拉取請求",
+                         missingCLI: "安裝 GitHub CLI（gh）以查看你的拉取請求。",
+                         notSignedIn: "在終端機中執行 gh auth login，然後再試一次。",
+                         failed: "無法連線至 GitHub。",
+                         retry: "再試一次",
+                         nothingToReview: "沒有等待你審查的項目。",
+                         noneOpen: "你沒有開啟中的拉取請求。",
+                         checksPassed: "檢查通過",
+                         checksFailed: "檢查失敗",
+                         checksPending: "檢查進行中",
+                         noChecks: "沒有檢查",
+                         draft: "草稿",
+                         cliFoundFormat: "正在使用 %@",
+                         cliMissing: "找不到 GitHub CLI。",
+                         lookAgain: "重新尋找",
+                         signedInFormat: "已登入為 %@",
+                         caption: "Zenith 會詢問你已在使用的 GitHub CLI，因此不需要另外的權杖。此區塊開啟時每 5 分鐘重新載入一次。")
+        }
+    }
+}
+
+extension ZenithStrings {
+    /// The GitHub section’s line in the island’s content editor.
+    static func gitHubSummary(_ language: AppLanguage) -> String {
+        switch language {
+        case .enUS: return "Pull requests waiting for your review, and yours with their checks, from GitHub."
+        case .ptBR: return "Pull requests aguardando sua revisão e os seus com as verificações, do GitHub."
+        case .tr: return "GitHub’dan incelemeni bekleyen pull request’ler ve denetimleriyle birlikte seninkiler."
+        case .ru: return "Pull requests, ждущие вашего обзора, и ваши собственные с проверками из GitHub."
+        case .es: return "Pull requests que esperan tu revisión y los tuyos con sus comprobaciones, desde GitHub."
+        case .sk: return "Pull requesty čakajúce na vašu kontrolu a vaše vlastné s kontrolami z GitHubu."
+        case .de: return "Pull Requests, die auf dein Review warten, und deine eigenen mit ihren Checks, von GitHub."
+        case .fr: return "Les pull requests qui attendent votre revue, et les vôtres avec leurs vérifications, depuis GitHub."
+        case .it: return "Le pull request in attesa della tua revisione e le tue con i relativi controlli, da GitHub."
+        case .ja: return "GitHubから、レビュー待ちのプルリクエストと、チェック状況付きの自分のプルリクエスト。"
+        case .ko: return "GitHub에서 리뷰를 기다리는 풀 리퀘스트와 검사 상태가 포함된 내 풀 리퀘스트입니다."
+        case .uk: return "Pull requests, що чекають на ваше рев’ю, і ваші власні з перевірками з GitHub."
+        case .zhHans: return "来自 GitHub 的等待你审查的拉取请求，以及附带检查状态的你的拉取请求。"
+        case .zhTW: return "來自 GitHub 等待你審查的提取要求，以及附有檢查狀態的你的提取要求。"
+        case .zhHK: return "來自 GitHub 等待你審查的拉取請求，以及附有檢查狀態的你的拉取請求。"
+        }
+    }
+}

@@ -295,6 +295,8 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Weather/WeatherSupport.swift
         Sources/Vorssaint/Services/Reminders/RemindersSupport.swift
         Sources/Vorssaint/Services/Notch/NotchLockScreenWidgetAccess.swift
+        Sources/Vorssaint/Services/Vercel/VercelSupport.swift
+        Sources/Vorssaint/Services/GitHub/GitHubSupport.swift
         Sources/Vorssaint/Core/ZenithStrings.swift
         Sources/Vorssaint/Services/Notch/NotchDownloadSupport.swift
         Sources/Vorssaint/Services/Notch/NotchDownloadProgressObserver.swift

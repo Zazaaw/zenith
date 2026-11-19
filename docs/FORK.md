@@ -234,6 +234,56 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     30 menit selama lock screen tampil.
   - Kedua item ditambahkan paling akhir di `NotchLockScreenActivity`, jadi kalau baris
     terlalu panjang, `ViewThatFits` membuang keduanya lebih dulu.
+- **Vercel dan GitHub (branch `feat/vercel-github`):** dua bagian notch baru, hanya di
+  notch (tidak ada kartu panel menu bar, tidak menyentuh lock screen). Kode di
+  `Services/Vercel/`, `Services/GitHub/`, `UI/Vercel/`, `UI/GitHub/`; teks di
+  `Core/ZenithStrings.swift` (15 bahasa). Test di `Tests/VercelGitHubTests.swift`
+  (suite `vercel` dan `gh`; nama `github` ditolak sandbox agent, jadi dipendekkan).
+  - **Vercel** (`.vercel`, ⌥⌘E). Auth: access token Vercel ditempel sekali di opsi
+    bagian Vercel (Dynamic Island → Content → Vercel), disimpan lewat
+    `Services/ZenithSecretStore.swift` sebagai file `<container>/Secrets/vercel-token`
+    (folder 0700, file 0600, dikecualikan dari Time Machine), **bukan** Keychain (build
+    self-signed tanpa Team ID membuat Keychain minta izin lagi setiap rebuild) dan bukan
+    UserDefaults/backup. Dikirim hanya ke `api.vercel.com` sebagai `Authorization: Bearer`.
+    Endpoint: `GET /v2/teams?limit=10`, lalu `GET /v6/deployments?limit=10` untuk akun
+    pribadi (tanpa `teamId`) dan tiap tim (`teamId=`, maks. 10 tim); hasil digabung,
+    tanpa duplikat, terbaru dulu, maks. 12. Field: `uid`, `name`, `url`,
+    `readyState`/`state`, `created`/`createdAt`, `target`, `inspectorUrl`,
+    `meta.githubCommitRef`/`githubCommitMessage` (juga GitLab/Bitbucket). Klik baris
+    membuka URL deployment kalau READY, selain itu halaman inspector (build log).
+    Visibilitas: bagian ini selalu ada di daftar Content supaya token bisa ditempel, tapi
+    baru tampil di island kalau `notchVercelEnabled` nyala (default mati); menyimpan
+    token otomatis menyalakannya, jadi pengguna lama tidak tiba-tiba melihat bagian baru.
+    Polling hanya saat island jalan, bagian Vercel tampil, dan token ada: tiap 15 dtk
+    selama ada deployment QUEUED/INITIALIZING/BUILDING, tiap 2 menit kalau tidak,
+    5 menit setelah gagal (1 menit kalau gagal saat build); token ditolak (401/403 di
+    semua scope) menghentikan polling sampai token baru disimpan. Token hanya dibaca dari
+    disk saat bagian nyala atau halamannya/opsinya dibuka.
+  - **Live activity Vercel**: `NotchCompactActivity.vercel`, urutan otomatis setelah
+    agents. Selama ada build, island tertutup menampilkan mark + "Building" di kiri kamera
+    dan nama project di kanan (kapsul: satu baris); build yang terlihat berjalan di polling
+    sebelumnya lalu selesai ditampilkan 8 detik ("Ready"/"Error"/"Canceled" dengan
+    simbolnya), lalu hilang. Pulse simbol mengikuti Reduce Motion. Ikut picker activity
+    seperti activity lain; bisa dimatikan di opsi Vercel (`notchVercelActivity`, default
+    nyala). Wing memakai geometri Watch (`compactWatchGeometry`, 56–150 pt) karena
+    `minimumCompactWidth` privat di `NotchSupport.swift`. Hook di file upstream ditandai
+    `// Zenith fork`: `NotchSupport` (case, urutan activity), `NotchService`
+    (`hasVercelActivity`, geometri, ukuran kapsul, langganan `$activity`, sync/stop
+    service), `NotchView`/`NotchMirrorView` (strip), `NotchTimerStrip`/`NotchCapsuleViews`
+    (Vercel tidak pernah jadi pasangan).
+  - **GitHub** (`.github`, ⌥⌘U) lewat `gh` yang sudah login, tanpa token baru. Satu
+    panggilan `gh api graphql` (pencarian `is:pr is:open review-requested:@me` dan
+    `is:pr is:open author:@me`, 8 per grup, dengan `statusCheckRollup` commit terakhir).
+    Selalu di luar main thread (`BoundedProcessRunner`, timeout 25 dtk), tanpa prompt,
+    update notice, atau warna. Lokasi `gh`: Homebrew (`/opt/homebrew/bin`,
+    `/usr/local/bin`), MacPorts, `~/.local/bin`, `~/bin`, Nix, shim mise/asdf,
+    `/usr/bin`, lalu PATH app; PATH login shell (`HomebrewEnvironment.loginShellExports`)
+    hanya dicari saat tombol "Look again" di opsi GitHub ditekan, karena menjalankan file
+    startup shell. Bagian ini tersedia hanya kalau `gh` ditemukan (cek file, di-cache
+    10 dtk); tanpa `gh` daftar Content menampilkan alasannya dan opsinya tetap bisa dibuka.
+    Status: gh tidak ada, belum login (exit 4 / HTTP 401), gagal, masing-masing dengan
+    pesan. Polling tiap 5 menit selama bagian tampil, plus saat halaman muncul kalau data
+    lebih tua dari 2 menit.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.

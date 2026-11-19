@@ -2528,10 +2528,19 @@ enum NotchTests {
         suite.expect(!NotchSupport.routes(.clipboard, in: defaults), "hidden module cannot leak an activity")
         defaults.set("system,music,music,unknown", forKey: DefaultsKey.notchModuleOrder)
         defaults.set(true, forKey: DefaultsKey.notchAgentsEnabled)
-        // Zenith fork: WakaTime joins the end on a Mac with ~/.wakatime.cfg.
+        // Zenith fork: WakaTime joins the end on a Mac with ~/.wakatime.cfg,
+        // and GitHub on a Mac with the GitHub CLI. Vercel waits until it is
+        // turned on (saving a token does that).
         let wakaTime: [NotchModule] = WakaTimeSupport.hasConfiguration() ? [.wakatime] : []
-        suite.expect(NotchSupport.modules(in: defaults) == [.system, .music, .controls, .mixer, .captures, .files, .tools, .calendar, .notifications, .timer, .camera, .downloads, .scratchpad, .agents, .watch] + wakaTime,
+        let gitHub: [NotchModule] = GitHubCLI.isInstalled() ? [.github] : []
+        let upstreamModules: [NotchModule] = [.system, .music, .controls, .mixer, .captures, .files, .tools, .calendar,
+                                              .notifications, .timer, .camera, .downloads, .scratchpad, .agents, .watch]
+        suite.expect(NotchSupport.modules(in: defaults) == upstreamModules + wakaTime + gitHub,
                "module order ignores unknown ids and duplicates, preserving newly added modules")
+        defaults.set(true, forKey: DefaultsKey.notchVercelEnabled)
+        suite.expect(NotchSupport.modules(in: defaults) == upstreamModules + wakaTime + [.vercel] + gitHub,
+               "the Vercel section joins once it is turned on")
+        defaults.removeObject(forKey: DefaultsKey.notchVercelEnabled)
         suite.expect(NotchSupport.routesShelf(in: defaults) && NotchSupport.revealsShelfDrag(in: defaults),
                "the enabled notch replaces the file destination and reveals active drags")
         defaults.set(false, forKey: DefaultsKey.notchDragReveal)

@@ -259,6 +259,8 @@ struct MetricsTests {
             // Zenith fork.
             ("wakatime", { WakaTimeTests.run(suite) }),
             ("lockscreen-widgets", { LockScreenWidgetsTests.run(suite) }),
+            ("vercel", { VercelTests.run(suite) }),
+            ("gh", { GitHubTests.run(suite) }),
         ]
         var selected = Set<String>()
         var listOnly = false

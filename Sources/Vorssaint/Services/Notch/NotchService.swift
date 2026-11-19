@@ -566,6 +566,12 @@ final class NotchService: ObservableObject {
         NotchKeepAwakeSupport.showsActivity() && KeepAwakeManager.shared.isActive
     }
 
+    /// Zenith fork: a Vercel build on its way, or how one just ended. The
+    /// service publishes one only while the section and its activity are on.
+    var hasVercelActivity: Bool {
+        modules.contains(.vercel) && VercelService.shared.activity != nil
+    }
+
     var compactActivity: NotchCompactActivity? {
         // A new song waiting for its notice is not drawn yet.
         activitySelection.current(available: awaitsTrackNotice ? compactActivities.filter { $0 != .music } : compactActivities)
@@ -574,7 +580,8 @@ final class NotchService: ObservableObject {
     var compactActivities: [NotchCompactActivity] {
         NotchSupport.compactActivities(timer: hasTimerActivity, watch: hasWatchActivity, downloads: hasDownloadActivity,
                                       agents: hasAgentActivity, calendar: hasCalendarActivity,
-                                      music: hasMusicActivity, keepAwake: hasKeepAwakeActivity)
+                                      music: hasMusicActivity, keepAwake: hasKeepAwakeActivity,
+                                      vercel: hasVercelActivity)
     }
 
     var showsCompactActivityPicker: Bool {
@@ -700,6 +707,8 @@ final class NotchService: ObservableObject {
                                                     paired: companion != nil)
         // Its reading is a countdown like the timer's, so it takes the timer's wings.
         case .keepAwake: return geometry.compactTimerGeometry(showsDownloads: false, wing: keepAwakeStripWing(in: geometry))
+        // Zenith fork: a mark and a reading, like the watch, so it takes the watch's wings.
+        case .vercel: return geometry.compactWatchGeometry(wing: vercelStripWing(in: geometry))
         default: return geometry
         }
     }
@@ -716,6 +725,11 @@ final class NotchService: ObservableObject {
             ]).width.rounded(.up)
         let inset = provisional.compactActivityEdgeInset(boxHeight: size * 0.72, radius: 0)
         return reading + inset + NotchTimerSupport.stripCameraGap
+    }
+
+    /// Zenith fork: the wider of the state's mark and word or the project's name.
+    private func vercelStripWing(in geometry: NotchGeometry) -> CGFloat {
+        VercelActivityLayout.stripWing(VercelService.shared.activity, language: L10n.shared.language, in: geometry)
     }
 
     private func keepAwakeStripWing(in geometry: NotchGeometry) -> CGFloat {
@@ -1120,6 +1134,8 @@ final class NotchService: ObservableObject {
                 NotchKeepAwakeSupport.compactText(until: $0, now: Date(), locale: Locale(identifier: language.rawValue))
             }
             return layout.keepAwakeSurface(reading: reading, geometry: geometry)
+        case .vercel: // Zenith fork
+            return VercelActivityLayout.capsuleSurface(VercelService.shared.activity, language: language, geometry: geometry)
         }
     }
 
@@ -1199,6 +1215,9 @@ final class NotchService: ObservableObject {
         NotchNotificationService.shared.syncWithPreferences()
         NotchAudioLevelService.shared.syncWithPreferences()
         AgentUsageService.shared.syncWithPreferences()
+        // Zenith fork: Vercel and GitHub poll only while their sections show.
+        VercelService.shared.syncWithPreferences()
+        GitHubService.shared.syncWithPreferences()
         followsPointer = displayPreference == .pointer || displayPreference == .all
         showsOnAllDisplays = displayPreference == .all
         updateFullscreenDisplays()
@@ -1294,6 +1313,8 @@ final class NotchService: ObservableObject {
         NotchTimerService.shared.stop()
         NotchAccessoryService.shared.stop()
         NotchWatchService.shared.stop()
+        VercelService.shared.stop() // Zenith fork
+        GitHubService.shared.stop()
         let cancelCapture = captureControlsCancel
         endCaptureControls()
         cancelCapture?()
@@ -4365,6 +4386,16 @@ final class NotchService: ObservableObject {
             let awake = KeepAwakeManager.shared
             awake.$isActive.combineLatest(awake.$endDate).removeDuplicates { $0 == $1 }
                 .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
+                    self?.syncMenuSpaceMonitoring()
+                    self?.objectWillChange.send()
+                    self?.refreshPresentation()
+                }.store(in: &subscriptions)
+        }
+        if modules.contains(.vercel) {
+            // Zenith fork: a build starting or ending, or the project it names,
+            // which changes the strip and the wings it needs.
+            VercelService.shared.$activity.removeDuplicates().receive(on: DispatchQueue.main)
                 .sink { [weak self] _ in
                     self?.syncMenuSpaceMonitoring()
                     self?.objectWillChange.send()
