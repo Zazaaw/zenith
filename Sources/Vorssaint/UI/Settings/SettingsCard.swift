@@ -15,16 +15,27 @@ struct SettingsCard<Content: View>: View {
         self.content = content()
     }
 
+    // Zenith fork: the heading sits above the card, bold and tightly tracked,
+    // and the card is a hairline over the faintest lift (p441z.my.id).
     var body: some View {
-        VStack(alignment: .leading, spacing: 13) {
+        VStack(alignment: .leading, spacing: 10) {
             if let title {
-                Text(title).font(.headline)
+                Text(title)
+                    .font(ZenithType.sectionTitle)
+                    .tracking(ZenithType.sectionTitleTracking)
+                    .padding(.leading, 2)
+                    .accessibilityAddTraits(.isHeader)
             }
-            content
+            VStack(alignment: .leading, spacing: 13) {
+                content
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(ZenithSurface.cardFill, in: RoundedRectangle(cornerRadius: ZenithRadius.panel, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: ZenithRadius.panel, style: .continuous)
+                .strokeBorder(ZenithSurface.hairline))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: ZenithRadius.panel, style: .continuous))
     }
 }
 
@@ -45,23 +56,41 @@ struct SettingsPageHeader<Accessory: View>: View {
         self.init(title: title, subtitle: subtitle) { EmptyView() }
     }
 
+    // Zenith fork: the large, tightly tracked title of p441z.my.id.
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(title).font(.title2.bold())
+            ZenithPageTitle(title: title, subtitle: subtitle)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            accessory
+        }
+        .padding(.bottom, 6)
+    }
+}
+
+/// Zenith fork: a page's title and its muted line, shared by the redesigned
+/// pages and the header Settings puts above the upstream form pages.
+struct ZenithPageTitle: View {
+    let title: String
+    var subtitle: String? = nil
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(ZenithType.pageTitle)
+                .tracking(ZenithType.pageTitleTracking)
+                .accessibilityAddTraits(.isHeader)
+            if let subtitle, !subtitle.isEmpty {
                 Text(subtitle)
-                    .font(.callout)
+                    .font(ZenithType.pageSubtitle)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            accessory
         }
     }
 }
 
 /// Where a row's text column starts, so follow-up controls can line up with it.
-let settingsRowTextInset: CGFloat = 26 + 12
+let settingsRowTextInset: CGFloat = 30 + 12 // Zenith fork: 30 pt tiles
 
 /// Icon, title, one line of explanation and the control on the right. A nil
 /// symbol shows the app's own menu bar glyph, for rows about that icon.
@@ -86,14 +115,16 @@ struct SettingsRow<Accessory: View>: View {
             iconTile
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(title)
+                    Text(title).font(ZenithType.rowTitle) // Zenith fork
                     if let badge {
-                        Text(badge)
-                            .font(.system(size: 8, weight: .bold))
-                            .foregroundStyle(Color.white)
+                        // Zenith fork: a mono tag in the Style Kit's 10% / 20% / 100% form.
+                        Text(badge.uppercased())
+                            .font(ZenithType.mono(8.5, weight: .semibold))
+                            .foregroundStyle(Color.accentColor)
                             .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(Capsule().fill(Color.accentColor))
+                            .padding(.vertical, 1.5)
+                            .background(ZenithStatus.fill(Color.accentColor), in: Capsule())
+                            .overlay(Capsule().strokeBorder(ZenithStatus.stroke(Color.accentColor)))
                             .accessibilityHidden(true)
                     }
                 }
@@ -111,21 +142,25 @@ struct SettingsRow<Accessory: View>: View {
 
     @ViewBuilder
     private var iconTile: some View {
+        // Zenith fork: monochrome glyphs on a grey tile with a hairline, as the
+        // logo tiles on p441z.my.id; colour stays for meaning.
         if let symbol {
             Image(systemName: symbol)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 26, height: 26)
-                .background(Color.accentColor.opacity(0.12),
-                            in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.primary.opacity(0.85))
+                .frame(width: 30, height: 30)
+                .background(ZenithSurface.tileFill,
+                            in: RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous)
+                    .strokeBorder(ZenithSurface.tileStroke))
         } else {
             // The menu bar draws the glyph white on a dark bar; the badge keeps
             // that pairing so it reads as the same icon in both appearances.
             MenuBarGlyph()
                 .frame(width: 17, height: 13)
-                .frame(width: 26, height: 26)
+                .frame(width: 30, height: 30)
                 .background(Color.black.opacity(0.82),
-                            in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                            in: RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous))
         }
     }
 }

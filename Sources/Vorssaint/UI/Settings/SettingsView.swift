@@ -162,10 +162,15 @@ struct SettingsView: View {
             // real space it was actually given for normal layout, and ~zero
             // when asked for an unconstrained ideal size, breaking the chain.
             GeometryReader { geometry in
-                detail
-                    .settingsSectionFocus(for: router.page)
-                    .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
+                // Zenith fork: every page over the dot grid, and a large title
+                // above the upstream form pages that have none of their own.
+                ZenithSettingsPage(title: zenithPageTitle) {
+                    detail
+                        .settingsSectionFocus(for: router.page)
+                }
+                .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
             }
+            .background { ZenithDotGrid() }
         }
         .navigationSplitViewStyle(.balanced)
         .toolbar {
@@ -287,6 +292,7 @@ struct SettingsView: View {
                 }
             }
             .listStyle(.sidebar)
+            .safeAreaInset(edge: .bottom, spacing: 0) { ZenithSidebarFooter() } // Zenith fork
             .onChange(of: sidebarPick) { _, selectedID in routeSidebarPick(selectedID) }
             .onChange(of: activeSearchIndex) { _, index in
                 guard let index, searchResults.items.indices.contains(index) else { return }
@@ -355,9 +361,10 @@ struct SettingsView: View {
                 if !collapsedSectionIDs.contains(section.id) {
                     ForEach(section.items) { item in
                         HStack(spacing: 9) {
+                            // Zenith fork: monochrome glyphs; the selection carries the accent.
                             Image(systemName: item.icon)
                                 .foregroundStyle(selectedID == item.id
-                                    ? AnyShapeStyle(.primary) : AnyShapeStyle(.tint))
+                                    ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
                                 .frame(width: 18)
                             Text(item.title)
                         }
@@ -377,7 +384,11 @@ struct SettingsView: View {
                             ? "chevron.right" : "chevron.down")
                             .font(.system(size: 9, weight: .semibold))
                             .frame(width: 12)
+                        // Zenith fork: section names as small mono labels.
                         Text(section.title)
+                            .font(ZenithType.mono(10, weight: .medium))
+                            .textCase(.uppercase)
+                            .tracking(0.6)
                     }
                     .contentShape(Rectangle())
                 }
@@ -573,6 +584,24 @@ struct SettingsView: View {
         FeatureVisibilitySupport.isPageVisible(page, isAvailable: { $0.isAvailable })
     }
 
+    /// Zenith fork: the title Settings draws above a page, nil for the pages
+    /// that open with their own `SettingsPageHeader` or hero.
+    private var zenithPageTitle: String? {
+        let ownHeader: Set<SettingsPage> = [.features, .notch, .notchMascot, .energy, .monitor, .mouse,
+                                            .switcher, .dock, .homebrew, .releaseNotes, .about, .support,
+                                            .killProcess, .portManager]
+        if ownHeader.contains(router.page) { return nil }
+        if router.page == .general, !(detailShowsGeneralTool) { return nil }
+        let selected = selectedSidebarItem
+        return sidebarItems.first(where: { $0.id == selected })?.title
+    }
+
+    private var detailShowsGeneralTool: Bool {
+        guard let anchor = router.destination.sectionAnchor else { return false }
+        return [.panelConfiguration, .mixer, .soundOutputSwitcher, .audioPriority, .musicBlocking].contains(anchor)
+            && sidebarItems.contains(where: { $0.destination == router.destination })
+    }
+
     @ViewBuilder
     private var detail: some View {
         switch router.page {
@@ -735,50 +764,90 @@ struct UpdatesView: View {
 struct AboutSettings: View {
     @ObservedObject private var l10n = L10n.shared
 
+    // Zenith fork: the About page after p441z.my.id. The app, the person who
+    // makes it, the studio and the source, each as its own block.
     var body: some View {
-        Form {
-            Section {
-                aboutContent
-            }
-
-            UpdatesView()
-        }
-        .formStyle(.grouped)
-    }
-
-    private var aboutContent: some View {
-        VStack(spacing: 14) {
-            BrandBadge(size: 76)
-            VStack(spacing: 3) {
-                Text(AppInfo.name)
-                    .font(.title2.bold())
-                HStack(spacing: 6) {
-                    Text("\(l10n.s.versionPrefix) \(AppInfo.version)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    if AppInfo.isBeta {
-                        Text(l10n.s.betaBadgeLabel)
-                            .font(.system(size: 9, weight: .bold))
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1.5)
-                            .background(ZenithStatus.fill(ZenithStatus.warning))
-                            .foregroundStyle(ZenithStatus.warning)
-                            .clipShape(Capsule())
+        let maker = ZenithStrings.maker(l10n.language)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 30) {
+                appHero
+                VStack(alignment: .leading, spacing: 10) {
+                    sectionTitle(maker.madeBy)
+                    ZenithMakerCard(strings: maker)
+                    ZenithLinkCard(title: AppInfo.maker, caption: maker.studioCaption, url: AppInfo.websiteURL) {
+                        BrandBadge(size: 40)
+                    }
+                    ZenithLinkCard(title: AppInfo.repositorySlug, caption: l10n.s.viewOnGitHub,
+                                   url: AppInfo.repositoryURL) {
+                        Image(systemName: "chevron.left.forwardslash.chevron.right")
+                            .font(.system(size: 15, weight: .medium))
+                            .frame(width: 40, height: 40)
+                            .background(ZenithSurface.tileFill,
+                                        in: RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous)
+                                .strokeBorder(ZenithSurface.tileStroke))
                     }
                 }
-                if AppInfo.isDeveloperBuild, let commit = AppInfo.buildCommit {
-                    // Dev-only: which source commit this build came from. Never shipped.
-                    Text(commit)
-                        .font(.caption2.monospaced())
-                        .foregroundStyle(.tertiary)
-                        .textSelection(.enabled)
+                if AppInfo.updatesEnabled {
+                    Form { UpdatesView() }
+                        .formStyle(.grouped)
+                        .frame(minHeight: 280)
+                }
+                Text(AppInfo.copyright)
+                    .font(ZenithType.mono(10.5))
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(maxWidth: 640, alignment: .leading)
+            .padding(.horizontal, 28)
+            .padding(.vertical, 26)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func sectionTitle(_ text: String) -> some View {
+        Text(text)
+            .font(ZenithType.sectionTitle)
+            .tracking(ZenithType.sectionTitleTracking)
+            .padding(.leading, 2)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    private var appHero: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .center, spacing: 16) {
+                BrandBadge(size: 68)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(AppInfo.name)
+                        .font(ZenithType.pageTitle)
+                        .tracking(ZenithType.pageTitleTracking)
+                    HStack(spacing: 8) {
+                        Text("\(l10n.s.versionPrefix) \(AppInfo.version)")
+                            .font(ZenithType.mono(11.5))
+                            .foregroundStyle(.secondary)
+                        if AppInfo.isBeta {
+                            Text(l10n.s.betaBadgeLabel.uppercased())
+                                .font(ZenithType.mono(9, weight: .semibold))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(ZenithStatus.fill(ZenithStatus.warning), in: Capsule())
+                                .overlay(Capsule().strokeBorder(ZenithStatus.stroke(ZenithStatus.warning)))
+                                .foregroundStyle(ZenithStatus.warning)
+                        }
+                        if AppInfo.isDeveloperBuild, let commit = AppInfo.buildCommit {
+                            // Dev-only: which source commit this build came from. Never shipped.
+                            Text(commit)
+                                .font(ZenithType.mono(10.5))
+                                .foregroundStyle(.tertiary)
+                                .textSelection(.enabled)
+                        }
+                    }
                 }
             }
             Text(l10n.s.aboutDescription)
-                .font(.system(size: 12))
-                .multilineTextAlignment(.center)
+                .font(ZenithType.pageSubtitle)
                 .foregroundStyle(.secondary)
-            HStack(spacing: 12) {
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 10) {
                 Button(l10n.s.reviewIntro) {
                     appDelegate()?.showOnboarding()
                 }
@@ -787,14 +856,9 @@ struct AboutSettings: View {
                         appDelegate()?.showUpdateHighlights(isReview: true)
                     }
                 }
-                Link(l10n.s.viewOnGitHub, destination: AppInfo.repositoryURL)
             }
-            Text(AppInfo.copyright)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
+            .controlSize(.large)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
     }
 }
 

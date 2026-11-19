@@ -1434,3 +1434,111 @@ extension ZenithStrings {
         }
     }
 }
+
+// MARK: About, the maker (Zenith fork)
+
+struct ZenithMakerStrings {
+    let madeBy: String
+    let role: String
+    let bio: String
+    let studioCaption: String
+    let website: String
+}
+
+extension ZenithStrings {
+    /// The About page’s “Made by” card.
+    static func maker(_ language: AppLanguage) -> ZenithMakerStrings {
+        switch language {
+        case .enUS:
+            return .init(madeBy: "Made by",
+                         role: "Fullstack developer & designer",
+                         bio: "I’m a fullstack developer and designer, an informatics engineer who codes, designs and shoots. I build web apps end to end, craft modern UI/UX and graphics, and produce video and photography. Living across engineering and design lets me take an idea from concept to a real, shipped product, Zenith included.",
+                         studioCaption: "Creative studio from Sumatra, Indonesia. Photography, film, web and Mac apps.",
+                         website: "Website")
+        case .ptBR:
+            return .init(madeBy: "Feito por",
+                         role: "Desenvolvedor fullstack e designer",
+                         bio: "Sou desenvolvedor fullstack e designer, um engenheiro de informática que programa, desenha e fotografa. Crio aplicações web de ponta a ponta, faço UI/UX e gráficos modernos, e produzo vídeo e fotografia. Viver entre engenharia e design me permite levar uma ideia do conceito a um produto real e lançado, inclusive o Zenith.",
+                         studioCaption: "Estúdio criativo de Sumatra, Indonésia. Fotografia, filme, web e apps para Mac.",
+                         website: "Site")
+        case .tr:
+            return .init(madeBy: "Yapımcı",
+                         role: "Fullstack geliştirici ve tasarımcı",
+                         bio: "Fullstack geliştirici ve tasarımcıyım; kod yazan, tasarlayan ve fotoğraf çeken bir bilişim mühendisi. Web uygulamalarını uçtan uca geliştiriyor, modern UI/UX ve grafikler tasarlıyor, video ve fotoğraf üretiyorum. Mühendislik ile tasarım arasında yaşamak, bir fikri kavramdan gerçek, yayınlanmış bir ürüne taşımamı sağlıyor; Zenith de bunlardan biri.",
+                         studioCaption: "Sumatra, Endonezya’dan bir yaratıcı stüdyo. Fotoğraf, film, web ve Mac uygulamaları.",
+                         website: "Web sitesi")
+        case .ru:
+            return .init(madeBy: "Автор",
+                         role: "Fullstack-разработчик и дизайнер",
+                         bio: "Я fullstack-разработчик и дизайнер, инженер-информатик, который пишет код, проектирует и снимает. Делаю веб-приложения от начала до конца, создаю современный UI/UX и графику, снимаю видео и фото. Работа на стыке инженерии и дизайна позволяет мне довести идею от концепции до настоящего выпущенного продукта, включая Zenith.",
+                         studioCaption: "Креативная студия с Суматры, Индонезия. Фото, видео, веб и приложения для Mac.",
+                         website: "Сайт")
+        case .es:
+            return .init(madeBy: "Hecho por",
+                         role: "Desarrollador fullstack y diseñador",
+                         bio: "Soy desarrollador fullstack y diseñador, un ingeniero informático que programa, diseña y fotografía. Creo aplicaciones web de principio a fin, diseño UI/UX y gráficos modernos, y produzco vídeo y fotografía. Moverme entre la ingeniería y el diseño me permite llevar una idea del concepto a un producto real y publicado, Zenith incluido.",
+                         studioCaption: "Estudio creativo de Sumatra, Indonesia. Fotografía, cine, web y apps para Mac.",
+                         website: "Sitio web")
+        case .sk:
+            return .init(madeBy: "Vytvoril",
+                         role: "Fullstack vývojár a dizajnér",
+                         bio: "Som fullstack vývojár a dizajnér, informatik, ktorý programuje, navrhuje a fotí. Tvorím webové aplikácie od začiatku do konca, navrhujem moderné UI/UX a grafiku a robím video a fotografiu. Život medzi inžinierstvom a dizajnom mi umožňuje dotiahnuť nápad od konceptu až po skutočný vydaný produkt, vrátane Zenithu.",
+                         studioCaption: "Kreatívne štúdio zo Sumatry v Indonézii. Fotografia, film, web a aplikácie pre Mac.",
+                         website: "Web")
+        case .de:
+            return .init(madeBy: "Gemacht von",
+                         role: "Fullstack-Entwickler und Designer",
+                         bio: "Ich bin Fullstack-Entwickler und Designer, ein Informatikingenieur, der programmiert, gestaltet und fotografiert. Ich baue Web-Apps von Anfang bis Ende, gestalte moderne UI/UX und Grafiken und produziere Video und Fotografie. Zwischen Technik und Design zu leben, lässt mich eine Idee vom Konzept bis zum echten, veröffentlichten Produkt bringen, Zenith eingeschlossen.",
+                         studioCaption: "Kreativstudio aus Sumatra, Indonesien. Fotografie, Film, Web und Mac-Apps.",
+                         website: "Website")
+        case .fr:
+            return .init(madeBy: "Créé par",
+                         role: "Développeur fullstack et designer",
+                         bio: "Je suis développeur fullstack et designer, un ingénieur en informatique qui code, conçoit et photographie. Je crée des applications web de bout en bout, je conçois des interfaces UI/UX et des visuels modernes, et je produis de la vidéo et de la photo. Vivre entre ingénierie et design me permet de mener une idée du concept à un vrai produit publié, Zenith compris.",
+                         studioCaption: "Studio créatif de Sumatra, en Indonésie. Photo, film, web et apps Mac.",
+                         website: "Site web")
+        case .it:
+            return .init(madeBy: "Creato da",
+                         role: "Sviluppatore fullstack e designer",
+                         bio: "Sono uno sviluppatore fullstack e designer, un ingegnere informatico che programma, progetta e fotografa. Realizzo app web dall’inizio alla fine, curo UI/UX e grafiche moderne e produco video e fotografia. Vivere tra ingegneria e design mi permette di portare un’idea dal concetto a un prodotto reale e pubblicato, Zenith compreso.",
+                         studioCaption: "Studio creativo di Sumatra, Indonesia. Fotografia, video, web e app per Mac.",
+                         website: "Sito web")
+        case .ja:
+            return .init(madeBy: "制作",
+                         role: "フルスタック開発者・デザイナー",
+                         bio: "フルスタック開発者でありデザイナー。コードを書き、デザインし、写真を撮る情報工学エンジニアです。Webアプリを最初から最後まで作り、モダンなUI/UXやグラフィックをデザインし、映像と写真も手がけています。エンジニアリングとデザインの両方にいることで、アイデアを構想から実際にリリースされるプロダクトまで形にできます。Zenithもそのひとつです。",
+                         studioCaption: "インドネシア・スマトラ島のクリエイティブスタジオ。写真、映像、Web、Macアプリ。",
+                         website: "Webサイト")
+        case .ko:
+            return .init(madeBy: "만든 사람",
+                         role: "풀스택 개발자 겸 디자이너",
+                         bio: "저는 풀스택 개발자이자 디자이너로, 코드를 쓰고 디자인하고 사진을 찍는 정보공학 엔지니어입니다. 웹 앱을 처음부터 끝까지 만들고, 현대적인 UI/UX와 그래픽을 디자인하며, 영상과 사진도 제작합니다. 엔지니어링과 디자인을 오가며 아이디어를 콘셉트에서 실제 출시된 제품까지 만들어 냅니다. Zenith도 그중 하나입니다.",
+                         studioCaption: "인도네시아 수마트라의 크리에이티브 스튜디오. 사진, 영상, 웹, Mac 앱.",
+                         website: "웹사이트")
+        case .uk:
+            return .init(madeBy: "Автор",
+                         role: "Fullstack-розробник і дизайнер",
+                         bio: "Я fullstack-розробник і дизайнер, інженер-інформатик, який пише код, проєктує й фотографує. Створюю вебзастосунки від початку до кінця, роблю сучасний UI/UX і графіку, знімаю відео та фото. Робота на межі інженерії та дизайну дає змогу довести ідею від концепції до справжнього випущеного продукту, зокрема Zenith.",
+                         studioCaption: "Креативна студія із Суматри, Індонезія. Фото, відео, веб і застосунки для Mac.",
+                         website: "Сайт")
+        case .zhHans:
+            return .init(madeBy: "制作者",
+                         role: "全栈开发者与设计师",
+                         bio: "我是一名全栈开发者和设计师，一个会写代码、做设计、也拍照的信息工程师。我从头到尾构建 Web 应用，设计现代的 UI/UX 与图形，也制作视频和摄影作品。游走于工程与设计之间，让我能把一个想法从概念变成真正发布的产品，Zenith 就是其中之一。",
+                         studioCaption: "来自印度尼西亚苏门答腊的创意工作室。摄影、影片、网页与 Mac 应用。",
+                         website: "网站")
+        case .zhTW:
+            return .init(madeBy: "製作者",
+                         role: "全端開發者與設計師",
+                         bio: "我是一名全端開發者和設計師，一個會寫程式、做設計、也拍照的資訊工程師。我從頭到尾打造網頁應用程式，設計現代的 UI/UX 與圖像，也製作影片和攝影作品。遊走於工程與設計之間，讓我能把一個想法從概念變成真正發布的產品，Zenith 就是其中之一。",
+                         studioCaption: "來自印尼蘇門答臘的創意工作室。攝影、影片、網頁與 Mac App。",
+                         website: "網站")
+        case .zhHK:
+            return .init(madeBy: "製作者",
+                         role: "全端開發者及設計師",
+                         bio: "我是一名全端開發者及設計師，一個會寫程式、做設計、也會拍照的資訊工程師。我由頭到尾打造網頁應用程式，設計現代的 UI/UX 及圖像，亦製作影片和攝影作品。遊走於工程與設計之間，令我能把一個想法由概念變成真正推出的產品，Zenith 就是其中之一。",
+                         studioCaption: "來自印尼蘇門答臘的創意工作室。攝影、影片、網頁及 Mac App。",
+                         website: "網站")
+        }
+    }
+}

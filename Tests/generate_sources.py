@@ -284,6 +284,7 @@ def main():
           + "}\nextension FeatureHubLayoutTests {\n"
           + declaration("Sources/Vorssaint/UI/Settings/SettingsCard.swift", "struct SettingsCard<")
           + declaration("Sources/Vorssaint/UI/Settings/SettingsCard.swift", "struct SettingsPageHeader<")
+          + declaration("Sources/Vorssaint/UI/Settings/SettingsCard.swift", "struct ZenithPageTitle:")
           + "}\n"
           + declaration(feature_hub, "private struct FeatureHubScrollAnchor:"))
     write("CleanerLayout.swift", "import SwiftUI\nextension CleanerLayoutTests.Results {\n"

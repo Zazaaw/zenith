@@ -123,4 +123,54 @@ enum ZenithType {
     static func figures(_ size: CGFloat, weight: Font.Weight = .semibold) -> Font {
         .system(size: size, weight: weight).monospacedDigit()
     }
+
+    // Settings, after p441z.my.id: a large, tightly tracked title over a muted
+    // line, bold section headings outside the cards, mono for metadata.
+    static let pageTitle = Font.system(size: 32, weight: .bold)
+    static let pageTitleTracking: CGFloat = -0.9
+    static let pageSubtitle = Font.system(size: 15)
+    static let sectionTitle = Font.system(size: 19, weight: .bold)
+    static let sectionTitleTracking: CGFloat = -0.4
+    static let rowTitle = Font.system(size: 13.5, weight: .medium)
+    static func mono(_ size: CGFloat = 11, weight: Font.Weight = .regular) -> Font {
+        .system(size: size, weight: weight, design: .monospaced)
+    }
+}
+
+// MARK: - Surfaces
+
+/// Pure grey surfaces: a card is a hairline and the faintest lift, never a
+/// coloured fill. Colour stays for meaning (`ZenithStatus`) and the selection.
+enum ZenithSurface {
+    static let cardFill = Color.primary.opacity(0.025)
+    static let hairline = Color.primary.opacity(0.09)
+    static let tileFill = Color.primary.opacity(0.05)
+    static let tileStroke = Color.primary.opacity(0.1)
+}
+
+/// The quiet dot grid behind Settings pages, as on p441z.my.id. Drawn once per
+/// size in a `Canvas`, never hit-tested.
+struct ZenithDotGrid: View {
+    var spacing: CGFloat = 22
+    var dot: CGFloat = 1.1
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        Canvas { context, size in
+            let color = Color.primary.opacity(colorScheme == .dark ? 0.09 : 0.08)
+            var path = Path()
+            var y = spacing / 2
+            while y < size.height {
+                var x = spacing / 2
+                while x < size.width {
+                    path.addEllipse(in: CGRect(x: x - dot / 2, y: y - dot / 2, width: dot, height: dot))
+                    x += spacing
+                }
+                y += spacing
+            }
+            context.fill(path, with: .color(color))
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
 }

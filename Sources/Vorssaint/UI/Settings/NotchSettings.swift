@@ -150,12 +150,8 @@ struct NotchSettings: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(text.title).font(.title2.bold())
-                    Text(text.description).font(.callout).foregroundStyle(.secondary)
-                }
-                Spacer(minLength: 12)
+            // Zenith fork: the shared large page header.
+            SettingsPageHeader(title: text.title, subtitle: text.description) {
                 Toggle(text.enable, isOn: $enabled).labelsHidden().toggleStyle(.switch)
                     .disabled(!AppFeature.notch.isAvailable).accessibilityLabel(text.enable)
             }
