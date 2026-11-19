@@ -297,7 +297,7 @@ struct TrailingSwitchToggleStyle: ToggleStyle {
             Spacer(minLength: 12)
             Toggle(isOn: configuration.$isOn) { EmptyView() }
                 .labelsHidden()
-                .toggleStyle(.switch)
+                .toggleStyle(ZenithSwitchStyle())
         }
     }
 }

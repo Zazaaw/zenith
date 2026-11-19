@@ -48,7 +48,7 @@ struct MonitorToken: View {
             }
             .padding(14)
             .frame(width: 250, alignment: .leading)
-            .toggleStyle(.switch)
+            .toggleStyle(ZenithSwitchStyle())
         }
         .opacity(available ? 1 : 0.5)
         .disabled(!available)

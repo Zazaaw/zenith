@@ -283,30 +283,3 @@ struct ZenithSwitchRow<Label: View>: View {
         }
     }
 }
-
-/// The switch itself: an accent capsule when on, a grey one when off, and a
-/// white knob that travels on the Style Kit's toggle curve.
-struct ZenithSwitchStyle: ToggleStyle {
-    @Environment(\.isEnabled) private var isEnabled
-
-    func makeBody(configuration: Configuration) -> some View {
-        let on = configuration.isOn
-        return ZStack(alignment: on ? .trailing : .leading) {
-            Capsule()
-                .fill(on ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color.primary.opacity(0.16)))
-            Circle()
-                .fill(Color.white)
-                .shadow(color: .black.opacity(0.25), radius: 1, y: 0.5)
-                .padding(2)
-        }
-        .frame(width: 34, height: 20)
-        .opacity(isEnabled ? 1 : 0.45)
-        .contentShape(Capsule())
-        .onTapGesture { configuration.isOn.toggle() }
-        .animation(ZenithMotion.respecting(ZenithMotion.toggle()), value: on)
-        // VoiceOver reads it as the system switch, with the row's title.
-        .accessibilityRepresentation {
-            Toggle(isOn: configuration.$isOn) { configuration.label }
-        }
-    }
-}

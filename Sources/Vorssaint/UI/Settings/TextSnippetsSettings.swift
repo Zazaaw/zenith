@@ -220,7 +220,7 @@ private struct SnippetRow: View {
                 .foregroundStyle(.tertiary)
             Toggle("", isOn: Binding(get: { snippet.enabled }, set: toggle))
                 .labelsHidden()
-                .toggleStyle(.switch)
+                .toggleStyle(ZenithSwitchStyle())
                 .controlSize(.small)
         }
         .padding(.vertical, 1)

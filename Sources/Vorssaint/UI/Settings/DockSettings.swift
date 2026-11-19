@@ -65,7 +65,7 @@ struct DockSettings: View {
             .frame(maxWidth: .infinity)
             .padding(22)
         }
-        .toggleStyle(.switch)
+        .toggleStyle(ZenithSwitchStyle())
     }
 
     private var dockPreviewCard: some View {

@@ -117,7 +117,7 @@ struct MouseSettings: View {
             .frame(maxWidth: .infinity)
             .padding(22)
         }
-        .toggleStyle(.switch)
+        .toggleStyle(ZenithSwitchStyle())
         .onAppear {
             MiddleClickService.shared.refreshDragGestureConflict()
         }

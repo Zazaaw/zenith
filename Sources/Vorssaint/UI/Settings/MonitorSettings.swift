@@ -65,7 +65,7 @@ struct MonitorSettings: View {
                 .padding(22)
             }
         }
-        .toggleStyle(.switch)
+        .toggleStyle(ZenithSwitchStyle())
         .onAppear {
             interval = Defaults.sanitizedMonitorInterval(interval)
             metricAppearance = Defaults.sanitizedMenuBarMetricAppearance(metricAppearance)

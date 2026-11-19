@@ -240,7 +240,7 @@ private struct MusicBlockingSettings: View {
                         caption: l10n.s.musicBlockCaption) {
                 Toggle(l10n.s.musicBlockTitle, isOn: $enabled)
                     .labelsHidden()
-                    .toggleStyle(.switch)
+                    .toggleStyle(ZenithSwitchStyle())
                     .onChange(of: enabled) { _, _ in
                         musicBlocker.syncWithPreferences()
                     }

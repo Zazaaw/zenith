@@ -68,7 +68,7 @@ struct EnergySettings: View {
         }
         // Shared subviews draw plain toggles; outside a Form those would be
         // checkboxes, so the whole page asks for switches.
-        .toggleStyle(.switch)
+        .toggleStyle(ZenithSwitchStyle())
         .onAppear {
             defaultDuration = Defaults.sanitizedDefaultDuration(defaultDuration)
             batteryLimit = Defaults.sanitizedBatteryLimit(batteryLimit)

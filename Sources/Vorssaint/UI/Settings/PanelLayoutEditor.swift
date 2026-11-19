@@ -203,7 +203,7 @@ private struct PanelSectionRow: View {
             if showsSwitch {
                 Toggle(title, isOn: $shown)
                     .labelsHidden()
-                    .toggleStyle(.switch)
+                    .toggleStyle(ZenithSwitchStyle())
                     .controlSize(.small)
                     .disabled(shown && !canHide)
                     .onChange(of: shown) { _, _ in onVisibilityChange() }

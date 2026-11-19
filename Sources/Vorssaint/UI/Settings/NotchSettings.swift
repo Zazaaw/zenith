@@ -152,7 +152,7 @@ struct NotchSettings: View {
         VStack(alignment: .leading, spacing: 20) {
             // Zenith fork: the shared large page header.
             SettingsPageHeader(title: text.title, subtitle: text.description) {
-                Toggle(text.enable, isOn: $enabled).labelsHidden().toggleStyle(.switch)
+                Toggle(text.enable, isOn: $enabled).labelsHidden().toggleStyle(ZenithSwitchStyle())
                     .disabled(!AppFeature.notch.isAvailable).accessibilityLabel(text.enable)
             }
             if enabled, AppFeature.notch.isAvailable, !(hover && hideUntilHover && !hiddenShowsActivity), !notch.geometry.isNotched, !permissions.accessibility {
@@ -1015,7 +1015,7 @@ struct NotchSettings: View {
     /// An option with its icon, one line and a switch, like every other page.
     private func switchRow(_ symbol: String, _ title: String, caption: String? = nil, isOn: Binding<Bool>) -> some View {
         SettingsRow(symbol: symbol, title: title, caption: caption) {
-            Toggle(title, isOn: isOn).labelsHidden().toggleStyle(.switch)
+            Toggle(title, isOn: isOn).labelsHidden().toggleStyle(ZenithSwitchStyle())
         }
     }
 

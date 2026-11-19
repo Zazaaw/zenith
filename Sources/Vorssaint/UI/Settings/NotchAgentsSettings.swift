@@ -133,7 +133,7 @@ struct NotchAgentsSettingsControls: View {
             Text(text.valueNote).font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             SettingsRow(symbol: "arrow.triangle.2.circlepath", title: text.priceUpdates, caption: priceCaption) {
-                Toggle(text.priceUpdates, isOn: $priceUpdates).labelsHidden().toggleStyle(.switch)
+                Toggle(text.priceUpdates, isOn: $priceUpdates).labelsHidden().toggleStyle(ZenithSwitchStyle())
             }
 
             if claude {
@@ -149,7 +149,7 @@ struct NotchAgentsSettingsControls: View {
                 }
             }
         }
-        .toggleStyle(.switch)
+        .toggleStyle(ZenithSwitchStyle())
         .onAppear {
             findRoots()
             // An agent turned off is not read at all, not even for its status.
@@ -259,7 +259,7 @@ struct NotchAgentsSettingsControls: View {
             }
             Spacer(minLength: 12)
             // One agent stays on; turning the section off stops all.
-            Toggle(provider.displayName, isOn: isOn).labelsHidden().toggleStyle(.switch)
+            Toggle(provider.displayName, isOn: isOn).labelsHidden().toggleStyle(ZenithSwitchStyle())
                 .disabled(isOn.wrappedValue && [claude, codex, opencode, copilot].filter { $0 }.count <= 1)
         }
     }
@@ -272,7 +272,7 @@ struct NotchAgentsSettingsControls: View {
 
     private func switchRow(_ symbol: String, _ title: String, isOn: Binding<Bool>) -> some View {
         SettingsRow(symbol: symbol, title: title) {
-            Toggle(title, isOn: isOn).labelsHidden().toggleStyle(.switch)
+            Toggle(title, isOn: isOn).labelsHidden().toggleStyle(ZenithSwitchStyle())
         }
     }
 

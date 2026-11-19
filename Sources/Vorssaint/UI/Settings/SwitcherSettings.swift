@@ -84,7 +84,7 @@ struct SwitcherSettings: View {
             .frame(maxWidth: .infinity)
             .padding(22)
         }
-        .toggleStyle(.switch)
+        .toggleStyle(ZenithSwitchStyle())
         .observesSecureInput(isActive: switcherReplacesSystemShortcuts)
         .onReceive(AppSwitcher.shared.$coversSecureInput) { switcherCoversSecureInput = $0 }
     }
