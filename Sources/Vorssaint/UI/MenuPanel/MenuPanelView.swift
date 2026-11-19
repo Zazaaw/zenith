@@ -380,18 +380,14 @@ struct MenuPanelView: View {
                     focusedSection = id
                 } label: {
                     Image(systemName: id.symbolName)
-                        .font(.system(size: 13.5, weight: .semibold))
+                        .font(.system(size: 13.5, weight: notchSize != nil ? .semibold : .medium)) // Zenith fork
                         .frame(maxWidth: .infinity)
                         .frame(height: 30)
                         .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .focused($focusedSection, equals: id)
-                .foregroundStyle(isActive ? (notchSize != nil ? Color.white : Color.accentColor) : Color.secondary.opacity(0.86))
-                .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(isActive ? navigationActiveFill : Color.clear)
-                )
+                .zenithPanelTab(isActive: isActive, notch: notchSize != nil) // Zenith fork
                 .help(id.title(l10n.s))
                 // Icon-only tabs: VoiceOver reads the section name, not the
                 // symbol's, and hears which one is showing.
@@ -400,19 +396,7 @@ struct MenuPanelView: View {
             }
         }
         .padding(4)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(notchSize != nil ? .black : PanelSurface.cardFill(for: colorScheme))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(PanelSurface.border(for: colorScheme), lineWidth: 0.7)
-        )
-    }
-
-    private var navigationActiveFill: Color {
-        if notchSize != nil { return .black }
-        return colorScheme == .light ? Color.accentColor.opacity(0.13) : Color.accentColor.opacity(0.20)
+        .zenithPanelTabStrip(notch: notchSize != nil) // Zenith fork
     }
 
     private func metricNavigationHeader(_ kind: MetricDetailKind) -> some View {
@@ -427,16 +411,7 @@ struct MenuPanelView: View {
                     .frame(width: 24, height: 24)
                     .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
-            .background(
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(PanelSurface.cardFill(for: colorScheme))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .strokeBorder(PanelSurface.border(for: colorScheme), lineWidth: 0.7)
-            )
+            .buttonStyle(ZenithPanelOutlineButtonStyle(cornerRadius: 7)) // Zenith fork
 
             Label(kind.title(l10n.s), systemImage: kind.symbolName)
                 .font(.system(size: 12.5, weight: .semibold))
@@ -492,18 +467,8 @@ struct MenuPanelView: View {
                 .labelStyle(.titleAndIcon)
                 .padding(.horizontal, horizontalPadding)
                 .frame(maxWidth: .infinity, minHeight: 28)
-                .background(
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(notchSize != nil ? .black : PanelSurface.cardFill(for: colorScheme))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .strokeBorder(PanelSurface.border(for: colorScheme), lineWidth: 0.8)
-                )
-                .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
         }
-        .buttonStyle(.plain)
-        .foregroundStyle(.secondary)
+        .buttonStyle(ZenithPanelOutlineButtonStyle(notch: notchSize != nil)) // Zenith fork: hairline buttons
     }
 }
 
@@ -519,13 +484,7 @@ private struct MenuPanelHeader: View {
 
             if AppInfo.isBeta {
                 HStack {
-                    Text(l10n.s.betaBadgeLabel.uppercased())
-                        .font(.system(size: 9, weight: .bold))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.orange.opacity(0.18))
-                        .foregroundStyle(.orange)
-                        .clipShape(Capsule())
+                    ZenithPanelTag(text: l10n.s.betaBadgeLabel, tint: ZenithStatus.warning) // Zenith fork
 
                     Spacer()
 
@@ -1301,13 +1260,10 @@ struct QuickControlsSection: View {
                     .font(.system(size: 8.5, weight: .bold))
                     .foregroundStyle(.secondary)
                     .rotationEffect(.degrees(editing || isExpanded(category) ? 90 : 0))
-                Text(title(for: category).uppercased())
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.secondary)
-                    .tracking(0.5)
+                ZenithPanelSectionLabel(text: title(for: category)) // Zenith fork
                 Spacer(minLength: 0)
                 Text("\(enabledCount)/\(categoryItems.count)")
-                    .font(.system(size: 9.5, weight: .semibold, design: .rounded))
+                    .font(ZenithType.mono(9.5, weight: .medium)) // Zenith fork
                     .foregroundStyle(enabledCount > 0 ? Color.accentColor : Color.secondary)
                     .monospacedDigit()
             }
@@ -2026,8 +1982,7 @@ struct QuickControlsSection: View {
             Spacer(minLength: 8)
             Toggle(title, isOn: $switcherIconRowMode)
                 .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(.mini)
+                .zenithPanelSwitch(.mini) // Zenith fork
                 .disabled(switcherSimpleMode)
                 .accessibilityHint(l10n.s.switcherIconRowModeCaption)
                 .onChange(of: switcherIconRowMode) { _, _ in
@@ -2167,7 +2122,7 @@ struct UtilityActionButton: View {
                 PanelDragHandle()
             }
             Image(systemName: systemImage)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 15, weight: .medium)) // Zenith fork
                 .foregroundStyle(iconColor)
                 .frame(width: PanelRowMetrics.iconWidth)
             VStack(alignment: .leading, spacing: 1) {
@@ -2197,14 +2152,11 @@ struct UtilityActionButton: View {
             } else {
                 if let shortcutHint {
                     Text(shortcutHint)
-                        .font(.system(size: 9, weight: .semibold, design: .rounded))
+                        .font(ZenithType.mono(9, weight: .medium)) // Zenith fork: a mono key hint
                         .foregroundStyle(.tertiary)
                         .padding(.horizontal, 5)
                         .padding(.vertical, 2)
-                        .background(
-                            RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                .fill(Color.primary.opacity(0.06))
-                        )
+                        .zenithPanelTile(cornerRadius: 5)
                 }
                 if showChevron {
                     Image(systemName: "chevron.right")
@@ -2226,14 +2178,15 @@ struct UtilityActionButton: View {
         .controlSize(.mini)
     }
 
+    // Zenith fork: grey glyphs; colour only for a problem to fix.
     private var iconColor: Color {
         if isHiddenInEditor { return .secondary }
-        return needsAttention ? .orange : .accentColor
+        return needsAttention ? ZenithStatus.warning : Color.primary.opacity(0.85)
     }
 
     private var captionColor: Color {
         if isHiddenInEditor { return Color.secondary.opacity(0.55) }
-        return needsAttention ? .orange : .secondary
+        return needsAttention ? ZenithStatus.warning : .secondary
     }
 
     private var isHiddenInEditor: Bool {
@@ -2281,7 +2234,7 @@ struct PanelToggleRow: View {
                 PanelDragHandle()
             }
             Image(systemName: systemImage)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 15, weight: .medium)) // Zenith fork
                 .foregroundStyle(iconColor)
                 .frame(width: PanelRowMetrics.iconWidth)
             VStack(alignment: .leading, spacing: 2) {
@@ -2304,7 +2257,7 @@ struct PanelToggleRow: View {
                 if isActive, let activeText {
                     Label(activeText, systemImage: "checkmark.circle.fill")
                         .font(.system(size: 9.5, weight: .medium))
-                        .foregroundStyle(.green)
+                        .foregroundStyle(ZenithStatus.success) // Zenith fork
                         .lineLimit(1)
                 }
                 if needsAttention, let permissionAction {
@@ -2343,21 +2296,22 @@ struct PanelToggleRow: View {
         } else {
             Toggle(title, isOn: $isOn)
                 .labelsHidden()
-                .controlSize(.small)
-                .toggleStyle(.switch)
+                .zenithPanelSwitch(.small) // Zenith fork
                 .accessibilityHint(showsCaption ? "" : caption)
         }
     }
 
+    // Zenith fork: the switch carries the accent; the glyph is grey, full
+    // strength while on, and amber only for a problem to fix.
     private var iconColor: Color {
         if isHiddenInEditor { return .secondary }
-        if needsAttention { return .orange }
-        return isOn ? .accentColor : .secondary
+        if needsAttention { return ZenithStatus.warning }
+        return isOn ? Color.primary.opacity(0.85) : .secondary
     }
 
     private var captionColor: Color {
         if isHiddenInEditor { return Color.secondary.opacity(0.55) }
-        return needsAttention ? .orange : .secondary
+        return needsAttention ? ZenithStatus.warning : .secondary
     }
 
     private var isHiddenInEditor: Bool {
@@ -2426,9 +2380,10 @@ struct PanelRowHighlight: View {
     @Environment(\.notchPresentation) private var notchPresentation
 
     var body: some View {
-        RoundedRectangle(cornerRadius: notchPresentation ? 14 : 7, style: .continuous)
+        // Zenith fork: 9 pt inside the panel's 12 pt card, the tile grey.
+        RoundedRectangle(cornerRadius: notchPresentation ? 14 : 9, style: .continuous)
             .fill((notchPresentation ? Color.white : Color.primary)
-                .opacity(isVisible ? (notchPresentation ? 0.08 : 0.06) : 0))
+                .opacity(isVisible ? (notchPresentation ? 0.08 : 0.05) : 0))
             .padding(notchPresentation ? 4 : 3)
     }
 }
@@ -2480,18 +2435,7 @@ struct PanelBetaBadge: View {
     let text: String
 
     var body: some View {
-        Text(text.uppercased())
-            .font(.system(size: 8, weight: .bold))
-            .tracking(0.4)
-            .foregroundStyle(.orange)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 1.5)
-            .background(
-                Capsule(style: .continuous).fill(Color.orange.opacity(0.16))
-            )
-            .overlay(
-                Capsule(style: .continuous).strokeBorder(Color.orange.opacity(0.35), lineWidth: 0.5)
-            )
+        ZenithPanelTag(text: text, tint: ZenithStatus.warning) // Zenith fork
             .accessibilityLabel(text)
     }
 }
@@ -2778,8 +2722,8 @@ struct KeepAwakeCard: View {
                         Spacer(minLength: 4)
                     }
                     Toggle(l10n.s.keepAwakeTitle, isOn: activeBinding)
-                        .toggleStyle(.switch)
                         .labelsHidden()
+                        .zenithPanelSwitch(.regular) // Zenith fork
                 }
 
                 // One click starts (or switches) a session; clicking the
@@ -2810,7 +2754,7 @@ struct KeepAwakeCard: View {
                     if let percent = awake.batteryProtectionPercent() {
                         Label(batteryNote(percent), systemImage: "battery.25percent")
                             .font(.system(size: 10))
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning) // Zenith fork
                     } else {
                         Text(chipHint)
                             .font(.system(size: 10))
@@ -2965,7 +2909,7 @@ struct KeepAwakeCard: View {
             .font(.system(size: 9, weight: .semibold))
             .foregroundStyle(Color.accentColor)
             .frame(width: 17, height: 17)
-            .background(Circle().fill(Color.accentColor.opacity(0.12)))
+            .zenithPanelSelection(true, in: Circle()) // Zenith fork
     }
 
     private func compactOptionToggle(icon: String,
@@ -2984,14 +2928,13 @@ struct KeepAwakeCard: View {
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 8)
                 Toggle(title, isOn: isOn)
-                    .toggleStyle(.switch)
-                    .controlSize(.mini)
                     .labelsHidden()
+                    .zenithPanelSwitch(.mini) // Zenith fork
             }
             if let errorText {
                 Text(errorText)
                     .font(.system(size: 9.5))
-                    .foregroundStyle(.red)
+                    .foregroundStyle(ZenithStatus.error) // Zenith fork
                     .padding(.leading, 22)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -3034,7 +2977,7 @@ struct KeepAwakeCard: View {
                 Text(l10n.s.keepAwakeNormalRules)
             }
         }
-        .font(.system(size: 11))
+        .font(.system(size: 11).monospacedDigit()) // Zenith fork
         .foregroundStyle(.secondary)
     }
 
@@ -3185,16 +3128,15 @@ struct KeepAwakeCard: View {
                 if let caption {
                     Text(caption)
                         .font(.system(size: 10))
-                        .foregroundStyle(captionIsError ? Color.red : Color.secondary)
+                        .foregroundStyle(captionIsError ? ZenithStatus.error : Color.secondary) // Zenith fork
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Spacer(minLength: 8)
             Toggle(title, isOn: isOn)
-                .toggleStyle(.switch)
-                .controlSize(.mini)
                 .labelsHidden()
+                .zenithPanelSwitch(.mini) // Zenith fork
                 .disabled(disabled)
         }
     }
@@ -3246,19 +3188,10 @@ enum DurationPicker {
 struct KeepAwakeChipStyle: ButtonStyle {
     var isSelected = false
 
+    // Zenith fork: an outlined pill; the selected one in the accent's
+    // 10% / 20% / 100% form (ZenithPanelChrome.swift).
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 11, weight: .medium))
-            .monospacedDigit()
-            .lineLimit(1)
-            .foregroundStyle(isSelected ? Color.white : Color.primary)
-            .padding(.horizontal, 8)
-            .frame(minHeight: 22)
-            .frame(maxWidth: .infinity)
-            .background(Capsule().fill(isSelected
-                ? Color.accentColor.opacity(configuration.isPressed ? 0.8 : 1)
-                : Color.primary.opacity(configuration.isPressed ? 0.16 : 0.07)))
-            .contentShape(Capsule())
+        ZenithPanelChipStyle(isSelected: isSelected).makeBody(configuration: configuration)
     }
 }
 

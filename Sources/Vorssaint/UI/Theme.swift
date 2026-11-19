@@ -154,14 +154,7 @@ private struct PanelCardModifier: ViewModifier {
         } else {
         content
             .padding(padded ? 10 : 0)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(PanelSurface.cardFill(for: colorScheme))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .strokeBorder(PanelSurface.border(for: colorScheme), lineWidth: 0.7)
-            )
+            .zenithPanelCardSurface() // Zenith fork: a hairline card, not a grey block.
         }
     }
 }
