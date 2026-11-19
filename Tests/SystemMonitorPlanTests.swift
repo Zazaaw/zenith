@@ -10,6 +10,7 @@ enum SystemMonitorPlanTests {
     class Fixture {
         var menuPanelNeeds = SystemMonitorPanelNeeds.none
         var notchDetailNeeds = SystemMonitorPanelNeeds.none
+        var lockScreenNeeds = SystemMonitorPanelNeeds.none // Zenith fork
         var fullMonitorVisible = false
         var notchVisible = false
         var notchAccessoryMonitoring = false
@@ -51,6 +52,15 @@ enum SystemMonitorPlanTests {
         suite.expect(monitor.currentPlan(defaults: defaults).needConnectedDevices,
                      "the island System page's device card ignores the panel row's toggle")
         monitor.notchDetailNeeds = .none
+        // Zenith fork: the lock screen's terminal readout asks for CPU and battery alone.
+        defaults.set(true, forKey: AppFeature.monitorCPU.availabilityKey)
+        monitor.lockScreenNeeds = SystemMonitorPanelNeeds(cpu: true, battery: true)
+        let locked = monitor.currentPlan(defaults: defaults)
+        suite.expect(locked.needCPU && !locked.needGPUUsage && !locked.needNetwork && !locked.needConnectedDevices
+                     && !locked.needDisk && !locked.needCPUCores,
+                     "the lock screen's readout reads CPU and nothing it does not show")
+        monitor.lockScreenNeeds = .none
+        defaults.removeObject(forKey: AppFeature.monitorCPU.availabilityKey)
         monitor.fullMonitorVisible = true
         let preview = monitor.currentPlan(defaults: defaults)
         suite.expect(preview.needConnectedDevices && preview.needFanSpeed,
