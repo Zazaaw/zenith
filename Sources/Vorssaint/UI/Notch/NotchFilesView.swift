@@ -69,8 +69,7 @@ struct NotchFilesView: View {
             } else if shelf.items.isEmpty {
                 NotchEmptyView(symbol: "tray.and.arrow.down", message: FeatureStrings.notch(l10n.language).dropHint)
                     .frame(maxHeight: .infinity)
-                    .overlay { RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .strokeBorder(.white.opacity(0.18), style: StrokeStyle(lineWidth: 0.75, dash: [4, 5])) }
+                    .zenithDropZone(cornerRadius: ZenithRadius.panel) // Zenith fork: a dashed hairline
             } else {
                 ShelfTilesView(items: shelf.visibleItems,
                                contentRevision: shelf.contentRevision,
@@ -134,9 +133,11 @@ struct NotchFilesView: View {
 
     private func dropDestination(_ title: String, symbol: String, selected: Bool, available: Bool = true,
                                  unavailableNote: String? = nil) -> some View {
-        VStack(spacing: 12) {
-            Image(systemName: symbol).font(.system(size: 28, weight: .light))
-            Text(title).font(.callout.weight(.medium)).multilineTextAlignment(.center)
+        VStack(spacing: 10) {
+            Image(systemName: symbol).font(.system(size: 24, weight: .light))
+                .foregroundStyle(selected ? ZenithIsland.accent : ZenithIsland.secondary) // Zenith fork
+            Text(title).font(.system(size: 13, weight: .medium)).multilineTextAlignment(.center) // Zenith fork
+                .foregroundStyle(selected ? ZenithIsland.primary : ZenithIsland.secondary) // Zenith fork
             // Zenith fork: AirDrop passes an empty note and is only dimmed when off.
             if !available, !(unavailableNote ?? l10n.s.mediaRunning).isEmpty {
                 Text(unavailableNote ?? l10n.s.mediaRunning).font(.caption).foregroundStyle(.secondary)
@@ -144,8 +145,8 @@ struct NotchFilesView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // Zenith fork: a hairline zone; the one under the file wears the accent.
-        .zenithIslandSectionTile(highlighted: selected, selected: selected)
+        // Zenith fork: a dashed zone; the one under the file brightens and its glyph takes the accent.
+        .zenithDropZone(targeted: selected)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(selected ? .isSelected : [])
         .opacity(available ? 1 : 0.5)

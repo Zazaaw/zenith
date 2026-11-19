@@ -82,7 +82,7 @@ struct NotchScratchpadView: View {
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .modifier(NotchControlSurface(cornerRadius: 12, interactive: false))
+                    .modifier(ZenithIslandSheet()) // Zenith fork: a sheet on a faint dot grid under a hairline, no box
                 }
             }
         }
@@ -283,11 +283,11 @@ struct NotchScratchpadView: View {
                 .accessibilityLabel(text.closePad)
             }
         }
-        .foregroundStyle(selected ? ZenithIsland.accent : ZenithIsland.secondary) // Zenith fork
+        .foregroundStyle(selected ? ZenithIsland.primary : ZenithIsland.secondary) // Zenith fork
         .padding(.leading, 10)
         .padding(.trailing, showsClose ? 5 : selected ? 8 : 10)
         .frame(height: 22)
-        .zenithIslandChoice(selected, in: Capsule()) // Zenith fork: an outlined pill, accent when open
+        .modifier(ZenithIslandTabBlock(selected: selected)) // Zenith fork: the open pad as a solid block
         .contentShape(Capsule())
     }
 

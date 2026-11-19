@@ -36,7 +36,8 @@ struct NotchControlsView: View {
                 if layout.shortcutRows > 0 {
                     NotchRail(items: shortcuts, rows: layout.shortcutRows, itemWidth: NotchLayout.shortcutWidth,
                               width: size.width, spacing: NotchLayout.shortcutSpacing,
-                              leastSpacing: NotchLayout.shortcutLeastSpacing, rowSpacing: layout.shortcutRowSpacing) { item in
+                              leastSpacing: NotchLayout.shortcutLeastSpacing, rowSpacing: layout.shortcutRowSpacing,
+                              dividers: true) { item in // Zenith fork: glyph buttons parted by hairlines
                         shortcut(item)
                     }
                 }
@@ -226,7 +227,7 @@ private struct NotchLevelChooser: View {
         NotchMenuButton(title: title, items: items) {
             Image(systemName: "chevron.down")
                 .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.secondary)
+                .zenithIslandGlyph() // Zenith fork: grey, brighter under the pointer
                 .frame(width: 16, height: 24)
                 .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
@@ -425,11 +426,12 @@ struct NotchActionTile: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 6) {
-                Image(systemName: symbol).font(.system(size: 17, weight: .medium))
+                Image(systemName: symbol).font(.system(size: 18, weight: .regular)) // Zenith fork
                     .contentTransition(.symbolEffect(.replace))
                     .frame(width: 40, height: 40)
-                    // Zenith fork: a hairline well; active in the accent or its status colour, 10/20/100.
-                    .zenithIslandActionWell(active: active, tint: accent == .selection ? ZenithIsland.accent : accent.fill)
+                    // Zenith fork: a plain glyph; an active one in the accent or its status colour, with a glowing dot.
+                    .modifier(ZenithIslandShortcutGlyph(active: active,
+                                                        tint: accent == .selection ? ZenithIsland.accent : accent.fill))
                     .animation(reduceMotion ? nil : .smooth(duration: 0.26), value: symbol)
                 label
                     .frame(maxWidth: .infinity)
@@ -441,7 +443,7 @@ struct NotchActionTile: View {
             .animation(reduceMotion ? nil : .smooth(duration: 0.26), value: active)
             .contentShape(RoundedRectangle(cornerRadius: 14))
         }
-        .buttonStyle(NotchButtonStyle(cornerRadius: 14))
+        .buttonStyle(ZenithBentoButtonStyle(cornerRadius: ZenithRadius.card)) // Zenith fork: a wash, no lift
         .accessibilityLabel(title)
         .accessibilityValue(reading ?? "")
         .accessibilityAddTraits(active ? .isSelected : [])
@@ -455,7 +457,7 @@ struct NotchActionTile: View {
                 // "dom, 10:45 p. m.", needs up to 91 pt on a 68 pt line. The
                 // smaller optical size spaces its letters wider, so scaling
                 // alone would still cut it off.
-                Text(reading).font(.system(size: 11, weight: .semibold)).monospacedDigit()
+                Text(reading).font(ZenithType.mono(11, weight: .semibold)) // Zenith fork: a reading in mono
                     .foregroundStyle(.white)
                     .allowsTightening(true)
                     .minimumScaleFactor(0.7)
@@ -468,17 +470,17 @@ struct NotchActionTile: View {
             .lineLimit(1)
             .minimumScaleFactor(0.85)
         } else {
-            Text(title).font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.white)
+            Text(title).font(ZenithType.mono(10, weight: .medium)).tracking(-0.2) // Zenith fork: a mono label
+                .foregroundStyle(ZenithIsland.secondary) // Zenith fork
                 .lineLimit(2).multilineTextAlignment(.center)
-                .minimumScaleFactor(0.85)
+                .minimumScaleFactor(0.75) // Zenith fork: mono runs wider
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
 
     private func readingTitle(_ text: String) -> some View {
-        Text(text).font(.system(size: 11, weight: .medium))
-            .foregroundStyle(.white.opacity(0.7))
+        Text(text).font(ZenithType.mono(10, weight: .medium)).tracking(-0.2) // Zenith fork: a mono label
+            .foregroundStyle(ZenithIsland.secondary)
     }
 }
 
