@@ -301,6 +301,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Command/CommandActivitySupport.swift
         Sources/Vorssaint/Services/GitHub/GitHubSupport.swift
         Sources/Vorssaint/Core/ZenithStrings.swift
+        Sources/Vorssaint/UI/Settings/ZenithAboutSupport.swift
         Sources/Vorssaint/UI/ZenithTokens.swift
         Sources/Vorssaint/UI/ZenithSwitch.swift
         Sources/Vorssaint/UI/Notch/ZenithIslandChrome.swift
