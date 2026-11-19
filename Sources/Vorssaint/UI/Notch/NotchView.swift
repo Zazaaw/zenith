@@ -240,6 +240,7 @@ struct NotchView: View {
             case .calendar: NotchCapsuleCalendarStrip(service: service, size: size)
             case .music: NotchCapsuleMusicStrip(service: service, size: size, interactive: true)
             case .keepAwake: NotchCapsuleKeepAwakeStrip(service: service, size: size)
+            case .vercel: VercelCapsuleStrip(service: service, size: size) // Zenith fork
             }
         } else {
             // Handed down, the wings stay as they were drawn while a strip
@@ -254,6 +255,7 @@ struct NotchView: View {
             case .calendar: NotchCalendarStrip(service: service, displayGeometry: geometry)
             case .music: NotchMusicStrip(service: service, displayGeometry: geometry, interactive: true)
             case .keepAwake: NotchKeepAwakeStrip(service: service, displayGeometry: geometry)
+            case .vercel: VercelActivityStrip(service: service, displayGeometry: geometry) // Zenith fork
             }
         }
     }
@@ -603,6 +605,8 @@ struct NotchView: View {
             case .agents: NotchAgentsView(size: pageSize)
             case .watch: NotchWatchView(size: pageSize)
             case .wakatime: NotchWakaTimeView(size: pageSize)
+            case .vercel: NotchVercelView(size: pageSize)
+            case .github: NotchGitHubView(size: pageSize)
             }
         }
     }
@@ -839,6 +843,8 @@ extension NotchModule: PanelOrderItem {
         case .agents: return FeatureStrings.notchAgents(language).title
         case .watch: return FeatureStrings.notchWatch(language).title
         case .wakatime: return "WakaTime"
+        case .vercel: return "Vercel"
+        case .github: return "GitHub"
         }
     }
 }

@@ -7,8 +7,9 @@ import Foundation
 import CoreGraphics
 
 enum NotchModule: String, CaseIterable, Identifiable {
-    // Zenith fork: wakatime shows coding time from WakaTime (WakaTimeService).
-    case controls, mixer, music, clipboard, captures, files, system, tools, calendar, notifications, timer, camera, downloads, scratchpad, agents, watch, wakatime
+    // Zenith fork: wakatime shows coding time from WakaTime (WakaTimeService),
+    // vercel recent deployments (VercelService), github pull requests (GitHubService).
+    case controls, mixer, music, clipboard, captures, files, system, tools, calendar, notifications, timer, camera, downloads, scratchpad, agents, watch, wakatime, vercel, github
     var id: String { rawValue }
 
     var symbol: String {
@@ -33,6 +34,8 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .agents: return "sparkles"
         case .watch: return "eye"
         case .wakatime: return "chevron.left.forwardslash.chevron.right"
+        case .vercel: return VercelSupport.symbol
+        case .github: return GitHubSupport.symbol
         }
     }
 
@@ -56,6 +59,8 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .agents: return "g"
         case .watch: return "o"
         case .wakatime: return "k"
+        case .vercel: return "e"
+        case .github: return "u"
         }
     }
 
@@ -80,6 +85,11 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .agents: return AppFeature.notchAgents.isAvailable(in: defaults)
         case .watch: return AppFeature.notchWatch.isAvailable(in: defaults)
         case .wakatime: return WakaTimeSupport.hasConfiguration()
+        // Zenith fork: Vercel is always listed, so its token can be pasted in
+        // its options; it shows in the island once notchVercelEnabled is on.
+        // GitHub needs the GitHub CLI.
+        case .vercel: return true
+        case .github: return GitHubCLI.isInstalled()
         case .system:
             return [.monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork,
                     .monitorDisk, .monitorPower, .fanControl, .connectedDevices].contains { (feature: AppFeature) in
@@ -828,7 +838,8 @@ enum NotchMusicStripLayout {
 }
 
 enum NotchCompactActivity: String, Identifiable {
-    case timer, watch, downloads, agents, calendar, music, keepAwake
+    // Zenith fork: vercel is a Vercel build on its way, then how it ended.
+    case timer, watch, downloads, agents, calendar, music, keepAwake, vercel
 
     var id: String { rawValue }
 
@@ -841,6 +852,7 @@ enum NotchCompactActivity: String, Identifiable {
         case .calendar: return FeatureStrings.notchCalendar(language).title
         case .music: return FeatureStrings.notch(language).music
         case .keepAwake: return Strings.localized(language).keepAwakeTitle
+        case .vercel: return "Vercel"
         }
     }
 
@@ -854,6 +866,7 @@ enum NotchCompactActivity: String, Identifiable {
         case .calendar: return .calendar
         case .music: return .music
         case .keepAwake: return .controls
+        case .vercel: return .vercel
         }
     }
 
@@ -1795,18 +1808,22 @@ enum NotchSupport {
 
     /// Automatic order until the user chooses one of the live activities.
     static func compactActivity(timer: Bool, downloads: Bool, agents: Bool = false,
-                                calendar: Bool = false, music: Bool, keepAwake: Bool = false) -> NotchCompactActivity? {
+                                calendar: Bool = false, music: Bool, keepAwake: Bool = false,
+                                vercel: Bool = false) -> NotchCompactActivity? {
         compactActivities(timer: timer, downloads: downloads, agents: agents,
-                          calendar: calendar, music: music, keepAwake: keepAwake).first
+                          calendar: calendar, music: music, keepAwake: keepAwake, vercel: vercel).first
     }
 
     /// Keep Awake comes last: a session can run all day, even more than
     /// music plays, and it only says that the Mac stays awake. A watch
     /// follows the timer: the person started both and is waiting on them.
+    /// Zenith fork: a Vercel build follows agents, as work the person
+    /// started and waits on that ends on its own.
     static func compactActivities(timer: Bool, watch: Bool = false, downloads: Bool, agents: Bool,
-                                  calendar: Bool, music: Bool, keepAwake: Bool = false) -> [NotchCompactActivity] {
+                                  calendar: Bool, music: Bool, keepAwake: Bool = false,
+                                  vercel: Bool = false) -> [NotchCompactActivity] {
         let candidates: [(Bool, NotchCompactActivity)] = [
-            (timer, .timer), (watch, .watch), (downloads, .downloads), (agents, .agents),
+            (timer, .timer), (watch, .watch), (downloads, .downloads), (agents, .agents), (vercel, .vercel),
             (calendar, .calendar), (music, .music), (keepAwake, .keepAwake)
         ]
         return candidates.compactMap { $0.0 ? $0.1 : nil }
@@ -1871,6 +1888,7 @@ enum NotchSupport {
                 && ($0 != .notifications || defaults.bool(forKey: DefaultsKey.notchNotificationsEnabled))
                 && ($0 != .agents || defaults.bool(forKey: DefaultsKey.notchAgentsEnabled))
                 && ($0 != .watch || defaults.bool(forKey: DefaultsKey.notchWatchEnabled))
+                && ($0 != .vercel || defaults.bool(forKey: DefaultsKey.notchVercelEnabled)) // Zenith fork
         }
     }
 
@@ -2799,7 +2817,7 @@ struct NotchGeometry: Equatable {
                 contentHeight = min(budget, agentsHeight.map { $0 > 0 ? $0 : NotchLayout.emptyHeight } ?? budget)
             // Lists and previews fill the chosen content budget.
             case .mixer, .calendar, .clipboard, .captures, .files, .notifications, .downloads, .camera, .scratchpad, .watch,
-                 .wakatime:
+                 .wakatime, .vercel, .github:
                 contentHeight = budget
             }
         }

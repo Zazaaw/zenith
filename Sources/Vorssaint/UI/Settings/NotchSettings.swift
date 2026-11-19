@@ -26,6 +26,7 @@ struct NotchSettings: View {
     @AppStorage(DefaultsKey.notchCalendarWeekNumbers) private var calendarWeekNumbers = false
     @AppStorage(DefaultsKey.notchAgentsEnabled) private var agentsEnabled = false
     @AppStorage(DefaultsKey.notchWatchEnabled) private var watchEnabled = true
+    @AppStorage(DefaultsKey.notchVercelEnabled) private var vercelEnabled = false // Zenith fork
     @AppStorage(DefaultsKey.notchLyricsEnabled) private var lyricsEnabled = true
     @AppStorage(DefaultsKey.notchLyricsOnline) private var lyricsOnline = false
     @AppStorage(DefaultsKey.notchBrowserCovers) private var browserCovers = false
@@ -133,7 +134,8 @@ struct NotchSettings: View {
          String(microphone), String(battery), String(clipboard), String(clipboardWindow), clipboardCardSize,
          String(capture), String(trackChange), captureAction, String(showInCaptures),
          String(returnHome), homeModule, String(opensActivity), String(scratchpad),
-         String(agentsEnabled), String(watchEnabled), String(keepAwakeActivity), String(shortcutEnabled)]
+         String(agentsEnabled), String(watchEnabled), String(keepAwakeActivity), String(shortcutEnabled),
+         String(vercelEnabled)]
     }
 
     private var access: Binding<NotchQuickAccessConfiguration> {
@@ -328,12 +330,16 @@ struct NotchSettings: View {
                 VStack(alignment: .leading, spacing: 16) {
                     let module = selectedModule
                     let available = module.isAvailable()
+                    // Zenith fork: GitHub names what it is missing (the GitHub CLI).
                     NotchSectionHeader(module: module, shown: isShown(module),
-                                       reason: available ? nil : moduleFeature(module).map { $0.enableReason(l10n) } ?? text.disabled) {
+                                       reason: available ? nil : moduleFeature(module).map { $0.enableReason(l10n) }
+                                           ?? (module == .github ? ZenithStrings.gitHub(l10n.language).missingCLI : text.disabled)) {
                         SettingsRouter.shared.request(FeatureSettingsDestination(.features), targetFeature: moduleFeature(module))
                     }
                     if !wide { preview(width: detailWidth, limit: 280) }
-                    if available, hasOptions(module) {
+                    // Zenith fork: GitHub's options can look again for a gh the
+                    // usual folders missed, so they show while it is unavailable.
+                    if available || module == .github, hasOptions(module) {
                         SettingsCard { moduleOptions(module) }
                     } else if available {
                         Text(editor.noOptions).font(.callout).foregroundStyle(.secondary)
@@ -546,6 +552,12 @@ struct NotchSettings: View {
         case .wakatime:
             // Zenith fork: the personal token that unlocks ranges and coding now.
             WakaTimeTokenSettings()
+        case .vercel:
+            // Zenith fork: the access token and the build in the closed island.
+            VercelSettings()
+        case .github:
+            // Zenith fork: which gh is used, and a way to look for it again.
+            GitHubSettings()
         case .mixer, .system, .tools:
             EmptyView()
         }
@@ -887,7 +899,7 @@ struct NotchSettings: View {
         case .scratchpad: return .scratchpad
         case .agents: return .notchAgents
         case .watch: return .notchWatch
-        case .wakatime: return nil
+        case .wakatime, .vercel, .github: return nil
         }
     }
 
@@ -1061,6 +1073,7 @@ struct NotchSettings: View {
             (module != .timer || timerEnabled) && (module != .camera || cameraEnabled)
                 && (module != .calendar || calendarEnabled) && (module != .notifications || notificationsEnabled)
                 && (module != .agents || agentsEnabled) && (module != .watch || watchEnabled)
+                && (module != .vercel || vercelEnabled) // Zenith fork
                 && !hidden.split(separator: ",").contains(Substring(module.rawValue))
         } set: { shown in
             if module == .timer { timerEnabled = shown }
@@ -1069,6 +1082,7 @@ struct NotchSettings: View {
             if module == .notifications { notificationsEnabled = shown }
             if module == .agents { agentsEnabled = shown }
             if module == .watch { watchEnabled = shown }
+            if module == .vercel { vercelEnabled = shown } // Zenith fork
             var values = Set(hidden.split(separator: ",").map(String.init))
             if shown { values.remove(module.rawValue) } else { values.insert(module.rawValue) }
             hidden = values.sorted().joined(separator: ",")
