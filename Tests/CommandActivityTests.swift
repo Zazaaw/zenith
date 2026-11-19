@@ -186,7 +186,7 @@ enum CommandActivityTests {
     }
 
     private static func thresholds(_ suite: TestSuite) {
-        let domain = "zenith.tests.command-activity"
+        let domain = "com.vorssaint.tests.command-activity"
         let defaults = UserDefaults(suiteName: domain)!
         defaults.removePersistentDomain(forName: domain)
         defer { defaults.removePersistentDomain(forName: domain) }
