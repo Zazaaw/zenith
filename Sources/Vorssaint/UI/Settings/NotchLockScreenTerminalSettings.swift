@@ -2,15 +2,19 @@
 // Copyright (C) 2026 Satu Visual
 
 import SwiftUI
+import SystemConfiguration
 
 /// Zenith fork: the terminal readout's switch in the Lock Screen card, then
-/// its lines (each with a switch and a place in the order) and whether
-/// project names may show.
+/// its lines (each with a switch and a place in the order), whether project
+/// names may show, and the name in its title bar.
 struct NotchLockScreenTerminalSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @AppStorage(DefaultsKey.notchLockScreenTerminal) private var enabled = false
     @AppStorage(DefaultsKey.notchLockScreenTerminalLines) private var stored = NotchLockScreenTerminalSelection.defaultValue
     @AppStorage(DefaultsKey.notchLockScreenTerminalProjects) private var showsProjects = false
+    @AppStorage(DefaultsKey.notchLockScreenTerminalTitle) private var storedTitle = ""
+    /// The field's text, kept to one short line as it is typed.
+    @State private var titleDraft = ""
 
     private var selection: NotchLockScreenTerminalSelection { NotchLockScreenTerminalSelection(stored: stored) }
 
@@ -44,11 +48,60 @@ struct NotchLockScreenTerminalSettings: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                titleField(ZenithStrings.lockScreenTerminalTitle(l10n.language))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, 40 + 28)
             .padding(.bottom, 2)
         }
+    }
+
+    /// The title bar's name: empty keeps `zenith — status`, and a button
+    /// fills in this Mac's name.
+    private func titleField(_ text: ZenithLockScreenTerminalTitleStrings) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(text.windowTitle)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.top, 4)
+            HStack(spacing: 6) {
+                TextField(text.windowTitle, text: $titleDraft,
+                          prompt: Text(NotchLockScreenTerminalSupport.defaultTitle))
+                    .labelsHidden()
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 12, design: .monospaced))
+                    .frame(maxWidth: 260)
+                Button {
+                    if let title = NotchLockScreenTerminalSupport.computerTitle(Self.computerName()) {
+                        titleDraft = title
+                    }
+                } label: {
+                    Image(systemName: "desktopcomputer")
+                        .frame(width: 22, height: 22)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel(text.useComputerName)
+                .help(text.useComputerName)
+            }
+            Text(text.caption)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .onAppear { titleDraft = storedTitle }
+        .onChange(of: titleDraft) { _, draft in
+            // Cleaned as it is typed, so a pasted line break or a long name
+            // never reaches the title bar; the readout trims the ends.
+            let clean = NotchLockScreenTerminalSupport.titleInput(draft)
+            if clean != draft { titleDraft = clean }
+            if storedTitle != clean { storedTitle = clean }
+        }
+    }
+
+    /// The name set in System Settings, General, Sharing; read when asked.
+    private static func computerName() -> String? {
+        SCDynamicStoreCopyComputerName(nil, nil) as String?
     }
 
     private func lineRow(_ entry: NotchLockScreenTerminalSelection.Entry,

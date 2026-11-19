@@ -141,7 +141,8 @@ struct NotchLockScreenTerminalView: View {
         Color(red: 0.157, green: 0.784, blue: 0.251),  // #28C840
     ]
 
-    /// The window buttons and the window's name, like a terminal's title bar.
+    /// The window buttons and the window's name, like a terminal's title bar:
+    /// `zenith — status` unless the person chose another.
     private var header: some View {
         HStack(spacing: 10) {
             HStack(spacing: 5) {
@@ -149,9 +150,11 @@ struct NotchLockScreenTerminalView: View {
                     Circle().fill(Self.trafficLights[index]).frame(width: 7, height: 7)
                 }
             }
-            Text("zenith — status")
+            Text(configuration.title)
                 .font(.system(size: 10.5, weight: .medium, design: .monospaced))
                 .foregroundStyle(.white.opacity(0.4))
+                .lineLimit(1)
+                .truncationMode(.tail)
         }
         .padding(.horizontal, Layout.horizontalPadding)
         .frame(height: Layout.headerHeight)

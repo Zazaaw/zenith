@@ -1658,3 +1658,79 @@ extension ZenithStrings {
         }
     }
 }
+
+struct ZenithLockScreenTerminalTitleStrings {
+    /// Over the field for the readout’s title bar.
+    let windowTitle: String
+    let caption: String
+    /// The button that fills in `<computer name> — status`.
+    let useComputerName: String
+}
+
+extension ZenithStrings {
+    /// The terminal readout’s own name in its title bar.
+    static func lockScreenTerminalTitle(_ language: AppLanguage) -> ZenithLockScreenTerminalTitleStrings {
+        switch language {
+        case .enUS:
+            return .init(windowTitle: "Window title",
+                         caption: "Shown in the readout’s title bar. Leave it empty for the default.",
+                         useComputerName: "Use this Mac’s name")
+        case .ptBR:
+            return .init(windowTitle: "Título da janela",
+                         caption: "Aparece na barra de título da leitura. Deixe vazio para usar o padrão.",
+                         useComputerName: "Usar o nome deste Mac")
+        case .tr:
+            return .init(windowTitle: "Pencere başlığı",
+                         caption: "Görünümün başlık çubuğunda gösterilir. Varsayılan için boş bırakın.",
+                         useComputerName: "Bu Mac’in adını kullan")
+        case .ru:
+            return .init(windowTitle: "Заголовок окна",
+                         caption: "Показывается в заголовке сводки. Оставьте пустым для стандартного.",
+                         useComputerName: "Использовать имя этого Mac")
+        case .es:
+            return .init(windowTitle: "Título de la ventana",
+                         caption: "Se muestra en la barra de título de la lectura. Déjalo vacío para usar el predeterminado.",
+                         useComputerName: "Usar el nombre de este Mac")
+        case .sk:
+            return .init(windowTitle: "Názov okna",
+                         caption: "Zobrazuje sa v záhlaví prehľadu. Ak ho necháte prázdny, použije sa predvolený.",
+                         useComputerName: "Použiť názov tohto Macu")
+        case .de:
+            return .init(windowTitle: "Fenstertitel",
+                         caption: "Steht in der Titelleiste der Anzeige. Leer lassen für den Standardtitel.",
+                         useComputerName: "Namen dieses Mac verwenden")
+        case .fr:
+            return .init(windowTitle: "Titre de la fenêtre",
+                         caption: "Affiché dans la barre de titre de l’affichage. Laissez vide pour le titre par défaut.",
+                         useComputerName: "Utiliser le nom de ce Mac")
+        case .it:
+            return .init(windowTitle: "Titolo della finestra",
+                         caption: "Compare nella barra del titolo. Lascialo vuoto per usare quello predefinito.",
+                         useComputerName: "Usa il nome di questo Mac")
+        case .ja:
+            return .init(windowTitle: "ウインドウのタイトル",
+                         caption: "表示のタイトルバーに表示されます。空欄にするとデフォルトになります。",
+                         useComputerName: "このMacの名前を使用")
+        case .ko:
+            return .init(windowTitle: "윈도우 제목",
+                         caption: "표시의 제목 막대에 나타납니다. 비워 두면 기본값을 사용합니다.",
+                         useComputerName: "이 Mac의 이름 사용")
+        case .uk:
+            return .init(windowTitle: "Заголовок вікна",
+                         caption: "Показується в заголовку зведення. Залиште порожнім для стандартного.",
+                         useComputerName: "Використати назву цього Mac")
+        case .zhHans:
+            return .init(windowTitle: "窗口标题",
+                         caption: "显示在读数的标题栏中。留空则使用默认标题。",
+                         useComputerName: "使用这台 Mac 的名称")
+        case .zhTW:
+            return .init(windowTitle: "視窗標題",
+                         caption: "顯示在讀數的標題列中。留空即使用預設標題。",
+                         useComputerName: "使用這部 Mac 的名稱")
+        case .zhHK:
+            return .init(windowTitle: "視窗標題",
+                         caption: "顯示在讀數的標題列中。留空即使用預設標題。",
+                         useComputerName: "使用這部 Mac 的名稱")
+        }
+    }
+}

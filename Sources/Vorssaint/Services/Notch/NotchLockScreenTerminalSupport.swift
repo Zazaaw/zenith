@@ -100,6 +100,8 @@ struct NotchLockScreenTerminalConfiguration: Equatable {
     /// The chosen lines this Mac can fill, in order.
     var sources: [NotchLockScreenTerminalSource]
     var showsProjects: Bool
+    /// The title bar's name, already cleaned up (`NotchLockScreenTerminalSupport.title`).
+    var title = NotchLockScreenTerminalSupport.defaultTitle
 }
 
 /// A tiny dot after a line's value, in a status color: used sparingly, so the
@@ -155,6 +157,55 @@ enum NotchLockScreenTerminalSupport {
 
     static func paddedLabel(_ source: NotchLockScreenTerminalSource) -> String {
         source.label.padding(toLength: labelWidth, withPad: " ", startingAt: 0)
+    }
+
+    // MARK: Title
+
+    /// The title bar's name when the person has not chosen one.
+    static let defaultTitle = "zenith — status"
+    /// What follows a computer's name in `<computer name> — status`.
+    static let titleSuffix = " — status"
+    /// A title stays one short line in the title bar.
+    static let maximumTitleLength = 32
+
+    static func title(in defaults: UserDefaults = .standard) -> String {
+        title(defaults.string(forKey: DefaultsKey.notchLockScreenTerminalTitle))
+    }
+
+    /// A title as it is typed and kept: on one line (line breaks, tabs and
+    /// other control characters become spaces) and at most
+    /// `maximumTitleLength` characters. Spaces at its ends stay, since the
+    /// person may still be typing.
+    static func titleInput(_ raw: String) -> String {
+        String(oneLine(raw).prefix(maximumTitleLength))
+    }
+
+    /// The name the title bar shows: the chosen title on one line, its runs
+    /// of spaces closed up and its ends trimmed, within the length limit; the
+    /// default when nothing is left.
+    static func title(_ stored: String?) -> String {
+        let words = oneLine(stored ?? "").split(whereSeparator: \.isWhitespace)
+        let title = String(words.joined(separator: " ").prefix(maximumTitleLength)).trimmingCharacters(in: .whitespaces)
+        return title.isEmpty ? defaultTitle : title
+    }
+
+    /// `<computer name> — status`, the name shortened with an ellipsis when
+    /// the whole would pass the length limit. Nil without a name.
+    static func computerTitle(_ computerName: String?) -> String? {
+        let name = oneLine(computerName ?? "").split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        guard !name.isEmpty else { return nil }
+        let room = maximumTitleLength - titleSuffix.count
+        guard name.count > room else { return name + titleSuffix }
+        let shortened = String(name.prefix(room - 1)).trimmingCharacters(in: .whitespaces)
+        return shortened + "…" + titleSuffix
+    }
+
+    /// Line breaks, tabs and other control characters as spaces.
+    private static func oneLine(_ text: String) -> String {
+        let scalars = text.unicodeScalars.map { scalar -> Unicode.Scalar in
+            scalar.properties.generalCategory == .control || CharacterSet.newlines.contains(scalar) ? " " : scalar
+        }
+        return String(String.UnicodeScalarView(scalars))
     }
 
     // MARK: Lines

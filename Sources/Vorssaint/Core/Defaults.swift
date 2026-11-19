@@ -1007,6 +1007,7 @@ enum DefaultsKey {
     static let notchLockScreenTerminal = "notchLockScreenTerminal"
     static let notchLockScreenTerminalLines = "notchLockScreenTerminalLines" // NotchLockScreenTerminalSelection.stored
     static let notchLockScreenTerminalProjects = "notchLockScreenTerminalProjects"
+    static let notchLockScreenTerminalTitle = "notchLockScreenTerminalTitle" // Zenith fork, "" = zenith — status
     static let wakaTimeDailyGoalMinutes = "wakaTimeDailyGoalMinutes" // Zenith fork, 0 = off
     // Companion: a small friend who rests in the closed island and is the Command Bar's face.
     static let notchMascotEnabled = "notchMascotEnabled"
@@ -1633,6 +1634,7 @@ enum Defaults {
         DefaultsKey.notchLockScreenTerminal: false,
         DefaultsKey.notchLockScreenTerminalLines: NotchLockScreenTerminalSelection.defaultValue,
         DefaultsKey.notchLockScreenTerminalProjects: false,
+        DefaultsKey.notchLockScreenTerminalTitle: "", // Zenith fork
         DefaultsKey.wakaTimeDailyGoalMinutes: 0,
         DefaultsKey.notchMascotEnabled: false,
         DefaultsKey.notchMascotVisits: true,

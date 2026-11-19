@@ -25,6 +25,7 @@ enum LockScreenTerminalTests {
         formatting(suite)
         layout(suite)
         configuration(suite)
+        title(suite)
     }
 
     // MARK: Fixtures
@@ -331,5 +332,66 @@ enum LockScreenTerminalTests {
         defaults.set(true, forKey: DefaultsKey.notchLockScreenTerminal)
         suite.expect(!Support.isEnabled(in: defaults), "the readout needs the lock screen itself on")
         defaults.removePersistentDomain(forName: "com.vorssaint.tests.lockscreen-terminal")
+    }
+
+    /// The title bar's name: the default until one is chosen, then the
+    /// chosen one on one short line.
+    private static func title(_ suite: TestSuite) {
+        suite.expect(Defaults.registeredDefaults[DefaultsKey.notchLockScreenTerminalTitle] as? String == "",
+                     "the title starts empty, which is the default")
+        suite.expect(Support.title(nil) == "zenith — status" && Support.title("") == Support.defaultTitle
+                     && Support.title("   \n\t ") == Support.defaultTitle,
+                     "an empty or blank title is the default")
+        suite.expect(Support.title("  build box  ") == "build box", "a title is trimmed")
+        suite.expect(Support.title("dev\nbox\r\nstatus") == "dev box status"
+                     && Support.title("a\u{2028}b\tc") == "a b c" && Support.title("a   b") == "a b",
+                     "line breaks, tabs and runs of spaces close up into one line")
+        let long = String(repeating: "x", count: 50)
+        suite.expect(Support.title(long).count == Support.maximumTitleLength && Support.maximumTitleLength == 32,
+                     "a title is capped at 32 characters")
+        suite.expect(Support.title("👩‍💻 macbook — status") == "👩‍💻 macbook — status",
+                     "an emoji sequence and the em dash survive the clean-up")
+        suite.expect(Support.title(" " + String(repeating: "y", count: 40)).count == Support.maximumTitleLength,
+                     "a leading space does not count against the cap once trimmed")
+
+        suite.expect(Support.titleInput("one\ntwo") == "one two" && Support.titleInput("tab\there") == "tab here",
+                     "typing keeps the title on one line")
+        suite.expect(Support.titleInput("trailing ") == "trailing ",
+                     "a space being typed at the end stays in the field")
+        suite.expect(Support.titleInput(long).count == Support.maximumTitleLength
+                     && Support.titleInput(long) == String(repeating: "x", count: 32),
+                     "the field stops at the cap")
+        suite.expect(Support.titleInput("e\u{301}t\u{E9}") == "e\u{301}t\u{E9}",
+                     "combining marks are kept")
+
+        suite.expect(Support.computerTitle("Faiz’s MacBook Air") == "Faiz’s MacBook Air — status",
+                     "this Mac's name takes the shape <name> — status")
+        suite.expect(Support.computerTitle(nil) == nil && Support.computerTitle("  \n ") == nil,
+                     "no name, no suggestion")
+        suite.expect(Support.computerTitle("  Studio\n Mac ") == "Studio Mac — status",
+                     "the name is put on one line first")
+        let named = Support.computerTitle("A Very Long Computer Name For A Mac Studio")
+        suite.expect(named.map { $0.count == Support.maximumTitleLength && $0.hasSuffix("… — status") } == true,
+                     "a long name is shortened so the whole stays within the cap and still ends in — status")
+        suite.expect(named.map { Support.title($0) == $0 } == true,
+                     "a suggested title survives the readout's own clean-up")
+        let exact = String(repeating: "m", count: Support.maximumTitleLength - Support.titleSuffix.count)
+        suite.expect(Support.computerTitle(exact) == exact + " — status",
+                     "a name that just fits is kept whole")
+
+        let defaults = UserDefaults(suiteName: "com.vorssaint.tests.lockscreen-terminal-title")!
+        defaults.removePersistentDomain(forName: "com.vorssaint.tests.lockscreen-terminal-title")
+        suite.expect(Support.title(in: defaults) == Support.defaultTitle, "nothing stored, the default")
+        defaults.set(" ci\nbox ", forKey: DefaultsKey.notchLockScreenTerminalTitle)
+        suite.expect(Support.title(in: defaults) == "ci box", "a stored title is read cleaned up")
+        defaults.removePersistentDomain(forName: "com.vorssaint.tests.lockscreen-terminal-title")
+        suite.expect(NotchLockScreenTerminalConfiguration(sources: [.sys], showsProjects: false).title == Support.defaultTitle,
+                     "a configuration without a title reads as the default")
+
+        suite.expect(AppLanguage.allCases.allSatisfy { language in
+            let text = ZenithStrings.lockScreenTerminalTitle(language)
+            return [text.windowTitle, text.caption, text.useComputerName]
+                .allSatisfy { !$0.isEmpty && !$0.contains("'") && !$0.contains("\u{2014}") }
+        }, "every language names the title field and its button, with curly apostrophes")
     }
 }
