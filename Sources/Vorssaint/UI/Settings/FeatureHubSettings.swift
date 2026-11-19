@@ -237,7 +237,7 @@ struct FeatureHubSettings: View {
                 HStack(spacing: 12) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 20))
-                        .foregroundStyle(.green)
+                        .foregroundStyle(ZenithStatus.success)
                         .accessibilityHidden(true)
                     Text(hub.footerNote)
                         .font(.callout)
@@ -760,8 +760,8 @@ private struct FeatureHubRow: View {
                             .font(.system(size: 9, weight: .bold))
                             .padding(.horizontal, 7)
                             .padding(.vertical, 3)
-                            .foregroundStyle(.orange)
-                            .background(Capsule().fill(Color.orange.opacity(0.14)))
+                            .foregroundStyle(ZenithStatus.warning)
+                            .background(Capsule().fill(ZenithStatus.fill(ZenithStatus.warning)))
                             .accessibilityHidden(true)
                     }
                     if feature.isBeta {

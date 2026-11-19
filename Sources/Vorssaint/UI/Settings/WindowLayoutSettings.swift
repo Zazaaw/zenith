@@ -103,7 +103,7 @@ struct WindowLayoutSettings: View {
                     if systemTilingEnabled {
                         Label(text.edgeSnapSystemConflict, systemImage: "exclamationmark.triangle.fill")
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                         if edgeSnapEnabled {
                             Text(text.edgeSnapWaitingForSystem)
                                 .font(.caption)
@@ -160,7 +160,7 @@ struct WindowLayoutSettings: View {
                     if !service.failedShortcutActions.isEmpty {
                         Text(l10n.s.shortcutUnavailable)
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                     }
                     Toggle(WindowDirectionalStrings.localized(l10n.language).title,
                            isOn: $directionalEnabled)
@@ -182,12 +182,12 @@ struct WindowLayoutSettings: View {
                         if let directionalError {
                             Text(directionalError)
                                 .font(.caption)
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(ZenithStatus.warning)
                         }
                         if service.directionalShortcutRegistrationFailed {
                             Text(l10n.s.shortcutUnavailable)
                                 .font(.caption)
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(ZenithStatus.warning)
                         }
                     }
                 }
@@ -215,7 +215,7 @@ struct WindowLayoutSettings: View {
                     if pointerDisplayEnabled, pointerDisplay.shortcutRegistrationFailed {
                         Text(l10n.s.shortcutUnavailable)
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                     }
                 }
 
@@ -268,7 +268,7 @@ struct WindowLayoutSettings: View {
             if maximizeEnabled, maximizer.isRunning {
                 Label(l10n.s.windowMaximizeActiveNow, systemImage: "checkmark.circle.fill")
                     .font(.caption)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(ZenithStatus.success)
             }
             WindowMaximizerExclusionsList()
         }
@@ -428,8 +428,8 @@ struct WindowLayoutSettings: View {
 
     private var resultColor: Color {
         switch service.lastResult {
-        case .success: return .green
-        case .failure: return .orange
+        case .success: return ZenithStatus.success
+        case .failure: return ZenithStatus.warning
         case nil: return .secondary
         }
     }
@@ -518,7 +518,7 @@ private struct WindowLayoutActionRow: View {
             if let errorText {
                 Text(errorText)
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
             } else if isRecording {
                 Text(ShortcutRecordingCaption.text(l10n.s, canClear: true))
                     .font(.caption)

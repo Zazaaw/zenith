@@ -690,7 +690,7 @@ struct UpdatesView: View {
         case .checking:
             label(l10n.s.updateChecking, system: "arrow.triangle.2.circlepath", tint: .secondary)
         case .upToDate:
-            label(l10n.s.updateUpToDate, system: "checkmark.circle.fill", tint: .green)
+            label(l10n.s.updateUpToDate, system: "checkmark.circle.fill", tint: ZenithStatus.success)
         case let .available(version):
             label("\(l10n.s.updateAvailablePrefix) \(version)", system: "arrow.down.circle.fill", tint: .accentColor)
         case let .downloading(progress):
@@ -703,7 +703,7 @@ struct UpdatesView: View {
         case .installing:
             label(l10n.s.updateInstalling, system: "gearshape.2.fill", tint: .secondary)
         case let .failed(reason):
-            label("\(l10n.s.updateFailedPrefix) \(reason)", system: "exclamationmark.triangle.fill", tint: .orange)
+            label("\(l10n.s.updateFailedPrefix) \(reason)", system: "exclamationmark.triangle.fill", tint: ZenithStatus.warning)
         }
     }
 
@@ -761,8 +761,8 @@ struct AboutSettings: View {
                             .font(.system(size: 9, weight: .bold))
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1.5)
-                            .background(Color.orange.opacity(0.18))
-                            .foregroundStyle(.orange)
+                            .background(ZenithStatus.fill(ZenithStatus.warning))
+                            .foregroundStyle(ZenithStatus.warning)
                             .clipShape(Capsule())
                     }
                 }
@@ -1086,12 +1086,12 @@ struct PermissionRow: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: granted ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
-                    .foregroundStyle(granted ? .green : .orange)
+                    .foregroundStyle(granted ? ZenithStatus.success : ZenithStatus.warning)
                 Text(name)
                 Spacer()
                 Text(granted ? l10n.s.permissionGranted : l10n.s.permissionMissing)
                     .font(.caption)
-                    .foregroundStyle(granted ? .green : .orange)
+                    .foregroundStyle(granted ? ZenithStatus.success : ZenithStatus.warning)
             }
             if !granted {
                 HStack(spacing: 8) {
@@ -1186,7 +1186,7 @@ struct SecureInputRow: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.circle.fill")
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
                 Text(l10n.s.secureInputTitle)
                 Spacer()
             }

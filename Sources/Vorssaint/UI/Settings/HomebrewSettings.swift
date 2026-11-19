@@ -197,7 +197,7 @@ struct HomebrewSettings: View {
             HStack(spacing: 8) {
                 Label("\(l10n.s.homebrewUpdates) \(homebrew.outdatedCount)", systemImage: "arrow.up.circle.fill")
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
                 Button {
                     pendingAction = HomebrewPendingAction(action: .upgradeAll)
                 } label: {
@@ -420,7 +420,7 @@ struct HomebrewSettings: View {
                     if dependencyUpdates > 0 {
                         Text(String(format: l10n.s.homebrewDependencyUpdatesFormat, dependencyUpdates))
                             .font(.system(size: 10))
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                             .lineLimit(1)
                     }
                     if let popularity = package.popularity {
@@ -439,7 +439,7 @@ struct HomebrewSettings: View {
                 updateButton(package, update: update)
             } else if package.isInstalled {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
+                    .foregroundStyle(ZenithStatus.success)
                     .font(.system(size: 11))
             }
         }
@@ -461,7 +461,7 @@ struct HomebrewSettings: View {
         } label: {
             Image(systemName: "arrow.up.circle.fill")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.orange)
+                .foregroundStyle(ZenithStatus.warning)
                 .frame(width: 22, height: 20)
                 .contentShape(Rectangle())
         }
@@ -522,7 +522,7 @@ struct HomebrewSettings: View {
                     if let error = homebrew.errorMessage, !error.isEmpty {
                         Label(error, systemImage: "exclamationmark.triangle.fill")
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -638,7 +638,7 @@ struct HomebrewSettings: View {
             if let error = homebrew.errorMessage, !error.isEmpty {
                 Label(error, systemImage: "exclamationmark.triangle.fill")
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 360)
             }
@@ -668,7 +668,7 @@ struct HomebrewSettings: View {
             ?? (package.update != nil
                 ? l10n.s.homebrewUpdateAvailableBadge
                 : (package.isInstalled ? l10n.s.homebrewInstalledBadge : l10n.s.homebrewNotInstalledBadge))
-        let color: Color = active != nil ? .accentColor : (package.update != nil ? .orange : (package.isInstalled ? .green : .secondary))
+        let color: Color = active != nil ? .accentColor : (package.update != nil ? ZenithStatus.warning : (package.isInstalled ? ZenithStatus.success : .secondary))
         return Text(title)
             .font(.system(size: 10, weight: .semibold))
             .foregroundStyle(color)
@@ -878,7 +878,7 @@ struct HomebrewTrustCard: View {
         }
         .padding(compact ? 8 : 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Color.orange.opacity(0.09)))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.orange.opacity(0.22), lineWidth: 1))
+        .background(RoundedRectangle(cornerRadius: 10).fill(ZenithStatus.fill(ZenithStatus.warning)))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(ZenithStatus.stroke(ZenithStatus.warning), lineWidth: 1))
     }
 }

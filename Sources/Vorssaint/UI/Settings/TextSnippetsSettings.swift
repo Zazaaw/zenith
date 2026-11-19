@@ -86,7 +86,7 @@ struct TextSnippetsSettings: View {
                     if library.shortcutRegistrationFailed {
                         Text(l10n.s.shortcutUnavailable)
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                     }
                 }
             } header: {
@@ -380,12 +380,12 @@ private struct SnippetEditor: View {
             if triggerTooShort, !snippet.trigger.isEmpty {
                 Text(text.triggerTooShort)
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
             }
             if duplicateTrigger {
                 Text(text.duplicateTrigger)
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
             }
             HStack {
                 if let delete {

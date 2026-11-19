@@ -61,18 +61,18 @@ struct AdvancedSettings: View {
                 }
                 if exported == true {
                     HStack(spacing: 6) {
-                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                        Text(backup.exported).font(.caption).foregroundStyle(.green)
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(ZenithStatus.success)
+                        Text(backup.exported).font(.caption).foregroundStyle(ZenithStatus.success)
                     }
                 } else if exported == false {
                     Text(backup.exportFailed)
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ZenithStatus.warning)
                 }
                 if importFailed {
                     Text(backup.invalidFile)
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ZenithStatus.warning)
                 }
             }
 
@@ -89,13 +89,13 @@ struct AdvancedSettings: View {
                 .disabled(working)
                 if cleared == true {
                     HStack(spacing: 6) {
-                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                        Text(l10n.s.advancedCleared).font(.caption).foregroundStyle(.green)
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(ZenithStatus.success)
+                        Text(l10n.s.advancedCleared).font(.caption).foregroundStyle(ZenithStatus.success)
                     }
                 } else if cleared == false {
                     Text(l10n.s.advancedClearFailed)
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ZenithStatus.warning)
                 }
             }
 

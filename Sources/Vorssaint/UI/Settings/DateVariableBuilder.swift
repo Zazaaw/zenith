@@ -131,7 +131,7 @@ struct DateVariableBuilder: View {
                     if !timeZoneQuery.isEmpty, search.typed != nil || search.matches.isEmpty {
                         let valid = search.typed != nil
                         Image(systemName: valid ? "checkmark.circle.fill" : "xmark.circle.fill")
-                            .foregroundStyle(valid ? .green : .red)
+                            .foregroundStyle(valid ? ZenithStatus.success : ZenithStatus.error)
                             .accessibilityLabel(valid
                                 ? text.dateTimeTimezoneValid
                                 : text.dateTimeTimezoneInvalid)

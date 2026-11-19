@@ -103,7 +103,7 @@ struct MonitorAlertsControls: View {
             if notificationsDenied, anyAlertEnabled {
                 Text(text.notificationsDenied)
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Text(text.caption)
@@ -202,7 +202,7 @@ struct MonitorAlertsControls: View {
             if notificationsDenied, anyAlertEnabled {
                 Text(text.notificationsDenied)
                     .font(.system(size: 9.5))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

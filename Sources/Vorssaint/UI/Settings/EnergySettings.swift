@@ -277,7 +277,7 @@ struct EnergySettings: View {
             if awake.clamshellSetupFailed {
                 Text(l10n.s.sudoersFailed)
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(ZenithStatus.error)
                     .padding(.leading, settingsRowTextInset)
             }
             if awake.clamshellPreferred {
@@ -328,7 +328,7 @@ struct EnergySettings: View {
                 if let failure = brightness.displayControlFailure {
                     Text(displayControlFailureText(failure, strings: strings))
                         .font(.caption)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(ZenithStatus.error)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 DisclosureGroup(isExpanded: $brightnessOptionsExpanded) {

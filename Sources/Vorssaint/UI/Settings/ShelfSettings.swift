@@ -78,7 +78,7 @@ struct ShelfSettings: View {
                     if shortcutEnabled, shelf.hotkeyRegistrationFailed {
                         Text(l10n.s.shortcutUnavailable)
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                     }
                     if shortcutEnabled {
                         VStack(alignment: .leading, spacing: 3) {

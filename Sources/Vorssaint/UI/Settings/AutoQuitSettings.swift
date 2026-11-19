@@ -28,7 +28,7 @@ struct AutoQuitSettings: View {
                 if enabled, service.isRunning {
                     Label(l10n.s.autoQuitActiveNow, systemImage: "checkmark.circle.fill")
                         .font(.caption)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(ZenithStatus.success)
                 }
             }
 

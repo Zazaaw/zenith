@@ -204,7 +204,7 @@ private struct MenuBarIconNameField: View {
             if !name.isEmpty, BlackHoleGlyph.customMark(named: name) == nil {
                 Text(text.menuBarIconUnknown)
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -252,7 +252,7 @@ private struct MusicBlockingSettings: View {
                 } else if !musicBlocker.isMonitoring {
                     Text(l10n.s.musicBlockUnavailable)
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ZenithStatus.warning)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.leading, settingsRowTextInset)
                 }
@@ -281,7 +281,7 @@ private struct MusicBlockingSettings: View {
                 if replacementRejected {
                     Text(l10n.s.musicBlockReplacementBlocked)
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ZenithStatus.warning)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.leading, settingsRowTextInset)
                 }

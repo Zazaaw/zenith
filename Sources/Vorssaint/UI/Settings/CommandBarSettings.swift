@@ -108,7 +108,7 @@ struct CommandBarSettings: View {
                 if shortcutEnabled, service.shortcutRegistrationFailed {
                     Text(l10n.s.shortcutUnavailable)
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ZenithStatus.warning)
                 }
                 if secureInput.holder != .off {
                     SecureInputRow()
@@ -284,7 +284,7 @@ struct CommandBarSettings: View {
                         if service.refusedRowShortcutKeys.contains(entry.key) {
                             Text(l10n.s.shortcutUnavailable)
                                 .font(.caption)
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(ZenithStatus.warning)
                         }
                         Button(text.removeButton) { removeRowShortcut(entry.key) }
                             .buttonStyle(.bordered)

@@ -588,7 +588,7 @@ struct MouseSettings: View {
                     if middleClick.touchDeviceMissing {
                         Text(l10n.s.middleClickNoTrackpad)
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }

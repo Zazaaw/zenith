@@ -72,7 +72,7 @@ struct GeneralSettings: View {
             } else if let loginError {
                 Text(loginError)
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(ZenithStatus.error)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Divider()
@@ -139,7 +139,7 @@ struct GeneralSettings: View {
             if hotkeyEnabled, hotkeys.registrationFailed {
                 Text(l10n.s.shortcutUnavailable)
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
                     .padding(.leading, settingsRowTextInset)
             }
         }

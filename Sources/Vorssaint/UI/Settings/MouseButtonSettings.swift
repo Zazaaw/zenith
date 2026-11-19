@@ -103,7 +103,7 @@ struct MouseButtonShortcutsSection: View {
                     if !spacesCommandsAreReachable {
                         Text(text.spacesShortcutsOffNote)
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -156,7 +156,7 @@ struct MouseButtonShortcutsSection: View {
             if let recordError, recordErrorButton == button {
                 Text(recordError)
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
             } else if recordingButton == button {
                 Text(ShortcutRecordingCaption.text(l10n.s, canClear: false))
                     .font(.caption)
@@ -165,7 +165,7 @@ struct MouseButtonShortcutsSection: View {
             if shortcut != nil, RadialMenuSupport.claimsMouseButton(button) {
                 Text(text.rowWheelNote)
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
             }
         }
     }
@@ -181,7 +181,7 @@ struct MouseButtonShortcutsSection: View {
                         Text(text.captureWaiting)
                     } else {
                         Image(systemName: "exclamationmark.circle.fill")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                         Text(text.captureBlind)
                     }
                     Spacer()
@@ -190,7 +190,7 @@ struct MouseButtonShortcutsSection: View {
                 if let captureFeedback {
                     Text(captureFeedback)
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ZenithStatus.warning)
                 }
                 Text(text.captureHint)
                     .font(.caption)
@@ -222,7 +222,7 @@ struct MouseButtonShortcutsSection: View {
                         Text(text.spacesCaptureWaiting)
                     } else {
                         Image(systemName: "exclamationmark.circle.fill")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                         Text(text.captureBlind)
                     }
                     Spacer()
@@ -231,7 +231,7 @@ struct MouseButtonShortcutsSection: View {
                 if let spacesFeedback {
                     Text(spacesFeedback)
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ZenithStatus.warning)
                 }
             }
             .onReceive(service.$lastInputSeen) { seen in

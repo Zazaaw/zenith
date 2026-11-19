@@ -53,7 +53,7 @@ struct QuickToolsSettings: View {
                     if launcherShortcutEnabled, launcher.shortcutRegistrationFailed {
                         Text(l10n.s.shortcutUnavailable)
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                     }
                 } header: {
                     Text(l10n.s.launcherName)
@@ -124,7 +124,7 @@ struct QuickToolsSettings: View {
                     if quitAllShortcutEnabled, quickToggles.shortcutRegistrationFailed {
                         Text(l10n.s.shortcutUnavailable)
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                     }
                     Toggle("\(l10n.s.quickToolShortcutToggle): \(FeatureStrings.quickToggles(l10n.language).quitOthersTitle)",
                            isOn: $quitOthersShortcutEnabled)
@@ -138,7 +138,7 @@ struct QuickToolsSettings: View {
                     if quitOthersShortcutEnabled, quickToggles.othersShortcutRegistrationFailed {
                         Text(l10n.s.shortcutUnavailable)
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                     }
                     Text(l10n.s.quitAppsCaption)
                         .font(.caption)
@@ -160,7 +160,7 @@ struct QuickToolsSettings: View {
                     if micMute.isMuted {
                         Label(l10n.s.micMutedHUD, systemImage: "mic.slash.fill")
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                     }
                     Text(l10n.s.micMuteCaption)
                         .font(.caption)
@@ -180,7 +180,7 @@ struct QuickToolsSettings: View {
                     if micShortcutEnabled, micMute.shortcutRegistrationFailed {
                         Text(l10n.s.shortcutUnavailable)
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                     }
                 } header: {
                     Text(l10n.s.micMuteName)
@@ -210,7 +210,7 @@ struct QuickToolsSettings: View {
                     if cameraShortcutEnabled, cameraPreview.shortcutRegistrationFailed {
                         Text(l10n.s.shortcutUnavailable)
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                     }
                     if permissions.camera == .denied {
                         CameraPermissionRow()
@@ -306,7 +306,7 @@ struct QuickToolsSettings: View {
                     if scratchpadShortcutEnabled, scratchpad.shortcutRegistrationFailed {
                         Text(l10n.s.shortcutUnavailable)
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ZenithStatus.warning)
                     }
                 } header: {
                     Text(FeatureStrings.scratchpad(l10n.language).pageTitle)
@@ -361,12 +361,12 @@ private struct CameraPermissionRow: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.circle.fill")
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
                 Text(FeatureStrings.cameraPreview(l10n.language).permName)
                 Spacer()
                 Text(l10n.s.permissionMissing)
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ZenithStatus.warning)
             }
             Button(l10n.s.permissionOpenSettings) {
                 Permissions.shared.openCameraSettings()
