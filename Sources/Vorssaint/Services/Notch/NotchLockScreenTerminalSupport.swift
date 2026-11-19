@@ -342,9 +342,10 @@ enum NotchLockScreenTerminalSupport {
     }
 }
 
-/// Where the readout sits: under the line of activities, as wide as the
-/// music player's pane. The player keeps the room that is left, and when that
-/// is too little for it, the readout gives way.
+/// Where the readout sits: at the bottom, just over the login controls, as
+/// wide as the music player's pane. The player keeps the room between the line
+/// of activities and the readout, and when that is too little, the readout
+/// gives way.
 enum NotchLockScreenTerminalLayout {
     static let fontSize: CGFloat = 11.5
     static let lineHeight: CGFloat = 16
@@ -366,12 +367,13 @@ enum NotchLockScreenTerminalLayout {
         guard lines > 0, let row, [screen.minX, screen.minY, screen.width, screen.height].allSatisfy(\.isFinite),
               screen.width >= width + 32 else { return (nil, player) }
         let height = height(lines: lines)
-        let top = row.minY - gap
-        guard top - height >= screen.minY + NotchLockScreenLayout.loginClearance else { return (nil, player) }
-        let terminal = CGRect(x: (screen.midX - width / 2).rounded(), y: top - height, width: width, height: height)
+        let bottom = screen.minY + NotchLockScreenLayout.loginClearance
+        guard bottom + height <= row.minY - gap else { return (nil, player) }
+        let terminal = CGRect(x: (screen.midX - width / 2).rounded(), y: bottom, width: width, height: height)
         guard music, let player else { return (terminal, player) }
-        let room = terminal.minY - gap - player.minY
+        let floor = terminal.maxY + gap
+        let room = player.maxY - floor
         guard room >= NotchLockScreenLayout.minimumPlayerHeight else { return (nil, player) }
-        return (terminal, CGRect(x: player.minX, y: player.minY, width: player.width, height: room))
+        return (terminal, CGRect(x: player.minX, y: floor, width: player.width, height: room))
     }
 }

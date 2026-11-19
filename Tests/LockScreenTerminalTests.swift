@@ -294,13 +294,14 @@ enum LockScreenTerminalTests {
         let player = NotchLockScreenLayout.playerFrame(in: screen)
         let arranged = Layout.arrange(row: row, player: player, screen: screen, lines: 7, music: true)
         suite.expect(arranged.terminal.map { terminal in
-            row.map { terminal.maxY == $0.minY - Layout.gap } == true && terminal.width == NotchLockScreenLayout.paneWidth
+            terminal.minY == screen.minY + NotchLockScreenLayout.loginClearance
+                && terminal.width == NotchLockScreenLayout.paneWidth
                 && terminal.height == Layout.height(lines: 7) && terminal.midX == screen.midX
-        } == true, "the readout hangs under the line of activities, as wide as the player's pane")
+        } == true, "the readout sits at the bottom, just over the login controls, as wide as the player's pane")
         suite.expect(arranged.player.map { adjusted in
-            arranged.terminal.map { adjusted.maxY == $0.minY - Layout.gap } == true
-                && adjusted.minY == player?.minY && adjusted.height >= NotchLockScreenLayout.minimumPlayerHeight
-        } == true, "the player keeps the room under the readout")
+            arranged.terminal.map { adjusted.minY == $0.maxY + Layout.gap } == true
+                && adjusted.maxY == player?.maxY && adjusted.height >= NotchLockScreenLayout.minimumPlayerHeight
+        } == true, "the player keeps the room over the readout")
         suite.expect(Layout.height(lines: 2) == 3 * Layout.lineHeight + 2 * Layout.verticalPadding,
                      "the card holds its lines and the prompt with the cursor")
         let short = CGRect(x: 0, y: 0, width: 1280, height: 800)
@@ -315,7 +316,7 @@ enum LockScreenTerminalTests {
         let none = Layout.arrange(row: row, player: player, screen: screen, lines: 0, music: true)
         suite.expect(none.terminal == nil && none.player == player, "no lines, no readout, and the player as it was")
         suite.expect(Layout.arrange(row: nil, player: player, screen: screen, lines: 3, music: true).terminal == nil,
-                     "no line of activities to hang from, no readout")
+                     "no line of activities to stay under, no readout")
     }
 
     private static func configuration(_ suite: TestSuite) {
