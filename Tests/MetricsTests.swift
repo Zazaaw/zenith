@@ -157,6 +157,7 @@ struct MetricsTests {
                 SettingsWindowTests.run { suite.expect($0, $1) }
                 NotchSettingsChoiceTests.run(suite)
                 MonitorTokenTests.run(suite)
+                ZenithAboutTests.run(suite) // Zenith fork
             }),
             ("feature-hub-layout", { FeatureHubLayoutTests.run(suite) }),
             ("display-restoration", {
