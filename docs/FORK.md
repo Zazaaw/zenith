@@ -563,6 +563,70 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     abu-abu tembus pandang: galeri command palette (kolom, kursor keyboard, paging), grid System/AI,
     WakaTime, segmented Timer di baris atas (ViewThatFits ke menu bila sempit), label mono Home di
     bahasa panjang, Increase Contrast, Reduce Motion.
+- **Live activity perintah terminal (branch `feat/command-activity`):** perintah zsh yang lama
+  (`./build.sh --test`, `npm run build`, `docker build`, deploy) tampil di island tertutup selama
+  jalan, lalu ✓/✗ dengan durasinya. Polanya sama dengan live activity Vercel. Kode di
+  `Services/Command/CommandActivitySupport.swift` (murni: parsing, nama program, daftar abaikan,
+  threshold, format jam, keputusan stale, blok `.zshrc`), `Services/Command/CommandActivityService.swift`,
+  dan `UI/Command/CommandActivityViews.swift` (layout, strip, Settings). Teks di `Core/ZenithStrings.swift`
+  (15 bahasa). Test di `Tests/CommandActivityTests.swift` (suite `command-activity`).
+  - **Hook zsh** (`CommandActivitySupport.hookBlock`): blok bertanda `# >>> zenith command activity >>>`
+    … `# <<< zenith command activity <<<` dengan `preexec` (lewat `add-zsh-hook`) dan `precmd` (dipasang
+    paling depan di `precmd_functions` supaya `$?` masih milik perintahnya). Folder tujuan ditulis di
+    blok saat dibuat, jadi build rilis dan Developer masing-masing menulis ke
+    `<Application Support>/<bundle id>/Commands/` miliknya; memasang dari build lain mengganti blok yang ada.
+    Hanya builtin (`print` ke `.tmp` lalu `zf_mv`, `$EPOCHREALTIME`), tanpa proses tambahan: diukur
+    sekitar 0,24 ms per perintah. Tidak pernah mencetak apa pun. Baris yang diketik dengan spasi di
+    depan dilewati. Kalau foldernya tidak ada (fitur mati) hook hanya mengecek folder itu.
+  - **Format event:** `<id>.start.json` = `{"id":"<pid>-<n>","pid":…,"tty":"ttys003","start":<epoch>,
+    "cmd":"…","cwd":"<nama folder>"}`; `<id>.end.json` = `{"id":…,"status":<exit>,"end":<epoch>}`.
+    `cmd` dipotong 400 karakter. File start tetap ada selama perintah jalan (supaya app yang
+    di-restart masih tahu), lalu dua-duanya dihapus saat end diproses.
+  - **Service:** DispatchSource pada folder (bukan polling), parsing dan hapus file di queue sendiri,
+    publish di main. Timer hanya untuk momen yang berubah sendiri (lewat threshold, lewat 1 jam, hasil
+    habis) dan, selama ada yang jalan, cek tiap 30 dtk apakah shell-nya masih hidup (`kill(pid, 0)`):
+    tab yang ditutup saat perintah jalan tidak pernah menjalankan `precmd`. Perintah > 12 jam dianggap
+    stale. `.tmp` dan file asing > 1 menit dihapus. Jalan hanya kalau island jalan dan saklar nyala;
+    dimatikan, foldernya ikut dihapus.
+  - **Privasi:** island hanya menampilkan nama program (`npm run build` → `npm`, `./build.sh` tetap,
+    path lain jadi nama file), melewati `VAR=x`, `sudo`, `env`, `nice`, `time`, `timeout`, `caffeinate`,
+    `xcrun`, dan setup di depan (`cd x && …`). Argumen dibaca sekali untuk memilih program dan tidak
+    disimpan. Nama folder hanya kalau "Show folder" nyala (default mati).
+  - **Daftar abaikan:** editor, pager, `man`, `ssh`, `top`/`htop`, `tmux`, agent (`claude`, `codex`, …),
+    shell database, REPL tanpa argumen (`python3`, `node`, `swift`), `tail -f`, `log stream`, `git log/diff`,
+    dev server (`npm run dev`, `npm start`, `vite`, `next dev`, `docker compose up` tanpa `-d`, …).
+    Tambahan sendiri lewat field "Also ignore" (`notchCommandIgnored`).
+  - **Island:** `NotchCompactActivity.command`, urutan otomatis setelah vercel, ikut picker activity,
+    tidak pernah jadi pasangan. Tidak punya halaman, jadi klik membuka home (`.controls`). Wing memakai
+    geometri Watch seperti Vercel. Kiri: arc ungu (`ZenithStatus.progress`) yang berputar + jam mono
+    (`0:42`, `3:05`, `1:02:10`); kanan: program (+N kalau ada perintah lain yang juga tampil,
+    `· folder`). Yang tampil adalah perintah yang mulai paling awal, jadi tidak lompat saat terminal lain
+    ikut. Hasil: ✓ emerald / ✗ merah + durasi total, 6 dtk.
+  - **Gerak:** jam di `TimelineView(.periodic(from: start, by: 1))` yang hanya membungkus teksnya, digit
+    mono, `.contentTransition(.numericText())`, slot selebar bacaan terlebar (`00:00`, `00:00:00` setelah
+    1 jam) jadi wing tidak berubah selama berdetak. Arc berputar dengan `.animation(_:body:)` yang hanya
+    menyentuh `rotationEffect` (tidak ikut animasi layout island). Selesai: arc mengecil dan memudar
+    sementara ✓/✗ membesar masuk (warna berpindah lewat crossfade), lalu bump spring 1,0 → 1,12 → 1,0
+    (`keyframeAnimator`, ~0,35 dtk). Masuk/keluar strip memakai transisi island yang sama dengan Vercel
+    (`NotchStripHold`). Reduce Motion: arc diam, tanpa bump, ganti dengan fade.
+  - **Settings:** kartu "Terminal commands" di Dynamic Island → Activity, di bawah Lock Screen. Saklar
+    "Command activity" (`notchCommandActivity`, default mati), "Show after" 5/8/15/30 dtk
+    (`notchCommandThreshold`, default 8), "Show folder" (`notchCommandShowsFolder`), "Also ignore". Bagian
+    shell hook: status (terpasang / untuk build lain / belum / blok rusak) dan kapan event terakhir
+    (`notchCommandLastEvent`, tidak terdaftar jadi tidak ikut backup), tombol "Install shell hook" (alert
+    menampilkan blok persis sebelum menulis), "Copy snippet", "Remove hook". Tulisan ke `~/.zshrc`
+    mengikuti symlink (dotfile manager), atomik, permission dipertahankan; blok dengan marker yang tidak
+    lengkap tidak pernah disentuh. Judul kartu digambar sendiri (bukan `SettingsCard(title:)`) dan saklar
+    memakai `ZenithSwitchRow`, jadi tidak masuk test search coverage.
+  - Edit di file upstream hanya baris bertanda `// Zenith fork`: `NotchSupport` (case, urutan, judul,
+    simbol), `NotchService` (`hasCommandActivity`, wing, kapsul, sync/stop, langganan `$activity`),
+    `NotchView`/`NotchMirrorView` (strip), `NotchTimerStrip`/`NotchCapsuleViews` (tidak berpasangan),
+    `NotchSettings` (kartu), `Defaults`. Test double `NotchMusicVisibilityTests` diberi
+    `hasCommandActivity` dan `commandStripWing`.
+  - **Belum diverifikasi visual:** app UI tidak dijalankan. Hook sudah dicoba di zsh terisolasi
+    (`ZDOTDIR` sementara, bukan `~/.zshrc` asli): escape JSON, status exit, baris berawalan spasi, waktu.
+    Perlu dicek di Mac: putaran arc dan roll digit di 120 Hz, morph ✓/✗ dan bump, lebar wing saat lewat
+    1 jam, kapsul, alert install, dan perilaku di beberapa tab terminal.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
