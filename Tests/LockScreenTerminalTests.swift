@@ -72,22 +72,24 @@ enum LockScreenTerminalTests {
             wakaSeconds: 3 * 3600 + 12 * 60, wakaGoalMinutes: 256, wakaTopProject: secret,
             deployments: [deployment(.building, ago: 30)], inbox: inbox(mine: [pullRequest(.pending)]),
             batteryPercent: 84, charging: false, cpu: 0.23, downloads: [download(fraction: 0.42)],
-            timer: timer, timerNow: 100 + 3 * 60 - 4, now: now)
+            timer: timer, timerNow: 100 + 3 * 60 - 4,
+            prayer: "ashar 15:04 · in 1h 04m", golden: "17:21–18:04 · in 3h 21m", now: now) // Zenith fork
     }
 
     // MARK: Selection
 
     private static func selection(_ suite: TestSuite) {
-        suite.expect(Selection.defaultValue == "agents,waka,-vercel,-ci,sys,dl,timer",
-                     "the default order is the readout's own, with Vercel and GitHub checks off")
+        // Zenith fork: the Sky lines (prayer, golden) join at the end, off.
+        suite.expect(Selection.defaultValue == "agents,waka,-vercel,-ci,sys,dl,timer,-prayer,-golden",
+                     "the default order is the readout's own, with Vercel, GitHub checks and the Sky lines off")
         suite.expect(Selection(stored: nil) == Selection(stored: Selection.defaultValue)
                      && Selection(stored: "  ") == Selection(stored: Selection.defaultValue),
                      "nothing stored reads as the default")
         let parsed = Selection(stored: "timer, -sys,bogus,timer,ci")
-        suite.expect(parsed.entries.map(\.source) == [.timer, .sys, .ci, .agents, .waka, .vercel, .dl]
+        suite.expect(parsed.entries.map(\.source) == [.timer, .sys, .ci, .agents, .waka, .vercel, .dl, .prayer, .golden]
                      && parsed.shown == [.timer, .ci],
                      "unknown and repeated names are skipped; missing lines join at the end, off")
-        suite.expect(Selection(stored: parsed.stored) == parsed && parsed.stored == "timer,-sys,ci,-agents,-waka,-vercel,-dl",
+        suite.expect(Selection(stored: parsed.stored) == parsed && parsed.stored == "timer,-sys,ci,-agents,-waka,-vercel,-dl,-prayer,-golden",
                      "a selection survives being stored and read back")
         var toggled = Selection(stored: nil)
         toggled.set(.vercel, isOn: true)
@@ -99,17 +101,17 @@ enum LockScreenTerminalTests {
     private static func ordering(_ suite: TestSuite) {
         var selection = Selection(stored: nil)
         selection.move(.sys, by: -4)
-        suite.expect(selection.entries.map(\.source) == [.sys, .agents, .waka, .vercel, .ci, .dl, .timer],
+        suite.expect(selection.entries.map(\.source) == [.sys, .agents, .waka, .vercel, .ci, .dl, .timer, .prayer, .golden],
                      "a line moves up past the others")
         selection.move(.sys, by: -1)
-        selection.move(.timer, by: 1)
-        suite.expect(selection.entries.first?.source == .sys && selection.entries.last?.source == .timer,
+        selection.move(.golden, by: 1)
+        suite.expect(selection.entries.first?.source == .sys && selection.entries.last?.source == .golden,
                      "moving past either end stops there")
         suite.expect(!selection.canMove(.sys, by: -1) && selection.canMove(.sys, by: 1)
-                     && !selection.canMove(.timer, by: 1) && !selection.canMove(.waka, by: 0),
+                     && !selection.canMove(.golden, by: 1) && !selection.canMove(.waka, by: 0),
                      "the first line cannot go up, the last cannot go down")
         selection.move(.agents, by: 99)
-        suite.expect(selection.entries.map(\.source) == [.sys, .waka, .vercel, .ci, .dl, .timer, .agents],
+        suite.expect(selection.entries.map(\.source) == [.sys, .waka, .vercel, .ci, .dl, .timer, .prayer, .golden, .agents],
                      "a large move lands at the end")
         let lines = Support.lines([.timer, .sys, .agents], readings: fullReadings(), showsProjects: false)
         suite.expect(lines.map(\.source) == [.timer, .sys, .agents], "the readout follows the chosen order")

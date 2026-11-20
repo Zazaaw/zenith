@@ -142,7 +142,8 @@ enum HomeLayoutTests {
                      "every widget shows with every page on")
         suite.expect(Set(ZenithHomeWidget.allCases.map(\.hex)).count == ZenithHomeWidget.allCases.count
                      && ZenithHomeWidget.allCases.allSatisfy { widget in
-                         widget.module.map { ZenithIslandPalette.hex($0) == widget.hex } ?? true
+                         // Zenith fork: the golden hour wears its own amber beside the Sky page's prayers.
+                         widget == .golden || (widget.module.map { ZenithIslandPalette.hex($0) == widget.hex } ?? true)
                      },
                      "each widget has its own colour, its page's where it has one")
     }
