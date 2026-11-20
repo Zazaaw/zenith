@@ -734,6 +734,85 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     Jepang, Rusia. Perlu dicek di Mac: animasi masuk tile saat di-scroll di 120 Hz, decrypt, kilau
     subtitle, hover tile, klik tile ke halaman yang benar (dan ke Features kalau fitur tidak
     terpasang), ikon app asli di hero, tombol "Review introduction" (tidak bisa dirender statis).
+- **Langkah Claude Code live di halaman AI (branch `feat/agents-live-claude`):** halaman AI di island
+  dibangun ulang dengan pola dan gerak tampilan agents Droppy (referensi
+  `reference/droplet-spot-agents-*.webm`; aset tidak diambil, mark agent tetap milik Zenith). Sumber
+  datanya hook resmi Claude Code, polanya sama dengan live activity perintah terminal. Kode di
+  `Services/AgentUsage/ClaudeHooksSupport.swift` (murni: parsing event, model sesi, strip, script hook),
+  `ClaudeHooksSettings.swift` (merge/hapus di `settings.json`, pembaca/penulis JSON berurutan),
+  `ClaudeHooksService.swift` (watcher folder, publish), `UI/Notch/NotchAgentsLiveView.swift` (halaman),
+  `UI/Notch/NotchAgentsLiveStrip.swift` (island tertutup) dan `UI/Settings/NotchAgentsClaudeHooksSettings.swift`.
+  Teks di `ZenithStrings.claudeHooks` (15 bahasa). Test di `Tests/ClaudeHooksTests.swift` (suite `claude-hooks`).
+  - **Hook:** script `sh` `<Application Support>/<bundle id>/zenith-claude-hook.sh` (di samping folder event,
+    bukan di dalamnya). Command di `settings.json`: `[ -f '<script>' ] && exec /bin/sh '<script>'; exit 0`,
+    jadi kalau script hilang (Zenith dihapus) Claude Code tetap tidak melihat error. Satu `awk` membaca
+    JSON dari stdin (tanpa `jq`, tanpa network), menulis `.<pid>.tmp` lalu `mv` ke `<pid>.json` di
+    `<Application Support>/<bundle id>/Agents/`. Tidak pernah mencetak ke stdout, selalu exit 0. Diukur
+    sekitar 5 ms per event (`Write` 2 MB sekaligus sekitar 0,2 dtk untuk menghitung barisnya). Kalau
+    foldernya tidak ada (fitur mati) script langsung keluar.
+  - **Event yang didaftarkan:** `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PostToolUseFailure`,
+    `Notification`, `Stop`, `SessionEnd`, masing-masing satu grup `{"matcher":"*","hooks":[{"type":"command",
+    "command":…,"timeout":5}]}` (tanpa `matcher` untuk event yang tidak memakainya).
+  - **Format event:** `{"v":1,"event":"pre","session":"<id>","time":<epoch dtk>,"folder":"<nama folder cwd>",
+    "tool":"Edit","id":"<tool_use_id>","target":"Hero.swift","added":22,"removed":6}`. `event` salah satu
+    `prompt/pre/post/failure/notification/stop/end`; `notice` untuk notification (`permission_prompt`,
+    `idle_prompt`, …). `target` hanya nama file (Read/Edit/Write/MultiEdit/NotebookEdit) atau nama program
+    untuk Bash (melewati `VAR=x`, `cd x &&`, `sudo`, `env`, `nice -n 15`, `timeout 30s`, …). Baris dihitung
+    dari `old_string`/`new_string`/`content` (escape `\n` di JSON, `\\n` tidak dihitung) dan teksnya dibuang.
+    Prompt, perintah, argumen, isi file, pesan notifikasi dan path lengkap tidak pernah ditulis.
+  - **Model:** urutan file per mtime (ns di APFS) lalu urutan wajar di satu turn. Prompt memulai turn
+    (checklist kosong), Pre menambah langkah ▶ (dobel/terbalik diabaikan, `TodoWrite` tanpa baris), Post ✓,
+    Failure ✗ (barisnya tidak dihitung lagi), Notification `permission_prompt` → butuh izin, `idle_prompt`
+    dan sejenisnya → menunggu input, Stop → selesai (langkah yang masih jalan dianggap selesai), SessionEnd
+    menghapus sesi. Kartu file = file terakhir yang disentuh, +/− kumulatif untuk file itu di turn ini.
+    Sesi tanpa event 2 jam dihapus; event yang lebih tua dari itu diabaikan; `.tmp`/file asing > 1 menit
+    dihapus; maksimal 400 file per scan. Service: DispatchSource pada folder, parse dan hapus di queue
+    sendiri, publish di main, timer hanya untuk ✓ yang habis, "menunggu input" yang keluar dari island
+    (10 menit) dan sesi yang basi. Jalan kalau island jalan, section AI tampil dan Claude nyala; mati →
+    foldernya dihapus.
+  - **Halaman:** header (mark Claude yang bernapas, "Claude", titik + status: "Working in <folder>" warna
+    Claude, "Needs your permission"/"Waiting for you" amber, "Done in 2m" emerald) dan pill **Progress |
+    Usage | Stats** di kanan (aktif emerald 10/20/100, lainnya abu-abu). Kalau ada beberapa sesi, chip `1/2`
+    untuk pindah. **Progress:** checklist 6 langkah terakhir (✓ warna Claude, ▶ untuk yang jalan, amber
+    saat menunggu izin, baris selesai lebih redup) dan kartu dalam (isi putih 6%, radius 14) berisi nama file
+    mono warna Claude, `+N −M` mono hijau/merah (`numericText`), status (Reading…/Editing…/Saving…/Running…
+    → Saved/Finished/Failed) dan bar 3 pt. Tanpa sesi hook: sesi dari log (Codex tetap lewat reader lama)
+    atau ajakan "Connect Claude Code". **Usage:** ring per agent (Claude, Codex, OpenCode kalau ada limit)
+    dengan mark di tengah, "% left" (atau "% used", ikut setting) di bawah, badge ↺ Codex kalau ada reset.
+    **Stats:** kartu upstream (`NotchAgentsView`) apa adanya, termasuk menu periode di baris atas.
+  - **Tinggi:** Progress dan Usage tetap 24 + 10 + 112 pt; Stats = tinggi kartu + header
+    (`NotchAgentsPageLayout`). Ganti tab memicu `refreshPresentation` lewat `NotchAgentsPageState.$tab`.
+  - **Gerak** (SwiftUI saja, transform/opacity/blur): ganti tab, sesi, heading dan file di kartu memakai
+    blur crossfade lokal (`AnyTransition.notchAgentsSwap`: blur 6, opacity, skala 0,98; gampang diganti
+    `.zenithMorph`). Baris masuk naik 6 pt dari blur, berurutan 40 ms; daftar bergeser dengan spring
+    (0,38/0,86); ▶ → ✓ lewat `symbolEffect(.replace)`. Bar: saat jalan isi ease-out ke 62% lalu merayap pelan
+    ke 94% (offset, bukan lebar), Post → penuh dengan spring; ganti langkah reset tanpa animasi. Ring masuk
+    skala 0,92 + blur + opacity berurutan. Pill tekan 0,96. Reduce Motion: fade saja.
+  - **Island tertutup:** memperluas live activity agents yang sudah ada (`.agents`), bukan activity baru.
+    Saat ada sesi butuh izin/input: kiri mark Claude + titik amber berdenyut (layer, `NotchAgentPulse`),
+    kanan "needs you · <folder>"; wing pinjam geometri Watch (56–150 pt) lewat `agentStripGeometry`.
+    Stop pada turn ≥ 10 dtk: ✓ emerald + "done · <folder>" 5 dtk lalu hilang. Izin tetap tampil sampai
+    dijawab; menunggu input 10 menit. Suara lembut (`Tink`, 0,35) sekali saat mulai butuh kamu, saklar
+    `notchAgentsClaudeSound` (default nyala, ikut backup). Hanya island dengan kamera; kapsul (tanpa notch)
+    tetap strip upstream.
+  - **Settings:** di Dynamic Island → AI agents, setelah bagian Live (kalau Claude nyala). Status (terhubung /
+    untuk build lain atau hook lama / belum / `settings.json` tidak bisa dibaca) dan event terakhir
+    (`notchAgentsClaudeLastEvent`, tidak terdaftar jadi tidak ikut backup). "Connect Claude Code" menampilkan
+    JSON persis yang akan di-merge sebelum menulis; "Disconnect" hanya mencabut handler Zenith. Merge
+    idempoten, kunci dan hook lain (urutan kunci, ejaan angka, karakter) tetap, handler build lain diganti,
+    file lama disalin ke `settings.json.zenith-backup`, tulisan atomik ke target symlink, permission
+    dipertahankan; file yang bukan JSON objek (mis. ada komentar) tidak pernah disentuh. Saklar suara memakai
+    `ZenithSwitchRow`, judul digambar sendiri (tidak masuk test search coverage).
+  - Edit di file upstream bertanda `// Zenith fork`: `NotchService` (`hasAgentActivity`, `agentStripGeometry`,
+    sync/stop, langganan strip dan tab, tinggi halaman), `NotchAgentStrip` (strip "needs you"), `NotchView` dan
+    `NotchContentEditor` (`NotchAgentsLivePage`), `NotchAgentsSettings` (bagian hook), `Defaults`. Test double
+    `NotchMusicVisibilityTests` diberi `agentStripGeometry`.
+  - **Belum diverifikasi visual:** app UI tidak dijalankan dan `~/.claude/settings.json` asli tidak disentuh.
+    Script dicoba dengan payload contoh di folder sementara (redaksi, hitung baris, waktu). Perlu dicek di
+    Mac: header dan pill di lebar island tersempit dan bahasa panjang, checklist + kartu (truncation nama
+    file, angka count-up), bar di 120 Hz, blur crossfade antartab/sesi, ring Usage, Stats (tinggi dan menu
+    periode), strip "needs you"/"done" di island bernotch (lebar wing, denyut amber, suara), alert Connect,
+    dan sesi Claude Code sungguhan (permission prompt, idle 60 dtk, beberapa sesi sekaligus).
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
