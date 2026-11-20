@@ -61,6 +61,8 @@ struct CardImportSettings: View {
                 .fixedSize()
             }
             ZenithSwitchRow(text.ejectWhenDone, isOn: $eject) { Text(text.ejectWhenDone) }
+            Divider().padding(.vertical, 2)
+            CardBackupSettingsView()
         }
         .onChange(of: enabled) { _, _ in
             NotchService.shared.syncWithPreferences()

@@ -142,6 +142,16 @@ final class ZenithNoticeCenter: ObservableObject {
         return true
     }
 
+    /// Zenith fork: card imports without a verified backup (CardBackupService),
+    /// after the reminder's delay or when a backup drive mounts: "2 events not
+    /// backed up" and Back up. A card's kind, so it shares its switch and rank.
+    func cardBackupPending(title: String, subtitle: String, action: String) {
+        guard CardImportOptions.isEnabled() else { return }
+        enqueue(ZenithNotice(kind: .card, key: ZenithNoticeKey.cardBackup, title: title, subtitle: subtitle,
+                             glyph: .symbol("externaldrive.badge.exclamationmark", .amber),
+                             accessory: .action(action), action: .backUpCards))
+    }
+
     /// The card left before anyone answered: its notice goes too.
     func cardRemoved(volume: String) {
         let key = ZenithNoticeKey.card(volume)
@@ -551,6 +561,11 @@ final class ZenithNoticeCenter: ObservableObject {
             // Zenith fork: as a card's Import, after the capsule has gone.
             dismiss(quickly: true)
             DispatchQueue.main.async { NotchService.shared.open(.recap) }
+            return
+        case .backUpCards:
+            // Zenith fork: as a card's Import, after the capsule has gone.
+            dismiss(quickly: true)
+            DispatchQueue.main.async { CardBackupService.shared.noticeBackUp() }
             return
         }
         dismiss(quickly: true)

@@ -28,6 +28,17 @@ enum CardImportStripLayout {
 
     static func iconSize(height: CGFloat) -> CGFloat { min(12, NotchTimerSupport.stripIconSize(height: height)) }
 
+    /// A backup's glyph: a drive while it copies, a shield while it compares.
+    static func backupSymbol(_ stage: CardBackupStage) -> String {
+        stage == .copying ? "externaldrive.fill" : "checkmark.shield.fill"
+    }
+
+    /// The title the island reads out: the import's, or the backup's.
+    static func title(_ activity: CardImportActivity, language: AppLanguage) -> String {
+        if case .backup = activity { return ZenithStrings.cardBackup(language).title }
+        return ZenithStrings.cardImport(language).title
+    }
+
     static func percentText(_ percent: Int) -> String { "\(min(100, max(0, percent)))%" }
 
     /// What the right side reads: `812 left · 3m` while copying, the count
@@ -36,7 +47,7 @@ enum CardImportStripLayout {
         let text = ZenithStrings.cardImport(language)
         let locale = language.formattingLocale()
         switch activity {
-        case .copying(let total):
+        case .copying(let total), .backup(.running(_, let total)):
             let left = progress.map { $0.totalFiles > 0 ? $0.filesLeft : total } ?? total
             var reading = CardImportFormat.filling(text.left, CardImportFormat.count(left, locale: locale))
             if let eta = progress?.eta { reading += " · " + CardImportFormat.eta(eta, locale: locale) }
@@ -49,12 +60,16 @@ enum CardImportStripLayout {
             case .diskFull: return text.diskFull
             case .failed: return text.failed
             }
+        case .backup(.finished(let files, let bytes, _)):
+            return CardImportFormat.summary(files: files, bytes: bytes, language: language)
+        case .backup(.failed(let failure)):
+            return CardBackupFormat.failure(failure, text: ZenithStrings.cardBackup(language), language: language)
         }
     }
 
     /// The widest the right side gets during this activity.
     static func detailTemplate(_ activity: CardImportActivity, language: AppLanguage) -> String {
-        guard case .copying(let total) = activity else { return detail(activity, progress: nil, language: language) }
+        guard let total = activity.runningFiles else { return detail(activity, progress: nil, language: language) }
         let text = ZenithStrings.cardImport(language)
         let locale = language.formattingLocale()
         let count = CardImportFormat.filling(text.left, CardImportFormat.count(max(total, 10), locale: locale))
@@ -64,7 +79,7 @@ enum CardImportStripLayout {
     }
 
     static func font(for activity: CardImportActivity) -> NSFont {
-        if case .copying = activity { return detailFont }
+        if activity.showsProgress { return detailFont }
         return resultFont
     }
 
@@ -87,7 +102,7 @@ enum CardImportStripLayout {
         guard let activity else { return geometry.restingSize(showsContent: false) }
         var content = layout.symbolWidth + layout.groupSpacing
             + layout.width(detailTemplate(activity, language: language), font: font(for: activity))
-        if case .copying = activity {
+        if activity.showsProgress {
             content += layout.spacing + width(percentText(100), font: capsulePercentFont) + layout.spacing + capsuleBarWidth
         }
         return layout.surface(content: content, maximum: layout.Maximum.activity, geometry: geometry)
@@ -100,7 +115,7 @@ enum CardImportStripLayout {
     static func accessibilityValue(_ activity: CardImportActivity, progress: CardImportProgress,
                                    language: AppLanguage) -> String {
         let reading = detail(activity, progress: progress, language: language)
-        if case .copying = activity { return percentText(progress.percent) + ", " + reading }
+        if activity.showsProgress { return percentText(progress.percent) + ", " + reading }
         return reading
     }
 }
@@ -112,7 +127,8 @@ enum CardImportStripLayout {
 /// in red. The glyph shrinks away as the result grows in; only scale,
 /// opacity and trim animate. Reduce Motion swaps them with a fade.
 struct CardImportMark: View {
-    enum Phase: Equatable { case copying, finished, failed }
+    /// Under way with its glyph (a camera, a drive, a shield), or ended.
+    enum Phase: Equatable { case copying(String), finished, failed }
 
     let phase: Phase
     let size: CGFloat
@@ -120,9 +136,10 @@ struct CardImportMark: View {
 
     init(_ activity: CardImportActivity, size: CGFloat) {
         switch activity {
-        case .copying: phase = .copying
-        case .finished: phase = .finished
-        case .failed: phase = .failed
+        case .copying: phase = .copying(NotchCompactActivity.cardImport.symbol)
+        case .finished, .backup(.finished): phase = .finished
+        case .failed, .backup(.failed): phase = .failed
+        case .backup(.running(let stage, _)): phase = .copying(CardImportStripLayout.backupSymbol(stage))
         }
         self.size = size
     }
@@ -134,8 +151,8 @@ struct CardImportMark: View {
     var body: some View {
         ZStack {
             switch phase {
-            case .copying:
-                Image(systemName: NotchCompactActivity.cardImport.symbol)
+            case .copying(let symbol):
+                Image(systemName: symbol)
                     .font(.system(size: size * 0.86, weight: .semibold))
                     .foregroundStyle(NotchModule.cardImport.zenithTint)
                     .transition(swap)
@@ -236,6 +253,7 @@ struct CardImportActivityStrip: View {
     var displayGeometry: NotchGeometry? = nil
     @ObservedObject private var imports = CardImportService.shared
     @ObservedObject private var meter = CardImportService.shared.meter
+    @ObservedObject private var backupMeter = CardBackupService.shared.meter
     @ObservedObject private var l10n = L10n.shared
 
     var body: some View {
@@ -250,8 +268,8 @@ struct CardImportActivityStrip: View {
         let height = geometry.compactActivityContentHeight
         let wing = geometry.compactActivityWingWidth
         let icon = CardImportStripLayout.iconSize(height: height)
-        let progress = meter.progress
-        let copying: Bool = { if case .copying = activity { return true } else { return false } }()
+        let progress: CardImportProgress = { if case .backup = activity { return backupMeter.progress } else { return meter.progress } }()
+        let copying = activity.showsProgress
         return Button { service.openActivity(NotchCompactActivity.cardImport.module) } label: {
             HStack(spacing: 0) {
                 HStack(spacing: CardImportStripLayout.markSpacing) {
@@ -290,7 +308,7 @@ struct CardImportActivityStrip: View {
         .padding(.horizontal, geometry.compactActivityHorizontalPadding)
         .padding(.top, geometry.compactActivityTopPadding)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(ZenithStrings.cardImport(l10n.language).title)
+        .accessibilityLabel(CardImportStripLayout.title(activity, language: l10n.language))
         .accessibilityValue(CardImportStripLayout.accessibilityValue(activity, progress: progress, language: l10n.language))
         .accessibilityHint(FeatureStrings.notch(l10n.language).open)
     }
@@ -304,6 +322,7 @@ struct CardImportCapsuleStrip: View {
     var displayGeometry: NotchGeometry? = nil
     @ObservedObject private var imports = CardImportService.shared
     @ObservedObject private var meter = CardImportService.shared.meter
+    @ObservedObject private var backupMeter = CardBackupService.shared.meter
     @ObservedObject private var l10n = L10n.shared
 
     var body: some View {
@@ -316,8 +335,8 @@ struct CardImportCapsuleStrip: View {
         let geometry = displayGeometry ?? service.geometry
         let layout = NotchCapsuleLayout.self
         let side = layout.side(geometry)
-        let progress = meter.progress
-        let copying: Bool = { if case .copying = activity { return true } else { return false } }()
+        let progress: CardImportProgress = { if case .backup = activity { return backupMeter.progress } else { return meter.progress } }()
+        let copying = activity.showsProgress
         return Button { service.openActivity(NotchCompactActivity.cardImport.module) } label: {
             HStack(spacing: layout.spacing) {
                 CardImportMark(activity, size: layout.symbolSize)
@@ -343,7 +362,7 @@ struct CardImportCapsuleStrip: View {
         .buttonStyle(.plain)
         .foregroundStyle(.white)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(ZenithStrings.cardImport(l10n.language).title)
+        .accessibilityLabel(CardImportStripLayout.title(activity, language: l10n.language))
         .accessibilityValue(CardImportStripLayout.accessibilityValue(activity, progress: progress, language: l10n.language))
         .accessibilityHint(FeatureStrings.notch(l10n.language).open)
     }

@@ -52,6 +52,8 @@ struct CardImportSession: Equatable {
     var eject = Eject.idle
     /// Ledger keys this import copied, which a retry never copies again.
     var copiedKeys: Set<String> = []
+    /// The event's entry in the backup ledger, once files are in (CardBackupService).
+    var backupRecord: String?
 
     var isRunning: Bool { phase == .preparing || phase == .copying }
 }
@@ -71,8 +73,14 @@ final class CardImportService: ObservableObject {
     @Published var draft = CardImportDraft()
     @Published private(set) var session: CardImportSession?
     /// What the closed island shows; changes only when an import starts or ends.
+    /// While no import shows, a backup's (CardBackupService) takes its place.
     @Published private(set) var activity: CardImportActivity?
     let meter = CardImportMeter()
+    private var importActivity: CardImportActivity? { didSet { publishActivity() } }
+    /// Set by CardBackupService while a backup or a check shows.
+    var backupActivity: CardBackupActivity? { didSet { publishActivity() } }
+    /// Where this run's files landed, card path to event path, for the backup ledger.
+    private var placed: [CardBackupPair] = []
 
     private var watching = false
     private var observers: [NSObjectProtocol] = []
@@ -112,6 +120,7 @@ final class CardImportService: ObservableObject {
             stop()
             return
         }
+        CardBackupService.shared.syncWithPreferences()
         guard !watching else { return }
         watching = true
         let center = NSWorkspace.shared.notificationCenter
@@ -134,6 +143,7 @@ final class CardImportService: ObservableObject {
     /// Detection off or the island stopped: no more watching. An import under
     /// way finishes on its own; the card it reads stays listed until then.
     func stop() {
+        CardBackupService.shared.stop()
         guard watching else { return }
         watching = false
         observers.forEach(NSWorkspace.shared.notificationCenter.removeObserver)
@@ -233,7 +243,8 @@ final class CardImportService: ObservableObject {
         return Identity(key: key, url: url, name: name)
     }
 
-    private static func diskArbitrationUUID(of url: URL) -> String? {
+    /// Also how CardBackupService knows a backup drive that gives Foundation no UUID.
+    static func diskArbitrationUUID(of url: URL) -> String? {
         guard let session = DASessionCreate(kCFAllocatorDefault),
               let disk = DADiskCreateFromVolumePath(kCFAllocatorDefault, session, url as CFURL),
               let description = DADiskCopyDescription(disk) as? [CFString: Any],
@@ -265,6 +276,7 @@ final class CardImportService: ObservableObject {
     /// The notice's Import: the card's page in the island.
     func openImport(volume: String) {
         if cards.contains(where: { $0.id == volume }) { select(volume) }
+        CardBackupService.shared.showsList = false
         NotchService.shared.open(.cardImport)
     }
 
@@ -276,6 +288,7 @@ final class CardImportService: ObservableObject {
         let base = Self.baseFolder
         let folder = CardImportDestination.eventFolder(base: base, typed: draft.eventName, fallbackDate: Date())
         session = CardImportSession(cardID: card.id, cardName: card.name, folder: folder, options: draft.options)
+        placed = []
         run(card)
     }
 
@@ -353,6 +366,7 @@ final class CardImportService: ObservableObject {
         guard let job, var current = session else { return }
         let state = job.drain()
         if !state.finishedKeys.isEmpty { record(state.finishedKeys, card: current.cardID) }
+        placed += state.placed
         if current.phase == .preparing, state.totalFiles > 0 || state.finished {
             current.phase = state.finished && state.error != nil ? current.phase : .copying
             current.skipped = state.skipped
@@ -378,6 +392,13 @@ final class CardImportService: ObservableObject {
         current.copiedBytes += state.copiedBytes
         saveLedger(current.cardID)
         refreshImported(current.cardID)
+        // Whatever came in, even from a run that stopped, wants a backup.
+        if !placed.isEmpty {
+            current.backupRecord = CardBackupService.shared.importFinished(
+                folder: current.folder, card: current.cardID, cardName: current.cardName,
+                pairs: placed, completed: state.error == nil)
+            placed = []
+        }
         switch state.error {
         case nil:
             current.phase = .finished
@@ -473,6 +494,12 @@ final class CardImportService: ObservableObject {
     private func setActivity(_ next: CardImportActivity?) {
         activityWork?.cancel()
         activityWork = nil
+        if importActivity != next { importActivity = next }
+    }
+
+    /// The import's own activity, or else a backup's, as the island shows it.
+    private func publishActivity() {
+        let next = importActivity ?? backupActivity.map(CardImportActivity.backup)
         if activity != next { activity = next }
     }
 
@@ -481,7 +508,7 @@ final class CardImportService: ObservableObject {
         setActivity(next)
         let work = DispatchWorkItem {
             let service = CardImportService.shared
-            if service.activity == next { service.activity = nil }
+            if service.importActivity == next { service.importActivity = nil }
         }
         activityWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + hold, execute: work)
