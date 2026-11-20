@@ -7,8 +7,7 @@ import Foundation
 /// Zenith fork: the customisable home page (ZenithHomeLayoutSupport): adding,
 /// removing and reordering widgets within the row's limits, persistence and
 /// backups, the migration from the old home page and the Music switch it
-/// keeps following, the island's size, the edit mode's draft, the gallery's
-/// pages, and the strings.
+/// keeps following, the island's size, the edit mode's draft, and the strings.
 enum HomeLayoutTests {
     static func run(_ suite: TestSuite) {
         editing(suite)
@@ -18,7 +17,6 @@ enum HomeLayoutTests {
         availability(suite)
         islandSize(suite)
         editMode(suite)
-        galleryPages(suite)
         strings(suite)
     }
 
@@ -195,27 +193,6 @@ enum HomeLayoutTests {
         ZenithHomeIsland.editing = saved
         ZenithHomeIsland.draft = savedDraft
         defaults.removePersistentDomain(forName: suiteName)
-    }
-
-    private static func galleryPages(_ suite: TestSuite) {
-        suite.expect(ZenithWidgetsPaging.pages(rows: 7, visible: 3) == 3 && ZenithWidgetsPaging.pages(rows: 3, visible: 3) == 1
-                     && ZenithWidgetsPaging.pages(rows: 1, visible: 0) == 1 && ZenithWidgetsPaging.pages(rows: 0, visible: 3) == 1,
-                     "the gallery has a page per visible set of rows, and always one")
-        suite.expect(ZenithWidgetsPaging.pageStart(4, rows: 7, visible: 3) == 3
-                     && ZenithWidgetsPaging.pageStart(6, rows: 7, visible: 3) == 6
-                     && ZenithWidgetsPaging.pageStart(40, rows: 7, visible: 3) == 6
-                     && ZenithWidgetsPaging.pageStart(-2, rows: 7, visible: 3) == 0,
-                     "the gallery rests on the first row of a page, within the pages it has")
-        let display = CGRect(x: 0, y: 0, width: 1512, height: 982)
-        for layout in [NotchSize.compact, .spacious] {
-            let geometry = NotchGeometry(screen: display, safeAreaTop: 32, cameraWidth: 210, layout: layout)
-            let count = NotchModule.allCases.count
-            let rows = NotchSectionPaging.rows(count: count, columns: geometry.sectionColumns)
-            let visible = geometry.sectionRows(count: count)
-            let pages = ZenithWidgetsPaging.pages(rows: rows, visible: visible)
-            suite.expect(pages >= 2 && pages * visible * geometry.sectionColumns >= count,
-                         "every module has a place on the gallery's pages: \(layout)")
-        }
     }
 
     private static func strings(_ suite: TestSuite) {

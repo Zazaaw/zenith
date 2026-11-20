@@ -605,11 +605,12 @@ struct ZenithStatusLine: View {
 
 // MARK: - Command rows
 
-/// A row of the section gallery's command palette: a monochrome glyph, the
+/// A row of the section gallery's command palette: a glyph (on a soft tile
+/// of the module's colour when it has a `tint`, otherwise monochrome), the
 /// module's name and its shortcut in dim mono at the far end. The pointer
 /// washes it; the current module wears a 2-point accent bar at its leading
-/// edge and an accent glyph; the keyboard's cursor is a brighter fill under
-/// a 1-point outline, so it reads apart from both.
+/// edge (and an accent glyph without a tint); the keyboard's cursor is a
+/// brighter fill under a 1-point outline, so it reads apart from both.
 struct ZenithCommandRow: View {
     let symbol: String
     let title: String
@@ -617,17 +618,27 @@ struct ZenithCommandRow: View {
     let highlighted: Bool
     let current: Bool
     var height: CGFloat = 30
+    /// The module's identity colour: the glyph then sits on its soft tinted
+    /// tile (`ZenithIslandGlyphTile`); without one, the plain glyph.
+    var tint: Color? = nil
     @State private var hovering = false
     @Environment(\.colorSchemeContrast) private var contrast
 
+    /// The tinted tile's side in a row.
+    static let tileSize: CGFloat = 22
+
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous)
-        HStack(spacing: 10) {
-            Image(systemName: symbol)
-                .font(.system(size: 13, weight: .regular))
-                .foregroundStyle(current ? ZenithIsland.accent : hovering || highlighted ? ZenithIsland.primary
-                                 : ZenithIsland.secondary)
-                .frame(width: 16, height: 16)
+        HStack(spacing: tint == nil ? 10 : 9) {
+            if let tint {
+                ZenithIslandGlyphTile(symbol: symbol, tint: tint, size: Self.tileSize, cornerRadius: 6.5)
+            } else {
+                Image(systemName: symbol)
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(current ? ZenithIsland.accent : hovering || highlighted ? ZenithIsland.primary
+                                     : ZenithIsland.secondary)
+                    .frame(width: 16, height: 16)
+            }
             Text(title)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(ZenithIsland.primary)
@@ -640,7 +651,7 @@ struct ZenithCommandRow: View {
                 .lineLimit(1)
                 .fixedSize()
         }
-        .padding(.leading, 12)
+        .padding(.leading, tint == nil ? 12 : 9)
         .padding(.trailing, 10)
         .frame(maxWidth: .infinity)
         .frame(height: height)

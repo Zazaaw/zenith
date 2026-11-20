@@ -12,9 +12,8 @@ import Foundation
 //
 // Everything here is pure (Foundation and CoreGraphics only) and compiled into
 // the tests: the widgets, the layout and its rules, persistence, migration
-// from the old home page, the island's size, and the gallery's horizontal
-// pages. ZenithHomeEditor (UI) drives the edit mode; ZenithHomeLayoutView
-// draws it.
+// from the old home page, and the island's size. ZenithHomeEditor (UI) drives
+// the edit mode; ZenithHomeLayoutView draws it.
 
 /// A widget the home page's card row can hold.
 enum ZenithHomeWidget: String, CaseIterable, Identifiable {
@@ -267,24 +266,5 @@ extension NotchGeometry {
     /// The widest home page the display allows, inside the island's sides.
     var zenithHomeMaximumContentWidth: CGFloat {
         max(0, screen.width - 24 - NotchQuickAccessLayout.gutter * 2 - NotchLayout.horizontalInset * 2)
-    }
-}
-
-/// The section gallery's icons rest on whole pages laid side by side: a page
-/// is as many rows as show at once, and the gallery steps a page at a time.
-/// The service keeps the first row of the page that shows.
-enum ZenithWidgetsPaging {
-    static func pages(rows: Int, visible: Int) -> Int {
-        let visible = max(1, visible)
-        return max(1, (max(1, rows) + visible - 1) / visible)
-    }
-
-    /// The page holding `row`.
-    static func page(ofRow row: Int, visible: Int) -> Int { max(0, row) / max(1, visible) }
-
-    /// The first row of the page holding `row`, within the pages there are.
-    static func pageStart(_ row: Int, rows: Int, visible: Int) -> Int {
-        let visible = max(1, visible)
-        return min(page(ofRow: row, visible: visible), pages(rows: rows, visible: visible) - 1) * visible
     }
 }

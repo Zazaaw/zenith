@@ -1912,28 +1912,24 @@ final class NotchService: ObservableObject {
 
     /// Keyboard moves and search results keep the highlighted tile's row in
     /// view, moving the gallery no further than that row needs.
-    // Zenith fork: the gallery pages sideways, so the highlighted icon brings
-    // its whole page.
     private func revealHighlightedSection() {
         guard let target = highlightedSection, let index = filteredSections.firstIndex(of: target) else { return }
         let limits = sectionRowLimits
-        let row = ZenithWidgetsPaging.pageStart(index / max(1, geometry.sectionColumns),
-                                                rows: limits.rows, visible: limits.visible)
+        let row = NotchSectionPaging.revealing(row: index / max(1, geometry.sectionColumns), first: sectionRow,
+                                               rows: limits.rows, visible: limits.visible)
         if row != sectionRow { sectionRow = row }
     }
 
     /// Rest the gallery on `row`, within the rows it has.
-    // Zenith fork: on the first row of the page holding it.
     func showSectionRow(_ row: Int) {
         let limits = sectionRowLimits
-        let next = ZenithWidgetsPaging.pageStart(row, rows: limits.rows, visible: limits.visible)
+        let next = NotchSectionPaging.clamped(row, rows: limits.rows, visible: limits.visible)
         guard next != sectionRow else { return }
         sectionRow = next
         provideHapticFeedback()
     }
 
-    // Zenith fork: a step is a page.
-    func scrollSections(by rows: Int) { showSectionRow(sectionRow + rows * max(1, sectionRowLimits.visible)) }
+    func scrollSections(by rows: Int) { showSectionRow(sectionRow + rows) }
 
     private func handleSectionKey(_ event: NSEvent) -> Bool {
         guard showingSections,
@@ -4284,7 +4280,7 @@ final class NotchService: ObservableObject {
             sectionScroll = NotchSectionScroll()
             return false
         }
-        // Zenith fork: the gallery pages sideways, so a sideways swipe steps it too.
+        // Zenith fork: a sideways swipe steps the gallery's rows too, as its icons' pages did.
         let delta = abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY) ? event.scrollingDeltaX : event.scrollingDeltaY
         let steps = sectionScroll.steps(deltaY: Double(delta), timestamp: event.timestamp,
                                         precise: event.hasPreciseScrollingDeltas, hasPhase: !event.phase.isEmpty,
