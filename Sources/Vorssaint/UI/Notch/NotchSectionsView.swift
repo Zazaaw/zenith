@@ -23,7 +23,7 @@ struct NotchSectionsView: View {
             if sections.isEmpty {
                 NotchEmptyView(symbol: "magnifyingglass", message: FeatureStrings.clipboard(l10n.language).noResults)
             } else {
-                gallery
+                ZenithWidgetsGallery(service: service) // Zenith fork: colourful icons in sideways pages
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

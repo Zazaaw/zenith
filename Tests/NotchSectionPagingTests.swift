@@ -76,6 +76,7 @@ enum NotchSectionPagingTests {
     // Events stay inside this fixture and never post input to the desktop.
     struct NSEvent {
         var locationInWindow: CGPoint
+        var scrollingDeltaX: CGFloat = 0 // Zenith fork: the gallery pages sideways
         var scrollingDeltaY: CGFloat = -24
         var timestamp: TimeInterval = 10
         var hasPreciseScrollingDeltas = true
@@ -125,6 +126,13 @@ enum NotchSectionPagingTests {
                              && service.movedRows == before + 1 && service.gestureCalls == gestures,
                              "every part of the body steps rows below the rendered header, including the top of the first tile")
             }
+            // Zenith fork: the gallery pages sideways, so a sideways swipe steps it as well.
+            var sideways = event(fromTop: headerBottom + 20)
+            sideways.scrollingDeltaX = -30
+            sideways.scrollingDeltaY = 2
+            let beforeSwipe = service.movedRows
+            suite.expect(service.handleScroll(sideways) && service.movedRows == beforeSwipe + 1,
+                         "a sideways swipe over the gallery steps it toward its next page")
             var modified = event(fromTop: headerBottom + 20)
             modified.modifierFlags = .command
             let before = service.movedRows
