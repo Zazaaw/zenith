@@ -22,6 +22,7 @@ enum ExportTrackerTests {
         concurrent(suite)
         batches(suite)
         realFile(suite)
+        island(suite)
         strings(suite)
     }
 
@@ -534,6 +535,22 @@ enum ExportTrackerTests {
         suite.expect(done?.phase == .finished && done?.bytes == 2_800_000 && done?.duration == 4,
                      "closed, it is done with its final size and the time it grew")
         suite.expect(ExportWriterProbe.openers(of: path)?.isEmpty == true, "nobody has it open any more")
+    }
+
+    // MARK: Island
+
+    private static func island(_ suite: TestSuite) {
+        suite.expect(NotchSupport.compactActivities(timer: false, downloads: true, agents: true, calendar: true,
+                                                   music: true, vercel: true, command: true, export: true)
+                        == [.downloads, .agents, .vercel, .command, .export, .calendar, .music]
+                     && NotchSupport.compactActivity(timer: false, downloads: false, music: true, export: true) == .export,
+                     "an export follows a terminal command and comes before an event and music")
+        suite.expect(!NotchSupport.compactActivities(timer: false, downloads: false, agents: false, calendar: false,
+                                                    music: false).contains(.export),
+                     "no export, no activity")
+        suite.expect(NotchCompactActivity.export.module == .controls && NotchCompactActivity.export.symbol == "film"
+                     && NotchCompactActivity.export.title(.enUS) == "Exports",
+                     "the export has no page of its own")
     }
 
     private static func strings(_ suite: TestSuite) {

@@ -585,6 +585,12 @@ final class NotchService: ObservableObject {
         CommandActivityService.shared.activity != nil
     }
 
+    /// Zenith fork: a render, recording or photo export growing in a watched
+    /// folder, or how it just ended. Published only while its switch is on.
+    var hasExportActivity: Bool {
+        ExportTrackerService.shared.activity != nil
+    }
+
     var compactActivity: NotchCompactActivity? {
         // A new song waiting for its notice is not drawn yet.
         activitySelection.current(available: awaitsTrackNotice ? compactActivities.filter { $0 != .music } : compactActivities)
@@ -594,7 +600,8 @@ final class NotchService: ObservableObject {
         NotchSupport.compactActivities(timer: hasTimerActivity, watch: hasWatchActivity, downloads: hasDownloadActivity,
                                       agents: hasAgentActivity, calendar: hasCalendarActivity,
                                       music: hasMusicActivity, keepAwake: hasKeepAwakeActivity,
-                                      vercel: hasVercelActivity, command: hasCommandActivity)
+                                      vercel: hasVercelActivity, command: hasCommandActivity,
+                                      export: hasExportActivity) // Zenith fork
     }
 
     var showsCompactActivityPicker: Bool {
@@ -723,6 +730,7 @@ final class NotchService: ObservableObject {
         // Zenith fork: a mark and a reading, like the watch, so it takes the watch's wings.
         case .vercel: return geometry.compactWatchGeometry(wing: vercelStripWing(in: geometry))
         case .command: return geometry.compactWatchGeometry(wing: commandStripWing(in: geometry)) // Zenith fork
+        case .export: return geometry.compactWatchGeometry(wing: exportStripWing(in: geometry)) // Zenith fork
         default: return geometry
         }
     }
@@ -749,6 +757,11 @@ final class NotchService: ObservableObject {
     /// Zenith fork: the wider of the mark and its clock or the program's name.
     private func commandStripWing(in geometry: NotchGeometry) -> CGFloat {
         CommandActivityLayout.stripWing(CommandActivityService.shared.activity, in: geometry)
+    }
+
+    /// Zenith fork: the wider of the mark and its size or the word and the file's name.
+    private func exportStripWing(in geometry: NotchGeometry) -> CGFloat {
+        ExportTrackerLayout.stripWing(ExportTrackerService.shared.activity, language: L10n.shared.language, in: geometry)
     }
 
     private func keepAwakeStripWing(in geometry: NotchGeometry) -> CGFloat {
@@ -1170,6 +1183,9 @@ final class NotchService: ObservableObject {
             return VercelActivityLayout.capsuleSurface(VercelService.shared.activity, language: language, geometry: geometry)
         case .command: // Zenith fork
             return CommandActivityLayout.capsuleSurface(CommandActivityService.shared.activity, geometry: geometry)
+        case .export: // Zenith fork
+            return ExportTrackerLayout.capsuleSurface(ExportTrackerService.shared.activity, language: language,
+                                                      geometry: geometry)
         }
     }
 
@@ -1253,6 +1269,7 @@ final class NotchService: ObservableObject {
         VercelService.shared.syncWithPreferences()
         GitHubService.shared.syncWithPreferences()
         CommandActivityService.shared.syncWithPreferences() // Zenith fork: watches only while its switch is on.
+        ExportTrackerService.shared.syncWithPreferences() // Zenith fork: watches only while its switch is on.
         ClaudeHooksService.shared.syncWithPreferences() // Zenith fork: Claude Code's hooks, while Claude shows.
         followsPointer = displayPreference == .pointer || displayPreference == .all
         showsOnAllDisplays = displayPreference == .all
@@ -1354,6 +1371,7 @@ final class NotchService: ObservableObject {
         VercelService.shared.stop() // Zenith fork
         GitHubService.shared.stop()
         CommandActivityService.shared.stop() // Zenith fork
+        ExportTrackerService.shared.stop() // Zenith fork
         let cancelCapture = captureControlsCancel
         endCaptureControls()
         cancelCapture?()
@@ -4495,6 +4513,14 @@ final class NotchService: ObservableObject {
         // changes the strip and the wings it needs. Bound whatever the switch
         // says: turned off, the service never publishes.
         CommandActivityService.shared.$activity.removeDuplicates().dropFirst().receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.syncMenuSpaceMonitoring()
+                self?.objectWillChange.send()
+                self?.refreshPresentation()
+            }.store(in: &subscriptions)
+        // Zenith fork: an export showing, ending or another joining it. Its
+        // growing size is the strip's alone and never lays the island out.
+        ExportTrackerService.shared.$activity.removeDuplicates().dropFirst().receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.syncMenuSpaceMonitoring()
                 self?.objectWillChange.send()

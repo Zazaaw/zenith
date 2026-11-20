@@ -97,6 +97,7 @@ enum NotchMusicVisibilityTests {
         var hasKeepAwakeActivity = false
         var hasVercelActivity = false // Zenith fork
         var hasCommandActivity = false // Zenith fork
+        var hasExportActivity = false // Zenith fork
         var awaitsTrackNotice = false
         var timerStripWing: CGFloat = 44
         func timerStripWing(for companion: NotchCompactActivity?, in geometry: NotchGeometry) -> CGFloat { timerStripWing }
@@ -115,6 +116,8 @@ enum NotchMusicVisibilityTests {
         func vercelStripWing(in geometry: NotchGeometry) -> CGFloat { vercelStripWing }
         var commandStripWing: CGFloat = 70 // Zenith fork
         func commandStripWing(in geometry: NotchGeometry) -> CGFloat { commandStripWing }
+        var exportStripWing: CGFloat = 90 // Zenith fork
+        func exportStripWing(in geometry: NotchGeometry) -> CGFloat { exportStripWing }
         var notchNeedsMonitor = false
         var heldDrag = false
         var pinned = false
