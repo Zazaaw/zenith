@@ -147,6 +147,8 @@ struct ClipboardSettings: View {
                 .settingsFormSectionAnchor(.pastePlain)
             }
 
+            QRSettingsSection() // Zenith fork: QR codes.
+
             if AppFeature.clipboardHistory.isAvailable {
                 clipboardStatsSection
             }
