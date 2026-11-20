@@ -210,7 +210,7 @@ extension NotchModule {
         case .cardImport: return "sdcard.fill"
         case .devServers: return "server.rack"
         case .recap: return "sun.horizon.fill"
-        case .sky: return "sun.horizon.fill"
+        case .sky: return "moon.stars.fill"
         }
     }
 }

@@ -46,7 +46,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .cardImport: return "sdcard" // Zenith fork
         case .devServers: return "server.rack" // Zenith fork
         case .recap: return "sun.horizon" // Zenith fork
-        case .sky: return "sun.horizon" // Zenith fork
+        case .sky: return "moon.stars" // Zenith fork: Today keeps sun.horizon
         }
     }
 
