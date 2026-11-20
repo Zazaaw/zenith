@@ -26,6 +26,8 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
     case prayer, golden
     /// The workspaces that are on, as calm tiles that run them (WorkspaceService).
     case workspaces
+    /// The current repository's branch and its changed files (GitService).
+    case git
 
     var id: String { rawValue }
 
@@ -45,6 +47,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .today: return .recap
         case .prayer, .golden: return .sky
         case .workspaces: return nil
+        case .git: return .git
         }
     }
 
@@ -64,6 +67,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .prayer: return "moon.stars.fill"
         case .golden: return "sun.horizon.fill"
         case .workspaces: return "square.grid.2x2.fill"
+        case .git: return GitSupportSymbols.module
         }
     }
 
@@ -85,6 +89,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .prayer: return 0x93C5FD
         case .golden: return 0xFCD34D
         case .workspaces: return 0x67E8F9 // cyan 300: it has no page whose colour to wear
+        case .git: return 0xFCA5A5
         }
     }
 
@@ -106,6 +111,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .prayer: return 196
         case .golden: return 216
         case .workspaces: return 252
+        case .git: return 216
         }
     }
 

@@ -17,6 +17,8 @@ enum NotchModule: String, CaseIterable, Identifiable {
     case recap
     /// Zenith fork: prayer times and the golden hour (SkyService).
     case sky
+    /// Zenith fork: the local Git status of the project being worked on (GitService).
+    case git
     var id: String { rawValue }
 
     var symbol: String {
@@ -47,6 +49,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .devServers: return "server.rack" // Zenith fork
         case .recap: return "sun.horizon" // Zenith fork
         case .sky: return "moon.stars" // Zenith fork: Today keeps sun.horizon
+        case .git: return GitSupportSymbols.module // Zenith fork
         }
     }
 
@@ -76,6 +79,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .devServers: return "l" // Zenith fork: localhost
         case .recap: return "y" // Zenith fork: todaY
         case .sky: return "q" // Zenith fork: qibla times
+        case .git: return "h" // Zenith fork: HEAD
         }
     }
 
@@ -114,6 +118,8 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .recap: return true
         // Zenith fork: worked out offline; it needs only a place, chosen on its page or in its options.
         case .sky: return true
+        // Zenith fork: needs a git that runs without offering to install the developer tools.
+        case .git: return GitCLI.isInstalled()
         case .system:
             return [.monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork,
                     .monitorDisk, .monitorPower, .fanControl, .connectedDevices].contains { (feature: AppFeature) in
@@ -907,6 +913,8 @@ enum NotchCompactActivity: String, Identifiable {
     /// Zenith fork: the next prayer's countdown, then its time; the
     /// evening's golden hour (SkyService).
     case prayer, golden
+    /// Zenith fork: the current repository's branch and whether it is dirty, when asked for.
+    case git
 
     var id: String { rawValue }
 
@@ -926,6 +934,7 @@ enum NotchCompactActivity: String, Identifiable {
         case .devServers: return ZenithStrings.devServers(language).title // Zenith fork
         case .prayer: return ZenithStrings.sky(language).prayerTab // Zenith fork
         case .golden: return ZenithStrings.sky(language).goldenTab // Zenith fork
+        case .git: return ZenithStrings.git(language).title // Zenith fork
         }
     }
 
@@ -946,6 +955,7 @@ enum NotchCompactActivity: String, Identifiable {
         case .export: return .controls // Zenith fork: a click reveals the file instead
         case .devServers: return .devServers // Zenith fork
         case .prayer, .golden: return .sky // Zenith fork
+        case .git: return .git // Zenith fork
         }
     }
 
@@ -1900,11 +1910,12 @@ enum NotchSupport {
                                 calendar: Bool = false, music: Bool, keepAwake: Bool = false,
                                 vercel: Bool = false, command: Bool = false,
                                 cardImport: Bool = false, export: Bool = false,
-                                devServers: Bool = false, prayer: Bool = false, golden: Bool = false) -> NotchCompactActivity? { // Zenith fork
+                                devServers: Bool = false, prayer: Bool = false, golden: Bool = false,
+                                git: Bool = false) -> NotchCompactActivity? { // Zenith fork
         compactActivities(timer: timer, downloads: downloads, agents: agents,
                           calendar: calendar, music: music, keepAwake: keepAwake, vercel: vercel,
                           command: command, cardImport: cardImport, export: export,
-                          devServers: devServers, prayer: prayer, golden: golden).first // Zenith fork
+                          devServers: devServers, prayer: prayer, golden: golden, git: git).first // Zenith fork
     }
 
     /// Keep Awake comes last: a session can run all day, even more than
@@ -1916,18 +1927,22 @@ enum NotchSupport {
     /// A prayer's countdown and the golden hour come before an event's: like
     /// it they are a time to keep, but a prayer's is short and exact.
     /// The dev servers' count stays up as long as they run, all day like Keep
-    /// Awake, so it waits behind music and goes just before Keep Awake.
+    /// Awake, so it waits behind music and goes just before Keep Awake. The
+    /// current branch is there all day too, and says the least: it goes
+    /// after the dev servers.
     static func compactActivities(timer: Bool, watch: Bool = false, downloads: Bool, agents: Bool,
                                   calendar: Bool, music: Bool, keepAwake: Bool = false,
                                   vercel: Bool = false, command: Bool = false,
                                   cardImport: Bool = false, export: Bool = false,
-                                  devServers: Bool = false, prayer: Bool = false, golden: Bool = false) -> [NotchCompactActivity] { // Zenith fork
+                                  devServers: Bool = false, prayer: Bool = false, golden: Bool = false,
+                                  git: Bool = false) -> [NotchCompactActivity] { // Zenith fork
         let candidates: [(Bool, NotchCompactActivity)] = [
             (timer, .timer), (watch, .watch), (downloads, .downloads), (agents, .agents), (vercel, .vercel),
             (command, .command), (cardImport, .cardImport), (export, .export),
             (prayer, .prayer), (golden, .golden), // Zenith fork
             (calendar, .calendar), (music, .music),
             (devServers, .devServers), // Zenith fork
+            (git, .git), // Zenith fork
             (keepAwake, .keepAwake)
         ]
         return candidates.compactMap { $0.0 ? $0.1 : nil }
@@ -2935,7 +2950,7 @@ struct NotchGeometry: Equatable {
                 contentHeight = min(budget, agentsHeight.map { $0 > 0 ? $0 : NotchLayout.emptyHeight } ?? budget)
             // Lists and previews fill the chosen content budget.
             case .mixer, .calendar, .clipboard, .captures, .files, .notifications, .downloads, .camera, .scratchpad, .watch,
-                 .wakatime, .vercel, .github, .cardImport, .devServers, .recap, .sky: // Zenith fork: devServers, recap, sky
+                 .wakatime, .vercel, .github, .cardImport, .devServers, .recap, .sky, .git: // Zenith fork: devServers, recap, sky, git
                 contentHeight = budget
             }
         }
