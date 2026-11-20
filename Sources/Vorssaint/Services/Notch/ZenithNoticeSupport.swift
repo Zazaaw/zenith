@@ -14,13 +14,15 @@ import Foundation
 struct ZenithNotice: Equatable {
     enum Kind: String, CaseIterable {
         case batteryCritical, batteryLow, charging, unplugged, chargeLimit, audio, download
+        /// A camera card mounted, offering to import it (CardImportService).
+        case card
 
         /// Higher shows first and may cut a lower one short.
         var priority: Int {
             switch self {
             case .batteryCritical: return 5
             case .batteryLow: return 4
-            case .audio: return 3
+            case .audio, .card: return 3
             case .charging, .unplugged: return 2
             case .chargeLimit, .download: return 1
             }
@@ -28,8 +30,9 @@ struct ZenithNotice: Equatable {
     }
 
     /// Colour with a meaning: red for low battery, amber for getting low,
-    /// green for charging and full, the system accent for information.
-    enum Tone: Equatable { case red, amber, green, accent, white }
+    /// green for charging and full, the system accent for information; a
+    /// module's identity colour (`tint`) where the notice is that module's.
+    enum Tone: Equatable { case red, amber, green, accent, white, tint(NotchModule) }
 
     enum Glyph: Equatable {
         case none
@@ -46,12 +49,16 @@ struct ZenithNotice: Equatable {
         case lowPower(on: Bool)
         /// A checkmark that draws itself.
         case checkmark
+        /// What a click on the capsule does, as words on a solid pill.
+        case action(String)
     }
 
     enum Action: Equatable {
         case none
         case batterySettings
         case reveal(URL)
+        /// Opens the card's import page in the island; the card's volume key.
+        case importCard(String)
     }
 
     let kind: Kind
@@ -102,7 +109,7 @@ struct ZenithNoticeQueue {
         switch kind {
         case .batteryCritical, .batteryLow: return 90
         case .audio, .charging, .unplugged: return 12
-        case .chargeLimit, .download: return 30
+        case .chargeLimit, .download, .card: return 30
         }
     }
 
@@ -178,6 +185,7 @@ enum ZenithNoticeKey {
     static let chargeLimit = "battery.limit"
     static func audio(_ name: String) -> String { "audio." + name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
     static func download(_ url: URL) -> String { "download." + url.standardizedFileURL.path }
+    static func card(_ volume: String) -> String { "card." + volume }
 }
 
 // MARK: - Battery
@@ -357,6 +365,8 @@ enum ZenithNoticeTiming {
     static func duration(_ kind: ZenithNotice.Kind) -> TimeInterval {
         switch kind {
         case .batteryCritical, .batteryLow: return 6
+        // A card asks for a decision, so it stays a little longer.
+        case .card: return 7
         default: return 4
         }
     }

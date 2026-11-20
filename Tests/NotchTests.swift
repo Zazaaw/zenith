@@ -2531,15 +2531,16 @@ enum NotchTests {
         defaults.set(true, forKey: DefaultsKey.notchAgentsEnabled)
         // Zenith fork: WakaTime joins the end on a Mac with ~/.wakatime.cfg,
         // and GitHub on a Mac with the GitHub CLI. Vercel waits until it is
-        // turned on (saving a token does that).
+        // turned on (saving a token does that). Card Import shows while card
+        // detection is on, as it is by default.
         let wakaTime: [NotchModule] = WakaTimeSupport.hasConfiguration() ? [.wakatime] : []
         let gitHub: [NotchModule] = GitHubCLI.isInstalled() ? [.github] : []
         let upstreamModules: [NotchModule] = [.system, .music, .controls, .mixer, .captures, .files, .tools, .calendar,
                                               .notifications, .timer, .camera, .downloads, .scratchpad, .agents, .watch]
-        suite.expect(NotchSupport.modules(in: defaults) == upstreamModules + wakaTime + gitHub,
+        suite.expect(NotchSupport.modules(in: defaults) == upstreamModules + wakaTime + gitHub + [.cardImport],
                "module order ignores unknown ids and duplicates, preserving newly added modules")
         defaults.set(true, forKey: DefaultsKey.notchVercelEnabled)
-        suite.expect(NotchSupport.modules(in: defaults) == upstreamModules + wakaTime + [.vercel] + gitHub,
+        suite.expect(NotchSupport.modules(in: defaults) == upstreamModules + wakaTime + [.vercel] + gitHub + [.cardImport],
                "the Vercel section joins once it is turned on")
         defaults.removeObject(forKey: DefaultsKey.notchVercelEnabled)
         suite.expect(NotchSupport.routesShelf(in: defaults) && NotchSupport.revealsShelfDrag(in: defaults),

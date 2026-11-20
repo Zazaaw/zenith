@@ -8,8 +8,9 @@ import CoreGraphics
 
 enum NotchModule: String, CaseIterable, Identifiable {
     // Zenith fork: wakatime shows coding time from WakaTime (WakaTimeService),
-    // vercel recent deployments (VercelService), github pull requests (GitHubService).
-    case controls, mixer, music, clipboard, captures, files, system, tools, calendar, notifications, timer, camera, downloads, scratchpad, agents, watch, wakatime, vercel, github
+    // vercel recent deployments (VercelService), github pull requests (GitHubService),
+    // cardImport photos and videos from a camera card (CardImportService).
+    case controls, mixer, music, clipboard, captures, files, system, tools, calendar, notifications, timer, camera, downloads, scratchpad, agents, watch, wakatime, vercel, github, cardImport
     var id: String { rawValue }
 
     var symbol: String {
@@ -36,6 +37,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .wakatime: return "chevron.left.forwardslash.chevron.right"
         case .vercel: return VercelSupport.symbol
         case .github: return GitHubSupport.symbol
+        case .cardImport: return "sdcard" // Zenith fork
         }
     }
 
@@ -61,6 +63,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .wakatime: return "k"
         case .vercel: return "e"
         case .github: return "u"
+        case .cardImport: return "j" // Zenith fork
         }
     }
 
@@ -90,6 +93,9 @@ enum NotchModule: String, CaseIterable, Identifiable {
         // GitHub needs the GitHub CLI.
         case .vercel: return true
         case .github: return GitHubCLI.isInstalled()
+        // Zenith fork: always listed, so its options stay reachable; it shows
+        // in the island while card detection is on.
+        case .cardImport: return true
         case .system:
             return [.monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork,
                     .monitorDisk, .monitorPower, .fanControl, .connectedDevices].contains { (feature: AppFeature) in
@@ -851,8 +857,9 @@ enum NotchMusicStripLayout {
 
 enum NotchCompactActivity: String, Identifiable {
     // Zenith fork: vercel is a Vercel build on its way, then how it ended;
-    // command a long-running terminal command, then how it ended.
-    case timer, watch, downloads, agents, calendar, music, keepAwake, vercel, command
+    // command a long-running terminal command, then how it ended;
+    // cardImport a camera card being copied, then how it ended.
+    case timer, watch, downloads, agents, calendar, music, keepAwake, vercel, command, cardImport
 
     var id: String { rawValue }
 
@@ -867,6 +874,7 @@ enum NotchCompactActivity: String, Identifiable {
         case .keepAwake: return Strings.localized(language).keepAwakeTitle
         case .vercel: return "Vercel"
         case .command: return ZenithStrings.commandActivity(language).activityTitle // Zenith fork
+        case .cardImport: return ZenithStrings.cardImport(language).title // Zenith fork
         }
     }
 
@@ -883,11 +891,13 @@ enum NotchCompactActivity: String, Identifiable {
         case .keepAwake: return .controls
         case .vercel: return .vercel
         case .command: return .controls // Zenith fork
+        case .cardImport: return .cardImport // Zenith fork
         }
     }
 
     var symbol: String {
         if self == .command { return CommandActivitySupport.symbol } // Zenith fork
+        if self == .cardImport { return "camera.fill" } // Zenith fork
         return self == .keepAwake ? NotchControlItem.keepAwake.symbol : module.symbol
     }
 }
@@ -1826,10 +1836,11 @@ enum NotchSupport {
     /// Automatic order until the user chooses one of the live activities.
     static func compactActivity(timer: Bool, downloads: Bool, agents: Bool = false,
                                 calendar: Bool = false, music: Bool, keepAwake: Bool = false,
-                                vercel: Bool = false, command: Bool = false) -> NotchCompactActivity? {
+                                vercel: Bool = false, command: Bool = false,
+                                cardImport: Bool = false) -> NotchCompactActivity? { // Zenith fork
         compactActivities(timer: timer, downloads: downloads, agents: agents,
                           calendar: calendar, music: music, keepAwake: keepAwake, vercel: vercel,
-                          command: command).first
+                          command: command, cardImport: cardImport).first
     }
 
     /// Keep Awake comes last: a session can run all day, even more than
@@ -1837,13 +1848,14 @@ enum NotchSupport {
     /// follows the timer: the person started both and is waiting on them.
     /// Zenith fork: a Vercel build follows agents, as work the person
     /// started and waits on that ends on its own; a terminal command
-    /// follows it for the same reason.
+    /// follows it for the same reason, and a card import after it.
     static func compactActivities(timer: Bool, watch: Bool = false, downloads: Bool, agents: Bool,
                                   calendar: Bool, music: Bool, keepAwake: Bool = false,
-                                  vercel: Bool = false, command: Bool = false) -> [NotchCompactActivity] {
+                                  vercel: Bool = false, command: Bool = false,
+                                  cardImport: Bool = false) -> [NotchCompactActivity] { // Zenith fork
         let candidates: [(Bool, NotchCompactActivity)] = [
             (timer, .timer), (watch, .watch), (downloads, .downloads), (agents, .agents), (vercel, .vercel),
-            (command, .command),
+            (command, .command), (cardImport, .cardImport),
             (calendar, .calendar), (music, .music), (keepAwake, .keepAwake)
         ]
         return candidates.compactMap { $0.0 ? $0.1 : nil }
@@ -1909,6 +1921,7 @@ enum NotchSupport {
                 && ($0 != .agents || defaults.bool(forKey: DefaultsKey.notchAgentsEnabled))
                 && ($0 != .watch || defaults.bool(forKey: DefaultsKey.notchWatchEnabled))
                 && ($0 != .vercel || defaults.bool(forKey: DefaultsKey.notchVercelEnabled)) // Zenith fork
+                && ($0 != .cardImport || CardImportOptions.isEnabled(in: defaults)) // Zenith fork
         }
     }
 
@@ -2837,7 +2850,7 @@ struct NotchGeometry: Equatable {
                 contentHeight = min(budget, agentsHeight.map { $0 > 0 ? $0 : NotchLayout.emptyHeight } ?? budget)
             // Lists and previews fill the chosen content budget.
             case .mixer, .calendar, .clipboard, .captures, .files, .notifications, .downloads, .camera, .scratchpad, .watch,
-                 .wakatime, .vercel, .github:
+                 .wakatime, .vercel, .github, .cardImport:
                 contentHeight = budget
             }
         }
