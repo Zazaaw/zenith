@@ -2661,6 +2661,55 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     PDF, teks/URL (hanya Files), urutan dan saklar dari Settings langsung terpakai, Files mati + drop teks ditolak, layar
     kecil (dua baris), Reduce Motion, Increase Contrast, island kaca, kartu Settings (light/dark, drag baris, ▲/▼,
     pratinjau diskalakan, saklar terkunci), dan backup/restore.
+- **Pencarian Settings untuk fitur fork (branch `feat/settings-search-fork`):** kolom cari di sidebar Settings hanya
+  mengenal fitur upstream, jadi "sholat", "golden hour", "git", "QR", "teleprompter", "watermark", "vercel",
+  "wakatime", "drop zones", "beautify", "backup", "dev server" atau "recap" tidak menemukan apa-apa atau membuka halaman
+  yang salah.
+  - **File fork** `UI/Settings/ZenithSettingsSearch.swift` (ikut `TEST_SOURCES`): satu hasil per bagian fork. Judulnya
+    label `ZenithStrings` yang sudah 15 bahasa, keyword-nya label yang tampil di bagian itu, plus **alias**: kata Inggris
+    dan Indonesia yang tidak ada di label ("sholat", "jadwal sholat", "adzan", "imsak", "cadangan", "tanda air",
+    "pindai", "naskah", "kartu SD", "rekap", "hari ini", "sembunyikan ikon", "ruang kerja", "layar kunci", "cuaca",
+    "zona drop", "balas", dan lain-lain). Alias berlaku di semua bahasa, tapi baris hasil tetap menampilkan judul
+    hasilnya dalam bahasa app ("sholat" → "Prayer times", di Jerman "Gebetszeiten"), bukan aliasnya. Tidak ada string UI
+    baru. Halaman Workspaces dan About mendapat alias lewat `pageAliases`.
+  - **Tujuan:** Dynamic Island › Content › WakaTime, Vercel, GitHub, Card Import (+ bagian Backup), Dev servers, Git,
+    Sky (+ Prayer times dan Golden hour), Today, Prompter, AI agents (bagian Claude Code live steps, hanya kalau Claude
+    nyala), Camera (auto-start mirror), Notifications (balas WhatsApp otomatis); Activity › kartu Lock screen (item
+    cuaca, pengingat, sholat, golden hour, terminal readout), Terminal commands, Exports, Notices; Layout › Tab bar;
+    Shelf › Drop zones, Watermark; Screen capture › Design overlay, Beautify; Clipboard › QR code; General › Menu bar
+    (menu bar hiding); Workspaces; About. Setiap hasil membuka tab dan modul island, lalu `SettingsSectionFocus`
+    menggulir ke bagiannya dan memberi outline seperti upstream.
+  - **Anchor:** `SettingsSectionAnchor` mendapat kasus `zenith*` (raw value selalu diawali `zenith`, jangan di-rename) dan
+    `FeatureSettingsDestination(notch:sectionAnchor:)` baru (tab/modul island + anchor). Bagian di dalam kartu memakai
+    `zenithSectionAnchor(_:cornerRadius:inset:)` di `ZenithSettingsChrome.swift` (outline 8 pt di luar bagian, layout tidak
+    berubah), section Form memakai `settingsFormSectionAnchor`. Hasil modul island memakai anchor (bukan id `.notch`),
+    karena `CommandBarCatalog` menganggap id `.notch` berasal dari label island upstream dan akan menggandakannya.
+    `.zenithMenuBarHider` hanya identitas hasil: General menampilkan satu tool per anchor dan `ensureVisiblePage`
+    membuang anchor yang tidak ada di sidebar, jadi hider membuka tool Menu bar (outline di kartu panel, kartu hider
+    tepat di bawahnya).
+  - **Kait di file upstream (bertanda `// Zenith fork`):** `SettingsSearchSupport` (`SettingsSearchItem.aliases` dan tiga
+    pencocokan), `SettingsDirectory.searchItems` (satu baris `ZenithSettingsSearch.extend`; keyword menu bar hider
+    dipindah ke hasilnya sendiri, jadi item Menu bar kembali sama dengan upstream), `FeatureVisibilitySupport` (kasus
+    anchor, `page`, init), `CommandBarCatalog.settingsEntries` (alias ikut keyword command bar), `NotchSettings` (anchor
+    kartu Lock screen dan baris auto-start kamera), `build.sh`, `Tests/MetricsTests.swift`,
+    `Tests/FeatureCatalogTests.swift` (set anchor fitur tidak menghitung `zenith*`) dan
+    `Tests/SettingsSearchCoverageTests.swift` (ikut membaca `ZenithSettingsSearch.items` dan mengikuti provider
+    `ZenithStrings` seperti `FeatureStrings`). Anchor ditempel di view fork masing-masing.
+  - **Test** `Tests/ForkSettingsSearchTests.swift` (suite `fork-settings-search`): tiap kueri Inggris dan Indonesia di
+    atas punya tujuan yang benar (halaman + anchor/modul) di tiga hasil teratas; alias menampilkan judul dalam bahasa app
+    (Inggris, Jerman, Jepang); setiap hasil fork ketemu lewat judulnya sendiri di 15 bahasa; tiap anchor `zenith*`
+    dipasang tepat sekali di UI; island membuka tab dan modul yang benar; hasil yang tidak ada tidak ditawarkan (Claude
+    mati, tanpa screenshot, tanpa notifikasi island); hasil upstream tetap ("music", "menu bar", "clipboard history");
+    command bar menemukan hasil yang sama lewat alias dan id-nya tetap unik; label `ZenithSwitchRow` di view Settings
+    fork semuanya terindeks (seperti `SettingsSearchCoverageTests` untuk komponen upstream).
+  - **Catatan:** di Rusia dan Ukraina "Notices" dan "Notifications" diterjemahkan dengan kata yang sama, jadi grup island
+    hanya menampilkan satu baris (Notifications); Notices tetap ketemu lewat labelnya dan alias. Watermark hanya tampil
+    kalau zona Transform nyala; kalau mati, hasilnya membuka Shelf tanpa outline. Terminal readout ada di dalam kartu
+    Lock screen (hanya tampil kalau lock screen nyala), jadi diarahkan ke kartu itu. "kiblat" sengaja tidak dipakai:
+    Zenith tidak punya arah kiblat.
+  - **Belum diverifikasi di Mac:** app UI tidak dijalankan. Perlu dicek: gulir dan outline di tab Activity/Layout dan di
+    opsi modul (ScrollView bersarang), Form Shelf/Screen capture/Clipboard, outline di dalam kartu (light/dark), Reduce
+    Motion, dan command bar.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
