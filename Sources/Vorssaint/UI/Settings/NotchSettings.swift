@@ -555,6 +555,9 @@ struct NotchSettings: View {
         case .github:
             // Zenith fork: which gh is used, and a way to look for it again.
             GitHubSettings()
+        case .cardImport:
+            // Zenith fork: card detection, the base folder and the import defaults.
+            CardImportSettings()
         case .mixer, .system, .tools:
             EmptyView()
         }
@@ -898,7 +901,7 @@ struct NotchSettings: View {
         case .scratchpad: return .scratchpad
         case .agents: return .notchAgents
         case .watch: return .notchWatch
-        case .wakatime, .vercel, .github: return nil
+        case .wakatime, .vercel, .github, .cardImport: return nil // Zenith fork: cardImport
         }
     }
 

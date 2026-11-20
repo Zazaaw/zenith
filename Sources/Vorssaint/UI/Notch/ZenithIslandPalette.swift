@@ -41,6 +41,7 @@ enum ZenithIslandPalette {
         case .wakatime: return 0xF472B6      // pink
         case .vercel: return 0xE5E7EB        // neutral
         case .github: return 0xCBD5E1        // slate
+        case .cardImport: return 0xFDBA74    // peach, the warm 300 step: the wheel's 400s are all taken
         }
     }
 

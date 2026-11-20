@@ -271,6 +271,7 @@ struct MetricsTests {
             ("notices", { ZenithNoticeTests.run(suite) }),
             ("reply", { ReplyTests.run(suite) }),
             ("home-layout", { HomeLayoutTests.run(suite) }),
+            ("card-import", { CardImportTests.run(suite) }),
         ]
         var selected = Set<String>()
         var listOnly = false

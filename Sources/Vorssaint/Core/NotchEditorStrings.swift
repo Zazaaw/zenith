@@ -98,6 +98,7 @@ struct NotchEditorStrings {
         case .wakatime: return ZenithStrings.wakaTimeSummary(L10n.shared.language)
         case .vercel: return ZenithStrings.vercelSummary(L10n.shared.language)
         case .github: return ZenithStrings.gitHubSummary(L10n.shared.language)
+        case .cardImport: return ZenithStrings.cardImport(L10n.shared.language).summary
         }
     }
 }

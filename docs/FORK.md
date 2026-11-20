@@ -1227,6 +1227,115 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     badge shortcut, kursor keyboard, cari), masuk/keluar mode edit, goyangan, ikon terbang dari strip,
     island melebar/menyempit tanpa isi melompat, widget Weather/Clipboard/Timer sungguhan, menu klik kanan,
     Reduce Motion, Increase Contrast, layar kecil.
+- **Import kartu kamera (branch `feat/card-import`):** kartu SD/CFexpress dari kamera dikenali saat
+  di-mount, ditawarkan lewat notice kapsul, lalu diimpor dari halaman island sendiri dengan progres di
+  island tertutup. Untuk alur fotografer acara (wisuda, acara sekolah): ribuan foto dan video sekali
+  colok. Kode di `Services/CardImport/CardImportSupport.swift` (murni, ikut `TEST_SOURCES`: aturan
+  deteksi, klasifikasi, scan, opsi, tujuan, rencana, ledger, laju dan ETA, model activity, format),
+  `CardImportCopier.swift` (`CardImportJob`, salin per file, ikut `TEST_SOURCES`),
+  `CardImportService.swift` (volume, notice, sesi, eject), `UI/Notch/CardImportPage.swift` (halaman),
+  `UI/Notch/CardImportStrip.swift` (island tertutup dan kapsul) dan `UI/Notch/CardImportSettings.swift`.
+  Teks di `ZenithStrings.cardImport` (15 bahasa, bentuk jamak one/few/many untuk ru/uk/sk). Test di
+  `Tests/CardImportTests.swift` (suite `card-import`).
+  - **Deteksi:** hanya saat island jalan dan saklar `notchCardImportEnabled` nyala (default nyala).
+    `NSWorkspace.didMountNotification`/`didUnmountNotification`; volume yang sudah ter-mount saat start
+    ikut dibaca tanpa notice. Syarat volume: lokal, bukan startup disk, dan removable atau ejectable
+    (slot SD bawaan MacBook memang "internal" tapi removable). Syarat isi: folder `DCIM`,
+    `PRIVATE/M4ROOT` (Sony XAVC), `PRIVATE/AVCHD`, `AVCHD`, atau `CLIP`. Yang di-scan hanya akar media:
+    `DCIM/**`, `PRIVATE/M4ROOT/CLIP`, `PRIVATE/AVCHD/BDMV/STREAM`, `AVCHD/BDMV/STREAM`, `CLIP/**`, jadi
+    thumbnail Sony (`THMBNL`, JPG) dan proxy (`SUB`, MP4) tidak terhitung. File tersembunyi dan
+    AppleDouble `._*` dilewati. Foto: JPG/JPEG/HEIC/HEIF (masuk JPG) dan RAW ARW, CR2, CR3, NEF, RAF,
+    DNG, ORF, RW2; video: MP4, MOV, MTS, MXF, BRAW. Scan di queue `utility`, tidak pernah di main thread.
+    Waktu ambil = tanggal pembuatan file (kamera menulisnya saat memotret), cadangannya tanggal ubah;
+    EXIF tidak dibaca supaya ribuan file tetap cepat.
+  - **Identitas kartu:** `volumeUUIDString`, atau UUID Disk Arbitration (kartu FAT/exFAT sering tidak
+    memberi UUID ke Foundation), atau `nama-kapasitas`. Format ulang di kamera = UUID baru = ledger baru.
+  - **Notice:** `ZenithNotice.Kind.card` (prioritas 3 seperti headphone: di atas download dan charger, di
+    bawah baterai lemah), tampil 7 dtk, menunggu island sampai 30 dtk, key `card.<uuid>` (kartu yang sama
+    di-coalesce). Judul `SD card · 1,248 photos · 64 GB` (video kalau tanpa foto), subjudul nama volume,
+    jumlah video, dan "N imported before". Glyph `sdcard.fill` warna modul (`Tone.tint`) dan aksesori
+    baru `.action("Import")`: pil padat warna modul. Klik = `CardImportService.openImport` (island
+    terbuka di halaman Card Import). Kartu dicabut sebelum dijawab = notice-nya ikut pergi.
+  - **Modul baru `NotchModule.cardImport`** (⌥⌘J, glyph `sdcard`, warna peach `#FDBA74`: semua tingkat
+    400 di palet sudah terpakai, jadi diambil tingkat 300 oranye). Selalu terdaftar di Content supaya
+    opsinya terjangkau; tampil di island selama deteksi nyala. Halaman (min. 232 pt, island custom yang
+    lebih pendek men-scroll):
+    - *Kosong:* tile glyph + "Insert a camera card…". *Membaca:* spinner + "Reading the card…".
+    - *Siap:* header (tile, nama volume, isi dan ukuran mono, tombol eject, menu ganti kartu kalau lebih
+      dari satu), kartu lembut Destination (base folder mono di kanan, field nama event dengan ikon
+      folder warna modul, terisi `YYYY-MM-DD` dari hari foto terbaru yang belum diimpor, cadangannya
+      hari ini), kartu lembut opsi (empat saklar `ZenithIslandSwitchStyle` ×0,76 dalam grid dua kolom +
+      `ZenithSegmented` Original | Date and time), lalu baris status ("N new" titik warna modul, "N
+      imported before" mono) dan tombol Import padat warna modul. Opsi di halaman hanya untuk import ini;
+      default-nya dari Settings dan direset tiap kartu baru.
+    - *Menyalin:* header (glyph kamera, nama kartu, `→ nama event`, tombol Stop), kartu lembut berisi
+      persen besar `ZenithFigure` dengan `numericText`, kata "Importing" warna modul, kecepatan, bar 4 pt,
+      `412 / 1,036`, `21.4 / 52 GB`, `3m left`, nama file yang sedang disalin.
+    - *Selesai:* cincin emerald yang terisi (`trim`) dengan ✓ yang tergambar (`trim`, jeda 0,3 dtk),
+      "Imported 1,248 · 52 GB", `→ ~/Pictures/Imports/<event>`, "N skipped, imported before", tombol
+      Reveal in Finder (padat), Eject (atau status Ejected), Done.
+    - *Gagal:* kartu dicabut (ikon `sdcard` merah), disk penuh (amber, "Free up X and retry."), atau file
+      gagal (merah, nama file). Retry (aktif kalau kartunya ada), Reveal in Finder kalau sudah ada yang
+      tersalin, Done.
+    - Ganti state lewat `.zenithMorph(on:)`; Reduce Motion: fade.
+  - **Rencana import (`CardImportPlanner`):** tujuan `<base>/<event>/`; base default `~/Pictures/Imports`
+    (disimpan dengan `~` kalau di dalam home), nama event dibersihkan (`/` dan `:` jadi `-`, tanpa titik di
+    depan, tanpa karakter kontrol, maks. 120). Subfolder: `RAW/` dan `JPG/` (HEIC ikut JPG) kalau
+    "RAW and JPG folders" nyala, `Video/` kalau "Video folder" nyala, selain itu langsung di folder event.
+    Nama: asli, atau `YYYYMMDD-HHMMSS-####` (waktu ambil zona lokal, nomor urut menurut waktu ambil,
+    empat digit lalu melebar; RAW dan JPG satu jepretan (folder + nama tanpa ekstensi sama) berbagi
+    nomor; ekstensi dipertahankan apa adanya). Tabrakan nama (dua folder DCIM dengan nama sama, file
+    yang sudah ada) tidak pernah menimpa: `-1`, `-2`, tanpa beda huruf besar. Skip imported: file yang
+    key ledger-nya `nama|ukuran|detik ambil` sudah tercatat; file yang sudah tersalin di sesi ini selalu
+    dilewati saat retry, apa pun opsinya.
+  - **Ledger:** `<container>/CardImport/ledger-<uuid>.json` (folder 0700), hanya key (tanpa path atau isi),
+    maks. 50.000 terbaru, ditulis tiap 40 file dan saat import berakhir. Tidak ikut backup.
+  - **Salin (`CardImportJob`):** `Task.detached(priority: .utility)`: rencana (cek nama yang sudah ada di
+    disk), cek ruang kosong (`volumeAvailableCapacityForImportantUsage` + margin 256 MB; kurang = langsung
+    gagal disk penuh dengan jumlah yang dibutuhkan), lalu file satu per satu: `read`/`write` POSIX 4 MB
+    dengan `F_NOCACHE`, ke `.zenith-import-<uuid>.partial` di folder tujuannya, ukuran dicek dua kali
+    (byte yang ditulis dan ukuran file), tanggal pembuatan dan ubah dari kartu dipasang, lalu
+    `renamex_np(RENAME_EXCL)` ke nama final (EEXIST = nama berikutnya, tidak pernah menimpa). Gagal di
+    tengah = file partial dihapus; partial sisa run yang terhenti (Mac tidur, Zenith keluar) dibersihkan
+    sebelum run berikutnya. Kartu tidak pernah ditulis, dipindah, atau dihapus. Main thread membaca state
+    job (di balik lock) tiap 0,1 dtk lewat timer, hanya selama menyalin.
+  - **Error:** kartu dicabut = read gagal dan volume hilang (stat gagal atau device id berubah; job
+    menunggu sampai 1,5 dtk karena read gagal sebelum unmount datang; unmount juga menandai job, dan
+    kegagalan file dalam 5 dtk sebelum unmount diklasifikasi ulang sebagai kartu dicabut). Disk penuh =
+    `ENOSPC`/`EDQUOT` (juga `NSFileWriteOutOfSpaceError`). Stop = sesi selesai, yang sudah tersalin
+    tetap ada (dan tercatat di ledger), halaman kembali ke kartu.
+  - **Eject:** "Eject when done" (default nyala) menjalankan `NSWorkspace.unmountAndEjectDevice` di
+    background setelah import sukses; tombol Eject di header dan di hasil. Gagal (file terbuka) ditulis di
+    halaman hasil. Tidak pernah saat menyalin.
+  - **Live activity `NotchCompactActivity.cardImport`:** urutan otomatis setelah `command`, ikut picker,
+    tidak pernah berpasangan, klik membuka halaman. Wing pinjam geometri Watch. Kiri: glyph
+    `camera.fill` warna modul + persen mono 11 (`numericText`); kanan: `812 left · 3m` mono 10,5 di atas
+    bar 2 pt warna modul. Kapsul: glyph, persen, bar 34 pt, bacaan. Lebar wing dihitung dari bacaan
+    terlebar untuk import ini (`100%`, jumlah file kartu, `1h 59m`), jadi tidak berubah selama angka
+    bergulir; `NotchService` hanya berlangganan `activity` yang kasar (mulai/selesai/gagal), progres
+    punya `ObservableObject` sendiri (`CardImportMeter`) yang hanya diamati strip dan halaman. Selesai:
+    glyph mengecil keluar, ✓ emerald tergambar `trim`, kanan `1,248 · 52 GB`, 8 dtk. Gagal: ✗ merah +
+    "Card removed"/"Destination disk is full"/"Import stopped", 15 dtk (halaman menyimpannya sampai Done).
+  - **Gerak:** semua SwiftUI, hanya transform/opacity/blur/trim: bar memakai `scaleEffect(x:anchor:
+    .leading)` (bukan lebar) dengan `.smooth(0,35)`, angka `numericText`, mark berganti dengan skala +
+    opacity di spring, ✓ dan cincin `trim`, halaman `.zenithMorph`. Reduce Motion: fade, tanpa gulir angka.
+  - **Settings:** opsi section Card Import di Dynamic Island → Content (seperti Vercel/GitHub): saklar
+    "Detect camera cards", "Import to" (path mono, Choose… lewat `NSOpenPanel`, Reset kalau custom),
+    keterangan folder event, lalu Defaults: RAW and JPG folders, Video folder, Skip imported (dengan
+    keterangan pencocokan), Names (segmented Original / Date and time, dengan contoh nama), Eject when
+    done. Semua `ZenithSwitchRow`/`ZenithSwitchStyle`, tanpa `SettingsRow`, jadi tidak masuk test search
+    coverage. Kunci `notchCardImport*` terdaftar di `registeredDefaults` (ikut backup).
+  - Edit di file upstream bertanda `// Zenith fork`: `NotchSupport` (case modul dan activity, simbol,
+    shortcut, ketersediaan, gerbang modul, tinggi konten, urutan activity), `NotchService` (activity,
+    wing, kapsul, langganan, sync/stop), `NotchView`/`NotchMirrorView` (strip, halaman, judul, tinggi
+    minimum), `NotchTimerStrip`/`NotchCapsuleViews` (tidak berpasangan), `NotchContentEditor`,
+    `NotchEditorStrings`, `NotchSettings` (opsi), `Defaults`, `build.sh` (`TEST_SOURCES`),
+    `Tests/MetricsTests.swift` (suite). File fork yang ikut berubah: `ZenithIslandPalette` (warna),
+    `ZenithNoticeSupport`/`Service`/`View` (kind, tone, aksesori, aksi). Test double
+    `NotchMusicVisibilityTests` diberi `hasCardImportActivity` dan `cardImportStripWing`.
+  - **Belum diverifikasi dengan kartu sungguhan:** app UI tidak dijalankan dan tidak ada volume yang
+    di-mount, dibaca, atau di-eject saat pengerjaan. Scan, rencana, ledger, dan salin (termasuk tanggal,
+    tabrakan, partial, kartu hilang, disk penuh dari errno) dites di folder sementara.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.

@@ -131,6 +131,24 @@ final class ZenithNoticeCenter: ObservableObject {
         return true
     }
 
+    /// A camera card mounted (CardImportService). Returns whether a capsule shows it.
+    @discardableResult
+    func cardInserted(volume: String, title: String, subtitle: String) -> Bool {
+        guard CardImportOptions.isEnabled() else { return false }
+        enqueue(ZenithNotice(kind: .card, key: ZenithNoticeKey.card(volume), title: title, subtitle: subtitle,
+                             glyph: .symbol("sdcard.fill", .tint(NotchModule.cardImport)),
+                             accessory: .action(ZenithStrings.cardImport(L10n.shared.language).importAction),
+                             action: .importCard(volume)))
+        return true
+    }
+
+    /// The card left before anyone answered: its notice goes too.
+    func cardRemoved(volume: String) {
+        let key = ZenithNoticeKey.card(volume)
+        queue.removeAll { $0.key == key }
+        if notice?.key == key { dismiss(quickly: true) }
+    }
+
     private static func reading(_ power: PowerReading) -> ZenithBatteryReading {
         ZenithBatteryReading(percent: power.chargePercent, external: power.externalConnected, charging: power.isCharging)
     }
@@ -474,6 +492,11 @@ final class ZenithNoticeCenter: ObservableObject {
             if FileManager.default.fileExists(atPath: url.path) {
                 NSWorkspace.shared.activateFileViewerSelecting([url])
             }
+        case .importCard(let volume):
+            // Zenith fork: after the capsule has gone, so the island opens on its own.
+            dismiss(quickly: true)
+            DispatchQueue.main.async { CardImportService.shared.openImport(volume: volume) }
+            return
         }
         dismiss(quickly: true)
     }
@@ -549,6 +572,7 @@ final class ZenithNoticeCenter: ObservableObject {
             case .chargeLimit: return !settings.highOn
             case .audio: return !defaults.bool(forKey: DefaultsKey.notchNoticeAudio)
             case .download: return !defaults.bool(forKey: DefaultsKey.notchNoticeDownload)
+            case .card: return !CardImportOptions.isEnabled(in: defaults)
             }
         }
     }

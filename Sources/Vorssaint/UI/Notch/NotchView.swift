@@ -242,6 +242,7 @@ struct NotchView: View {
             case .keepAwake: NotchCapsuleKeepAwakeStrip(service: service, size: size)
             case .vercel: VercelCapsuleStrip(service: service, size: size) // Zenith fork
             case .command: CommandCapsuleStrip(service: service, size: size) // Zenith fork
+            case .cardImport: CardImportCapsuleStrip(service: service, size: size) // Zenith fork
             }
         } else {
             // Handed down, the wings stay as they were drawn while a strip
@@ -258,6 +259,7 @@ struct NotchView: View {
             case .keepAwake: NotchKeepAwakeStrip(service: service, displayGeometry: geometry)
             case .vercel: VercelActivityStrip(service: service, displayGeometry: geometry) // Zenith fork
             case .command: CommandActivityStrip(service: service, displayGeometry: geometry) // Zenith fork
+            case .cardImport: CardImportActivityStrip(service: service, displayGeometry: geometry) // Zenith fork
             }
         }
     }
@@ -502,6 +504,7 @@ struct NotchView: View {
         case .files:
             // One shelf tile and its vertical insets; the actions are in the top row.
             size.height = max(size.height, 88 + 8)
+        case .cardImport: size.height = max(size.height, CardImportPageMetrics.minimumHeight) // Zenith fork
         default: break
         }
         return size
@@ -610,6 +613,7 @@ struct NotchView: View {
             case .wakatime: NotchWakaTimeView(size: pageSize)
             case .vercel: NotchVercelView(size: pageSize)
             case .github: NotchGitHubView(size: pageSize)
+            case .cardImport: CardImportPage(size: pageSize) // Zenith fork
             }
         }
     }
@@ -828,6 +832,7 @@ extension NotchModule: PanelOrderItem {
         case .wakatime: return "WakaTime"
         case .vercel: return "Vercel"
         case .github: return "GitHub"
+        case .cardImport: return ZenithStrings.cardImport(language).title // Zenith fork
         }
     }
 }

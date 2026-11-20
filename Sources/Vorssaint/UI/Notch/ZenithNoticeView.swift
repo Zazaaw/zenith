@@ -124,6 +124,7 @@ extension ZenithNotice.Tone {
         case .green: return ZenithStatus.success
         case .accent: return Color(nsColor: .controlAccentColor)
         case .white: return .white.opacity(0.95)
+        case .tint(let module): return module.zenithTint
         }
     }
 }
@@ -194,6 +195,8 @@ private struct ZenithNoticeContent: View {
             ZenithNoticeLowPowerSwitch(on: on, reduceMotion: reduceMotion)
         case .checkmark:
             ZenithNoticeCheckmark(shown: shown, reduceMotion: reduceMotion)
+        case .action(let title):
+            ZenithNoticeActionPill(title: title, tint: notice.glyphTint)
         }
     }
 }
@@ -322,6 +325,32 @@ private struct ZenithNoticeCheckmark: View {
         }
         .padding(2)
         .frame(width: ZenithNoticeLayout.ring, height: ZenithNoticeLayout.ring)
+    }
+}
+
+/// What a click on the capsule does, as words on a solid pill in the
+/// notice's colour: the whole capsule takes the click, the pill names it.
+private struct ZenithNoticeActionPill: View {
+    let title: String
+    let tint: Color
+
+    var body: some View {
+        Text(title)
+            .font(.system(size: 12, weight: .semibold))
+            .lineLimit(1)
+            .fixedSize()
+            .foregroundStyle(Color.black.opacity(0.88))
+            .padding(.horizontal, 13)
+            .frame(height: 28)
+            .background(Capsule().fill(tint))
+    }
+}
+
+private extension ZenithNotice {
+    /// The colour the glyph wears, which the action pill matches.
+    var glyphTint: Color {
+        if case let .symbol(_, tone) = glyph { return tone.color }
+        return .white.opacity(0.9)
     }
 }
 
