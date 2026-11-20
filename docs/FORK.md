@@ -1903,6 +1903,57 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     roll digit, ganti ke "Waktunya …", bump glyph), kapsul, halaman Sky (tile, hero, arc dan penanda, morph antar tab,
     island kaca), widget home, item lock screen dan baris readout, notice kapsul + suara (system dan file sendiri),
     prompt izin lokasi dari tombol Sky, Settings (stepper, field lat/long), Reduce Motion, Increase Contrast.
+- **Beautify di editor screenshot (branch `feat/screenshot-beautify`):** membingkai screenshot untuk Instagram dan
+  portofolio: latar, padding, sudut, bayangan, bingkai jendela, rasio, dan caption, di resolusi Retina penuh. Kode di
+  `Services/QuickTools/ScreenshotBeautifySupport.swift` (gaya, gradien, preset, layout, nama file; ikut test),
+  `ScreenshotBeautifyRenderer.swift` (CoreGraphics/CoreImage, tanpa main actor; ikut test),
+  `ScreenshotBeautifySession.swift` (state per jendela editor, export, after capture), `UI/Screenshot/ScreenshotBeautifyStage.swift`
+  (stage dan inspector) dan `ScreenshotBeautifySettings.swift`. Teks di `ZenithStrings.beautify` (15 bahasa). Test di
+  `Tests/ScreenshotBeautifyTests.swift` (suite `screenshot-beautify`).
+  - **Masuk:** tombol tongkat (`wand.and.stars`) di action cluster editor; tombol yang sama di thumbnail preview setelah
+    capture (preview melayang dan di island) dan tombol **B** di preview. Dari preview, Beautify = Edit dengan satu
+    permintaan (`ScreenshotBeautifyHandoff`, berlaku 3 dtk): editor berikutnya langsung terbuka di Beautify. Stage menutupi
+    editor (editor tetap hidup di bawahnya, anotasi dan undo utuh); "Edit" atau Esc kembali ke editor.
+  - **Sumber:** `ScreenshotEditorModel.beautifySource()` meratakan capture dengan anotasi dan watermark, ukuran penuh, tanpa
+    backdrop upstream dan pembulatannya. Backdrop upstream diabaikan selama Beautify (keduanya tidak ditumpuk).
+  - **Opsi:** latar Gradient (8 preset tenang: Ink dan Paper monokrom Satu Visual, Mist, Peach, Sage, Sky, Sand, Dusk),
+    Solid (6 swatch + color well), Clear (transparan), Wallpaper (gambar desktop `NSScreen.main`, diperkecil ke 1600 px
+    dan di-blur CIGaussianBlur 3,5%, di-cache per file; kalau tidak terbaca, gradien Mist menggantikan dan ada catatan).
+    Padding 0–30% dari ukuran shot (akar luas, jadi strip lebar tetap wajar), sudut 0–48 pt kontinu (kurva squircle
+    Apple, dibatasi ukuran shot), bayangan None/Soft/Strong (mengikuti sudut jendela transparan, tidak pernah jadi pelat
+    gelap di latar Clear), bingkai jendela Light/Dark (bar 28 pt, tiga lampu 12 pt berjarak 20 pt, garis tepi tipis),
+    rasio Auto/16:9/1:1/4:5/9:16, caption satu baris (SF Pro medium, min. 13 pt, warna gelap/terang menurut terang latar).
+  - **Layout:** shot tidak pernah diperkecil; kanvas yang tumbuh mengikuti padding dan rasio, konten (shot + caption) di
+    tengah. Hanya kanvas di atas 8192 px yang diperkecil utuh. Semua dalam piksel dengan asal kiri atas
+    (`ScreenshotBeautifyLayout`), dipakai preview dan export.
+  - **Render:** preview 1800 px dirender di `Task.detached` tiap perubahan (satu render jalan, perubahan di tengahnya
+    digabung jadi satu render berikutnya); export penuh disiapkan di belakang 0,35 dtk setelah perubahan terakhir, jadi
+    Copy, Save dan drag biasanya langsung. Ruang warna mengikuti shot (P3 tetap P3). Di harness lokal 1600×1000 @2x:
+    export penuh 30–70 ms, preview 7–13 ms.
+  - **Export:** Copy (PNG + TIFF, plus file di cache kecuali "image only", sama seperti editor), Save beside original
+    (`<nama>-beautified.png/.jpg`, unik dengan " 2", ditulis `.withoutOverwriting`; asal = file sumber kalau ada dan di folder
+    milik pengguna, file yang disimpan preview, atau folder screenshot), drag-out (file sementara 1 jam). PNG, atau JPEG
+    (0,92) kalau latar tidak Clear. Export tidak menutup editor (beberapa rasio bisa diekspor berturut-turut) dan menandai
+    capture sudah diekspor. Shortcut di Beautify: ⏎/⌘C copy, ⌘S save, Esc kembali. Preferensi 1x downscale tidak berlaku.
+  - **Preset dan memori:** gaya terakhir (`screenshotBeautifyStyle`, JSON) dan preset bernama (`screenshotBeautifyPresets`,
+    maks. 12, nama sama = ganti) terdaftar di `registeredDefaults`, jadi ikut backup. Decode per field, jadi gaya lama atau
+    backup yang diedit tetap terbaca.
+  - **Beautify after capture** (`screenshotBeautifyAfterCapture`, default mati, kartu "Beautify" di Screen capture): setiap
+    capture baru dibingkai dengan gaya terakhir sebelum copy/save/preview/shelf (hook di `route`, setelah
+    `beginLatestCapture`, lalu capture berbingkai di-route lagi). Pasangan berbingkai → mentah diingat untuk 2 capture
+    terakhir, jadi Edit/Beautify dari preview membuka capture mentah di Beautify, bukan bingkai di dalam bingkai.
+  - **Hook di file upstream** (bertanda `// Zenith fork`): `ScreenshotEditorController` (`beautifySource`, properti
+    session, init memetakan capture, root view `ScreenshotBeautifyContainer`, `handleKey`, masuk Beautify di akhir
+    `show`), `ScreenshotEditorView` (tombol), `ScreenshotQuickPreviewController` (tombol thumbnail, tombol island, tombol B),
+    `ScreenshotService` (`route`, `.edit` membawa file tersimpan, `editImage(at:)` membawa URL), `ScreenshotSelectionController`
+    (`Capture.sourceURL`), `ScreenCaptureSettings` (kartu), `Defaults`, `build.sh` (`TEST_SOURCES`), `MetricsTests`.
+    Sengaja tidak menyentuh `openEditor`, `editFromPreview`, `perform` dan baris pertama `route`: test upstream menyalin
+    fungsi itu apa adanya (`Tests/generate_sources.py`) atau memeriksa urutannya.
+  - **Belum diverifikasi visual:** app UI tidak dijalankan; hasil render dicek lewat harness lokal (PNG statis). Perlu dicek
+    di Mac: transisi masuk/keluar stage di 120 Hz dan Reduce Motion, slider dan preview saat digeser, inspector di jendela
+    minimum, tombol di thumbnail preview dan di island, B di preview, Copy ke Figma/Slack, Save di samping file shelf dan di
+    folder screenshot, drag ke Finder, wallpaper dinamis/foto/warna polos, capture P3, Beautify after capture dengan setiap
+    after-capture action, VoiceOver.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
