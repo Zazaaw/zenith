@@ -319,14 +319,14 @@ enum NotchLayout {
     /// to none, before their rail scrolls, so the narrowest island holds
     /// four across, as the home page's shortcuts do.
     static let toolLeastSpacing: CGFloat = 0
-    // Zenith fork: the gallery is a command palette, rows of a glyph, a name
-    // and a shortcut in up to two columns, in the room upstream's three rows
-    // of 86-point tiles took (see `sectionListHeight`).
-    static let sectionTileHeight: CGFloat = 32.5 // Zenith fork: a row
-    static let sectionTileWidth: CGFloat = 170 // Zenith fork: a column's least width
-    static let sectionSpacing: CGFloat = 2 // Zenith fork: between rows
-    static let sectionColumnSpacing: CGFloat = 8 // Zenith fork
-    static let sectionMaximumColumns = 2 // Zenith fork
+    // Zenith fork: the gallery is a grid of colourful app icons over their
+    // names, paged sideways (ZenithWidgetsGallery), in the room upstream's
+    // three rows of 86-point tiles took (see `sectionListHeight`).
+    static let sectionTileHeight: CGFloat = 86 // Zenith fork: an icon and its name
+    static let sectionTileWidth: CGFloat = 84 // Zenith fork: a column's least width
+    static let sectionSpacing: CGFloat = 8 // Zenith fork: between rows
+    static let sectionColumnSpacing: CGFloat = 4 // Zenith fork
+    static let sectionMaximumColumns = 8 // Zenith fork
     /// Zenith fork: the height upstream's tiles (86 points, 8 apart) filled
     /// in `budget`, which the palette's rows keep.
     static func sectionListHeight(budget: CGFloat) -> CGFloat {
@@ -334,7 +334,8 @@ enum NotchLayout {
         return railHeight(rows: max(1, Int(((budget + 8) / 94).rounded(.down))), rowHeight: 86, spacing: 8)
     }
     /// The gallery's row indicator beside the tiles, with its gap.
-    static let sectionIndicatorWidth: CGFloat = 12
+    // Zenith fork: the page dots sit in the island's top row, not beside the icons.
+    static let sectionIndicatorWidth: CGFloat = 0
     /// The search field the clipboard page shows once it is wanted.
     static let clipboardSearchHeight: CGFloat = 36
     static let clipboardCardHeight: CGFloat = 104
@@ -2321,6 +2322,8 @@ struct NotchGeometry: Equatable {
     /// The 28-point controls a page that wraps the camera hands the row,
     /// as the player's lyrics and queue toggles while a song plays.
     var pageTrailingControls = 0
+    /// Zenith fork: the home page's widgets (ZenithHomeIsland), set while it shows.
+    var zenithHome: ZenithHomeIslandGeometry? = nil
     private var allowsActivityFooter = true
     private var minimumCompactWidth: CGFloat = 0
     /// Narrower wings than this are dropped rather than drawn cramped.
@@ -2724,9 +2727,11 @@ struct NotchGeometry: Equatable {
         var wing = pageBandSide + (rowShowsSectionsButton ? NotchBand.sectionsButtonRoom : 0)
         let ending = max(wing, trailingSectionsRoom + NotchBand.cameraClearance)
         if sectionsButtonEndsRow, cameraWidth + ending * 2 + NotchLayout.horizontalInset * 2 <= chosen { wing = ending }
-        let preferred = layout == .custom ? chosen : pageContentWidth.map { natural in
+        var preferred = layout == .custom ? chosen : pageContentWidth.map { natural in
             min(chosen, max(natural, isNotched ? cameraWidth + wing * 2 : 0) + NotchLayout.horizontalInset * 2)
         } ?? chosen
+        // Zenith fork: widgets side by side widen the home page past the chosen width.
+        if let home = zenithHome?.contentWidth { preferred = max(preferred, home + NotchLayout.horizontalInset * 2) }
         return min(max(preferred, cameraWidth + 36), screen.width - 24 - NotchQuickAccessLayout.gutter * 2)
     }
     var contentWidth: CGFloat { max(0, expandedWidth - NotchLayout.horizontalInset * 2) }
@@ -2810,10 +2815,12 @@ struct NotchGeometry: Equatable {
                 let band = NotchBand(geometry: self, contentWidth: contentWidth)
                 let levelRow = NotchLayout.bandLevelCount(levels, band: band) < levels
                 let room = budget + (levelRow && layout != .custom ? NotchLayout.levelRowHeight + NotchLayout.rowSpacing : 0)
-                let home = NotchLayout.controls(hasCards: controlsHaveMusic, levelRow: levelRow,
+                let hasCards = zenithHome?.hasCards ?? controlsHaveMusic // Zenith fork: the widgets' row
+                let home = NotchLayout.controls(hasCards: hasCards, levelRow: levelRow,
                                                 shortcutCount: max(0, shortcutCount), width: contentWidth, height: room)
-                let empty = !controlsHaveMusic && sliderCount <= 0 && shortcutCount <= 0
+                let empty = !hasCards && sliderCount <= 0 && shortcutCount <= 0
                 contentHeight = min(room, empty ? NotchLayout.emptyHeight : home.height)
+                    + (zenithHome?.stripHeight ?? 0) // Zenith fork: the edit strip
             case .music:
                 let player = NotchLayout.musicPlayerHeight(band: musicBandHeight, playing: musicHasContent)
                 // Presets grow for the optional row; a custom height keeps

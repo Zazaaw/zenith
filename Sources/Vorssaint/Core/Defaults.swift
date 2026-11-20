@@ -879,6 +879,8 @@ enum DefaultsKey {
     static let notchScratchpadControlHidden = "notchScratchpadControlHidden"
     static let notchKeyboardLightControlHidden = "notchKeyboardLightControlHidden"
     static let notchControlOrder = "notchControlOrder"
+    // Zenith fork: the home page's widgets, in order (ZenithHomeLayout.encoded; "auto" follows the Music switch).
+    static let zenithHomeLayout = "zenithHomeLayout"
     static let notchSize = "notchSize"
     static let notchOutlineEnabled = "notchOutlineEnabled"
     static let notchHideMenuBarGap = "notchHideMenuBarGap"
@@ -1548,6 +1550,7 @@ enum Defaults {
         DefaultsKey.notchScratchpadControlHidden: false,
         DefaultsKey.notchKeyboardLightControlHidden: false,
         DefaultsKey.notchControlOrder: "",
+        DefaultsKey.zenithHomeLayout: ZenithHomeLayout.automatic, // Zenith fork
         DefaultsKey.notchSize: NotchSize.spacious.rawValue,
         DefaultsKey.notchOutlineEnabled: false,
         DefaultsKey.notchHideMenuBarGap: false,

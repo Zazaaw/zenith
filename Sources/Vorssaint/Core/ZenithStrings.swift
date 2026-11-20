@@ -4893,3 +4893,106 @@ extension ZenithStrings {
         }
     }
 }
+
+struct ZenithHomeStrings {
+    /// The island menu's item that opens the home page's edit mode.
+    let customize: String
+    let done: String
+    let cancel: String
+    /// "Remove %@" and "Add %@", %@ a widget's name.
+    let removeFormat: String
+    let addFormat: String
+    /// A widget the row has no room for.
+    let noRoom: String
+    /// An empty row in edit mode.
+    let emptyHint: String
+    /// The weather widget before it may read the location.
+    let allowLocation: String
+    let openSettings: String
+
+    func remove(_ widget: String) -> String { removeFormat.replacingOccurrences(of: "%@", with: widget) }
+    func add(_ widget: String) -> String { addFormat.replacingOccurrences(of: "%@", with: widget) }
+}
+
+extension ZenithStrings {
+    /// The customisable home page (ZenithHomeLayoutSupport) and its edit mode.
+    static func home(_ language: AppLanguage) -> ZenithHomeStrings {
+        switch language {
+        case .enUS:
+            return .init(customize: "Customize Home", done: "Done", cancel: "Cancel",
+                         removeFormat: "Remove %@", addFormat: "Add %@",
+                         noRoom: "No room for another widget", emptyHint: "Add widgets from the row below",
+                         allowLocation: "Allow Location", openSettings: "Open Settings")
+        case .ptBR:
+            return .init(customize: "Personalizar Início", done: "OK", cancel: "Cancelar",
+                         removeFormat: "Remover %@", addFormat: "Adicionar %@",
+                         noRoom: "Não há espaço para outro widget", emptyHint: "Adicione widgets da fileira abaixo",
+                         allowLocation: "Permitir Localização", openSettings: "Abrir Ajustes")
+        case .tr:
+            return .init(customize: "Ana Sayfayı Özelleştir", done: "Bitti", cancel: "Vazgeç",
+                         removeFormat: "%@ öğesini kaldır", addFormat: "%@ öğesini ekle",
+                         noRoom: "Başka bir widget için yer yok", emptyHint: "Aşağıdaki satırdan widget ekle",
+                         allowLocation: "Konuma İzin Ver", openSettings: "Ayarları Aç")
+        case .ru:
+            return .init(customize: "Настроить «Главную»", done: "Готово", cancel: "Отменить",
+                         removeFormat: "Удалить «%@»", addFormat: "Добавить «%@»",
+                         noRoom: "Нет места для ещё одного виджета", emptyHint: "Добавьте виджеты из ряда ниже",
+                         allowLocation: "Разрешить геолокацию", openSettings: "Открыть Настройки")
+        case .es:
+            return .init(customize: "Personalizar Inicio", done: "OK", cancel: "Cancelar",
+                         removeFormat: "Quitar %@", addFormat: "Añadir %@",
+                         noRoom: "No hay espacio para otro widget", emptyHint: "Añade widgets desde la fila de abajo",
+                         allowLocation: "Permitir ubicación", openSettings: "Abrir Ajustes")
+        case .sk:
+            return .init(customize: "Prispôsobiť Domov", done: "Hotovo", cancel: "Zrušiť",
+                         removeFormat: "Odstrániť %@", addFormat: "Pridať %@",
+                         noRoom: "Na ďalší widget nie je miesto", emptyHint: "Pridajte widgety z riadka nižšie",
+                         allowLocation: "Povoliť polohu", openSettings: "Otvoriť nastavenia")
+        case .de:
+            return .init(customize: "Home anpassen", done: "Fertig", cancel: "Abbrechen",
+                         removeFormat: "%@ entfernen", addFormat: "%@ hinzufügen",
+                         noRoom: "Kein Platz für ein weiteres Widget", emptyHint: "Füge Widgets aus der Reihe unten hinzu",
+                         allowLocation: "Standort erlauben", openSettings: "Einstellungen öffnen")
+        case .fr:
+            return .init(customize: "Personnaliser l’accueil", done: "OK", cancel: "Annuler",
+                         removeFormat: "Retirer %@", addFormat: "Ajouter %@",
+                         noRoom: "Plus de place pour un autre widget", emptyHint: "Ajoutez des widgets depuis la rangée ci-dessous",
+                         allowLocation: "Autoriser la localisation", openSettings: "Ouvrir les Réglages")
+        case .it:
+            return .init(customize: "Personalizza Home", done: "Fine", cancel: "Annulla",
+                         removeFormat: "Rimuovi %@", addFormat: "Aggiungi %@",
+                         noRoom: "Non c’è spazio per un altro widget", emptyHint: "Aggiungi widget dalla riga qui sotto",
+                         allowLocation: "Consenti posizione", openSettings: "Apri Impostazioni")
+        case .ja:
+            return .init(customize: "ホームをカスタマイズ", done: "完了", cancel: "キャンセル",
+                         removeFormat: "%@を削除", addFormat: "%@を追加",
+                         noRoom: "これ以上ウィジェットを置けません", emptyHint: "下の列からウィジェットを追加",
+                         allowLocation: "位置情報を許可", openSettings: "設定を開く")
+        case .ko:
+            return .init(customize: "홈 사용자화", done: "완료", cancel: "취소",
+                         removeFormat: "%@ 제거", addFormat: "%@ 추가",
+                         noRoom: "위젯을 더 둘 공간이 없습니다", emptyHint: "아래 줄에서 위젯을 추가하세요",
+                         allowLocation: "위치 허용", openSettings: "설정 열기")
+        case .uk:
+            return .init(customize: "Налаштувати «Головну»", done: "Готово", cancel: "Скасувати",
+                         removeFormat: "Вилучити «%@»", addFormat: "Додати «%@»",
+                         noRoom: "Немає місця для ще одного віджета", emptyHint: "Додайте віджети з ряду нижче",
+                         allowLocation: "Дозволити геолокацію", openSettings: "Відкрити Параметри")
+        case .zhHans:
+            return .init(customize: "自定主页", done: "完成", cancel: "取消",
+                         removeFormat: "移除“%@”", addFormat: "添加“%@”",
+                         noRoom: "没有空间放更多小组件", emptyHint: "从下方一行添加小组件",
+                         allowLocation: "允许定位", openSettings: "打开设置")
+        case .zhTW:
+            return .init(customize: "自訂主頁", done: "完成", cancel: "取消",
+                         removeFormat: "移除「%@」", addFormat: "加入「%@」",
+                         noRoom: "沒有空間放更多小工具", emptyHint: "從下方一列加入小工具",
+                         allowLocation: "允許定位", openSettings: "打開設定")
+        case .zhHK:
+            return .init(customize: "自訂主頁", done: "完成", cancel: "取消",
+                         removeFormat: "移除「%@」", addFormat: "加入「%@」",
+                         noRoom: "沒有空間放更多小工具", emptyHint: "從下方一列加入小工具",
+                         allowLocation: "允許定位", openSettings: "打開設定")
+        }
+    }
+}

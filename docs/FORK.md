@@ -1138,6 +1138,95 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     di laporan branch (export Figma 2x di atas browser, Difference dengan izin Screen Recording, Fit di
     Safari/Chrome, HUD di 120 Hz, full screen, beberapa display). ⌥⌘O bentrok dengan Outline Stroke di Figma
     dan menutupi shortcut lokal ⌥⌘O (Watch) di island; ganti kalau mengganggu.
+- **Ikon berwarna, galeri Widgets dan Customize Home (branch `feat/island-home-custom`):** pola dan
+  gerak dari rekaman referensi `reference/home-shelf-*.mp4` dan `buy-shelf-*.mp4` (dianalisis per frame;
+  artwork ikon tidak diambil, semua ikon digambar Zenith sendiri). Faiz memilih ikon berwarna (bosan
+  serba monokrom).
+  - **`ZenithAppIcon`** (`UI/Notch/ZenithAppIcon.swift`, hanya app): squircle sudut kontinu 22,5% sisi,
+    gradasi vertikal dari warna modul (`zenithTint`/hex): atas lebih terang dan sedikit kurang jenuh, bawah
+    lebih gelap dan lebih kaya (kuning/lime turun lebih dalam supaya glyph putih tetap terbaca); bloom radial
+    lembut, kilau elips di setengah atas, inner shadow terang di tepi atas dan gelap di tepi bawah, hairline
+    yang terang di atas dan pudar di bawah, glyph SF Symbol putih semibold dengan drop shadow kecil dalam
+    nada tergelap warnanya, bayangan luar halus (bisa dimatikan, `lifted: false`, untuk strip padat). Warna
+    abu-abu (Vercel, GitHub) jadi ikon grafit. Hanya shape dan gradient SwiftUI, tajam di semua ukuran.
+    Glyph per modul `NotchModule.zenithIconSymbol` (versi filled: Home `house.fill`, Tools
+    `wrench.and.screwdriver.fill`, Notifications `bell.badge.fill`, dst.), warna dari `ZenithIslandPalette`.
+    Shortcut Home `NotchControlItem.zenithIconHex` dan tool `QuickLauncherItem.zenithIconHex` punya warna
+    sendiri (Keep Awake amber, mic pink, screenshot cyan, rekam merah, speed test emerald, panel biru, Command
+    Bar slate, Homebrew oranye, Color Picker fuchsia, dst.). `ZenithAboutPage` punya ikon privat bernama sama,
+    jadi diganti nama `ZenithAboutAppIcon`.
+  - **Tile Home dan Tools:** `NotchActionTile` menerima `iconHex`; dengan itu glyph jadi `ZenithAppIcon` 34 pt.
+    Status aktif tetap: titik status menyala di pojok + simbol berubah; rekam dan mic mati mengubah ikon jadi
+    merah. Tools di island (`QuickLauncherView`, cabang `notchSize`) memakai ikon 32 pt; panel cepat terpisah
+    tidak berubah. Preview island di Settings (`NotchLayoutEditor`) ikut.
+  - **Galeri jadi Widgets** (`UI/Notch/ZenithWidgetsGallery.swift`, kait satu baris di `NotchSectionsView`):
+    grid ikon 60 pt dengan nama di bawahnya, halaman bergeser ke samping (spring `ZenithMorph`; Reduce Motion:
+    crossfade), page control (titik, yang aktif kapsul 14 pt) di baris atas island di samping kolom cari.
+    Yang dipertahankan: cari, navigasi keyboard (grid service sama; ikon yang disorot membawa halamannya),
+    tanda modul aktif (badge centang aksen di pojok ikon), ketersediaan dan urutan (`filteredSections`), dan
+    shortcut ⌥⌘ (badge mono kecil di bawah ikon saat hover atau kursor keyboard, plus tooltip). Baris masuk
+    naik 6 pt dari blur berurutan 40 ms. Tekan ikon menyusut ke 0,94 dengan spring.
+  - **Kontrak tinggi galeri tetap:** konstanta `NotchLayout` (bertanda `// Zenith fork`) jadi sel 86 pt, jarak
+    baris 8, lebar kolom minimal 84, jarak kolom 4, maks. 8 kolom, `sectionIndicatorWidth` 0 (titik pindah ke
+    baris atas). `sectionListHeight(budget:)` tidak berubah, jadi preset tetap 3 baris = 274 pt, persis
+    tinggi galeri sebelumnya. Kolom: compact 4, spacious 5, lebar tersempit 3; 19 modul = 2 halaman.
+    `NotchService`: `sectionRow` sekarang selalu baris pertama sebuah halaman (`ZenithWidgetsPaging.pageStart`),
+    satu langkah scroll = satu halaman, dan swipe ke samping di trackpad ikut menggeser (sumbu dominan
+    `scrollingDeltaX`/`Y`).
+  - **Customize Home:** item menu klik kanan island "Customize Home" (paling atas, juga di klik kanan tab Home
+    pil). Masuk mode edit di halaman Home (pindah ke Home dulu kalau perlu): widget bergoyang ±1° (Reduce
+    Motion: diam), tiap widget bergaris putus-putus dengan badge hapus merah (masuk 40 ms setelah garis), dan
+    strip di bawah naik dengan spring + blur (ikon berurutan 40 ms, ✕/✓ menyusul). Strip: ikon 34 pt semua
+    widget yang halamannya nyala, nama 9,5 pt, centang aksen untuk yang sudah ada; klik = tambah/hapus; yang
+    tidak muat diredupkan dengan tooltip "No room for another widget". ✕ membatalkan (layout kembali), ✓
+    (Return) menyimpan. Mode edit batal sendiri kalau halaman Home hilang (ganti halaman, galeri, island
+    tertutup). Menambah widget: ikon terbang dari strip ke tempatnya (`matchedGeometryEffect`), lalu blur-fade
+    jadi isi widget; island melebar lewat spring siluetnya sendiri. Menghapus: widget menyusut 0,82 + blur 10 +
+    fade, island menyempit.
+  - **Kandidat widget** (`UI/Notch/ZenithHomeWidgets.swift`): Now Playing (kartu player Home yang sudah ada),
+    Timer (jam mono, fase, satu tombol bulat ungu: start mode tersimpan / jeda / lanjut / fase berikut),
+    Clipboard (dua salinan terakhir sebagai kartu kecil, klik = salin lagi dengan centang), Calendar (acara
+    berikut minggu ini dengan batang warna kalender), Weather (simbol, suhu, tinggi/rendah; tanpa izin lokasi
+    menampilkan tombol "Allow Location"/"Open Settings", tidak pernah meminta sendiri), System (CPU dan memori
+    dengan bar 3 pt), Agents (bacaan strip AI + titik hijau saat agent bekerja), Shelf (tiga item pertama +
+    jumlah). Klik badan widget membuka halamannya. Widget yang halamannya mati tetap tersimpan tapi tidak tampil.
+    `WeatherService` mendapat `homeShown()/homeHidden()`: pembacaan sama dengan lock screen selama widget tampil.
+  - **Model** (`Services/Notch/ZenithHomeLayoutSupport.swift`, murni, ikut `TEST_SOURCES`): `ZenithHomeWidget`
+    (modul, glyph, warna, lebar alami 172–300 pt), `ZenithHomeLayout` (maks. 3 berdampingan, tanpa duplikat,
+    tambah/hapus/pindah, `canAdd` dengan lebar maksimum layar), `ZenithHomeIsland` (draft mode edit sebagai
+    state statis seperti `ZenithReplyHold`, geometri island), `ZenithWidgetsPaging`.
+  - **Persistensi:** `zenithHomeLayout` (`DefaultsKey.zenithHomeLayout`), daftar dipisah koma, mis.
+    `nowPlaying,timer,clipboard`; `""` = Home tanpa kartu; default terdaftar `auto` = belum pernah diatur;
+    karena terdaftar, ikut backup. Migrasi: `auto` = player kalau saklar Music Home nyala, kalau tidak kosong (persis Home
+    lama). Saklar Music di Settings tetap penentu player: dimatikan → player keluar dari layout; dinyalakan →
+    player kembali di depan (widget terakhir mengalah kalau penuh). Menyimpan layout ikut mengubah `music` di
+    `notchHiddenControls` (format daftar terurut tetap).
+  - **Lebar island:** satu widget mengisi baris seperti player dulu (lebar island tidak berubah). Dua atau lebih:
+    `NotchGeometry.zenithHome` (diisi `expandedGeometry` hanya di Home) membuat `expandedWidth` minimal
+    jumlah lebar widget + jarak 10 + inset, dibatasi tepi layar (`zenithHomeMaximumContentWidth`); widget yang
+    membuat baris melewati batas itu tidak ditawarkan (tidak wrap). Mode edit menambah tinggi strip
+    (58 + 10 pt) lewat `expandedSize`. Semua perubahan memanggil `refreshPresentation()`, jadi ukuran berubah
+    lewat animasi siluet island sendiri. Di dalam baris, lebar tiap widget sebanding dengan lebar alaminya.
+    Preview island di Settings (`NotchContentEditor`) ikut menampilkan widget, tapi tidak pernah mode edit
+    (`notchSettingsPreview`) dan tidak dilebarkan (geometri preview tidak diberi `zenithHome`).
+  - Edit di file upstream bertanda `// Zenith fork`: `NotchSupport` (konstanta galeri, `zenithHome`, lebar dan
+    tinggi Home), `NotchService` (geometri Home, paging halaman, swipe samping), `NotchSectionsView` (galeri),
+    `NotchControlsView` (baris widget, strip, tile berwarna), `NotchView` (item menu), `QuickLauncherView`
+    (ikon Tools), `NotchLayoutEditor` (preview), `Defaults` (kunci), `build.sh` (`TEST_SOURCES`),
+    `Tests/MetricsTests.swift` (suite). Teks di `ZenithStrings.home` (15 bahasa; nama widget memakai judul
+    modul yang sudah ada dan kata Weather dari lock screen).
+  - **Test:** baru `Tests/HomeLayoutTests.swift` (suite `home-layout`): tambah/hapus/urut, batas 3 dan lebar
+    layar, encode/decode dan nama asing, kunci terdaftar + ikut backup, migrasi dan sinkron saklar Music,
+    ketersediaan, ukuran island (satu widget = Home lama persis, tiga widget melebar, mode edit menambah strip,
+    tidak melewati layar), draft mode edit, halaman galeri, teks. Diubah: `NotchTests` (galeri: 3 baris bukan
+    8, kolom 4/5/3 bukan 2/2/1, 2 halaman bukan ≤ 3 posisi baris; tujuan sama: tinggi galeri = tiga baris tile
+    upstream), `NotchSectionPagingTests` (double `NSEvent` dapat `scrollingDeltaX`, dan test baru swipe
+    samping menggeser galeri).
+  - **Belum diverifikasi visual:** app UI tidak dijalankan. Ikon dan mock galeri/mode edit dirender statis
+    (`ImageRenderer`). Perlu dicek di Mac (120 Hz): ikon di island kaca abu-abu, galeri (geser halaman, titik,
+    badge shortcut, kursor keyboard, cari), masuk/keluar mode edit, goyangan, ikon terbang dari strip,
+    island melebar/menyempit tanpa isi melompat, widget Weather/Clipboard/Timer sungguhan, menu klik kanan,
+    Reduce Motion, Increase Contrast, layar kecil.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.

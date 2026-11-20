@@ -270,6 +270,7 @@ struct MetricsTests {
             ("design-overlay", { DesignOverlayTests.run(suite) }),
             ("notices", { ZenithNoticeTests.run(suite) }),
             ("reply", { ReplyTests.run(suite) }),
+            ("home-layout", { HomeLayoutTests.run(suite) }),
         ]
         var selected = Set<String>()
         var listOnly = false

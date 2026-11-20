@@ -158,7 +158,7 @@ private struct ZenithAboutHero: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 18) {
-            ZenithAppIcon(size: 80)
+            ZenithAboutAppIcon(size: 80)
             VStack(alignment: .leading, spacing: 6) {
                 Text(AppInfo.name)
                     .font(ZenithType.pageTitle)
@@ -190,7 +190,7 @@ private struct ZenithAboutHero: View {
 }
 
 /// Zenith's own icon from the bundle, else the Satu Visual badge it is made from.
-private struct ZenithAppIcon: View {
+private struct ZenithAboutAppIcon: View {
     let size: CGFloat
 
     private static let icon: NSImage? = Bundle.main.image(forResource: "AppIcon")

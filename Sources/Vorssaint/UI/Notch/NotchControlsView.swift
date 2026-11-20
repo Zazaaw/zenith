@@ -10,9 +10,16 @@ struct NotchControlsView: View {
     @ObservedObject private var l10n = L10n.shared
     @AppStorage(DefaultsKey.brightnessControlEnabled) private var brightnessEnabled = false
     @Environment(\.notchBand) private var band
+    @ObservedObject private var homeEditor = ZenithHomeEditor.shared // Zenith fork: the home page's widgets
+    @Environment(\.notchSettingsPreview) private var preview // Zenith fork: Settings shows no edit mode
+    @Namespace private var homeWidgets // Zenith fork: icons flying from the edit strip
 
     var body: some View {
         let items = NotchSupport.controls()
+        // Zenith fork: the card row holds the chosen widgets, and edit mode adds its strip below.
+        let homeEditing = homeEditor.editing && !preview
+        let homeCards = !homeEditor.shown(modules: service.modules).isEmpty || homeEditing
+        let stripRoom = homeEditing ? ZenithHomeIsland.stripHeight + ZenithHomeIsland.stripSpacing : 0
         let levels = items.filter(\.isLevel)
         // The levels go to the island's top row with no readout: the slider
         // there already shows the level. Beside a camera that cannot split
@@ -21,9 +28,10 @@ struct NotchControlsView: View {
         let bandLevels = Array(levels.prefix(inBand))
         let belowLevels = Array(levels.dropFirst(inBand))
         let shortcuts = items.filter { !$0.isLevel && $0 != .music }
-        let layout = NotchLayout.controls(hasCards: items.contains(.music), levelRow: !belowLevels.isEmpty,
-                                          shortcutCount: shortcuts.count, width: size.width, height: size.height)
-        if items.isEmpty {
+        let layout = NotchLayout.controls(hasCards: homeCards, levelRow: !belowLevels.isEmpty, // Zenith fork
+                                          shortcutCount: shortcuts.count, width: size.width,
+                                          height: size.height - stripRoom) // Zenith fork
+        if items.isEmpty && !homeCards { // Zenith fork: widgets alone make a home page
             NotchEmptyView(symbol: "slider.horizontal.3", message: FeatureStrings.notch(l10n.language).empty)
         } else {
             VStack(spacing: NotchLayout.rowSpacing) {
@@ -31,7 +39,9 @@ struct NotchControlsView: View {
                     NotchLevelRow(levels: belowLevels) { level($0) }
                 }
                 if layout.cardRow > 0 {
-                    NotchMusicControlsView(notch: service, height: layout.cardRow).frame(height: layout.cardRow)
+                    // Zenith fork: the chosen widgets, the player alone as before.
+                    ZenithHomeCardRow(service: service, width: size.width, height: layout.cardRow, namespace: homeWidgets)
+                        .frame(height: layout.cardRow)
                 }
                 if layout.shortcutRows > 0 {
                     NotchRail(items: shortcuts, rows: layout.shortcutRows, itemWidth: NotchLayout.shortcutWidth,
@@ -41,8 +51,13 @@ struct NotchControlsView: View {
                         shortcut(item)
                     }
                 }
+                if homeEditing { // Zenith fork: the widgets to add, Cancel and Done
+                    Spacer(minLength: 0)
+                    ZenithHomeEditStrip(service: service, namespace: homeWidgets)
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .onDisappear { if !preview { homeEditor.abandon() } } // Zenith fork: leaving the page cancels the edit
             .notchBand(leading: {
                 NotchBandLevels(band: band, levels: bandLevels, side: .leading) { level($0) }
             }, trailing: {
@@ -97,20 +112,21 @@ struct NotchControlsView: View {
         case .keepAwake: NotchAwakeButton()
         case .microphone: NotchMicButton()
         case .screenshot:
-            NotchActionTile(symbol: item.symbol, title: item.title(l10n)) {
+            NotchActionTile(symbol: item.symbol, title: item.title(l10n), iconHex: item.zenithIconHex) { // Zenith fork
                 service.perform { ScreenshotService.shared.capture() }
             }
         case .recording: NotchRecorderButton(service: service)
         case .speedTest:
-            NotchActionTile(symbol: item.symbol, title: item.title(l10n)) { service.showMetric(.network) }
+            NotchActionTile(symbol: item.symbol, title: item.title(l10n), iconHex: item.zenithIconHex) { service.showMetric(.network) } // Zenith fork
         case .panel:
-            NotchActionTile(symbol: item.symbol, title: item.title(l10n)) { service.openAppPanel() }
+            NotchActionTile(symbol: item.symbol, title: item.title(l10n), iconHex: item.zenithIconHex) { service.openAppPanel() } // Zenith fork
         case .mixer:
-            NotchActionTile(symbol: item.symbol, title: item.title(l10n)) { service.select(.mixer) }
+            NotchActionTile(symbol: item.symbol, title: item.title(l10n), iconHex: item.zenithIconHex) { service.select(.mixer) } // Zenith fork
         case .commandBar:
-            NotchActionTile(symbol: item.symbol, title: item.title(l10n)) { service.perform { CommandBarService.shared.show() } }
+            NotchActionTile(symbol: item.symbol, title: item.title(l10n), iconHex: item.zenithIconHex) { service.perform { CommandBarService.shared.show() } } // Zenith fork
         case .scratchpad:
-            NotchActionTile(symbol: item.symbol, title: item.title(l10n), action: service.openScratchpad)
+            NotchActionTile(symbol: item.symbol, title: item.title(l10n), iconHex: item.zenithIconHex, // Zenith fork
+                            action: service.openScratchpad)
         case .timer: NotchTimerTile(service: service)
         case .calendar: NotchCalendarTile(service: service)
         case .volume, .brightness, .keyboardLight, .music: EmptyView()
@@ -421,18 +437,14 @@ struct NotchActionTile: View {
     var compactTitle: String?
     var active = false
     var accent: NotchTileAccent = .selection
+    /// Zenith fork: the colour of its app icon (`NotchControlItem.zenithIconHex`); nil keeps the plain glyph.
+    var iconHex: UInt32? = nil
     let action: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         Button(action: action) {
             VStack(spacing: 6) {
-                Image(systemName: symbol).font(.system(size: 18, weight: .regular)) // Zenith fork
-                    .contentTransition(.symbolEffect(.replace))
-                    .frame(width: 40, height: 40)
-                    // Zenith fork: a plain glyph; an active one in the accent or its status colour, with a glowing dot.
-                    .modifier(ZenithIslandShortcutGlyph(active: active,
-                                                        tint: accent == .selection ? ZenithIsland.accent : accent.fill))
-                    .animation(reduceMotion ? nil : .smooth(duration: 0.26), value: symbol)
+                glyph // Zenith fork: a colourful icon where the tile has a colour
                 label
                     .frame(maxWidth: .infinity)
                     .frame(height: 28, alignment: .top)
@@ -448,6 +460,29 @@ struct NotchActionTile: View {
         .accessibilityValue(reading ?? "")
         .accessibilityAddTraits(active ? .isSelected : [])
         .help(title)
+    }
+
+    // Zenith fork: with `iconHex` the glyph is a small colourful app icon; an
+    // active state adds its glowing dot (and a recording or a muted microphone
+    // turns the icon red), its symbol changing too. Without one, the plain glyph.
+    @ViewBuilder private var glyph: some View {
+        let tint = accent == .selection ? ZenithIsland.accent : accent.fill
+        if let iconHex {
+            ZenithAppIcon(symbol: symbol, hex: active && accent == .alert ? 0xEF4444 : iconHex, size: 34)
+                .contentTransition(.symbolEffect(.replace))
+                .overlay(alignment: .topTrailing) {
+                    if active { ZenithStatusDot(color: tint, live: true, size: 6).offset(x: 5, y: -5) }
+                }
+                .frame(width: 40, height: 40)
+                .animation(reduceMotion ? nil : .smooth(duration: 0.26), value: symbol)
+        } else {
+            Image(systemName: symbol).font(.system(size: 18, weight: .regular))
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: 40, height: 40)
+                // A plain glyph; an active one in the accent or its status colour, with a glowing dot.
+                .modifier(ZenithIslandShortcutGlyph(active: active, tint: tint))
+                .animation(reduceMotion ? nil : .smooth(duration: 0.26), value: symbol)
+        }
     }
 
     @ViewBuilder private var label: some View {
@@ -513,7 +548,7 @@ private struct NotchTimerTile: View {
             // A long phase name, such as a Russian short break, would be cut
             // off on a narrow tile; the module's own title stands in.
             compactTitle: active ? NotchControlItem.timer.title(l10n) : nil,
-            active: active, accent: .timer) { service.select(.timer) }
+            active: active, accent: .timer, iconHex: NotchControlItem.timer.zenithIconHex) { service.select(.timer) } // Zenith fork
     }
 
     /// The compact strip's marks, without the circle the tile already draws.
@@ -544,7 +579,7 @@ private struct NotchCalendarTile: View {
                 ?? NotchControlItem.calendar.title(l10n),
             reading: event.map {
                 NotchCalendarSupport.tileStartText($0.start, now: now, locale: l10n.language.formattingLocale())
-            }) { service.select(.calendar) }
+            }, iconHex: NotchControlItem.calendar.zenithIconHex) { service.select(.calendar) } // Zenith fork
     }
 }
 
@@ -554,7 +589,7 @@ private struct NotchAwakeButton: View {
     var body: some View {
         NotchActionTile(symbol: service.isActive ? "cup.and.saucer.fill" : "cup.and.saucer",
                         title: l10n.s.keepAwakeTitle, active: service.isActive,
-                        accent: .awake, action: service.toggle)
+                        accent: .awake, iconHex: NotchControlItem.keepAwake.zenithIconHex, action: service.toggle) // Zenith fork
     }
 }
 
@@ -564,7 +599,8 @@ private struct NotchMicButton: View {
     var body: some View {
         NotchActionTile(symbol: service.isMuted ? "mic.slash.fill" : "mic.fill",
                         title: service.isMuted ? l10n.s.micUnmuteName : l10n.s.micMuteName,
-                        active: service.isMuted, accent: .alert, action: service.toggle)
+                        active: service.isMuted, accent: .alert, iconHex: NotchControlItem.microphone.zenithIconHex, // Zenith fork
+                        action: service.toggle)
     }
 }
 
@@ -575,7 +611,8 @@ private struct NotchRecorderButton: View {
     var body: some View {
         NotchActionTile(symbol: recorder.isRecording ? "stop.circle.fill" : "record.circle",
                         title: FeatureStrings.recorder(l10n.language).pageTitle,
-                        active: recorder.isRecording, accent: .alert) {
+                        active: recorder.isRecording, accent: .alert,
+                        iconHex: NotchControlItem.recording.zenithIconHex) { // Zenith fork
             service.perform { recorder.toggle() }
         }
     }
