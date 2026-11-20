@@ -43,5 +43,6 @@ enum ShortcutCapture {
         FeatureRuntime.shared.sync(GlobalShortcutRole.featuresToSilenceWhileRecording)
         // Zenith fork: the menu bar hider has no hub feature to sync, so it hears this instead.
         NotificationCenter.default.post(name: .zenithShortcutCaptureEnded, object: nil)
+        WorkspaceService.shared.syncHotkeys() // Zenith fork: workspaces hold quick tool keys too
     }
 }

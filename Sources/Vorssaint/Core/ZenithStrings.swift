@@ -7399,6 +7399,650 @@ extension ZenithStrings {
     }
 }
 
+// MARK: - Workspaces
+
+/// Zenith fork: workspaces (WorkspaceSupport, WorkspaceService): the Settings
+/// page and its step editor, the Command Bar's rows, the island's home widget
+/// and the capsule notice a run ends with.
+struct ZenithWorkspacesStrings {
+    let title: String
+    let subtitle: String
+    let addWorkspace: String
+    let capture: String
+    let captureHint: String
+    /// The name a captured workspace starts with.
+    let captureName: String
+    let runNow: String
+    let running: String
+    let delete: String
+    let example: String
+    let exampleHint: String
+    let name: String
+    let symbol: String
+    let color: String
+    let use: String
+    let useHint: String
+    let shortcut: String
+    let steps: String
+    let addStep: String
+    let noSteps: String
+    let empty: String
+    // The steps.
+    let openApps: String
+    let hideOthers: String
+    let quitApps: String
+    let arrange: String
+    let keepAwake: String
+    let focus: String
+    let sound: String
+    let wallpaper: String
+    let openURL: String
+    // The step editor.
+    let addApp: String
+    let targetPlaceholder: String
+    let hideHint: String
+    let quitHint: String
+    let arrangeHint: String
+    let capturedPlace: String
+    let on: String
+    let off: String
+    let shortcutName: String
+    let focusHint: String
+    let device: String
+    let keepCurrent: String
+    let volume: String
+    let chooseImage: String
+    let noImage: String
+    let moveUp: String
+    let moveDown: String
+    let remove: String
+    /// The Command Bar row's kind, and its title: `%@` the workspace's name.
+    let kind: String
+    let commandFormat: String
+    /// The notice: `%@` the workspace's name.
+    let readyFormat: String
+    let issuesFormat: String
+    let allDone: String
+    let untitled: String
+    /// `%d` problems not listed.
+    let moreFormat: String
+    // What went wrong: `%@` an app, a Shortcut, a device or a link.
+    let notFoundFormat: String
+    let openFailedFormat: String
+    let notRunningFormat: String
+    let noWindowFormat: String
+    let needsAccessibility: String
+    let quitFailedFormat: String
+    let shortcutFailedFormat: String
+    let keepAwakeUnavailable: String
+    let outputMissingFormat: String
+    let wallpaperFailed: String
+    let linkFailedFormat: String
+    // The palette.
+    let blue: String
+    let indigo: String
+    let violet: String
+    let rose: String
+    let orange: String
+    let amber: String
+    let green: String
+    let teal: String
+    /// The home widget with no workspace turned on.
+    let widgetEmpty: String
+    let lastRun: String
+
+    /// Fills `%@` or `%d` without String(format:), which a stray specifier could crash.
+    func format(_ template: String, _ value: String) -> String { template.replacingOccurrences(of: "%@", with: value) }
+    func format(_ template: String, _ value: Int) -> String { template.replacingOccurrences(of: "%d", with: String(value)) }
+}
+
+extension ZenithStrings {
+    static func workspaces(_ language: AppLanguage) -> ZenithWorkspacesStrings {
+        switch language {
+        case .enUS:
+            return .init(title: "Workspaces",
+                         subtitle: "Set your Mac up for a kind of work in one click: its apps, windows, Focus and sound.",
+                         addWorkspace: "New Workspace", capture: "Capture Current",
+                         captureHint: "Makes a workspace from the apps open now and where their windows are.",
+                         captureName: "Current Setup", runNow: "Run Now", running: "Running…", delete: "Delete",
+                         example: "Example", exampleHint: "An example. Check its apps, then turn it on.",
+                         name: "Name", symbol: "Symbol", color: "Color", use: "Use this workspace",
+                         useHint: "Lists it in the Command Bar and on the island, and turns on its shortcut.",
+                         shortcut: "Shortcut", steps: "Steps", addStep: "Add Step",
+                         noSteps: "No steps yet. Add one to start.", empty: "No workspaces yet.",
+                         openApps: "Open apps", hideOthers: "Hide other apps", quitApps: "Quit apps",
+                         arrange: "Arrange windows", keepAwake: "Keep awake", focus: "Focus with a Shortcut",
+                         sound: "Sound output", wallpaper: "Wallpaper", openURL: "Open a link",
+                         addApp: "Add App…", targetPlaceholder: "Folder, file or link (optional)",
+                         hideHint: "Hides every app this workspace doesn’t open.",
+                         quitHint: "Asks the apps to quit and never forces them. Finder, Zenith and the exceptions in Quit apps stay open.",
+                         arrangeHint: "Uses Window Layout’s positions and gaps. Needs Accessibility.",
+                         capturedPlace: "Captured position", on: "On", off: "Off", shortcutName: "Shortcut name",
+                         focusHint: "macOS has no Focus switch for apps. In the Shortcuts app, create a shortcut that sets a Focus, then type its name here.",
+                         device: "Device", keepCurrent: "Keep current", volume: "Volume",
+                         chooseImage: "Choose Image…", noImage: "No image chosen",
+                         moveUp: "Move up", moveDown: "Move down", remove: "Remove",
+                         kind: "Workspace", commandFormat: "Workspace: %@",
+                         readyFormat: "%@ workspace ready", issuesFormat: "%@ workspace ran with problems",
+                         allDone: "Everything is in place", untitled: "Untitled", moreFormat: "+%d more",
+                         notFoundFormat: "%@ not found", openFailedFormat: "%@ didn’t open",
+                         notRunningFormat: "%@ isn’t running", noWindowFormat: "No window of %@",
+                         needsAccessibility: "Arranging windows needs Accessibility",
+                         quitFailedFormat: "%@ didn’t quit", shortcutFailedFormat: "Shortcut “%@” failed",
+                         keepAwakeUnavailable: "Keep awake is off in Features",
+                         outputMissingFormat: "Output “%@” not found", wallpaperFailed: "Wallpaper not set",
+                         linkFailedFormat: "Couldn’t open %@",
+                         blue: "Blue", indigo: "Indigo", violet: "Violet", rose: "Rose", orange: "Orange",
+                         amber: "Amber", green: "Green", teal: "Teal",
+                         widgetEmpty: "Turn a workspace on in Settings", lastRun: "Last run")
+        case .ptBR:
+            return .init(title: "Espaços de trabalho",
+                         subtitle: "Prepare o Mac para um tipo de trabalho com um clique: apps, janelas, Foco e som.",
+                         addWorkspace: "Novo espaço", capture: "Capturar atual",
+                         captureHint: "Cria um espaço com os apps abertos agora e a posição das janelas.",
+                         captureName: "Configuração atual", runNow: "Executar agora", running: "Executando…", delete: "Apagar",
+                         example: "Exemplo", exampleHint: "Um exemplo. Confira os apps e depois ative.",
+                         name: "Nome", symbol: "Símbolo", color: "Cor", use: "Usar este espaço",
+                         useHint: "Mostra-o na Barra de comando e na ilha, e ativa o atalho.",
+                         shortcut: "Atalho", steps: "Etapas", addStep: "Adicionar etapa",
+                         noSteps: "Nenhuma etapa ainda. Adicione uma para começar.", empty: "Nenhum espaço ainda.",
+                         openApps: "Abrir apps", hideOthers: "Ocultar outros apps", quitApps: "Encerrar apps",
+                         arrange: "Organizar janelas", keepAwake: "Manter acordado", focus: "Foco com um atalho",
+                         sound: "Saída de som", wallpaper: "Papel de parede", openURL: "Abrir um link",
+                         addApp: "Adicionar app…", targetPlaceholder: "Pasta, arquivo ou link (opcional)",
+                         hideHint: "Oculta todos os apps que este espaço não abre.",
+                         quitHint: "Pede aos apps para encerrar, sem nunca forçar. O Finder, o Zenith e as exceções de Encerrar apps ficam abertos.",
+                         arrangeHint: "Usa as posições e os espaçamentos do Layout de janelas. Precisa de Acessibilidade.",
+                         capturedPlace: "Posição capturada", on: "Ativado", off: "Desativado", shortcutName: "Nome do atalho",
+                         focusHint: "O macOS não oferece aos apps um controle de Foco. No app Atalhos, crie um atalho que ative um Foco e digite o nome dele aqui.",
+                         device: "Dispositivo", keepCurrent: "Manter o atual", volume: "Volume",
+                         chooseImage: "Escolher imagem…", noImage: "Nenhuma imagem escolhida",
+                         moveUp: "Mover para cima", moveDown: "Mover para baixo", remove: "Remover",
+                         kind: "Espaço de trabalho", commandFormat: "Espaço: %@",
+                         readyFormat: "Espaço %@ pronto", issuesFormat: "Espaço %@ executado com problemas",
+                         allDone: "Tudo no lugar", untitled: "Sem nome", moreFormat: "+%d outros",
+                         notFoundFormat: "%@ não encontrado", openFailedFormat: "%@ não abriu",
+                         notRunningFormat: "%@ não está aberto", noWindowFormat: "Nenhuma janela de %@",
+                         needsAccessibility: "Organizar janelas precisa de Acessibilidade",
+                         quitFailedFormat: "%@ não encerrou", shortcutFailedFormat: "O atalho “%@” falhou",
+                         keepAwakeUnavailable: "Manter acordado está desativado em Recursos",
+                         outputMissingFormat: "Saída “%@” não encontrada", wallpaperFailed: "Papel de parede não definido",
+                         linkFailedFormat: "Não foi possível abrir %@",
+                         blue: "Azul", indigo: "Anil", violet: "Violeta", rose: "Rosa", orange: "Laranja",
+                         amber: "Âmbar", green: "Verde", teal: "Verde-azulado",
+                         widgetEmpty: "Ative um espaço nos Ajustes", lastRun: "Última execução")
+        case .tr:
+            return .init(title: "Çalışma alanları",
+                         subtitle: "Mac’inizi tek tıkla bir iş türüne hazırlayın: uygulamaları, pencereleri, Odak’ı ve sesi.",
+                         addWorkspace: "Yeni çalışma alanı", capture: "Şu anki düzeni al",
+                         captureHint: "Şu an açık uygulamalardan ve pencerelerin yerinden bir çalışma alanı oluşturur.",
+                         captureName: "Şu anki düzen", runNow: "Şimdi çalıştır", running: "Çalışıyor…", delete: "Sil",
+                         example: "Örnek", exampleHint: "Bir örnek. Uygulamalarını kontrol edip açın.",
+                         name: "Ad", symbol: "Simge", color: "Renk", use: "Bu çalışma alanını kullan",
+                         useHint: "Komut çubuğunda ve adada gösterir, kısayolunu açar.",
+                         shortcut: "Kısayol", steps: "Adımlar", addStep: "Adım ekle",
+                         noSteps: "Henüz adım yok. Başlamak için bir adım ekleyin.", empty: "Henüz çalışma alanı yok.",
+                         openApps: "Uygulamaları aç", hideOthers: "Diğer uygulamaları gizle", quitApps: "Uygulamaları kapat",
+                         arrange: "Pencereleri yerleştir", keepAwake: "Uyanık tut", focus: "Kestirmeyle Odak",
+                         sound: "Ses çıkışı", wallpaper: "Duvar kâğıdı", openURL: "Bağlantı aç",
+                         addApp: "Uygulama ekle…", targetPlaceholder: "Klasör, dosya veya bağlantı (isteğe bağlı)",
+                         hideHint: "Bu çalışma alanının açmadığı tüm uygulamaları gizler.",
+                         quitHint: "Uygulamalardan kapanmalarını ister, asla zorlamaz. Finder, Zenith ve Uygulamaları kapat istisnaları açık kalır.",
+                         arrangeHint: "Pencere yerleşiminin konumlarını ve boşluklarını kullanır. Erişilebilirlik gerekir.",
+                         capturedPlace: "Alınan konum", on: "Açık", off: "Kapalı", shortcutName: "Kestirme adı",
+                         focusHint: "macOS uygulamalara Odak anahtarı sunmaz. Kestirmeler uygulamasında bir Odak açan bir kestirme oluşturun ve adını buraya yazın.",
+                         device: "Aygıt", keepCurrent: "Geçerli olanı koru", volume: "Ses düzeyi",
+                         chooseImage: "Görüntü seç…", noImage: "Görüntü seçilmedi",
+                         moveUp: "Yukarı taşı", moveDown: "Aşağı taşı", remove: "Kaldır",
+                         kind: "Çalışma alanı", commandFormat: "Çalışma alanı: %@",
+                         readyFormat: "%@ çalışma alanı hazır", issuesFormat: "%@ çalışma alanı sorunlarla çalıştı",
+                         allDone: "Her şey yerinde", untitled: "Adsız", moreFormat: "+%d tane daha",
+                         notFoundFormat: "%@ bulunamadı", openFailedFormat: "%@ açılmadı",
+                         notRunningFormat: "%@ çalışmıyor", noWindowFormat: "%@ penceresi yok",
+                         needsAccessibility: "Pencereleri yerleştirmek Erişilebilirlik gerektirir",
+                         quitFailedFormat: "%@ kapanmadı", shortcutFailedFormat: "“%@” kestirmesi başarısız oldu",
+                         keepAwakeUnavailable: "Uyanık tut Özellikler’de kapalı",
+                         outputMissingFormat: "“%@” çıkışı bulunamadı", wallpaperFailed: "Duvar kâğıdı ayarlanmadı",
+                         linkFailedFormat: "%@ açılamadı",
+                         blue: "Mavi", indigo: "Çivit", violet: "Menekşe", rose: "Gül", orange: "Turuncu",
+                         amber: "Kehribar", green: "Yeşil", teal: "Camgöbeği",
+                         widgetEmpty: "Ayarlar’da bir çalışma alanını açın", lastRun: "Son çalıştırma")
+        case .ru:
+            return .init(title: "Рабочие пространства",
+                         subtitle: "Настройте Mac под вид работы одним щелчком: приложения, окна, фокусирование и звук.",
+                         addWorkspace: "Новое пространство", capture: "Снять текущее",
+                         captureHint: "Создаёт пространство из открытых сейчас приложений и положения их окон.",
+                         captureName: "Текущая расстановка", runNow: "Запустить", running: "Выполняется…", delete: "Удалить",
+                         example: "Пример", exampleHint: "Это пример. Проверьте приложения, затем включите его.",
+                         name: "Название", symbol: "Символ", color: "Цвет", use: "Использовать это пространство",
+                         useHint: "Показывает его в командной панели и на острове и включает его сочетание клавиш.",
+                         shortcut: "Сочетание клавиш", steps: "Шаги", addStep: "Добавить шаг",
+                         noSteps: "Шагов пока нет. Добавьте первый.", empty: "Пространств пока нет.",
+                         openApps: "Открыть приложения", hideOthers: "Скрыть другие приложения", quitApps: "Закрыть приложения",
+                         arrange: "Расставить окна", keepAwake: "Не давать Mac уснуть", focus: "Фокусирование через команду",
+                         sound: "Вывод звука", wallpaper: "Обои", openURL: "Открыть ссылку",
+                         addApp: "Добавить приложение…", targetPlaceholder: "Папка, файл или ссылка (необязательно)",
+                         hideHint: "Скрывает все приложения, которые это пространство не открывает.",
+                         quitHint: "Просит приложения закрыться и никогда не завершает их принудительно. Finder, Zenith и исключения из «Закрытие приложений» остаются открытыми.",
+                         arrangeHint: "Использует положения и отступы раскладки окон. Нужен универсальный доступ.",
+                         capturedPlace: "Снятое положение", on: "Вкл.", off: "Выкл.", shortcutName: "Название команды",
+                         focusHint: "macOS не даёт приложениям переключать фокусирование. В приложении «Быстрые команды» создайте команду, которая включает фокусирование, и введите её название здесь.",
+                         device: "Устройство", keepCurrent: "Оставить текущее", volume: "Громкость",
+                         chooseImage: "Выбрать изображение…", noImage: "Изображение не выбрано",
+                         moveUp: "Переместить вверх", moveDown: "Переместить вниз", remove: "Удалить",
+                         kind: "Рабочее пространство", commandFormat: "Пространство: %@",
+                         readyFormat: "Пространство «%@» готово", issuesFormat: "Пространство «%@» запущено с ошибками",
+                         allDone: "Всё на своих местах", untitled: "Без названия", moreFormat: "ещё %d",
+                         notFoundFormat: "%@: не найдено", openFailedFormat: "%@: не открылось",
+                         notRunningFormat: "%@: не запущено", noWindowFormat: "%@: нет окна",
+                         needsAccessibility: "Для расстановки окон нужен универсальный доступ",
+                         quitFailedFormat: "%@: не закрылось", shortcutFailedFormat: "Команда «%@» не выполнена",
+                         keepAwakeUnavailable: "«Не давать Mac уснуть» выключено в функциях",
+                         outputMissingFormat: "Выход «%@» не найден", wallpaperFailed: "Обои не установлены",
+                         linkFailedFormat: "Не удалось открыть %@",
+                         blue: "Синий", indigo: "Индиго", violet: "Фиолетовый", rose: "Розовый", orange: "Оранжевый",
+                         amber: "Янтарный", green: "Зелёный", teal: "Бирюзовый",
+                         widgetEmpty: "Включите пространство в настройках", lastRun: "Последний запуск")
+        case .es:
+            return .init(title: "Espacios de trabajo",
+                         subtitle: "Prepara el Mac para un tipo de trabajo con un clic: apps, ventanas, concentración y sonido.",
+                         addWorkspace: "Nuevo espacio", capture: "Capturar el actual",
+                         captureHint: "Crea un espacio con las apps abiertas ahora y la posición de sus ventanas.",
+                         captureName: "Configuración actual", runNow: "Ejecutar ahora", running: "Ejecutando…", delete: "Eliminar",
+                         example: "Ejemplo", exampleHint: "Un ejemplo. Revisa sus apps y actívalo.",
+                         name: "Nombre", symbol: "Símbolo", color: "Color", use: "Usar este espacio",
+                         useHint: "Lo muestra en la barra de comandos y en la isla, y activa su atajo.",
+                         shortcut: "Atajo", steps: "Pasos", addStep: "Añadir paso",
+                         noSteps: "Aún no hay pasos. Añade uno para empezar.", empty: "Aún no hay espacios.",
+                         openApps: "Abrir apps", hideOthers: "Ocultar otras apps", quitApps: "Salir de apps",
+                         arrange: "Colocar ventanas", keepAwake: "Mantener activo", focus: "Concentración con un atajo",
+                         sound: "Salida de sonido", wallpaper: "Fondo de pantalla", openURL: "Abrir un enlace",
+                         addApp: "Añadir app…", targetPlaceholder: "Carpeta, archivo o enlace (opcional)",
+                         hideHint: "Oculta todas las apps que este espacio no abre.",
+                         quitHint: "Pide a las apps que salgan y nunca las fuerza. Finder, Zenith y las excepciones de Salir de apps siguen abiertos.",
+                         arrangeHint: "Usa las posiciones y márgenes de la disposición de ventanas. Necesita Accesibilidad.",
+                         capturedPlace: "Posición capturada", on: "Activado", off: "Desactivado", shortcutName: "Nombre del atajo",
+                         focusHint: "macOS no da a las apps un control de concentración. En la app Atajos, crea un atajo que active un modo de concentración y escribe aquí su nombre.",
+                         device: "Dispositivo", keepCurrent: "Mantener el actual", volume: "Volumen",
+                         chooseImage: "Elegir imagen…", noImage: "Ninguna imagen elegida",
+                         moveUp: "Subir", moveDown: "Bajar", remove: "Quitar",
+                         kind: "Espacio de trabajo", commandFormat: "Espacio: %@",
+                         readyFormat: "Espacio %@ listo", issuesFormat: "Espacio %@ ejecutado con problemas",
+                         allDone: "Todo está en su sitio", untitled: "Sin nombre", moreFormat: "+%d más",
+                         notFoundFormat: "No se encontró %@", openFailedFormat: "%@ no se abrió",
+                         notRunningFormat: "%@ no está abierta", noWindowFormat: "Ninguna ventana de %@",
+                         needsAccessibility: "Colocar ventanas necesita Accesibilidad",
+                         quitFailedFormat: "%@ no salió", shortcutFailedFormat: "El atajo “%@” falló",
+                         keepAwakeUnavailable: "Mantener activo está desactivado en Funciones",
+                         outputMissingFormat: "No se encontró la salida “%@”", wallpaperFailed: "No se cambió el fondo",
+                         linkFailedFormat: "No se pudo abrir %@",
+                         blue: "Azul", indigo: "Índigo", violet: "Violeta", rose: "Rosa", orange: "Naranja",
+                         amber: "Ámbar", green: "Verde", teal: "Verde azulado",
+                         widgetEmpty: "Activa un espacio en Ajustes", lastRun: "Última ejecución")
+        case .sk:
+            return .init(title: "Pracovné priestory",
+                         subtitle: "Pripravte Mac na druh práce jedným kliknutím: aplikácie, okná, Sústredenie a zvuk.",
+                         addWorkspace: "Nový priestor", capture: "Zachytiť aktuálne",
+                         captureHint: "Vytvorí priestor z práve otvorených aplikácií a polohy ich okien.",
+                         captureName: "Aktuálne rozloženie", runNow: "Spustiť teraz", running: "Prebieha…", delete: "Vymazať",
+                         example: "Príklad", exampleHint: "Príklad. Skontrolujte jeho aplikácie a potom ho zapnite.",
+                         name: "Názov", symbol: "Symbol", color: "Farba", use: "Používať tento priestor",
+                         useHint: "Zobrazí ho v príkazovej lište a na ostrove a zapne jeho skratku.",
+                         shortcut: "Skratka", steps: "Kroky", addStep: "Pridať krok",
+                         noSteps: "Zatiaľ žiadne kroky. Pridajte prvý.", empty: "Zatiaľ žiadne priestory.",
+                         openApps: "Otvoriť aplikácie", hideOthers: "Skryť ostatné aplikácie", quitApps: "Ukončiť aplikácie",
+                         arrange: "Usporiadať okná", keepAwake: "Bdelý režim", focus: "Sústredenie cez skratku",
+                         sound: "Zvukový výstup", wallpaper: "Tapeta", openURL: "Otvoriť odkaz",
+                         addApp: "Pridať aplikáciu…", targetPlaceholder: "Priečinok, súbor alebo odkaz (voliteľné)",
+                         hideHint: "Skryje všetky aplikácie, ktoré tento priestor neotvára.",
+                         quitHint: "Požiada aplikácie o ukončenie a nikdy ich nevynúti. Finder, Zenith a výnimky z Ukončenia aplikácií zostanú otvorené.",
+                         arrangeHint: "Používa polohy a medzery rozloženia okien. Vyžaduje Prístupnosť.",
+                         capturedPlace: "Zachytená poloha", on: "Zap.", off: "Vyp.", shortcutName: "Názov skratky",
+                         focusHint: "macOS nedáva aplikáciám prepínač Sústredenia. V aplikácii Skratky vytvorte skratku, ktorá zapne Sústredenie, a sem napíšte jej názov.",
+                         device: "Zariadenie", keepCurrent: "Ponechať aktuálne", volume: "Hlasitosť",
+                         chooseImage: "Vybrať obrázok…", noImage: "Nie je vybraný obrázok",
+                         moveUp: "Posunúť nahor", moveDown: "Posunúť nadol", remove: "Odstrániť",
+                         kind: "Pracovný priestor", commandFormat: "Priestor: %@",
+                         readyFormat: "Priestor %@ je pripravený", issuesFormat: "Priestor %@ prebehol s problémami",
+                         allDone: "Všetko je na mieste", untitled: "Bez názvu", moreFormat: "+%d ďalšie",
+                         notFoundFormat: "%@ sa nenašla", openFailedFormat: "%@ sa neotvorila",
+                         notRunningFormat: "%@ nie je spustená", noWindowFormat: "%@ nemá okno",
+                         needsAccessibility: "Usporiadanie okien vyžaduje Prístupnosť",
+                         quitFailedFormat: "%@ sa neukončila", shortcutFailedFormat: "Skratka „%@“ zlyhala",
+                         keepAwakeUnavailable: "Bdelý režim je vypnutý vo Funkciách",
+                         outputMissingFormat: "Výstup „%@“ sa nenašiel", wallpaperFailed: "Tapeta sa nenastavila",
+                         linkFailedFormat: "%@ sa nepodarilo otvoriť",
+                         blue: "Modrá", indigo: "Indigová", violet: "Fialová", rose: "Ružová", orange: "Oranžová",
+                         amber: "Jantárová", green: "Zelená", teal: "Modrozelená",
+                         widgetEmpty: "Zapnite priestor v Nastaveniach", lastRun: "Posledné spustenie")
+        case .de:
+            return .init(title: "Arbeitsbereiche",
+                         subtitle: "Richte deinen Mac mit einem Klick für eine Art von Arbeit ein: Apps, Fenster, Fokus und Ton.",
+                         addWorkspace: "Neuer Arbeitsbereich", capture: "Aktuellen übernehmen",
+                         captureHint: "Erstellt einen Arbeitsbereich aus den gerade offenen Apps und der Lage ihrer Fenster.",
+                         captureName: "Aktuelle Anordnung", runNow: "Jetzt ausführen", running: "Läuft…", delete: "Löschen",
+                         example: "Beispiel", exampleHint: "Ein Beispiel. Prüfe seine Apps und schalte es dann ein.",
+                         name: "Name", symbol: "Symbol", color: "Farbe", use: "Diesen Arbeitsbereich verwenden",
+                         useHint: "Zeigt ihn in der Befehlsleiste und auf der Insel und schaltet sein Tastenkürzel ein.",
+                         shortcut: "Tastenkürzel", steps: "Schritte", addStep: "Schritt hinzufügen",
+                         noSteps: "Noch keine Schritte. Füge einen hinzu.", empty: "Noch keine Arbeitsbereiche.",
+                         openApps: "Apps öffnen", hideOthers: "Andere Apps ausblenden", quitApps: "Apps beenden",
+                         arrange: "Fenster anordnen", keepAwake: "Wachhalten", focus: "Fokus per Kurzbefehl",
+                         sound: "Tonausgabe", wallpaper: "Hintergrundbild", openURL: "Link öffnen",
+                         addApp: "App hinzufügen…", targetPlaceholder: "Ordner, Datei oder Link (optional)",
+                         hideHint: "Blendet jede App aus, die dieser Arbeitsbereich nicht öffnet.",
+                         quitHint: "Bittet die Apps zu beenden und erzwingt es nie. Finder, Zenith und die Ausnahmen von Apps beenden bleiben offen.",
+                         arrangeHint: "Nutzt die Positionen und Abstände des Fensterlayouts. Braucht Bedienungshilfen.",
+                         capturedPlace: "Übernommene Position", on: "Ein", off: "Aus", shortcutName: "Name des Kurzbefehls",
+                         focusHint: "macOS gibt Apps keinen Schalter für den Fokus. Erstelle in der App Kurzbefehle einen Kurzbefehl, der einen Fokus einschaltet, und gib hier seinen Namen ein.",
+                         device: "Gerät", keepCurrent: "Aktuelles behalten", volume: "Lautstärke",
+                         chooseImage: "Bild auswählen…", noImage: "Kein Bild ausgewählt",
+                         moveUp: "Nach oben", moveDown: "Nach unten", remove: "Entfernen",
+                         kind: "Arbeitsbereich", commandFormat: "Arbeitsbereich: %@",
+                         readyFormat: "Arbeitsbereich %@ bereit", issuesFormat: "Arbeitsbereich %@ lief mit Problemen",
+                         allDone: "Alles ist an seinem Platz", untitled: "Ohne Namen", moreFormat: "+%d weitere",
+                         notFoundFormat: "%@ nicht gefunden", openFailedFormat: "%@ wurde nicht geöffnet",
+                         notRunningFormat: "%@ läuft nicht", noWindowFormat: "Kein Fenster von %@",
+                         needsAccessibility: "Fenster anordnen braucht Bedienungshilfen",
+                         quitFailedFormat: "%@ wurde nicht beendet", shortcutFailedFormat: "Kurzbefehl „%@“ fehlgeschlagen",
+                         keepAwakeUnavailable: "Wachhalten ist in den Funktionen aus",
+                         outputMissingFormat: "Ausgabe „%@“ nicht gefunden", wallpaperFailed: "Hintergrundbild nicht gesetzt",
+                         linkFailedFormat: "%@ konnte nicht geöffnet werden",
+                         blue: "Blau", indigo: "Indigo", violet: "Violett", rose: "Rosé", orange: "Orange",
+                         amber: "Bernstein", green: "Grün", teal: "Petrol",
+                         widgetEmpty: "Schalte einen Arbeitsbereich in den Einstellungen ein", lastRun: "Zuletzt ausgeführt")
+        case .fr:
+            return .init(title: "Espaces de travail",
+                         subtitle: "Préparez votre Mac pour un type de travail en un clic : apps, fenêtres, Concentration et son.",
+                         addWorkspace: "Nouvel espace", capture: "Capturer l’actuel",
+                         captureHint: "Crée un espace à partir des apps ouvertes et de la position de leurs fenêtres.",
+                         captureName: "Configuration actuelle", runNow: "Lancer maintenant", running: "En cours…", delete: "Supprimer",
+                         example: "Exemple", exampleHint: "Un exemple. Vérifiez ses apps, puis activez-le.",
+                         name: "Nom", symbol: "Symbole", color: "Couleur", use: "Utiliser cet espace",
+                         useHint: "L’affiche dans la barre de commande et sur l’île, et active son raccourci.",
+                         shortcut: "Raccourci", steps: "Étapes", addStep: "Ajouter une étape",
+                         noSteps: "Aucune étape pour l’instant. Ajoutez-en une.", empty: "Aucun espace pour l’instant.",
+                         openApps: "Ouvrir des apps", hideOthers: "Masquer les autres apps", quitApps: "Quitter des apps",
+                         arrange: "Disposer les fenêtres", keepAwake: "Garder éveillé", focus: "Concentration par un raccourci",
+                         sound: "Sortie audio", wallpaper: "Fond d’écran", openURL: "Ouvrir un lien",
+                         addApp: "Ajouter une app…", targetPlaceholder: "Dossier, fichier ou lien (facultatif)",
+                         hideHint: "Masque toutes les apps que cet espace n’ouvre pas.",
+                         quitHint: "Demande aux apps de quitter sans jamais les forcer. Le Finder, Zenith et les exceptions de Quitter des apps restent ouverts.",
+                         arrangeHint: "Utilise les positions et marges de la disposition des fenêtres. Nécessite l’Accessibilité.",
+                         capturedPlace: "Position capturée", on: "Activé", off: "Désactivé", shortcutName: "Nom du raccourci",
+                         focusHint: "macOS n’offre pas aux apps de commande de Concentration. Dans l’app Raccourcis, créez un raccourci qui active une Concentration, puis saisissez son nom ici.",
+                         device: "Appareil", keepCurrent: "Garder l’actuel", volume: "Volume",
+                         chooseImage: "Choisir une image…", noImage: "Aucune image choisie",
+                         moveUp: "Monter", moveDown: "Descendre", remove: "Retirer",
+                         kind: "Espace de travail", commandFormat: "Espace : %@",
+                         readyFormat: "Espace %@ prêt", issuesFormat: "Espace %@ lancé avec des problèmes",
+                         allDone: "Tout est en place", untitled: "Sans nom", moreFormat: "+%d autres",
+                         notFoundFormat: "%@ introuvable", openFailedFormat: "%@ ne s’est pas ouvert",
+                         notRunningFormat: "%@ n’est pas ouvert", noWindowFormat: "Aucune fenêtre de %@",
+                         needsAccessibility: "Disposer les fenêtres nécessite l’Accessibilité",
+                         quitFailedFormat: "%@ n’a pas quitté", shortcutFailedFormat: "Le raccourci « %@ » a échoué",
+                         keepAwakeUnavailable: "Garder éveillé est désactivé dans Fonctions",
+                         outputMissingFormat: "Sortie « %@ » introuvable", wallpaperFailed: "Fond d’écran non défini",
+                         linkFailedFormat: "Impossible d’ouvrir %@",
+                         blue: "Bleu", indigo: "Indigo", violet: "Violet", rose: "Rose", orange: "Orange",
+                         amber: "Ambre", green: "Vert", teal: "Bleu canard",
+                         widgetEmpty: "Activez un espace dans les Réglages", lastRun: "Dernier lancement")
+        case .it:
+            return .init(title: "Spazi di lavoro",
+                         subtitle: "Prepara il Mac per un tipo di lavoro con un clic: app, finestre, Full immersion e audio.",
+                         addWorkspace: "Nuovo spazio", capture: "Cattura l’attuale",
+                         captureHint: "Crea uno spazio dalle app aperte ora e dalla posizione delle loro finestre.",
+                         captureName: "Configurazione attuale", runNow: "Esegui ora", running: "In esecuzione…", delete: "Elimina",
+                         example: "Esempio", exampleHint: "Un esempio. Controlla le sue app, poi attivalo.",
+                         name: "Nome", symbol: "Simbolo", color: "Colore", use: "Usa questo spazio",
+                         useHint: "Lo mostra nella barra dei comandi e sull’isola e attiva la sua scorciatoia.",
+                         shortcut: "Scorciatoia", steps: "Passaggi", addStep: "Aggiungi passaggio",
+                         noSteps: "Ancora nessun passaggio. Aggiungine uno.", empty: "Ancora nessuno spazio.",
+                         openApps: "Apri app", hideOthers: "Nascondi le altre app", quitApps: "Esci dalle app",
+                         arrange: "Disponi le finestre", keepAwake: "Mantieni attivo", focus: "Full immersion con un comando",
+                         sound: "Uscita audio", wallpaper: "Sfondo", openURL: "Apri un link",
+                         addApp: "Aggiungi app…", targetPlaceholder: "Cartella, file o link (facoltativo)",
+                         hideHint: "Nasconde tutte le app che questo spazio non apre.",
+                         quitHint: "Chiede alle app di uscire e non le forza mai. Finder, Zenith e le eccezioni di Esci dalle app restano aperti.",
+                         arrangeHint: "Usa le posizioni e i margini della disposizione finestre. Richiede Accessibilità.",
+                         capturedPlace: "Posizione catturata", on: "Attivo", off: "Disattivo", shortcutName: "Nome del comando",
+                         focusHint: "macOS non offre alle app un controllo per Full immersion. Nell’app Comandi Rapidi crea un comando che attivi una modalità Full immersion, poi scrivi qui il suo nome.",
+                         device: "Dispositivo", keepCurrent: "Mantieni l’attuale", volume: "Volume",
+                         chooseImage: "Scegli immagine…", noImage: "Nessuna immagine scelta",
+                         moveUp: "Sposta su", moveDown: "Sposta giù", remove: "Rimuovi",
+                         kind: "Spazio di lavoro", commandFormat: "Spazio: %@",
+                         readyFormat: "Spazio %@ pronto", issuesFormat: "Spazio %@ eseguito con problemi",
+                         allDone: "Tutto è al suo posto", untitled: "Senza nome", moreFormat: "+%d altri",
+                         notFoundFormat: "%@ non trovata", openFailedFormat: "%@ non si è aperta",
+                         notRunningFormat: "%@ non è aperta", noWindowFormat: "Nessuna finestra di %@",
+                         needsAccessibility: "Disporre le finestre richiede Accessibilità",
+                         quitFailedFormat: "%@ non è uscita", shortcutFailedFormat: "Il comando “%@” non è riuscito",
+                         keepAwakeUnavailable: "Mantieni attivo è disattivato in Funzioni",
+                         outputMissingFormat: "Uscita “%@” non trovata", wallpaperFailed: "Sfondo non impostato",
+                         linkFailedFormat: "Impossibile aprire %@",
+                         blue: "Blu", indigo: "Indaco", violet: "Viola", rose: "Rosa", orange: "Arancione",
+                         amber: "Ambra", green: "Verde", teal: "Verde acqua",
+                         widgetEmpty: "Attiva uno spazio nelle Impostazioni", lastRun: "Ultima esecuzione")
+        case .ja:
+            return .init(title: "ワークスペース",
+                         subtitle: "ワンクリックで作業の種類に合わせてMacを整えます。アプリ、ウインドウ、集中モード、サウンド。",
+                         addWorkspace: "新規ワークスペース", capture: "現在の状態を取り込む",
+                         captureHint: "いま開いているアプリとウインドウの位置からワークスペースを作ります。",
+                         captureName: "現在の配置", runNow: "今すぐ実行", running: "実行中…", delete: "削除",
+                         example: "例", exampleHint: "例です。アプリを確認してからオンにしてください。",
+                         name: "名前", symbol: "シンボル", color: "カラー", use: "このワークスペースを使う",
+                         useHint: "コマンドバーとアイランドに表示し、ショートカットを有効にします。",
+                         shortcut: "ショートカット", steps: "ステップ", addStep: "ステップを追加",
+                         noSteps: "ステップはまだありません。追加して始めましょう。", empty: "ワークスペースはまだありません。",
+                         openApps: "アプリを開く", hideOthers: "ほかのアプリを隠す", quitApps: "アプリを終了",
+                         arrange: "ウインドウを配置", keepAwake: "スリープ防止", focus: "ショートカットで集中モード",
+                         sound: "サウンド出力", wallpaper: "壁紙", openURL: "リンクを開く",
+                         addApp: "アプリを追加…", targetPlaceholder: "フォルダ、ファイル、リンク（任意）",
+                         hideHint: "このワークスペースが開かないアプリをすべて隠します。",
+                         quitHint: "アプリに終了を依頼し、強制終了はしません。Finder、Zenith、「アプリを終了」の例外は開いたままです。",
+                         arrangeHint: "ウインドウレイアウトの位置と間隔を使います。アクセシビリティが必要です。",
+                         capturedPlace: "取り込んだ位置", on: "オン", off: "オフ", shortcutName: "ショートカット名",
+                         focusHint: "macOSにはアプリが使える集中モードのスイッチがありません。ショートカットアプリで集中モードを設定するショートカットを作り、その名前をここに入力してください。",
+                         device: "デバイス", keepCurrent: "現在のまま", volume: "音量",
+                         chooseImage: "画像を選択…", noImage: "画像が選択されていません",
+                         moveUp: "上へ移動", moveDown: "下へ移動", remove: "削除",
+                         kind: "ワークスペース", commandFormat: "ワークスペース: %@",
+                         readyFormat: "%@ ワークスペースの準備ができました", issuesFormat: "%@ ワークスペースで問題がありました",
+                         allDone: "すべて整いました", untitled: "名称未設定", moreFormat: "ほか%d件",
+                         notFoundFormat: "%@ が見つかりません", openFailedFormat: "%@ が開きませんでした",
+                         notRunningFormat: "%@ は起動していません", noWindowFormat: "%@ のウインドウがありません",
+                         needsAccessibility: "ウインドウの配置にはアクセシビリティが必要です",
+                         quitFailedFormat: "%@ が終了しませんでした", shortcutFailedFormat: "ショートカット「%@」が失敗しました",
+                         keepAwakeUnavailable: "スリープ防止が機能でオフになっています",
+                         outputMissingFormat: "出力「%@」が見つかりません", wallpaperFailed: "壁紙を設定できませんでした",
+                         linkFailedFormat: "%@ を開けませんでした",
+                         blue: "ブルー", indigo: "インディゴ", violet: "バイオレット", rose: "ローズ", orange: "オレンジ",
+                         amber: "アンバー", green: "グリーン", teal: "ティール",
+                         widgetEmpty: "設定でワークスペースをオンにしてください", lastRun: "前回の実行")
+        case .ko:
+            return .init(title: "작업 공간",
+                         subtitle: "클릭 한 번으로 작업 종류에 맞게 Mac을 준비합니다. 앱, 윈도우, 집중 모드, 사운드.",
+                         addWorkspace: "새 작업 공간", capture: "현재 상태 가져오기",
+                         captureHint: "지금 열린 앱과 윈도우 위치로 작업 공간을 만듭니다.",
+                         captureName: "현재 배치", runNow: "지금 실행", running: "실행 중…", delete: "삭제",
+                         example: "예시", exampleHint: "예시입니다. 앱을 확인한 다음 켜세요.",
+                         name: "이름", symbol: "기호", color: "색상", use: "이 작업 공간 사용",
+                         useHint: "명령 막대와 아일랜드에 표시하고 단축키를 켭니다.",
+                         shortcut: "단축키", steps: "단계", addStep: "단계 추가",
+                         noSteps: "아직 단계가 없습니다. 하나를 추가해 시작하세요.", empty: "아직 작업 공간이 없습니다.",
+                         openApps: "앱 열기", hideOthers: "다른 앱 가리기", quitApps: "앱 종료",
+                         arrange: "윈도우 배치", keepAwake: "절전 방지", focus: "단축어로 집중 모드",
+                         sound: "사운드 출력", wallpaper: "배경화면", openURL: "링크 열기",
+                         addApp: "앱 추가…", targetPlaceholder: "폴더, 파일 또는 링크(선택 사항)",
+                         hideHint: "이 작업 공간이 열지 않는 모든 앱을 가립니다.",
+                         quitHint: "앱에 종료를 요청하며 강제로 종료하지 않습니다. Finder, Zenith, 앱 종료의 예외는 열린 상태로 남습니다.",
+                         arrangeHint: "윈도우 정렬의 위치와 간격을 사용합니다. 손쉬운 사용 권한이 필요합니다.",
+                         capturedPlace: "가져온 위치", on: "켬", off: "끔", shortcutName: "단축어 이름",
+                         focusHint: "macOS는 앱에 집중 모드 스위치를 제공하지 않습니다. 단축어 앱에서 집중 모드를 켜는 단축어를 만들고 여기에 이름을 입력하세요.",
+                         device: "기기", keepCurrent: "현재 유지", volume: "음량",
+                         chooseImage: "이미지 선택…", noImage: "선택한 이미지 없음",
+                         moveUp: "위로 이동", moveDown: "아래로 이동", remove: "제거",
+                         kind: "작업 공간", commandFormat: "작업 공간: %@",
+                         readyFormat: "%@ 작업 공간 준비 완료", issuesFormat: "%@ 작업 공간 실행 중 문제 발생",
+                         allDone: "모든 것이 제자리에 있습니다", untitled: "이름 없음", moreFormat: "외 %d개",
+                         notFoundFormat: "%@을(를) 찾을 수 없음", openFailedFormat: "%@이(가) 열리지 않음",
+                         notRunningFormat: "%@이(가) 실행 중이 아님", noWindowFormat: "%@의 윈도우 없음",
+                         needsAccessibility: "윈도우 배치에는 손쉬운 사용 권한이 필요합니다",
+                         quitFailedFormat: "%@이(가) 종료되지 않음", shortcutFailedFormat: "단축어 “%@” 실패",
+                         keepAwakeUnavailable: "절전 방지가 기능에서 꺼져 있습니다",
+                         outputMissingFormat: "출력 “%@”을(를) 찾을 수 없음", wallpaperFailed: "배경화면이 설정되지 않음",
+                         linkFailedFormat: "%@을(를) 열 수 없음",
+                         blue: "파랑", indigo: "남색", violet: "보라", rose: "장미", orange: "주황",
+                         amber: "호박색", green: "초록", teal: "청록",
+                         widgetEmpty: "설정에서 작업 공간을 켜세요", lastRun: "마지막 실행")
+        case .uk:
+            return .init(title: "Робочі простори",
+                         subtitle: "Налаштуйте Mac під вид роботи одним клацанням: програми, вікна, зосередження і звук.",
+                         addWorkspace: "Новий простір", capture: "Зняти поточний",
+                         captureHint: "Створює простір із відкритих зараз програм і положення їхніх вікон.",
+                         captureName: "Поточне розташування", runNow: "Запустити", running: "Виконується…", delete: "Видалити",
+                         example: "Приклад", exampleHint: "Це приклад. Перевірте програми, потім увімкніть його.",
+                         name: "Назва", symbol: "Символ", color: "Колір", use: "Використовувати цей простір",
+                         useHint: "Показує його на панелі команд і на острові та вмикає його сполучення клавіш.",
+                         shortcut: "Сполучення клавіш", steps: "Кроки", addStep: "Додати крок",
+                         noSteps: "Кроків ще немає. Додайте перший.", empty: "Просторів ще немає.",
+                         openApps: "Відкрити програми", hideOthers: "Сховати інші програми", quitApps: "Закрити програми",
+                         arrange: "Розставити вікна", keepAwake: "Не давати Mac заснути", focus: "Зосередження через команду",
+                         sound: "Вивід звуку", wallpaper: "Шпалери", openURL: "Відкрити посилання",
+                         addApp: "Додати програму…", targetPlaceholder: "Папка, файл або посилання (необов’язково)",
+                         hideHint: "Ховає всі програми, які цей простір не відкриває.",
+                         quitHint: "Просить програми закритися і ніколи не завершує їх примусово. Finder, Zenith і винятки з «Закриття програм» лишаються відкритими.",
+                         arrangeHint: "Використовує положення й відступи розкладки вікон. Потрібен доступ до функцій універсального доступу.",
+                         capturedPlace: "Зняте положення", on: "Увімк.", off: "Вимк.", shortcutName: "Назва команди",
+                         focusHint: "macOS не дає програмам перемикача зосередження. У програмі «Швидкі команди» створіть команду, яка вмикає зосередження, і введіть тут її назву.",
+                         device: "Пристрій", keepCurrent: "Лишити поточний", volume: "Гучність",
+                         chooseImage: "Вибрати зображення…", noImage: "Зображення не вибрано",
+                         moveUp: "Перемістити вгору", moveDown: "Перемістити вниз", remove: "Вилучити",
+                         kind: "Робочий простір", commandFormat: "Простір: %@",
+                         readyFormat: "Простір «%@» готовий", issuesFormat: "Простір «%@» виконано з помилками",
+                         allDone: "Усе на своїх місцях", untitled: "Без назви", moreFormat: "ще %d",
+                         notFoundFormat: "%@: не знайдено", openFailedFormat: "%@: не відкрилося",
+                         notRunningFormat: "%@: не запущено", noWindowFormat: "%@: немає вікна",
+                         needsAccessibility: "Щоб розставити вікна, потрібен універсальний доступ",
+                         quitFailedFormat: "%@: не закрилося", shortcutFailedFormat: "Команда «%@» не виконалася",
+                         keepAwakeUnavailable: "«Не давати Mac заснути» вимкнено у функціях",
+                         outputMissingFormat: "Вихід «%@» не знайдено", wallpaperFailed: "Шпалери не встановлено",
+                         linkFailedFormat: "Не вдалося відкрити %@",
+                         blue: "Синій", indigo: "Індиго", violet: "Фіолетовий", rose: "Рожевий", orange: "Помаранчевий",
+                         amber: "Бурштиновий", green: "Зелений", teal: "Бірюзовий",
+                         widgetEmpty: "Увімкніть простір у параметрах", lastRun: "Останній запуск")
+        case .zhHans:
+            return .init(title: "工作区",
+                         subtitle: "一键为某种工作准备好 Mac：应用、窗口、专注模式和声音。",
+                         addWorkspace: "新建工作区", capture: "捕捉当前状态",
+                         captureHint: "用现在打开的应用和它们窗口的位置创建工作区。",
+                         captureName: "当前布局", runNow: "立即运行", running: "正在运行…", delete: "删除",
+                         example: "示例", exampleHint: "这是示例。检查它的应用后再打开。",
+                         name: "名称", symbol: "符号", color: "颜色", use: "使用此工作区",
+                         useHint: "在命令栏和灵动岛中列出它，并启用它的快捷键。",
+                         shortcut: "快捷键", steps: "步骤", addStep: "添加步骤",
+                         noSteps: "还没有步骤。添加一个开始吧。", empty: "还没有工作区。",
+                         openApps: "打开应用", hideOthers: "隐藏其他应用", quitApps: "退出应用",
+                         arrange: "排列窗口", keepAwake: "保持唤醒", focus: "用快捷指令切换专注模式",
+                         sound: "声音输出", wallpaper: "墙纸", openURL: "打开链接",
+                         addApp: "添加应用…", targetPlaceholder: "文件夹、文件或链接（可选）",
+                         hideHint: "隐藏此工作区不打开的所有应用。",
+                         quitHint: "请求应用退出，从不强制退出。访达、Zenith 和“退出应用”的例外保持打开。",
+                         arrangeHint: "使用窗口布局的位置和间距。需要辅助功能权限。",
+                         capturedPlace: "捕捉的位置", on: "开", off: "关", shortcutName: "快捷指令名称",
+                         focusHint: "macOS 没有供应用使用的专注模式开关。请在“快捷指令”App 中创建一个设定专注模式的快捷指令，然后在这里输入它的名称。",
+                         device: "设备", keepCurrent: "保持当前", volume: "音量",
+                         chooseImage: "选择图像…", noImage: "未选择图像",
+                         moveUp: "上移", moveDown: "下移", remove: "移除",
+                         kind: "工作区", commandFormat: "工作区：%@",
+                         readyFormat: "%@ 工作区已就绪", issuesFormat: "%@ 工作区运行时出现问题",
+                         allDone: "一切就绪", untitled: "未命名", moreFormat: "还有 %d 项",
+                         notFoundFormat: "找不到 %@", openFailedFormat: "%@ 未能打开",
+                         notRunningFormat: "%@ 未运行", noWindowFormat: "%@ 没有窗口",
+                         needsAccessibility: "排列窗口需要辅助功能权限",
+                         quitFailedFormat: "%@ 未退出", shortcutFailedFormat: "快捷指令“%@”失败",
+                         keepAwakeUnavailable: "保持唤醒已在功能中关闭",
+                         outputMissingFormat: "找不到输出“%@”", wallpaperFailed: "未能设置墙纸",
+                         linkFailedFormat: "无法打开 %@",
+                         blue: "蓝色", indigo: "靛蓝", violet: "紫罗兰", rose: "玫瑰色", orange: "橙色",
+                         amber: "琥珀色", green: "绿色", teal: "青色",
+                         widgetEmpty: "请在设置中打开一个工作区", lastRun: "上次运行")
+        case .zhTW:
+            return .init(title: "工作區",
+                         subtitle: "一鍵為某種工作準備好 Mac：App、視窗、專注模式和聲音。",
+                         addWorkspace: "新增工作區", capture: "擷取目前狀態",
+                         captureHint: "用現在打開的 App 和它們視窗的位置建立工作區。",
+                         captureName: "目前配置", runNow: "立即執行", running: "正在執行…", delete: "刪除",
+                         example: "範例", exampleHint: "這是範例。檢查它的 App 後再開啟。",
+                         name: "名稱", symbol: "符號", color: "顏色", use: "使用此工作區",
+                         useHint: "在指令列和動態島中列出它，並啟用它的快速鍵。",
+                         shortcut: "快速鍵", steps: "步驟", addStep: "加入步驟",
+                         noSteps: "還沒有步驟。加入一個開始吧。", empty: "還沒有工作區。",
+                         openApps: "打開 App", hideOthers: "隱藏其他 App", quitApps: "結束 App",
+                         arrange: "排列視窗", keepAwake: "保持喚醒", focus: "用捷徑切換專注模式",
+                         sound: "聲音輸出", wallpaper: "背景圖片", openURL: "打開連結",
+                         addApp: "加入 App…", targetPlaceholder: "檔案夾、檔案或連結（選填）",
+                         hideHint: "隱藏此工作區不打開的所有 App。",
+                         quitHint: "請求 App 結束，從不強制結束。Finder、Zenith 和「結束 App」的例外保持開啟。",
+                         arrangeHint: "使用視窗佈局的位置和間距。需要輔助使用權限。",
+                         capturedPlace: "擷取的位置", on: "開啟", off: "關閉", shortcutName: "捷徑名稱",
+                         focusHint: "macOS 沒有供 App 使用的專注模式開關。請在「捷徑」App 中建立一個設定專注模式的捷徑，然後在這裡輸入它的名稱。",
+                         device: "裝置", keepCurrent: "保持目前", volume: "音量",
+                         chooseImage: "選擇影像…", noImage: "未選擇影像",
+                         moveUp: "上移", moveDown: "下移", remove: "移除",
+                         kind: "工作區", commandFormat: "工作區：%@",
+                         readyFormat: "%@ 工作區已就緒", issuesFormat: "%@ 工作區執行時出現問題",
+                         allDone: "一切就緒", untitled: "未命名", moreFormat: "還有 %d 項",
+                         notFoundFormat: "找不到 %@", openFailedFormat: "%@ 未能打開",
+                         notRunningFormat: "%@ 未執行", noWindowFormat: "%@ 沒有視窗",
+                         needsAccessibility: "排列視窗需要輔助使用權限",
+                         quitFailedFormat: "%@ 未結束", shortcutFailedFormat: "捷徑「%@」失敗",
+                         keepAwakeUnavailable: "保持喚醒已在功能中關閉",
+                         outputMissingFormat: "找不到輸出「%@」", wallpaperFailed: "未能設定背景圖片",
+                         linkFailedFormat: "無法打開 %@",
+                         blue: "藍色", indigo: "靛藍", violet: "紫羅蘭", rose: "玫瑰色", orange: "橙色",
+                         amber: "琥珀色", green: "綠色", teal: "青色",
+                         widgetEmpty: "請在設定中開啟一個工作區", lastRun: "上次執行")
+        case .zhHK:
+            return .init(title: "工作區",
+                         subtitle: "一按為某種工作準備好 Mac：App、視窗、專注模式和聲音。",
+                         addWorkspace: "新增工作區", capture: "擷取目前狀態",
+                         captureHint: "用現在打開的 App 和它們視窗的位置建立工作區。",
+                         captureName: "目前配置", runNow: "立即執行", running: "正在執行…", delete: "刪除",
+                         example: "範例", exampleHint: "這是範例。檢查它的 App 後再開啟。",
+                         name: "名稱", symbol: "符號", color: "顏色", use: "使用此工作區",
+                         useHint: "在指令列和動態島中列出它，並啟用它的快速鍵。",
+                         shortcut: "快速鍵", steps: "步驟", addStep: "加入步驟",
+                         noSteps: "還沒有步驟。加入一個開始吧。", empty: "還沒有工作區。",
+                         openApps: "打開 App", hideOthers: "隱藏其他 App", quitApps: "結束 App",
+                         arrange: "排列視窗", keepAwake: "保持喚醒", focus: "用捷徑切換專注模式",
+                         sound: "聲音輸出", wallpaper: "背景圖片", openURL: "打開連結",
+                         addApp: "加入 App…", targetPlaceholder: "資料夾、檔案或連結（選填）",
+                         hideHint: "隱藏此工作區不打開的所有 App。",
+                         quitHint: "要求 App 結束，從不強制結束。Finder、Zenith 和「結束 App」的例外保持開啟。",
+                         arrangeHint: "使用視窗佈局的位置和間距。需要輔助使用權限。",
+                         capturedPlace: "擷取的位置", on: "開啟", off: "關閉", shortcutName: "捷徑名稱",
+                         focusHint: "macOS 沒有供 App 使用的專注模式開關。請在「捷徑」App 中建立一個設定專注模式的捷徑，然後在這裏輸入它的名稱。",
+                         device: "裝置", keepCurrent: "保持目前", volume: "音量",
+                         chooseImage: "選擇影像…", noImage: "未選擇影像",
+                         moveUp: "上移", moveDown: "下移", remove: "移除",
+                         kind: "工作區", commandFormat: "工作區：%@",
+                         readyFormat: "%@ 工作區已就緒", issuesFormat: "%@ 工作區執行時出現問題",
+                         allDone: "一切就緒", untitled: "未命名", moreFormat: "還有 %d 項",
+                         notFoundFormat: "找不到 %@", openFailedFormat: "%@ 未能打開",
+                         notRunningFormat: "%@ 未執行", noWindowFormat: "%@ 沒有視窗",
+                         needsAccessibility: "排列視窗需要輔助使用權限",
+                         quitFailedFormat: "%@ 未結束", shortcutFailedFormat: "捷徑「%@」失敗",
+                         keepAwakeUnavailable: "保持喚醒已在功能中關閉",
+                         outputMissingFormat: "找不到輸出「%@」", wallpaperFailed: "未能設定背景圖片",
+                         linkFailedFormat: "無法打開 %@",
+                         blue: "藍色", indigo: "靛藍", violet: "紫羅蘭", rose: "玫瑰色", orange: "橙色",
+                         amber: "琥珀色", green: "綠色", teal: "青色",
+                         widgetEmpty: "請在設定中開啟一個工作區", lastRun: "上次執行")
+        }
+    }
+}
+
 // MARK: - Card import
 
 /// Zenith fork: importing camera cards (CardImportService), in the island and in Settings.

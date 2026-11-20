@@ -202,6 +202,7 @@ enum CommandBarCatalog {
             entries = includingEnglishNames(entries, english: english)
         }
         entries.append(contentsOf: snippetEntries(bar))
+        entries.append(contentsOf: workspaceEntries(bar)) // Zenith fork: workspaces
         entries.append(contentsOf: linkEntries(
             CommandBarLinks.decode(UserDefaults.standard.data(forKey: DefaultsKey.commandBarLinks)),
             bar: bar))

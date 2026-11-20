@@ -24,6 +24,8 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
     case today
     /// The next prayer and the golden hour (SkyService).
     case prayer, golden
+    /// The workspaces that are on, as calm tiles that run them (WorkspaceService).
+    case workspaces
 
     var id: String { rawValue }
 
@@ -42,6 +44,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .devServers: return .devServers
         case .today: return .recap
         case .prayer, .golden: return .sky
+        case .workspaces: return nil
         }
     }
 
@@ -60,6 +63,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .today: return "sun.horizon.fill"
         case .prayer: return "moon.stars.fill"
         case .golden: return "sun.horizon.fill"
+        case .workspaces: return "square.grid.2x2.fill"
         }
     }
 
@@ -80,6 +84,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .today: return 0xA5B4FC
         case .prayer: return 0x93C5FD
         case .golden: return 0xFCD34D
+        case .workspaces: return 0x67E8F9 // cyan 300: it has no page whose colour to wear
         }
     }
 
@@ -100,6 +105,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .today: return 216
         case .prayer: return 196
         case .golden: return 216
+        case .workspaces: return 252
         }
     }
 

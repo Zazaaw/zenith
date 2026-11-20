@@ -2114,6 +2114,108 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     ⌘-drag melewati divider, collapse/expand dengan putaran chevron, posisi tetap setelah relaunch (dan setelah
     quit dalam keadaan collapsed), ⌥-klik, hover, menu chevron, klik area kosong, auto-collapse dengan menu ikon
     tersembunyi terbuka, lock, notch guard di MacBook bernotch, bar yang penuh sesak, dan Reduce Motion.
+- **Workspaces (branch `feat/workspaces`):** preset sekali klik yang menyiapkan Mac untuk satu mode kerja
+  (coding, editing foto/video, desain). Kode di `Services/Workspaces/WorkspaceSupport.swift` (murni, ikut
+  `TEST_SOURCES`: model, JSON + migrasi, contoh, edit, runner, teks notice, perintah Shortcuts, capture, rencana
+  hide/quit, geometri), `WorkspaceService.swift` (simpan, jalankan satu per satu di queue latar, notice, shortcut
+  global), `WorkspaceSystemPerformer.swift` (langkah di Mac sungguhan + AX + capture), `WorkspaceAudio.swift`,
+  `WorkspaceCommandBar.swift`, `UI/Settings/WorkspacesSettings.swift`, `UI/Settings/WorkspacesStepEditor.swift`,
+  `UI/Notch/WorkspacesHomeWidget.swift`. Teks di `ZenithStrings.workspaces` (15 bahasa, apostrof lengkung, tanpa em
+  dash). Test di `Tests/WorkspacesTests.swift` (suite `workspaces`).
+  - **Model:** `Workspace` (id, nama, SF Symbol dari 16 pilihan, warna `WorkspaceColor` dari palet tenang island
+    (tingkat 400: blue, indigo, violet, rose, orange, amber, green, teal), `isEnabled`, `isExample`, shortcut
+    `GlobalShortcut.storageValue`, langkah berurutan). `WorkspaceStep` = id + saklar + `WorkspaceAction`:
+    `openApps` (app per bundle ID lalu path terakhir, plus target opsional: folder, file, atau link),
+    `hideOthers`, `quitApps`, `arrange` (`WorkspaceArrangement`: app + posisi Window Layout atau `WorkspaceFrame`
+    hasil capture), `keepAwake(on/off)`, `focus(shortcut:)`, `sound` (UID device + volume opsional), `wallpaper`,
+    `openURL`.
+  - **Penyimpanan:** JSON di satu kunci terdaftar `zenithWorkspaces` (default `""`, jadi ikut backup):
+    `{"version":1,"workspaces":[…]}`. `""` = Mac yang belum pernah mengedit, menampilkan dua contoh; simpan pertama
+    menulisnya sungguhan (daftar kosong tetap kosong). Versi 0 (list polos) dibaca; field yang hilang memakai default,
+    langkah/app/warna/posisi yang tidak dikenal dilewati atau jatuh ke default (posisi asing = maximize, warna asing =
+    blue), id ganda dibaca sekali. Teks rusak = tidak ada workspace (bukan contoh lagi).
+  - **Contoh:** "Coding" (VS Code, Chrome, Terminal, Claude; hide others; VS Code kiri 2/3 + Chrome kanan 1/3; Keep
+    Awake nyala; Focus "Coding Focus" mati) dan "Editing" (DaVinci Resolve, Lightroom Classic, Finder; hide others;
+    Resolve maximize; Keep Awake; Focus "Editing Focus" mati). Keduanya `isEnabled = false` dan `isExample`; edit apa pun
+    menghapus tanda contoh. Id contoh tetap. App yang belum terpasang dilaporkan, tidak ditebak.
+  - **Menjalankan:** `WorkspaceRunner.run` menjalankan langkah yang nyala sesuai urutan lewat `WorkspacePerforming`
+    (protokol, jadi test memakai performer palsu). Masalah tiap langkah dicatat (sekali per jenis) dan langkah
+    berikutnya tetap jalan. Satu run sekaligus, di `DispatchQueue` latar; AppKit dan service lain disentuh di main
+    thread. Hasil: notice kapsul `ZenithNotice.Kind.workspace` (prioritas 3, tampil 6 dtk, menunggu island maks.
+    30 dtk, key `workspace.<id>`), glyph workspace dalam warnanya (`Tone.hex`, baru), judul "Coding workspace ready" +
+    "Everything is in place" + centang, atau "Coding workspace ran with problems" + dua masalah pertama dan "+N more".
+    Island mati = notifikasi biasa (`Notifier.post`). Hasil terakhir juga tampil di Settings.
+  - **Langkah dan fitur yang dipakai ulang:**
+    - *Open apps:* `NSWorkspace.openApplication` / `open(_:withApplicationAt:)` (target `~`/path = file, skema = link,
+      host polos = https), tunggu sampai `isFinishedLaunching` (maks. 15 dtk) lalu jeda 0,35 dtk.
+    - *Hide other apps:* `NSRunningApplication.hide()` untuk app reguler yang tidak dibuka/diatur workspace, tidak
+      pernah Zenith (semua bundle ID lama Vorssaint ikut).
+    - *Quit apps:* aturan dan pengecualian Quit Apps (`QuickTogglesSupport.shouldQuitApp`,
+      `sanitizedQuitAllExceptions`, Finder/Phone/Zenith selalu aman), hanya `terminate()`, tidak pernah force quit;
+      app milik workspace sendiri tidak pernah ditutup; yang masih terbuka setelah 6 dtk (mis. minta simpan) dilaporkan.
+      Catatan: Quit Protection upstream hanya menjaga ⌘Q/⌘W keyboard, tidak punya daftar app terlindungi, jadi
+      yang dihormati di sini adalah pengecualian Quit Apps.
+    - *Arrange windows:* geometri Window Layout (`WindowLayoutGeometry.rect` dengan gap, margin, dan
+      `windowLayoutVisibleFrame` milik user) di display tempat jendela berada; set ukuran/posisi lewat AX di
+      `WorkspaceWindows` dengan `EnhancedUserInterfaceSuspension`. `WindowLayoutService.apply` hanya bekerja di jendela
+      yang fokus dan semua fungsi per-jendelanya `private`, jadi tidak dipanggil (tanpa kait di file upstream). Pilihan
+      posisi = semua aksi Window Layout dengan kapabilitas `.frame` kecuali pindah display. Butuh Accessibility;
+      tanpa izin, langkah ini melapor "needs Accessibility" dan halaman menampilkan `PermissionRow`.
+    - *Keep Awake:* `KeepAwakeManager.activate(minutes: 0)` / `deactivate`. Karena `activate` menyimpan durasi sebagai
+      pilihan default user, `defaultDuration` dan `keepAwakeSwitchUsesUntil` dikembalikan setelahnya. Fitur mati di
+      Features = dilaporkan.
+    - *Focus:* `/usr/bin/shortcuts run "<nama>"` lewat `BoundedProcessRunner` (timeout 30 dtk), nama sebagai satu
+      argumen (tanpa shell); Settings menampilkan perintahnya dengan kutip tunggal. macOS tidak punya API Focus publik,
+      jadi UI menjelaskan: buat Shortcut yang menyetel Focus, lalu ketik namanya.
+    - *Sound output:* lewat mixer (`AppVolumeMixer.setUniversalOutputDeviceUID`) kalau device ada di daftarnya, kalau
+      tidak (fitur suara mati, daftar mixer kosong) langsung lewat HAL di `WorkspaceAudio`; volume lewat
+      `AppVolumeMixer.setSystemOutputVolume`.
+    - *Wallpaper:* `WallpaperService.apply` (semua display/Space sesuai setelannya) kalau fitur wallpaper nyala, kalau
+      tidak `NSWorkspace.setDesktopImageURL` per layar.
+    - *Open a link:* `NSWorkspace.open`.
+  - **Capture current:** app reguler yang terlihat (tanpa Zenith), diurutkan dari belakang ke depan menurut
+    `CGWindowListCopyWindowInfo` (tanpa izin), jadi saat dibuka ulang yang paling depan kembali di depan. Frame jendela
+    depan dibaca lewat AX (kalau diizinkan) dan disimpan relatif ke display-nya dengan UUID display
+    (`CGDisplayCreateUUIDFromDisplayID`) dan ukuran display saat itu. Saat dijalankan: display yang sama = posisi
+    persis; display hilang = display utama secara proporsional; selalu dijepit ke area terlihat.
+  - **Entry point:** Command Bar (`CommandBarCatalog.workspaceEntries`, baris "Workspace: Coding" ber-id
+    `action.workspaces.<uuid>` sehingga alias, pin, dan shortcut baris Command Bar ikut jalan), shortcut global per
+    workspace (`QuickToolHotkey` id 1800+posisi, maks. 32, konflik dicek terhadap role upstream dan workspace lain),
+    widget Home `ZenithHomeWidget.workspaces` (lebar 252, warna cyan 300 `#67E8F9`, maks. tiga tile tenang, klik =
+    jalan, spinner selama jalan), Settings (Run Now di daftar dan editor). Panel menu bar **tidak** diberi entry: perlu
+    `PanelSectionID` baru dengan sekitar tujuh switch di file upstream, tidak sederhana.
+  - **Settings:** halaman baru `SettingsPage.workspaces` di Utilities (bagian aplikasi, tanpa `AppFeature`, jadi tidak
+    ada saklar di Features dan hitungan fitur upstream tidak berubah). `SettingsPageHeader` + tombol Capture Current dan
+    New Workspace; kartu daftar (tile glyph lembut dalam warna workspace, nama, tag EXAMPLE, ringkasan langkah, shortcut
+    mono, tombol play); di bawahnya editor: nama, simbol, warna, saklar "Use this workspace" (`ZenithSwitchRow`),
+    shortcut (`ShortcutRecorderButton`), Run Now, Delete (konfirmasi), hasil terakhir; lalu "Steps" dengan menu Add Step,
+    tiap langkah: tile, ▲/▼, hapus, saklar (`ZenithSwitchStyle`), dan isinya. Pemilih app `NSOpenPanel` hanya `.app`
+    (mulai di /Applications), pemilih target folder/file, pemilih gambar. Judul digambar sendiri, `SettingsCard` tanpa
+    `title:`, tanpa `SettingsRow`, jadi tidak masuk test search coverage; halaman bisa dicari lewat
+    `SettingsDirectory` (`ZenithWorkspacesSearch.keywords`). Gerak: spring `ZenithMotion` (opacity/scale saja), Reduce
+    Motion = fade.
+  - Edit di file upstream bertanda `// Zenith fork`: `Defaults` (kunci + default), `FeatureVisibilitySupport` (case
+    halaman), `SettingsView` (detail + header sendiri), `SettingsDirectory` (item), `CommandBarCatalog.build` (satu
+    baris), `AppDelegate` (`WorkspaceService.shared.start()`, hanya mendaftarkan shortcut kalau ada), `ShortcutCapture.end`
+    (daftar ulang shortcut workspace setelah merekam), `build.sh` (`TEST_SOURCES`), `Tests/MetricsTests.swift` (suite).
+    Test upstream yang ikut disesuaikan: `CommandBarFeatureTests` (stub `workspaceEntries` di host build),
+    `ShortcutClearingTests` (stub `WorkspaceService`), `HomeLayoutTests` (widget tanpa halaman sekarang weather dan
+    workspaces). File fork yang ikut berubah: `ZenithNoticeSupport`/`Service`/`View` (kind, `Tone.hex`),
+    `ZenithHomeLayoutSupport`/`View`/`Widgets` (widget).
+  - **Test (`workspaces`):** round trip semua jenis langkah, migrasi v0/versi baru/field hilang/langkah asing, contoh,
+    urutan (geser, clamp, tambah, hapus, mati), runner dengan performer palsu (urutan, langkah mati dilewati, gagal
+    tidak menghentikan, masalah unik, berhenti di antara langkah), teks notice (siap, masalah, +N, tanpa nama, 15
+    bahasa), perintah Shortcuts (trim, NUL, karakter shell literal, kutip tampilan), target path/link, capture (display,
+    relatif, lintas display, di luar layar, display hilang proporsional, jepit, tanpa Zenith/duplikat/bundle kosong,
+    tanpa AX), rencana hide/quit, konversi AX ↔ AppKit, registrasi + backup, kind notice, teks. Tidak ada app yang
+    dibuka atau ditutup.
+  - **Belum diverifikasi di Mac:** app UI tidak dijalankan. Perlu dicek: halaman Settings (terang/gelap, lebar sempit,
+    editor langkah, pemilih app, perekam shortcut, konfirmasi hapus), Run Now dengan app sungguhan (urutan buka, jeda,
+    hide, quit yang minta simpan), arrange dengan VS Code/Chrome (gap Window Layout, display kedua), Capture Current
+    lalu jalankan di susunan display lain, Keep Awake (durasi default tidak berubah), Shortcut Focus sungguhan, ganti
+    output (dengan dan tanpa fitur Mixer), wallpaper (dengan dan tanpa fitur Wallpaper), notice kapsul (siap/masalah,
+    notch dan capsule), widget Home (spinner, Reduce Motion), baris Command Bar, shortcut global setelah merekam
+    shortcut lain.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.

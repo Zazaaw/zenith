@@ -35,6 +35,7 @@ enum CommandBarFeatureTests {
             CommandBarCatalogSearch.includingEnglishNames(rows, english: english)
         }
         static func snippetEntries(_ bar: CommandBarFeatureStrings) -> [CommandBarEntry] { [] }
+        static func workspaceEntries(_ bar: CommandBarFeatureStrings) -> [CommandBarEntry] { [] } // Zenith fork
         static func linkEntries(_ links: [Int], bar: CommandBarFeatureStrings) -> [CommandBarEntry] { [] }
     }
 
