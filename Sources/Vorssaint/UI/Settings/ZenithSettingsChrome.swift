@@ -87,3 +87,16 @@ struct ZenithSwitchRow<Label: View>: View {
         }
     }
 }
+
+extension View {
+    /// Marks a fork section that Settings search lands on (ZenithSettingsSearch).
+    /// The landing outline stands `inset` outside the section, so it frames a
+    /// group of rows inside a card without touching their text, and the layout
+    /// stays as it was.
+    func zenithSectionAnchor(_ anchor: SettingsSectionAnchor, cornerRadius: CGFloat = ZenithRadius.card,
+                             inset: CGFloat = 8) -> some View {
+        padding(inset)
+            .settingsSectionAnchor(anchor, cornerRadius: cornerRadius)
+            .padding(-inset)
+    }
+}

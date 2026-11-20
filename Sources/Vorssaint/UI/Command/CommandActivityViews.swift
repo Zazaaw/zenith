@@ -331,6 +331,7 @@ struct CommandActivitySettings: View {
                 if enabled { options }
             }
         }
+        .zenithSectionAnchor(.zenithCommandActivity, cornerRadius: ZenithRadius.panel + 6, inset: 6) // Settings search lands here
         .onAppear {
             draft = ignored
             refreshHook()

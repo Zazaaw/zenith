@@ -192,5 +192,6 @@ struct GitHubSettings: View {
             Text(text.caption).font(ZenithType.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .zenithSectionAnchor(.zenithGitHub) // Settings search lands here
     }
 }

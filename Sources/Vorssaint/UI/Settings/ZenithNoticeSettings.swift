@@ -46,6 +46,7 @@ struct ZenithNoticeSettings: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+        .zenithSectionAnchor(.zenithNotices, cornerRadius: ZenithRadius.panel + 6, inset: 6) // Settings search lands here
         .onChange(of: lowOn) { _, _ in sync() }
         .onChange(of: criticalOn) { _, _ in sync() }
         .onChange(of: highOn) { _, _ in sync() }

@@ -72,5 +72,6 @@ struct QRSettingsSection: View {
         } header: {
             Text(text.title)
         }
+        .settingsFormSectionAnchor(.zenithQR) // Settings search lands here
     }
 }

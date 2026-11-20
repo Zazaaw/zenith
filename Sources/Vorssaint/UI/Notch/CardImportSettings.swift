@@ -63,7 +63,9 @@ struct CardImportSettings: View {
             ZenithSwitchRow(text.ejectWhenDone, isOn: $eject) { Text(text.ejectWhenDone) }
             Divider().padding(.vertical, 2)
             CardBackupSettingsView()
+                .zenithSectionAnchor(.zenithCardBackup) // Settings search lands here
         }
+        .zenithSectionAnchor(.zenithCardImport) // Settings search lands here
         .onChange(of: enabled) { _, _ in
             NotchService.shared.syncWithPreferences()
             ZenithNoticeCenter.shared.syncWithPreferences()

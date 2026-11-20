@@ -511,6 +511,7 @@ struct NotchSettings: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
+            .zenithSectionAnchor(.zenithCameraAutoStart) // Zenith fork: Settings search
             if permissions.camera == .granted {
                 Label(l10n.s.permissionGranted, systemImage: "checkmark.circle.fill").foregroundStyle(.green)
             } else {
@@ -689,6 +690,7 @@ struct NotchSettings: View {
                 if lockScreen { NotchLockScreenItemToggles() }
                 switchRow("speaker.wave.2", locked.sounds, caption: locked.soundsHint, isOn: $lockSounds)
             }
+            .settingsSectionAnchor(.zenithLockScreen, cornerRadius: ZenithRadius.panel) // Zenith fork: Settings search
             CommandActivitySettings() // Zenith fork: long-running terminal commands in the closed island.
             ExportTrackerSettings() // Zenith fork: renders, recordings and photo exports in the closed island.
             ZenithNoticeSettings() // Zenith fork: capsule notices for battery, headphones and downloads.

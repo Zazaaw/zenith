@@ -40,6 +40,7 @@ struct DevServersSettings: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+        .zenithSectionAnchor(.zenithDevServers) // Settings search lands here
         .onAppear {
             portsDraft = ports
             namesDraft = names

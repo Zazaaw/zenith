@@ -24,5 +24,6 @@ struct ZenithReplySettings: View {
                 }
             }
         }
+        .zenithSectionAnchor(.zenithReply) // Settings search lands here
     }
 }

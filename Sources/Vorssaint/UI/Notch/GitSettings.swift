@@ -66,6 +66,7 @@ struct GitSettings: View {
             Text(text.readOnly).font(ZenithType.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .zenithSectionAnchor(.zenithGit) // Settings search lands here
         .onAppear {
             pinned = GitOptions.pinnedEntries()
             accessibility = AXIsProcessTrusted()

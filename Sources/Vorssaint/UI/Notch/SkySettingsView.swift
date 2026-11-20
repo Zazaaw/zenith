@@ -36,20 +36,28 @@ struct SkySettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            heading(text.calculation)
-            calculation
-            Divider().padding(.vertical, 2)
-            heading(text.location)
-            location
-            Divider().padding(.vertical, 2)
-            heading(text.reminders)
-            remindersSection
-            Divider().padding(.vertical, 2)
-            heading(text.goldenTab)
-            ZenithSwitchRow(text.goldenActivity, isOn: $goldenActivity) {
-                label(text.goldenActivity, caption: text.goldenActivityCaption)
+            // The prayer times and the golden hour are each a place Settings search lands on.
+            VStack(alignment: .leading, spacing: 10) {
+                heading(text.calculation)
+                calculation
+                Divider().padding(.vertical, 2)
+                heading(text.location)
+                location
+                Divider().padding(.vertical, 2)
+                heading(text.reminders)
+                remindersSection
             }
+            .zenithSectionAnchor(.zenithPrayerTimes)
+            Divider().padding(.vertical, 2)
+            VStack(alignment: .leading, spacing: 10) {
+                heading(text.goldenTab)
+                ZenithSwitchRow(text.goldenActivity, isOn: $goldenActivity) {
+                    label(text.goldenActivity, caption: text.goldenActivityCaption)
+                }
+            }
+            .zenithSectionAnchor(.zenithGoldenHour)
         }
+        .zenithSectionAnchor(.zenithSky) // Settings search lands here
         .onAppear {
             weather.refreshAccess()
             SkyService.shared.viewShown()

@@ -248,6 +248,7 @@ struct VercelSettings: View {
                 service.syncFailureAlerts()
             }
         }
+        .zenithSectionAnchor(.zenithVercel) // Settings search lands here
         .onAppear { service.loadTokenIfNeeded() }
     }
 
