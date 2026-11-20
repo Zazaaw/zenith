@@ -26,6 +26,9 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
     private var quickAccessConfiguration: NotchQuickAccessConfiguration?
     private var quickAccessNotchSize = CGSize.zero
     private var quickAccessAnimate = false
+    // Zenith fork: the tab pill shows below the open island.
+    private var showsDock = false
+    private var dockAnimates = false
     private var currentGeometry: NotchGeometry
     private var appliedFrame = CGRect.zero
     private var animationGeneration = 0
@@ -61,7 +64,8 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
 
     init(content: AnyView, geometry: NotchGeometry, size: CGSize,
          background: (NotchBackdropPresentation) -> AnyView = { _ in AnyView(Color.black) },
-         quickAccess: ((NotchQuickAccessMotion, NotchBackdropPresentation) -> AnyView)? = nil) {
+         quickAccess: ((NotchQuickAccessMotion, NotchBackdropPresentation) -> AnyView)? = nil,
+         dock: ((ZenithIslandDockMotion) -> AnyView)? = nil) { // Zenith fork: the tab pill below the island
         targetSize = size
         currentGeometry = geometry
         panel = NotchPanel(contentRect: geometry.frame(for: size),
@@ -69,7 +73,7 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
                            backing: .buffered, defer: false)
         let mainCanvas = NotchCanvas(content: content, background: background, size: size)
         canvas = mainCanvas
-        quickAccessContainer = quickAccess.map { NotchQuickAccessContainer(canvas: mainCanvas, content: $0) }
+        quickAccessContainer = quickAccess.map { NotchQuickAccessContainer(canvas: mainCanvas, content: $0, dock: dock) } // Zenith fork
         super.init()
         panel.isOpaque = false
         panel.backgroundColor = .clear
@@ -258,7 +262,8 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
 
     func present(size: CGSize, geometry: NotchGeometry, animated: Bool, transitionContent: NotchContentTransition = .none,
                  quickAccess: NotchQuickAccessConfiguration? = nil, revealFromHidden: Bool = false,
-                 hideWhenSettled: Bool = false, usesGlass: Bool = false, steady: Bool = false) {
+                 hideWhenSettled: Bool = false, usesGlass: Bool = false, steady: Bool = false,
+                 dock: Bool = false) { // Zenith fork: whether the tab pill shows below the island
         // Choosing the capsule or the notch redraws the island at once, even
         // at a size it already has.
         canvas.setFloatingGap(geometry.floatingGap)
@@ -295,6 +300,13 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         quickAccessAnimate = canAnimate
         if quickAccessConfiguration != nil { quickAccessNotchSize = size }
         if withdrawing { quickAccessContainer?.motion.setVisible(false, animated: canAnimate) }
+        // Zenith fork: the tab pill. Reduce Motion still fades it, which the
+        // pill does by itself; it leaves at once as the island closes.
+        dockAnimates = animated && !relocationHidden && (isPresented || revealing)
+        let dockWithdrawing = showsDock && !dock
+        showsDock = dock && quickAccessContainer?.dockView != nil
+        if revealing { quickAccessContainer?.dock.setVisible(false, animated: false) }
+        if dockWithdrawing { quickAccessContainer?.dock.setVisible(false, animated: dockAnimates) }
         let gutter = quickAccessConfiguration == nil ? 0 : NotchQuickAccessLayout.gutter
         let bottom = quickAccessBottomInset(for: size, geometry: geometry)
         let frame = geometry.frame(for: CGSize(width: size.width + gutter * 2, height: size.height + bottom))
@@ -320,6 +332,7 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
             currentGeometry = geometry
             configureQuickAccess()
             if !isAnimating { quickAccessContainer?.motion.setVisible(quickAccessConfiguration != nil, animated: canAnimate) }
+            if !isAnimating { quickAccessContainer?.dock.setVisible(showsDock, animated: dockAnimates) } // Zenith fork
             return
         }
         if canAnimate { canvas.transitionContent(revealing ? .reveal : transitionContent) }
@@ -329,6 +342,10 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
             // screen in the resting shape, flushed ahead of the resize, or
             // ahead of the surface drawn beneath it. A fade is not motion.
             canvas.transitionContent(.reveal, shapeSnaps: true)
+        } else if animated, transitionContent == .replace, isPresented, !relocationHidden {
+            // Zenith fork: under Reduce Motion an open page still cross-fades
+            // into the next one; the canvas leaves the blur and dip out.
+            canvas.transitionContent(.replace)
         } else { canvas.restoreContent() }
         guard changesFrame else { configureQuickAccess(); return }
         // An ordered-out panel still has its last expanded shape. Start the
@@ -410,6 +427,11 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         // Each frame is the island's own silhouette at that size, so its
         // corners and shoulders stay true while the sides swing apart.
         let paths = zip(motion.sizes, offsets).map { canvas.silhouettePath(for: $0, offset: $1) }
+        // Zenith fork: the tab pill arrives as the island nears its size.
+        if showsDock {
+            quickAccessContainer?.dock.setVisible(true, animated: canAnimate,
+                                                  delay: NotchMotion.arrivalTime(from: start, to: size) * 0.5)
+        }
         // The floating controls emerge once the island reaches its size, while it still swings.
         if quickAccessConfiguration != nil {
             quickAccessContainer?.motion.setVisible(true, animated: canAnimate,
@@ -484,6 +506,7 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         CATransaction.commit()
         CATransaction.flush()
         quickAccessContainer?.motion.setVisible(quickAccessConfiguration != nil, animated: quickAccessAnimate)
+        quickAccessContainer?.dock.setVisible(showsDock, animated: dockAnimates) // Zenith fork
         if hidesWhenSettled {
             panel.orderOut(nil)
             concealedForFrameChange = false
@@ -519,14 +542,17 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
     /// Short pages may end above the last side button. Keep its circle and
     /// hover margin inside the window without enlarging the island's surface.
     private func quickAccessBottomInset(for size: CGSize, geometry: NotchGeometry) -> CGFloat {
-        guard let configuration = quickAccessConfiguration else { return 0 }
+        // Zenith fork: room for the tab pill below the island while it shows.
+        let dockRoom = showsDock
+            ? ZenithIslandDockLayout.reservation(belowQuickAccess: quickAccessConfiguration?.hasBottom == true) : 0
+        guard let configuration = quickAccessConfiguration else { return dockRoom }
         let sideCount = max(configuration.buttons.filter { $0.side == .left }.count,
                             configuration.buttons.filter { $0.side == .right }.count)
         let sideBottom = sideCount > 0
             ? geometry.quickAccessCenterY + CGFloat(sideCount - 1) * NotchQuickAccessLayout.rowSpacing
                 + NotchQuickAccessLayout.diameter / 2 + NotchQuickAccessLayout.hoverMargin
             : 0
-        return max(configuration.hasBottom ? NotchQuickAccessLayout.gutter : 0, sideBottom - size.height)
+        return max(configuration.hasBottom ? NotchQuickAccessLayout.gutter : 0, sideBottom - size.height, dockRoom) // Zenith fork
     }
 
     /// Mission Control switches the window server into a mode where every
@@ -585,8 +611,23 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
     private func configureQuickAccess() {
         guard let container = quickAccessContainer else { return }
         container.quickView.isHidden = quickAccessConfiguration == nil && container.gutter == 0 && container.bottomInset == 0
+        // Zenith fork: the tab pill hangs below the island's body, and its
+        // corridor down from the island keeps the pointer over the island.
+        var dockHover: [CGRect] = []
+        if let dockView = container.dockView {
+            let shoulder = NotchLayout.shoulder(height: targetSize.height)
+            let islandX = canvas.convert(CGPoint(x: islandMinX(targetSize), y: 0), to: dockView).x
+            container.dock.configure(body: CGRect(x: islandX + shoulder, y: 0, width: targetSize.width - shoulder * 2,
+                                                  height: targetSize.height),
+                                     belowQuickAccess: quickAccessConfiguration?.hasBottom == true, animated: dockAnimates)
+            if showsDock {
+                let rect = ZenithIslandDockLayout.hoverRect(anchor: container.dock.anchor,
+                                                            belowQuickAccess: quickAccessConfiguration?.hasBottom == true)
+                dockHover = [container.convert(rect, from: dockView).intersection(container.bounds)]
+            }
+        }
         guard let configuration = quickAccessConfiguration else {
-            container.setHoverRects([])
+            container.setHoverRects(dockHover) // Zenith fork
             return
         }
         // The silhouette's shoulders sit outside its vertical body.
@@ -600,7 +641,7 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
                                    animated: quickAccessAnimate)
         container.setHoverRects(container.motion.hoverRects.map {
             container.convert($0, from: container.quickView).intersection(container.bounds)
-        })
+        } + dockHover) // Zenith fork
     }
 
     func setHoverHandler(_ handler: @escaping (Bool) -> Void) {
@@ -754,6 +795,7 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
     func contains(_ screenPoint: CGPoint) -> Bool {
         if containsSurface(screenPoint) { return true }
         guard isPresented, !concealedForMissionControl, let container = quickAccessContainer else { return false }
+        if container.dockContains(container.convert(panel.convertPoint(fromScreen: screenPoint), from: nil)) { return true } // Zenith fork
         return container.motion.contains(container.quickView.convert(panel.convertPoint(fromScreen: screenPoint), from: nil))
     }
 
@@ -856,6 +898,7 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         concealedForFrameChange = false
         canvas.stopMotion()
         quickAccessContainer?.motion.setVisible(false, animated: false)
+        quickAccessContainer?.dock.setVisible(false, animated: false) // Zenith fork
         quickAccessContainer?.setHoverRects([])
         panel.orderOut(nil)
         panel.contentView = nil
@@ -1046,6 +1089,9 @@ private final class NotchQuickAccessContainer: NSView {
     let canvas: NotchCanvas
     let motion: NotchQuickAccessMotion
     let quickView: NSHostingView<AnyView>
+    // Zenith fork: the tab pill, on the same stage, above the floating buttons.
+    let dock = ZenithIslandDockMotion()
+    private(set) var dockView: ZenithIslandDockHost?
     private(set) var hoverRects: [CGRect] = []
     private var hoverTrackingAreas: [NSTrackingArea] = []
     var hoverChanged: ((Bool) -> Void)?
@@ -1058,7 +1104,8 @@ private final class NotchQuickAccessContainer: NSView {
     override var isFlipped: Bool { true }
     override var isOpaque: Bool { false }
 
-    init(canvas: NotchCanvas, content: (NotchQuickAccessMotion, NotchBackdropPresentation) -> AnyView) {
+    init(canvas: NotchCanvas, content: (NotchQuickAccessMotion, NotchBackdropPresentation) -> AnyView,
+         dock dockContent: ((ZenithIslandDockMotion) -> AnyView)? = nil) {
         self.canvas = canvas
         let motion = NotchQuickAccessMotion()
         self.motion = motion
@@ -1070,6 +1117,15 @@ private final class NotchQuickAccessContainer: NSView {
         wantsLayer = true
         autoresizesSubviews = false
         addSubview(quickView)
+        // Zenith fork: the tab pill's own hosting view, which takes only its clicks.
+        if let dockContent {
+            let view = ZenithIslandDockHost(rootView: dockContent(dock))
+            view.motion = dock
+            view.sizingOptions = []
+            view.wantsLayer = true
+            addSubview(view)
+            dockView = view
+        }
         addSubview(canvas)
     }
 
@@ -1094,6 +1150,7 @@ private final class NotchQuickAccessContainer: NSView {
         stage = NotchStage.size(including: CGSize(width: max(stage.width, bounds.width), height: max(stage.height, bounds.height)))
         let stageFrame = NotchStage.frame(stage, in: bounds)
         if quickView.frame != stageFrame { quickView.frame = stageFrame }
+        if let dockView, dockView.frame != stageFrame { dockView.frame = stageFrame } // Zenith fork
         CATransaction.commit()
     }
 
@@ -1120,8 +1177,15 @@ private final class NotchQuickAccessContainer: NSView {
     override func hitTest(_ point: NSPoint) -> NSView? {
         let local = convert(point, from: superview)
         guard canvas.containsVisiblePoint(canvas.convert(local, from: self))
-                || motion.contains(quickView.convert(local, from: self)) else { return nil }
+                || motion.contains(quickView.convert(local, from: self))
+                || dockContains(local) else { return nil } // Zenith fork
         return super.hitTest(point)
+    }
+
+    /// Zenith fork: whether a point in this view lands on the tab pill.
+    func dockContains(_ local: CGPoint) -> Bool {
+        guard let dockView else { return false }
+        return dock.contains(dockView.convert(local, from: self))
     }
 }
 
@@ -1591,11 +1655,16 @@ private final class NotchCanvas: NSView {
         CATransaction.setDisableActions(true)
         if kind == .replace {
             contentVisibility.opacity = 1
+            // Zenith fork: an open page swapping for another morphs (ZenithMorph);
+            // a closed strip's reading, and Reduce Motion, keep the plain fade.
+            let morphs = ZenithMorph.morphs(height: contentSize.height)
+                && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
             let transition = CATransition()
             transition.type = .fade
-            transition.duration = 0.18
+            transition.duration = morphs ? ZenithMorph.layerCrossfade : 0.18 // Zenith fork
             transition.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             host.layer?.add(transition, forKey: kCATransition)
+            if morphs { beginMorph() } // Zenith fork
         } else {
             // Mask only the content pixels. A black overlay would obscure the
             // glass; alphaValue would remove the hosting view's AX/hit frame.
@@ -1724,6 +1793,39 @@ private final class NotchCanvas: NSView {
         }
         // A filter left in place, even at no radius, keeps an extra render pass.
         DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self] in
+            guard let self, self.arrivalGeneration == generation else { return }
+            self.endArrival()
+        }
+    }
+
+    /// Zenith fork: the page swap's blur and dip, on the arrival's own blur
+    /// filter and transform key, so whatever ends an arrival ends it too.
+    /// Both peak early, as the crossfade passes its middle, and settle sharp.
+    private func beginMorph() {
+        guard let layer = host.layer else { return }
+        arrivalGeneration += 1
+        let generation = arrivalGeneration
+        let begin = layer.convertTime(CACurrentMediaTime(), from: nil)
+        let keyTimes = [0, NSNumber(value: ZenithMorph.layerPeak), 1]
+        if let filter = Self.makeArrivalBlur() {
+            layer.filters = [filter]
+            let blur = CAKeyframeAnimation(keyPath: "filters.\(Self.arrivalBlurName).inputRadius")
+            blur.values = [0, ZenithMorph.blur, 0]
+            blur.keyTimes = keyTimes
+            blur.timingFunctions = ZenithMorph.layerTimings
+            blur.beginTime = begin
+            blur.duration = ZenithMorph.layerDuration
+            layer.add(blur, forKey: Self.arrivalBlurKey)
+        }
+        let dip = CAKeyframeAnimation(keyPath: "transform")
+        dip.values = [CATransform3DIdentity, arrivalTransform(scale: ZenithMorph.scale, in: layer), CATransform3DIdentity]
+            .map { NSValue(caTransform3D: $0) }
+        dip.keyTimes = keyTimes
+        dip.timingFunctions = ZenithMorph.layerTimings
+        dip.beginTime = begin
+        dip.duration = ZenithMorph.layerDuration
+        layer.add(dip, forKey: Self.arrivalScaleKey)
+        DispatchQueue.main.asyncAfter(deadline: .now() + ZenithMorph.layerDuration) { [weak self] in
             guard let self, self.arrivalGeneration == generation else { return }
             self.endArrival()
         }

@@ -135,13 +135,16 @@ enum NotchPresentationRefreshContract {
         var outlineEnabled = false
         var outlineColor = NSColor.white
         var transitions: [NotchContentTransition] = []
+        var dock = false // Zenith fork
         func setOutline(enabled: Bool, color: NSColor) {
             outlineEnabled = enabled
             outlineColor = color
         }
         func present(size: CGSize, geometry: NotchGeometry, animated: Bool,
                      transitionContent: NotchContentTransition, quickAccess: NotchQuickAccessConfiguration?,
-                     revealFromHidden: Bool, usesGlass: Bool, steady: Bool) {
+                     revealFromHidden: Bool, usesGlass: Bool, steady: Bool,
+                     dock: Bool = false) { // Zenith fork: the tab pill
+            self.dock = dock
             transitions.append(transitionContent)
             self.steady = steady
             departsContent = transitionContent == .depart && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion

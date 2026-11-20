@@ -909,6 +909,82 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     Skrip AppleScript sudah dicompile (`osacompile`, tanpa dijalankan) dan escape-nya diuji bolak-balik
     lewat skrip `return "…"`. Alur AX WhatsApp ditulis dari pola AX umum, belum dicoba di jendela
     WhatsApp Catalyst. Perlu dicek di Mac: lihat laporan "cek manual" di PR.
+- **Island ala Droppy, fase 1A fondasi (branch `feat/island-droppy-foundation`):** bentuk, transisi,
+  navigasi dan warna bersama untuk island terbuka, dari rekaman referensi di `reference/` (dianalisis
+  per frame; pola dan kualitas gerak saja, tanpa aset atau nama). Strip tertutup, live activity,
+  `NotchAgents*` dan `NotchNotifications*` tidak disentuh (dikerjakan agent lain).
+  - **Ukuran yang diukur** (rekaman 2x, piksel dibagi 2): bahu cekung island terbuka hampir
+    lingkaran ~27 pt (lebar dan tinggi sama); sudut bawah cocok dengan sudut 34 pt (galat RMS < 1 pt
+    untuk lingkaran maupun sudut kontinu); tinggi island tertutup 32 pt (cocok dengan notch, jadi
+    skala 2x benar); pil tab 24 pt × ~110 pt, berjarak ~15 pt di bawah island; tab terpilih kapsul
+    abu-abu; transisi halaman: blur puncak ~70–100 ms, tajam lagi ~270 ms.
+  - **Siluet** (`UI/Notch/ZenithIslandShape.swift`, `ZenithIslandSilhouette`; kait di `NotchShape.path`
+    dan batas `NotchLayout.surfaceRadius`): sudut bawah island terbuka 34 pt (dulu 28), sudut kontinu
+    (smoothing 0,6 ala Figma: busur di tengah, ujung melandai ke sisi). Bahu tetap selebar 14 pt
+    (lebar island, jendela dan semua halaman tidak berubah) tapi turun 22 pt sebagai busur elips, jadi
+    di tiap baris melebar lebih jauh dari lingkaran 14 pt yang lama. Smoothing sengaja 0 untuk bahu:
+    smoothing membuat kurva menempel ke tepi layar dan bahunya justru tampak lebih tipis. Profil baru
+    masuk perlahan sesuai tinggi (smoothstep 72 → 128 pt), jadi strip tertutup (≤ 72 pt) tergambar
+    persis seperti upstream (dicek test titik per titik) dan resize terlihat sebagai morph. Tiap path
+    punya elemen yang sama di semua ukuran (3 kurva per sudut) karena Core Animation menginterpolasi
+    keyframe path per elemen. Bahu 27 pt penuh seperti referensi butuh island lebih lebar dan inset
+    halaman lebih besar (`horizontalInset`), jadi belum diambil; perlu keputusan Faiz.
+  - **Radius konsentris** (`ZenithIslandKit.swift`): `ZenithIsland.innerRadius(depth:outer:minimum:)`
+    = luar − inset (minimal 4). `islandRadius` 34, `pageInset` 14 (halaman 28 pt dari tepi jendela,
+    14 di antaranya bahu), `cardRadius` 20, `nestedRadius(padding:)` untuk isi kartu. Kartu besar
+    upstream (`ZenithIsland.radius` ≥ 16) sekarang 20, bukan 16.
+  - **Bento jadi kartu lembut:** API `ZenithBentoGrid` sama, rendernya berubah: tiap sel di atas
+    `zenithIslandSoftCard()` (isi putih 6%, garis 8%, garis 40% dengan Increase Contrast, radius 20),
+    berjarak `spacing` (celah tempat garis pemisah dulu), jadi tinggi halaman tetap. Wash hover
+    `ZenithBentoButtonStyle` default radius 17 (konsentris, 3 pt di dalam kartu). Yang ikut berubah:
+    System dan Agents. `ZenithBentoDivider` dan `NotchRail(dividers:)` tetap garis.
+  - **Morph + blur** (`UI/Notch/ZenithIslandMorph.swift`): SwiftUI `AnyTransition.zenithMorph`
+    (keluar blur 0 → 10, opacity 1 → 0, skala 1 → 0,97; masuk kebalikannya), `zenithMorph(reduceMotion:)`
+    (fade biasa), `ZenithMorph.animation` (spring response 0,38, damping 0,86) dan modifier
+    `.zenithMorph(on: value)`. Ganti halaman island sendiri terjadi di window host (upstream mematikan
+    animasi SwiftUI di sana dan crossfade layer hosting dengan `CATransition` sambil siluet ber-spring
+    lewat keyframe CA), jadi kait di `NotchCanvas.transitionContent(.replace)` menambah blur 0 → 10 → 0
+    dan skala 1 → 0,97 → 1 (puncak di 30%, total 0,34 dtk, crossfade 0,22 dtk) memakai filter blur dan
+    key transform milik animasi arrival, sehingga apa pun yang mengakhiri arrival ikut mengakhirinya.
+    Hanya untuk halaman terbuka (`ZenithMorph.morphs(height:)`); bacaan strip tertutup tetap fade 0,18.
+    Reduce Motion: crossfade biasa (dulu langsung tanpa transisi). Berlaku untuk semua `.replace`:
+    ganti modul, galeri ↔ halaman, detail ↔ halaman, mode Timer.
+  - **Pil tab** (`UI/Notch/ZenithIslandDock.swift`): kapsul hitam 26 pt, 12 pt di bawah island (di
+    bawah tombol mengambang bawah kalau ada), isi Home (`.controls`), Files (`.files`, badge jumlah item
+    Shelf, mono, angka beranimasi), halaman yang sedang tampil kalau bukan keduanya (glyph modul dalam
+    warnanya), dan galeri section. Tab terpilih kapsul abu-abu yang meluncur (`matchedGeometryEffect`)
+    dengan glyph berwarna modul. Muncul saat island hampir terbuka (setengah `arrivalTime`) dengan spring
+    morph + blur, tiap tab menyusul 40 ms; pergi dengan easeIn 0,16 dtk saat island menutup; ikut
+    spring tinggi island saat halaman berganti. Di-host di jendela island sendiri: hosting view kedua di
+    `NotchQuickAccessContainer` (stage sama dengan tombol mengambang), jadi ikut display island,
+    Mission Control, relokasi, dan klik di pil adalah klik di island (tidak menutupnya). `hitTest`
+    hanya menerima klik di pil (frame dilaporkan SwiftUI); koridor hover dari tepi bawah island sampai
+    bawah pil supaya pointer yang menyeberang celah tidak keluar dari island. Jendela memesan ruang di
+    bawah hanya selama pil tampil; `quickAccessBottomInset` geometri ikut, jadi island paling tinggi
+    tetap menyisakan ruang. Tombol galeri di baris atas island dihapus (`sectionsButtonInRow = false`,
+    termasuk preview di Settings); galeri tetap lewat pil, menu klik kanan, ⌘K dan shortcut ⌥⌘ modul.
+    Tooltip memakai judul modul + shortcut (tanpa teks baru).
+  - **Warna modul** (`UI/Notch/ZenithIslandPalette.swift`): Faiz memilih island berwarna. Tiap
+    `NotchModule` punya warna identitas (`zenithTint`, tingkat 400): Home biru #60A5FA, Mixer indigo
+    #818CF8, Music rose #FB7185, Clipboard violet #A78BFA, Captures cyan #22D3EE, Files teal #2DD4BF,
+    System hijau #4ADE80, Tools fuchsia #E879F9, Calendar merah #F87171, Notifications amber #FBBF24,
+    Timer ungu #C084FC, Camera emerald #34D399, Downloads sky #38BDF8, Scratchpad kuning #FACC15,
+    Agents oranye #FB923C, Watch lime #A3E635, WakaTime pink #F472B6, Vercel #E5E7EB, GitHub #CBD5E1.
+    Warna identitas tidak pernah berarti status. `ZenithIslandGlyphTile` (Kit): glyph berwarna di tile
+    lembut (isi 18%, garis 24%; 30%/55% dengan Increase Contrast), tanpa tint = monokrom. Galeri dan
+    ikon Home belum dipindah ke tile ini (fase berikutnya).
+  - **File baru yang ikut `TEST_SOURCES`:** `ZenithIslandShape.swift`, `ZenithIslandMorph.swift`,
+    `ZenithIslandPalette.swift`. `ZenithIslandDock.swift` hanya app (butuh `NotchService`).
+  - **Test:** baru `ZenithIslandTests` (suite notch): strip tertutup identik dengan rumus upstream,
+    profil terbuka (bahu lebih dalam, sudut lebih besar, body dan bounding box sama, sudut halaman tetap
+    di dalam), elemen path sama di semua ukuran dan tanpa NaN, radius konsentris, jangkauan morph,
+    palet unik. Diubah: `NotchTests` "an open island keeps its full corner radius" sekarang
+    membandingkan dengan `ZenithIslandSilhouette.openCornerRadius` (dulu 28), tujuannya sama.
+  - **Belum diverifikasi visual:** app UI tidak dijalankan. Perlu dicek di Mac (120 Hz): bentuk bahu
+    dan sudut bawah saat buka/tutup dan ganti halaman, blur saat ganti halaman (terutama Music ↔ Home
+    dan galeri), pil tab (posisi, jarak 12 pt, muncul/hilang, geser pilihan, badge Shelf, klik tidak
+    menutup island, hover menyeberang celah, bersama tombol mengambang bawah), kartu System/Agents,
+    Reduce Motion, Increase Contrast, island kaca (pil tetap hitam).
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.

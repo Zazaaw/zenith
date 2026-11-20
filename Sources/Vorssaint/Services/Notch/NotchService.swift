@@ -894,7 +894,7 @@ final class NotchService: ObservableObject {
     /// buttons are not read for it, so a preview reads them as it draws.
     func previewGeometry(for module: NotchModule) -> NotchGeometry {
         var result = geometry.page(module, controls: NotchSupport.controls(),
-                                   sectionsButton: !NotchQuickAccessConfiguration.current().actions.contains(.explore))
+                                   sectionsButton: false) // Zenith fork: the tab pill holds the sections
         if result.pageTop == .wrapsCamera { result.pageTrailingControls = playerToggleCount }
         return result
     }
@@ -2890,7 +2890,9 @@ final class NotchService: ObservableObject {
                                     || UserDefaults.standard.bool(forKey: DefaultsKey.notchHideUntilHover)
                                     && UserDefaults.standard.bool(forKey: DefaultsKey.notchOpenOnHover)),
                             usesGlass: !fullscreenCompact && usesGlassSurface,
-                            steady: fitsInPlace)
+                            steady: fitsInPlace,
+                            // Zenith fork: the tab pill below the open island.
+                            dock: expanded && captureControls == nil && !showingCommandBar && !modules.isEmpty)
         // The selector lives in a separate full-screen panel. A floating
         // capsule may sit below the display edge, so publish the island's
         // actual bottom inset as the controls collapse or reopen.
@@ -3779,9 +3781,13 @@ final class NotchService: ObservableObject {
         if sameMenuBar { next.compactSideRoom = geometry.compactSideRoom }
         let access = NotchQuickAccessConfiguration.current()
         next.quickAccessBottomInset = access.hasBottom ? NotchQuickAccessLayout.gutter : 0
+        // Zenith fork: the tab pill keeps its room below the tallest island,
+        // and holds the way to the sections the row used to.
+        next.quickAccessBottomInset = max(next.quickAccessBottomInset,
+                                          ZenithIslandDockLayout.reservation(belowQuickAccess: access.hasBottom))
         // Read with the floating buttons rather than on every layout pass,
         // which would decode them each time.
-        next.sectionsButtonInRow = !access.actions.contains(.explore)
+        next.sectionsButtonInRow = false // Zenith fork: upstream's `!access.actions.contains(.explore)`
         if next != geometry { menuSpaceGeneration += 1; geometry = next }
         // A new camera or bar, such as a notch fit being adjusted, measures the
         // menus again at once rather than leaving the wings off until the timer.
@@ -3789,7 +3795,8 @@ final class NotchService: ObservableObject {
         if windowHost == nil {
             windowHost = NotchWindowHost(content: AnyView(NotchView(service: self)), geometry: geometry, size: surfaceSize,
                                         background: { AnyView(NotchWindowBackground(presentation: $0)) },
-                                        quickAccess: { AnyView(NotchQuickAccessView(service: self, motion: $0, backdrop: $1)) })
+                                        quickAccess: { AnyView(NotchQuickAccessView(service: self, motion: $0, backdrop: $1)) },
+                                        dock: { AnyView(ZenithIslandDockView(service: self, motion: $0)) }) // Zenith fork
             windowHost?.missionControlDidRestore = { [weak self] in self?.missionControlDidRestore() }
             windowHost?.setHoverHandler { [weak self] in self?.hover($0) }
             panel?.title = FeatureStrings.notch(L10n.shared.language).title

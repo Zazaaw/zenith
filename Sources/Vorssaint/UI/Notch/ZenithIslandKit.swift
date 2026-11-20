@@ -18,7 +18,13 @@ import SwiftUI
 //
 // The test executable compiles this file (build.sh, TEST_SOURCES) because
 // several island declarations copied into it draw with these pieces: keep it
-// free of anything outside SwiftUI, AppKit and `ZenithTokens`/`ZenithIsland`.
+// free of anything outside SwiftUI, AppKit, `ZenithTokens`/`ZenithIsland` and
+// `ZenithIslandSilhouette`.
+//
+// The third pass (after a reference island studied frame by frame) adds
+// concentric radii, bento cells as soft rounded cards, the morph every
+// content swap goes through, and tinted glyph tiles for the modules' own
+// colours.
 
 // MARK: - Values
 
@@ -51,6 +57,101 @@ extension ZenithIsland {
     /// A data colour (a language, a provider) pulled toward grey, so it still
     /// tells one series from another without shouting over the page.
     static func muted(_ color: Color) -> Color { color.opacity(0.72) }
+}
+
+// MARK: - Concentric radii
+
+extension ZenithIsland {
+    /// The open island's bottom corner, which everything inside it nests in.
+    static var islandRadius: CGFloat { ZenithIslandSilhouette.openCornerRadius }
+    /// From the island's side to its page: the page sits 28 points in from
+    /// the window's edge (`NotchLayout.horizontalInset`), 14 of them the shoulder.
+    static let pageInset: CGFloat = 14
+
+    /// The radius of a surface `depth` points inside one of radius `outer`,
+    /// so the two curves run parallel: outer less the inset, never below
+    /// `minimum`, where a curve would pinch to a point.
+    static func innerRadius(depth: CGFloat, outer: CGFloat = islandRadius,
+                            minimum: CGFloat = ZenithRadius.small) -> CGFloat {
+        guard depth.isFinite, outer.isFinite else { return minimum }
+        return max(minimum, outer - max(0, depth))
+    }
+
+    /// A card laid on a page, concentric with the island's corner (20).
+    static var cardRadius: CGFloat { innerRadius(depth: pageInset) }
+
+    /// Something inside such a card, `padding` in from its edge.
+    static func nestedRadius(padding: CGFloat) -> CGFloat { innerRadius(depth: padding, outer: cardRadius) }
+
+    /// A card's soft fill and its hairline on the island's black.
+    static let cardFill = Color.white.opacity(0.06)
+    static let cardStroke = Color.white.opacity(0.08)
+}
+
+/// A soft rounded card: a faint white fill under a fainter hairline, its
+/// corner concentric with the island's. Increase Contrast draws the outline.
+struct ZenithIslandSoftCard: ViewModifier {
+    var cornerRadius: CGFloat = ZenithIsland.cardRadius
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        content
+            .background(ZenithIsland.cardFill, in: shape)
+            .overlay {
+                shape.strokeBorder(contrast == .increased ? ZenithIsland.contrastHairline : ZenithIsland.cardStroke,
+                                   lineWidth: 0.75)
+                    .allowsHitTesting(false)
+            }
+    }
+}
+
+extension View {
+    /// Lays this view on a soft rounded card concentric with the island.
+    func zenithIslandSoftCard(cornerRadius: CGFloat = ZenithIsland.cardRadius) -> some View {
+        modifier(ZenithIslandSoftCard(cornerRadius: cornerRadius))
+    }
+}
+
+// MARK: - Glyph tiles
+
+extension ZenithIsland {
+    /// A tinted tile's fill and outline: soft enough that the glyph in its
+    /// full colour carries it, firmer with Increase Contrast.
+    static func tileFill(_ tint: Color, contrast: ColorSchemeContrast = .standard) -> Color {
+        tint.opacity(contrast == .increased ? 0.3 : 0.18)
+    }
+
+    static func tileStroke(_ tint: Color, contrast: ColorSchemeContrast = .standard) -> Color {
+        tint.opacity(contrast == .increased ? 0.55 : 0.24)
+    }
+}
+
+/// A module's glyph on a rounded tile. With a `tint` (a module's identity
+/// colour, `NotchModule.zenithTint`) the glyph wears it over a soft tile of
+/// the same hue; without one it is the monochrome glyph on a faint white tile.
+struct ZenithIslandGlyphTile: View {
+    let symbol: String
+    var tint: Color? = nil
+    var size: CGFloat = 28
+    /// The tile's corner; by default a continuous corner about a third of its side.
+    var cornerRadius: CGFloat? = nil
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius ?? (size * 0.3).rounded(), style: .continuous)
+        Image(systemName: symbol)
+            .font(.system(size: (size * 0.46).rounded(), weight: .semibold))
+            .foregroundStyle(tint ?? ZenithIsland.primary)
+            .frame(width: size, height: size)
+            .background(tint.map { ZenithIsland.tileFill($0, contrast: contrast) } ?? ZenithIsland.cardFill, in: shape)
+            .overlay {
+                shape.strokeBorder(tint.map { ZenithIsland.tileStroke($0, contrast: contrast) }
+                                       ?? ZenithIsland.outline(contrast), lineWidth: 0.75)
+                    .allowsHitTesting(false)
+            }
+            .accessibilityHidden(true)
+    }
 }
 
 // MARK: - Bento
@@ -186,10 +287,10 @@ extension ZenithBentoCell where Trailing == ZenithBentoMeta {
     }
 }
 
-/// Rows of cells with hairlines between them: across between rows, down
-/// between the cells of a row. `spacing` is the gap a line sits in, so a
-/// page that spaced cards apart keeps its measurements. Cells in a row share
-/// its height; `rowHeight` fixes it where the page has measured one.
+/// Rows of cells, each on a soft rounded card concentric with the island,
+/// `spacing` apart. The gaps are the ones the second pass's hairlines sat
+/// in, so a page keeps its measurements. Cells in a row share its height;
+/// `rowHeight` fixes it where the page has measured one.
 struct ZenithBentoGrid<Item: Identifiable, Cell: View>: View {
     let rows: [[Item]]
     var spacing: CGFloat = 1
@@ -197,9 +298,8 @@ struct ZenithBentoGrid<Item: Identifiable, Cell: View>: View {
     @ViewBuilder let cell: (Item) -> Cell
 
     var body: some View {
-        VStack(spacing: 0) {
-            ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
-                if index > 0 { ZenithBentoDivider(.horizontal, gap: spacing) }
+        VStack(spacing: spacing) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
                 rowView(row)
             }
         }
@@ -207,10 +307,11 @@ struct ZenithBentoGrid<Item: Identifiable, Cell: View>: View {
 
     @ViewBuilder private func rowView(_ row: [Item]) -> some View {
         let height = rowHeight?(row) ?? nil
-        HStack(spacing: 0) {
-            ForEach(Array(row.enumerated()), id: \.element.id) { index, item in
-                if index > 0 { ZenithBentoDivider(.vertical, gap: spacing) }
-                cell(item).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        HStack(spacing: spacing) {
+            ForEach(row) { item in
+                cell(item)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .zenithIslandSoftCard()
             }
         }
         .frame(height: height)
@@ -221,7 +322,8 @@ struct ZenithBentoGrid<Item: Identifiable, Cell: View>: View {
 /// A cell that opens something: a faint wash under the pointer, never a lift
 /// or a scale. The content draws itself.
 struct ZenithBentoButtonStyle: ButtonStyle {
-    var cornerRadius: CGFloat = ZenithRadius.card
+    /// Concentric with a soft card, 3 points inside it (17).
+    var cornerRadius: CGFloat = ZenithIsland.nestedRadius(padding: 3)
 
     func makeBody(configuration: Configuration) -> some View {
         ZenithBentoButton(label: configuration.label, isPressed: configuration.isPressed, cornerRadius: cornerRadius)

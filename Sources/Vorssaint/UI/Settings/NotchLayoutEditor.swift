@@ -151,7 +151,7 @@ struct NotchLayoutEditor: View {
                                      menuBarHeight: floats ? notch.geometry.menuBarHeight : 24,
                                      customWidth: width, customHeight: height, silhouette: floats ? .capsule : .notch)
         return geometry.page(.controls, controls: NotchSupport.controls(),
-                             sectionsButton: !configuration.actions.contains(.explore))
+                             sectionsButton: false) // Zenith fork: the tab pill holds the sections
     }
     private var actualHeight: CGFloat {
         if layout == .custom { return previewGeometry.customHeight }

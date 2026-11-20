@@ -134,6 +134,7 @@ struct MetricsTests {
                 NotchVolumeKeyTests.run(suite)
                 NotchSettingsTabRowTests.run(suite)
                 NotchPresentationProbeArgumentTests.run(suite)
+                ZenithIslandTests.run(suite) // Zenith fork
             }),
             ("switcher-model", { SwitcherModelFeatureTests.run(suite) }),
             ("agents", { NotchAgentTests.run(suite) }),
