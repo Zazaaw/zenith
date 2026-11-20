@@ -158,6 +158,13 @@ final class ZenithNoticeCenter: ObservableObject {
                              glyph: .file(url), accessory: .checkmark, action: .reveal(url)))
     }
 
+    /// Zenith fork: a prayer's time came (SkyService): "Waktunya Dzuhur", the
+    /// time and the method below, its sun or moon in the Sky section's colour.
+    func prayerTime(key: String, title: String, subtitle: String, symbol: String) {
+        enqueue(ZenithNotice(kind: .prayer, key: ZenithNoticeKey.prayer(key), title: title, subtitle: subtitle,
+                             glyph: .symbol(symbol, .tint(NotchModule.sky))))
+    }
+
     private static func reading(_ power: PowerReading) -> ZenithBatteryReading {
         ZenithBatteryReading(percent: power.chargePercent, external: power.externalConnected, charging: power.isCharging)
     }
@@ -585,6 +592,7 @@ final class ZenithNoticeCenter: ObservableObject {
             case .download: return !defaults.bool(forKey: DefaultsKey.notchNoticeDownload)
             case .card: return !CardImportOptions.isEnabled(in: defaults)
             case .export: return !ExportTrackerSupport.isEnabled(in: defaults)
+            case .prayer: return !NotchSupport.modules(in: defaults).contains(.sky)
             }
         }
     }

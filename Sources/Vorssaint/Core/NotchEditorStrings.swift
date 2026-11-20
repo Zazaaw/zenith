@@ -99,6 +99,7 @@ struct NotchEditorStrings {
         case .vercel: return ZenithStrings.vercelSummary(L10n.shared.language)
         case .github: return ZenithStrings.gitHubSummary(L10n.shared.language)
         case .cardImport: return ZenithStrings.cardImport(L10n.shared.language).summary
+        case .sky: return ZenithStrings.sky(L10n.shared.language).summary
         }
     }
 }

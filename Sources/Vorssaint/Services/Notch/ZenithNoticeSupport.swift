@@ -16,13 +16,15 @@ struct ZenithNotice: Equatable {
         case batteryCritical, batteryLow, charging, unplugged, chargeLimit, audio, download, export
         /// A camera card mounted, offering to import it (CardImportService).
         case card
+        /// A prayer's time came (SkyService).
+        case prayer
 
         /// Higher shows first and may cut a lower one short.
         var priority: Int {
             switch self {
             case .batteryCritical: return 5
             case .batteryLow: return 4
-            case .audio, .card: return 3
+            case .audio, .card, .prayer: return 3
             case .charging, .unplugged: return 2
             case .chargeLimit, .download, .export: return 1
             }
@@ -110,6 +112,8 @@ struct ZenithNoticeQueue {
         case .batteryCritical, .batteryLow: return 90
         case .audio, .charging, .unplugged: return 12
         case .chargeLimit, .download, .card, .export: return 30
+        // A prayer's time is worth waiting a little for, not long.
+        case .prayer: return 120
         }
     }
 
@@ -188,6 +192,7 @@ enum ZenithNoticeKey {
     static func card(_ volume: String) -> String { "card." + volume }
     /// An export: one file, or a batch of images by its folder.
     static func export(_ id: String) -> String { "export." + id }
+    static func prayer(_ name: String) -> String { "prayer." + name }
 }
 
 // MARK: - Battery
@@ -369,6 +374,7 @@ enum ZenithNoticeTiming {
         case .batteryCritical, .batteryLow: return 6
         // A card asks for a decision, so it stays a little longer.
         case .card: return 7
+        case .prayer: return 6
         default: return 4
         }
     }

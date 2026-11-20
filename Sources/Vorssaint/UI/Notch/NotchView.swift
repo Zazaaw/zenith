@@ -245,6 +245,8 @@ struct NotchView: View {
             case .command: CommandCapsuleStrip(service: service, size: size) // Zenith fork
             case .cardImport: CardImportCapsuleStrip(service: service, size: size) // Zenith fork
             case .export: ExportCapsuleStrip(service: service, size: size) // Zenith fork
+            case .prayer: SkyCapsuleStrip(service: service, kind: .prayer, size: size) // Zenith fork
+            case .golden: SkyCapsuleStrip(service: service, kind: .golden, size: size) // Zenith fork
             }
         } else {
             // Handed down, the wings stay as they were drawn while a strip
@@ -263,6 +265,8 @@ struct NotchView: View {
             case .command: CommandActivityStrip(service: service, displayGeometry: geometry) // Zenith fork
             case .cardImport: CardImportActivityStrip(service: service, displayGeometry: geometry) // Zenith fork
             case .export: ExportActivityStrip(service: service, displayGeometry: geometry) // Zenith fork
+            case .prayer: SkyActivityStrip(service: service, kind: .prayer, displayGeometry: geometry) // Zenith fork
+            case .golden: SkyActivityStrip(service: service, kind: .golden, displayGeometry: geometry) // Zenith fork
             }
         }
     }
@@ -508,6 +512,7 @@ struct NotchView: View {
             // One shelf tile and its vertical insets; the actions are in the top row.
             size.height = max(size.height, 88 + 8)
         case .cardImport: size.height = max(size.height, CardImportPageMetrics.minimumHeight) // Zenith fork
+        case .sky: size.height = max(size.height, SkyPageMetrics.minimumHeight) // Zenith fork
         default: break
         }
         return size
@@ -617,6 +622,7 @@ struct NotchView: View {
             case .vercel: NotchVercelView(size: pageSize)
             case .github: NotchGitHubView(size: pageSize)
             case .cardImport: CardImportPage(size: pageSize) // Zenith fork
+            case .sky: SkyPage(size: pageSize) // Zenith fork
             }
         }
     }
@@ -836,6 +842,7 @@ extension NotchModule: PanelOrderItem {
         case .vercel: return "Vercel"
         case .github: return "GitHub"
         case .cardImport: return ZenithStrings.cardImport(language).title // Zenith fork
+        case .sky: return ZenithStrings.sky(language).title // Zenith fork
         }
     }
 }

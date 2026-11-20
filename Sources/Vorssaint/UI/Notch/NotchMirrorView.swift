@@ -54,6 +54,8 @@ struct NotchMirrorView: View {
             case .command: CommandCapsuleStrip(service: service, size: size, displayGeometry: geometry) // Zenith fork
             case .cardImport: CardImportCapsuleStrip(service: service, size: size, displayGeometry: geometry) // Zenith fork
             case .export: ExportCapsuleStrip(service: service, size: size, displayGeometry: geometry) // Zenith fork
+            case .prayer: SkyCapsuleStrip(service: service, kind: .prayer, size: size, displayGeometry: geometry) // Zenith fork
+            case .golden: SkyCapsuleStrip(service: service, kind: .golden, size: size, displayGeometry: geometry) // Zenith fork
             }
         } else {
             switch activity {
@@ -68,6 +70,8 @@ struct NotchMirrorView: View {
             case .command: CommandActivityStrip(service: service, displayGeometry: mirror.strip) // Zenith fork
             case .cardImport: CardImportActivityStrip(service: service, displayGeometry: mirror.strip) // Zenith fork
             case .export: ExportActivityStrip(service: service, displayGeometry: mirror.strip) // Zenith fork
+            case .prayer: SkyActivityStrip(service: service, kind: .prayer, displayGeometry: mirror.strip) // Zenith fork
+            case .golden: SkyActivityStrip(service: service, kind: .golden, displayGeometry: mirror.strip) // Zenith fork
             }
         }
     }

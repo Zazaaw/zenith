@@ -598,6 +598,17 @@ final class NotchService: ObservableObject {
         ExportTrackerService.shared.activity != nil
     }
 
+    /// Zenith fork: the next prayer within its lead, or its time just come;
+    /// the evening's golden hour, coming or under way. SkyService publishes
+    /// them only while the Sky section shows and their switches are on.
+    var hasPrayerActivity: Bool {
+        SkyService.shared.prayerActivity != nil
+    }
+
+    var hasGoldenActivity: Bool {
+        SkyService.shared.goldenActivity != nil
+    }
+
     var compactActivity: NotchCompactActivity? {
         // A new song waiting for its notice is not drawn yet.
         activitySelection.current(available: awaitsTrackNotice ? compactActivities.filter { $0 != .music } : compactActivities)
@@ -609,7 +620,8 @@ final class NotchService: ObservableObject {
                                       music: hasMusicActivity, keepAwake: hasKeepAwakeActivity,
                                       vercel: hasVercelActivity, command: hasCommandActivity,
                                       cardImport: hasCardImportActivity, // Zenith fork
-                                      export: hasExportActivity) // Zenith fork
+                                      export: hasExportActivity, // Zenith fork
+                                      prayer: hasPrayerActivity, golden: hasGoldenActivity) // Zenith fork
     }
 
     var showsCompactActivityPicker: Bool {
@@ -740,6 +752,8 @@ final class NotchService: ObservableObject {
         case .command: return geometry.compactWatchGeometry(wing: commandStripWing(in: geometry)) // Zenith fork
         case .cardImport: return geometry.compactWatchGeometry(wing: cardImportStripWing(in: geometry)) // Zenith fork
         case .export: return geometry.compactWatchGeometry(wing: exportStripWing(in: geometry)) // Zenith fork
+        case .prayer: return geometry.compactWatchGeometry(wing: prayerStripWing(in: geometry)) // Zenith fork
+        case .golden: return geometry.compactWatchGeometry(wing: goldenStripWing(in: geometry)) // Zenith fork
         default: return geometry
         }
     }
@@ -776,6 +790,16 @@ final class NotchService: ObservableObject {
     /// Zenith fork: the wider of the mark and its size or the word and the file's name.
     private func exportStripWing(in geometry: NotchGeometry) -> CGFloat {
         ExportTrackerLayout.stripWing(ExportTrackerService.shared.activity, language: L10n.shared.language, in: geometry)
+    }
+
+    /// Zenith fork: the wider of the glyph and its countdown or the prayer's words.
+    private func prayerStripWing(in geometry: NotchGeometry) -> CGFloat {
+        SkyStripLayout.stripWing(.prayer, language: L10n.shared.language, in: geometry)
+    }
+
+    /// Zenith fork: the wider of the sun and its clock or the golden hour's words.
+    private func goldenStripWing(in geometry: NotchGeometry) -> CGFloat {
+        SkyStripLayout.stripWing(.golden, language: L10n.shared.language, in: geometry)
     }
 
     private func keepAwakeStripWing(in geometry: NotchGeometry) -> CGFloat {
@@ -1205,6 +1229,10 @@ final class NotchService: ObservableObject {
         case .export: // Zenith fork
             return ExportTrackerLayout.capsuleSurface(ExportTrackerService.shared.activity, language: language,
                                                       geometry: geometry)
+        case .prayer: // Zenith fork
+            return SkyStripLayout.capsuleSurface(.prayer, language: language, geometry: geometry)
+        case .golden: // Zenith fork
+            return SkyStripLayout.capsuleSurface(.golden, language: language, geometry: geometry)
         }
     }
 
@@ -1290,6 +1318,7 @@ final class NotchService: ObservableObject {
         CommandActivityService.shared.syncWithPreferences() // Zenith fork: watches only while its switch is on.
         CardImportService.shared.syncWithPreferences() // Zenith fork: watches volumes while detection is on.
         ExportTrackerService.shared.syncWithPreferences() // Zenith fork: watches only while its switch is on.
+        SkyService.shared.syncWithPreferences() // Zenith fork: one timer for the next prayer and golden hour.
         ClaudeHooksService.shared.syncWithPreferences() // Zenith fork: Claude Code's hooks, while Claude shows.
         followsPointer = displayPreference == .pointer || displayPreference == .all
         showsOnAllDisplays = displayPreference == .all
@@ -1393,6 +1422,7 @@ final class NotchService: ObservableObject {
         CommandActivityService.shared.stop() // Zenith fork
         CardImportService.shared.stop() // Zenith fork: an import under way finishes on its own
         ExportTrackerService.shared.stop() // Zenith fork
+        SkyService.shared.stop() // Zenith fork
         let cancelCapture = captureControlsCancel
         endCaptureControls()
         cancelCapture?()
@@ -4565,6 +4595,16 @@ final class NotchService: ObservableObject {
         // Zenith fork: an export showing, ending or another joining it. Its
         // growing size is the strip's alone and never lays the island out.
         ExportTrackerService.shared.$activity.removeDuplicates().dropFirst().receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.syncMenuSpaceMonitoring()
+                self?.objectWillChange.send()
+                self?.refreshPresentation()
+            }.store(in: &subscriptions)
+        // Zenith fork: a prayer's lead starting, its time coming or its arrival
+        // ending, and the golden hour's; the countdown is the strip's alone.
+        SkyService.shared.$prayerActivity.removeDuplicates().dropFirst().map { _ in () }
+            .merge(with: SkyService.shared.$goldenActivity.removeDuplicates().dropFirst().map { _ in () })
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.syncMenuSpaceMonitoring()
                 self?.objectWillChange.send()

@@ -568,6 +568,9 @@ struct NotchSettings: View {
         case .cardImport:
             // Zenith fork: card detection, the base folder and the import defaults.
             CardImportSettings()
+        case .sky:
+            // Zenith fork: the method, the place, the reminders and the golden hour.
+            SkySettingsView()
         case .mixer, .system, .tools:
             EmptyView()
         }
@@ -912,7 +915,7 @@ struct NotchSettings: View {
         case .scratchpad: return .scratchpad
         case .agents: return .notchAgents
         case .watch: return .notchWatch
-        case .wakatime, .vercel, .github, .cardImport: return nil // Zenith fork: cardImport
+        case .wakatime, .vercel, .github, .cardImport, .sky: return nil // Zenith fork: cardImport, sky
         }
     }
 

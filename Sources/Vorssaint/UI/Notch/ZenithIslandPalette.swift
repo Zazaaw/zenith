@@ -42,6 +42,7 @@ enum ZenithIslandPalette {
         case .vercel: return 0xE5E7EB        // neutral
         case .github: return 0xCBD5E1        // slate
         case .cardImport: return 0xFDBA74    // peach, the warm 300 step: the wheel's 400s are all taken
+        case .sky: return 0xA5B4FC           // dusk indigo, the 300 step
         }
     }
 

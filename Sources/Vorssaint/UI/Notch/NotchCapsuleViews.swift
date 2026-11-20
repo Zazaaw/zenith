@@ -429,7 +429,7 @@ private struct NotchCapsuleCompanionMark: View {
                     NotchCapsuleCalendarStrip.clockMark(countdown, now: context.date)
                 }
             }
-        case .timer, .keepAwake, .watch, .vercel, .command, .cardImport, .export: // Zenith fork: vercel, command, card import and export never pair
+        case .timer, .keepAwake, .watch, .vercel, .command, .cardImport, .export, .prayer, .golden: // Zenith fork: vercel, command, card import and export never pair
             EmptyView()
         }
     }
