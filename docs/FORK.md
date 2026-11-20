@@ -1546,6 +1546,105 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     (segmented, ✕/✓, ganti sisi), drag shortcut (tetangga bergeser, drop, drag sampai keluar island, rail dua baris
     di Spacious), ikon terbang dari strip, hapus, island melebar/meninggi saat shortcut bertambah, tooltip redup,
     Reduce Motion, VoiceOver.
+- **Jadwal sholat dan golden hour (branch `feat/prayer-golden-hour`):** waktu sholat dan jendela golden/blue
+  hour untuk fotografer, dihitung offline di Mac (tanpa jaringan, tanpa kode pihak ketiga). Kode di
+  `Services/Sky/SolarSupport.swift` (murni: posisi matahari), `Services/Sky/PrayerTimesSupport.swift` (murni:
+  metode, jadwal, penyesuaian, next/current, activity, format, kota, setelan, `SkyDay`),
+  `Services/Sky/SkyService.swift` (satu timer, notice, suara), dan `UI/Notch/Sky*` (`SkyStrip`, `SkyPage`,
+  `SkyWidgets`, `SkySettingsView`). Teks di `ZenithStrings.sky` (15 bahasa). Test di `Tests/SkyTests.swift`
+  (suite `sky`); kedua file Support ikut `TEST_SOURCES`.
+  - **Algoritma matahari:** rumus presisi rendah Meeus (bab 25 dan 28) seperti di kalkulator NOAA: bujur tampak,
+    kemiringan ekliptika, deklinasi, equation of time, lalu hour angle dan elevasi geometris (pusat matahari, tanpa
+    refraksi). Terbit/terbenam memakai −0,833°. Waktu untuk ketinggian tertentu dicari iteratif (6 langkah, deklinasi
+    dihitung ulang di waktu itu), jadi tidak bergantung pada zona waktu. Semua fungsi mengembalikan nil atau nilai
+    terhingga, tidak pernah NaN.
+  - **Metode sholat** (deskripsi PrayTimes.org, ditulis sendiri): Kemenag RI (default; Subuh 20°, Isya 18°, ihtiyat
+    +2 menit di semua waktu, Terbit −2, Dzuhur transit + 2), MWL 18/17, Umm al-Qura 18,5 / Isya Maghrib + 90 menit
+    (tanpa aturan 120 menit Ramadan), Egyptian 19,5/17,5, ISNA 15/15, MUIS/JAKIM 20/18. Ashar Syafi'i (bayangan 1) atau
+    Hanafi (2). Imsak = Subuh − 10 menit. Dibulatkan ke menit terdekat (cocok dengan tabel Kemenag), lalu
+    penyesuaian per waktu −10…+10 menit; Imsak ikut Subuh yang sudah disesuaikan lalu ditambah penyesuaiannya sendiri.
+  - **Lintang tinggi:** aturan angle-based (Subuh/Isya tidak lebih jauh dari matahari daripada sudut/60 malam, seperti
+    Aladhan). Kalau matahari tidak terbit/terbenam (siang/malam kutub), dipakai lintang ±64° di meridian yang sama dan
+    jadwal ditandai `approximated` (halaman menulis "Approximated for a high latitude").
+  - **Validasi** (`SkyTests`): Kemenag Jakarta Pusat (6°10' LS, 106°49' BT) 1 Jan, 21 Jan, 15 Jun, 1 Nov, 20 Nov 2026
+    dan Medan (3°35' LU, 98°39' BT) 1 Mar, 21 Mar, 15 Jul, 21 Nov 2026 dari jadwalsholat.org (parameter Kemenag):
+    semua waktu ±1 menit; di koordinat brief (−6,2, 106,8 dan 3,59, 98,67) ±2 menit. Jadwal imsakiyah resmi Kemenag
+    DKI 19 Feb 2026 (Imsak 04:31, Subuh 04:41, Maghrib 18:18, Isya 19:28) ±1. Metode lain vs Aladhan (Jakarta 20 Nov
+    2026, Hanafi, Makkah Umm al-Qura 21 Jun, London dan Oslo MWL angle-based 21 Jun) ±1 menit (praktis sama persis).
+    Matahari: deklinasi dan EoT contoh Meeus 25.a/28.a, elevasi contoh NREL SPA, civil twilight/terbit/transit/terbenam
+    vs sunrise-sunset.org ±60 dtk (selisih nyata ≤ 10 dtk).
+  - **Lokasi:** sumber `automatic` (posisi kira-kira milik cuaca), `city` (24 kota besar Indonesia, bawaan), atau
+    `custom` (lat/long). `WeatherService` dapat kait kecil: `place` (posisi bulat terakhir, dipublish), `locateForSky`
+    (minta fix hanya kalau izin sudah granted dan fix lebih tua dari batas; tidak pernah prompt, tidak membaca cuaca;
+    `finishLocating` tidak fetch cuaca kalau tidak ada tampilan cuaca), dan pemberitahuan ke `SkyService` saat
+    posisi/izin berubah. Izin hanya diminta lewat tombol "Allow Location" di halaman/widget/Settings. Nama tempat
+    hanya tampil untuk kota pilihan, tidak pernah untuk posisi otomatis atau ketikan. Zona waktu: zona sistem.
+    Teks izin lokasi (`NSLocation*UsageDescription`, Info.plist + 13 lproj) sekarang menyebut jadwal sholat dan golden
+    hour, dan bahwa jadwal dihitung di Mac.
+  - **Nama:** setelan "Prayer names" Automatic / Indonesian / App language. Automatic = Indonesia kalau bahasa
+    pilihan Mac `id` atau region `ID` (app tidak punya bahasa Indonesia). Nama Indonesia: Imsak, Subuh, Terbit, Dzuhur,
+    Ashar, Maghrib, Isya; "Waktunya Dzuhur". Nama per bahasa app ada di `ZenithStrings.sky.prayerNames` (Turki Sabah/Öğle/
+    İkindi/Akşam/Yatsı, Cina 晨礼/晌礼/晡礼/昏礼/宵礼, dst.).
+  - **Modul baru `NotchModule.sky`** (⌥⌘Y, glyph `sun.horizon`, warna dusk indigo `#A5B4FC`, tingkat 300; golden
+    `#FCD34D`, blue `#93C5FD`, warna identitas, bukan status). Selalu tersedia. Halaman (min. 196 pt): segmented
+    "Prayer times | Golden hour" (`notchSkyPage`, tidak ikut backup), meta kota · metode di kanan.
+    - *Prayer times:* hero (tile glyph, "NEXT · ASHAR", countdown mono 24 pt `-1:12:04` dengan `numericText` di slot
+      selebar `-00:00:00`, jamnya), lalu tujuh tile lembut (Imsak…Isya): yang berikut di-tint indigo, yang sedang
+      berlangsung titik kecil, yang lewat lebih redup.
+    - *Golden hour:* hero ke golden hour berikut (atau sisa waktu kalau sedang berlangsung) dengan rentang mono dan arc
+      kecil lintasan matahari hari ini (garis horizon, pita golden −4…+6 amber tipis, penanda dengan elevasi saat ini
+      `12.4°`), lalu sampai empat tile jendela berikut (golden/blue, pagi/sore/besok, `17:21–18:04`).
+    - Tanpa tempat: tile + pesan + "Allow Location" / "Open Settings" / "Choose a City" (membuka opsi Sky).
+    - Ganti tab dan state lewat `.zenithMorph(on:)`; Reduce Motion: fade. Halaman di-render ulang tiap menit
+      (`TimelineView(.everyMinute)`), countdown tiap detik hanya di teksnya.
+  - **Live activity:** `NotchCompactActivity.prayer` dan `.golden`, urutan otomatis setelah `export`, sebelum
+    `calendar`; ikut picker, tidak pernah berpasangan, wing geometri Watch, klik membuka halaman Sky.
+    - *Prayer:* mulai N menit sebelum waktu (10/15/30, default 10, `notchSkyPrayerLead`) untuk sholat yang diingatkan.
+      Kiri: glyph matahari/bulan per waktu (indigo) + countdown mono `-12:04`; kanan: nama sholat. Saat waktunya: kiri jam
+      `11:40`, kanan "Waktunya Dzuhur" selama 2 menit (glyph bump spring sekali). Saklar `notchSkyPrayerActivity`.
+    - *Golden:* 30 menit sebelum golden hour sore: kiri `☀ 17:21` amber, kanan "Golden hour in 32 min"; selama
+      golden hour: jam berakhir dan "Golden hour · 18 min left". Saklar `notchSkyGoldenActivity` (default nyala). Golden
+      hour pagi hanya di halaman.
+    - Lebar wing dihitung dari bacaan terlebar semua fase activity itu, jadi island tidak relayout saat countdown
+      berdetak atau saat waktunya tiba. `SkyService` hanya mempublish perubahan fase; detik hanya di `TimelineView`
+      yang membungkus teks. Strip menahan state terakhir saat pergi (`NotchStripHold`).
+  - **Notice dan suara:** `ZenithNotice.Kind.prayer` (prioritas 3, tampil 6 dtk, menunggu island sampai 120 dtk), judul
+    "Waktunya Dzuhur", subjudul `11:40 · Medan · Kemenag RI` (kota hanya kalau dipilih), glyph tint Sky. Sekali per waktu,
+    dan tidak diumumkan kalau ketahuan > 90 dtk setelah waktunya (Mac baru bangun). Suara opsional
+    (`notchSkyPrayerSound`, default mati): system sound `Purr` 0,6, atau file audio sendiri lewat "Choose Sound File…"
+    yang disalin ke `<container>/Sky/prayer-sound.<ext>` (maks. 50 MB; nama di `notchSkyPrayerSoundFile`, tidak ikut
+    backup). Tidak ada rekaman adzan yang dibundel.
+  - **Service:** jalan kalau island jalan dan modul Sky tampil. Satu `Timer` ke momen berikut yang mengubah activity
+    (awal lead, waktu, akhir 2 menit, lead/awal/akhir golden hour, tengah malam), plus `NSCalendarDayChanged`, ganti
+    zona waktu/jam, dan bangun dari tidur. Lock screen, home, dan Settings membaca `currentDay()` tanpa menyalakan apa pun.
+  - **Lock screen:** item "Next prayer" (`☾ Ashar 15:04  1h 04m`) dan "Golden hour" (`17:21–18:04` / sisa menit),
+    default mati (`notchLockScreenPrayer`, `notchLockScreenGolden`), paling akhir di baris jadi paling dulu dibuang
+    `ViewThatFits`. Terminal readout: baris `sholat`/`prayer` (`ashar 15:04 · in 1h 04m`, `isya now`) dan `golden`
+    (`17:21–18:04 · in 32m`, `now · 18m left`), keduanya mati dan masuk di akhir urutan.
+  - **Home:** widget `prayer` (berikut, jam, countdown) dan `golden` (rentang, countdown, arc mini) untuk Customize Home;
+    modulnya Sky. Tanpa tempat: prompt lokasi ringkas, tidak pernah meminta sendiri.
+  - **Settings:** opsi section Sky di Dynamic Island → Content: Calculation (metode + sudutnya, Ashar, nama, penyesuaian
+    per waktu dengan stepper), Location (Approximate/City/Custom, catatan izin + tombol, daftar kota, field lat/long),
+    Reminders (saklar per sholat termasuk Imsak, countdown di island + lead, suara + pilih file/putar/kembali ke
+    system sound), Golden hour (saklar activity). Semua `ZenithSwitchRow`/`ZenithSwitchStyle`, judul digambar sendiri,
+    tanpa `SettingsRow`. Kunci `notchSky*` terdaftar di `registeredDefaults` (ikut backup), kecuali file suara dan tab.
+  - Edit di file upstream bertanda `// Zenith fork`: `NotchSupport` (case modul dan activity, simbol, shortcut,
+    ketersediaan, judul, urutan activity, tinggi konten), `NotchService` (activity, wing, kapsul, langganan, sync/stop),
+    `NotchView`/`NotchMirrorView` (strip, halaman, judul, tinggi minimum), `NotchTimerStrip`/`NotchCapsuleViews` (tidak
+    berpasangan), `NotchContentEditor`, `NotchEditorStrings`, `NotchSettings` (opsi), `NotchLockScreenSupport`/`Service`/
+    `View` (item), `NotchLockScreenTerminalView`, `NotchLockScreenTerminalSettings`, `Defaults`, `build.sh`
+    (`TEST_SOURCES`), `Tests/MetricsTests.swift`. File fork yang ikut berubah: `WeatherService`, `ZenithNoticeSupport`/
+    `Service`, `ZenithIslandPalette`, `ZenithAppIcon`, `ZenithHomeLayoutSupport`/`View`/`Widgets`,
+    `NotchLockScreenItems`, `NotchLockScreenTerminal`/`Support`.
+  - **Test yang disesuaikan (tujuan sama):** `NotchTests` (daftar modul + `.sky`; galeri 21 modul jadi ≤ 4 posisi baris, dulu ≤ 3), `NotchMusicVisibilityTests` (double
+    `hasPrayerActivity`/`hasGoldenActivity` + wing), `LockScreenTerminalTests` (urutan default dan perpindahan dengan dua
+    baris baru di akhir), `NotchLockScreenTests` (semua item), `HomeLayoutTests` (widget golden memakai amber sendiri,
+    bukan warna halaman Sky).
+  - Desimal elevasi dan sudut metode memakai locale eksplisit (`String(format:locale:)`, test repository).
+  - **Belum diverifikasi visual:** app UI tidak dijalankan. Perlu dicek di Mac (120 Hz): strip prayer/golden (wing,
+    roll digit, ganti ke "Waktunya …", bump glyph), kapsul, halaman Sky (tile, hero, arc dan penanda, morph antar tab,
+    island kaca), widget home, item lock screen dan baris readout, notice kapsul + suara (system dan file sendiri),
+    prompt izin lokasi dari tombol Sky, Settings (stepper, field lat/long), Reduce Motion, Increase Contrast.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
