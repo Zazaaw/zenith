@@ -103,6 +103,11 @@ struct NotchAgentsSettingsControls: View {
                                       provider: claude ? .claude : codex ? .codex : opencode ? .opencode : .copilot)
                     .padding(.leading, settingsRowTextInset)
             }
+            // Zenith fork: Claude Code's hooks, for live steps and "needs you".
+            if claude {
+                Divider()
+                NotchAgentsClaudeHooksSettings()
+            }
 
             Divider()
             Text(text.alerts).font(.subheadline.weight(.medium))

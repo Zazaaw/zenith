@@ -102,6 +102,9 @@ enum NotchMusicVisibilityTests {
         func timerStripWing(for companion: NotchCompactActivity?, in geometry: NotchGeometry) -> CGFloat { timerStripWing }
         var agentStripWing: CGFloat = 58
         func agentStripWing(in geometry: NotchGeometry) -> CGFloat { agentStripWing }
+        func agentStripGeometry(in geometry: NotchGeometry) -> NotchGeometry { // Zenith fork
+            geometry.compactAgentGeometry(wing: agentStripWing(in: geometry))
+        }
         var watchStripWing: CGFloat = 60
         func watchStripWing(in geometry: NotchGeometry) -> CGFloat { watchStripWing }
         var calendarStripWing: CGFloat = 120

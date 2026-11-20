@@ -16,14 +16,24 @@ struct NotchAgentStrip: View {
     @AppStorage(DefaultsKey.notchAgentsReadout) private var readout = NotchAgentReadout.elapsed.rawValue
     @AppStorage(DefaultsKey.notchAgentsLimitDisplay) private var display = NotchAgentLimitDisplay.remaining.rawValue
     @AppStorage(DefaultsKey.notchAgentsLimitFocus) private var focus = NotchAgentLimitFocus.mostUsed.rawValue
+    @ObservedObject private var hooks = ClaudeHooksService.shared // Zenith fork
+    @State private var heldHook: ClaudeHooksSupport.Strip? // Zenith fork
 
     private func working(_ live: [AgentLiveSession]) -> [AgentProvider] {
         AgentProvider.allCases.filter { provider in live.contains { $0.provider == provider } }
     }
 
     var body: some View {
+        // Zenith fork: a Claude Code session that needs the person, or has
+        // just finished, takes the strip; held while the island lets it go.
+        if let hook = hooks.strip ?? (usage.snapshot.live.isEmpty ? heldHook : nil) {
+            NotchAgentsLiveStrip(service: service, strip: hook, displayGeometry: displayGeometry)
+                .onChange(of: hooks.strip) { _, next in if let next { heldHook = next } }
+                .onAppear { heldHook = hooks.strip ?? heldHook }
+        } else {
         // The last agent stopping empties the list before the strip has left.
         NotchStripHold(usage.snapshot.live, shows: !usage.snapshot.live.isEmpty) { strip(live: $0) }
+        } // Zenith fork
     }
 
     @ViewBuilder private func strip(live: [AgentLiveSession]) -> some View {
