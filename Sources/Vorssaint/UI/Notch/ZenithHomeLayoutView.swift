@@ -191,7 +191,7 @@ struct ZenithHomeCardRow: View {
             .allowsHitTesting(!editing)
             .overlay {
                 if landing {
-                    ZenithAppIcon(symbol: widget.symbol, hex: widget.hex, size: 40)
+                    ZenithIslandIcon(symbol: widget.symbol, hex: widget.hex, size: 40)
                         .matchedGeometryEffect(id: widget, in: namespace)
                         .transition(.asymmetric(insertion: .identity,
                                                 removal: .opacity.combined(with: .scale(scale: 1.15))))
@@ -279,7 +279,7 @@ private struct ZenithHomeWiggle: ViewModifier {
 // MARK: - The edit strip
 
 /// The bottom of the home page in edit mode: the widgets that can be added,
-/// as colourful icons over their names (a check on those already in the
+/// as tinted icons over their names (a check on those already in the
 /// row), scrolling sideways, then Cancel and Done.
 struct ZenithHomeEditStrip: View {
     @ObservedObject var service: NotchService
@@ -328,10 +328,10 @@ struct ZenithHomeEditStrip: View {
             VStack(spacing: 4) {
                 ZStack {
                     if added {
-                        ZenithAppIcon(symbol: widget.symbol, hex: widget.hex, size: 34, lifted: false)
+                        ZenithIslandIcon(symbol: widget.symbol, hex: widget.hex, size: 34, lifted: false)
                     } else {
                         // The icon that flies into the row when the widget joins it.
-                        ZenithAppIcon(symbol: widget.symbol, hex: widget.hex, size: 34, lifted: false)
+                        ZenithIslandIcon(symbol: widget.symbol, hex: widget.hex, size: 34, lifted: false)
                             .matchedGeometryEffect(id: widget, in: namespace)
                     }
                 }

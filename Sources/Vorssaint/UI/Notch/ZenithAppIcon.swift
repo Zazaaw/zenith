@@ -19,6 +19,37 @@ import SwiftUI
 //
 // The artwork is Zenith's own; only the idea of colourful icons in a dark
 // island comes from the reference.
+//
+// Faiz later found the glossy squircles too loud beside the calm island and
+// chose the soft tinted tiles (`ZenithIslandGlyphTile`) for every icon. The
+// island draws `ZenithIslandIcon`, which follows `ZenithIconStyle`; the
+// glossy icon stays here, one switch away.
+
+/// Which icons the island draws: the soft tinted tiles (false) or the glossy
+/// app icons (true). One switch for the shortcuts, the tools, the home
+/// widgets and the edit strip.
+enum ZenithIconStyle {
+    static let glossy = false
+}
+
+/// A shortcut's, tool's or widget's icon in the island, in the style
+/// `ZenithIconStyle` picks: its glyph on a soft tile of its colour, or the
+/// glossy app icon.
+struct ZenithIslandIcon: View {
+    let symbol: String
+    let hex: UInt32
+    var size: CGFloat = 34
+    /// The glossy icon's outer shadow; the tiles have none.
+    var lifted = true
+
+    var body: some View {
+        if ZenithIconStyle.glossy {
+            ZenithAppIcon(symbol: symbol, hex: hex, size: size, lifted: lifted)
+        } else {
+            ZenithIslandGlyphTile(symbol: symbol, tint: ZenithIslandPalette.color(hex: hex), size: size)
+        }
+    }
+}
 
 /// The colours an icon is drawn with, derived from its tint.
 struct ZenithAppIconPalette: Equatable {

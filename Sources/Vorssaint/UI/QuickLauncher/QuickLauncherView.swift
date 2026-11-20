@@ -264,8 +264,8 @@ struct QuickLauncherView: View {
                         .fill(iconBackground(item, isSelected: isSelected, isHovered: isHovered))
                         .frame(width: notchSize == nil ? 46 : 32, height: notchSize == nil ? 46 : 32)
                         .overlay {
-                            if notchSize != nil { // Zenith fork: a colourful app icon in the island
-                                ZenithAppIcon(symbol: icon(for: item),
+                            if notchSize != nil { // Zenith fork: a tinted icon in the island
+                                ZenithIslandIcon(symbol: icon(for: item),
                                               hex: item == .micMute && micMute.isMuted ? 0xEF4444 : item.zenithIconHex, size: 32)
                             } else {
                                 Image(systemName: icon(for: item))

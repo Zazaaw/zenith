@@ -437,14 +437,14 @@ struct NotchActionTile: View {
     var compactTitle: String?
     var active = false
     var accent: NotchTileAccent = .selection
-    /// Zenith fork: the colour of its app icon (`NotchControlItem.zenithIconHex`); nil keeps the plain glyph.
+    /// Zenith fork: the colour of its icon (`NotchControlItem.zenithIconHex`); nil keeps the plain glyph.
     var iconHex: UInt32? = nil
     let action: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         Button(action: action) {
             VStack(spacing: 6) {
-                glyph // Zenith fork: a colourful icon where the tile has a colour
+                glyph // Zenith fork: a tinted icon where the tile has a colour
                 label
                     .frame(maxWidth: .infinity)
                     .frame(height: 28, alignment: .top)
@@ -462,13 +462,14 @@ struct NotchActionTile: View {
         .help(title)
     }
 
-    // Zenith fork: with `iconHex` the glyph is a small colourful app icon; an
-    // active state adds its glowing dot (and a recording or a muted microphone
-    // turns the icon red), its symbol changing too. Without one, the plain glyph.
+    // Zenith fork: with `iconHex` the glyph sits on a soft tile of its colour
+    // (`ZenithIslandIcon`); an active state adds its glowing dot (and a
+    // recording or a muted microphone turns the tile red), its symbol changing
+    // too. Without one, the plain glyph.
     @ViewBuilder private var glyph: some View {
         let tint = accent == .selection ? ZenithIsland.accent : accent.fill
         if let iconHex {
-            ZenithAppIcon(symbol: symbol, hex: active && accent == .alert ? 0xEF4444 : iconHex, size: 34)
+            ZenithIslandIcon(symbol: symbol, hex: active && accent == .alert ? 0xEF4444 : iconHex, size: 34)
                 .contentTransition(.symbolEffect(.replace))
                 .overlay(alignment: .topTrailing) {
                     if active { ZenithStatusDot(color: tint, live: true, size: 6).offset(x: 5, y: -5) }
