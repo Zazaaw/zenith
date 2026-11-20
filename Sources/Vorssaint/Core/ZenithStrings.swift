@@ -2792,6 +2792,307 @@ extension ZenithStrings {
     }
 }
 
+// MARK: - Dev servers
+
+/// Zenith fork: dev servers (DevServersService): the island page, its home
+/// widget, the notice, the closed island's count and the section's options.
+struct ZenithDevServersStrings {
+    /// The page, its module, its widget and its live activity.
+    let title: String
+    /// What the section does, in Settings.
+    let summary: String
+    let empty: String
+    let emptyHint: String
+    let open: String
+    let copyURL: String
+    let copied: String
+    let kill: String
+    /// The kill button's second question.
+    let confirmKill: String
+    let stopping: String
+    /// Help on a Docker row, which has no Kill.
+    let dockerOwned: String
+    /// `%@` is the uptime, as in “Running for 12:03”.
+    let runningFor: String
+    /// The notice's subtitle.
+    let started: String
+    /// `%@` is a count, as in “3 running”.
+    let running: String
+    let detect: String
+    let detectCaption: String
+    let announce: String
+    let announceCaption: String
+    let indicator: String
+    let indicatorCaption: String
+    let extraPorts: String
+    let extraPortsPlaceholder: String
+    let extraNames: String
+    let extraNamesPlaceholder: String
+    let extrasCaption: String
+}
+
+extension ZenithStrings {
+    static func devServers(_ language: AppLanguage) -> ZenithDevServersStrings {
+        switch language {
+        case .enUS:
+            return .init(title: "Dev servers",
+                         summary: "Lists the dev servers running on this Mac, to open, copy or stop them.",
+                         empty: "No dev servers running",
+                         emptyHint: "Start one with next dev, vite or php artisan serve and it shows up here.",
+                         open: "Open", copyURL: "Copy URL", copied: "Copied", kill: "Kill", confirmKill: "Kill?",
+                         stopping: "Stopping…", dockerOwned: "Docker forwards this port. Stop the container in Docker.",
+                         runningFor: "Running for %@", started: "New dev server", running: "%@ running",
+                         detect: "Detect dev servers",
+                         detectCaption: "Reads the same listening ports as Port Manager, only while the page or its widget is on screen unless an option below needs more.",
+                         announce: "Announce new servers",
+                         announceCaption: "A notice with Open when a dev server starts. A restart of the same project on the same port within 30 seconds stays quiet. Checks about every 10 seconds.",
+                         indicator: "Show the count in the closed island",
+                         indicatorCaption: "A green dot and how many servers are running, as a live activity.",
+                         extraPorts: "Also these ports", extraPortsPlaceholder: "8080, 9000-9002",
+                         extraNames: "Also these processes", extraNamesPlaceholder: "caddy, hugo",
+                         extrasCaption: "Listeners on these ports, or from processes with these names, count as dev servers too.")
+        case .ptBR:
+            return .init(title: "Servidores de dev",
+                         summary: "Lista os servidores de desenvolvimento em execução neste Mac, para abrir, copiar ou parar.",
+                         empty: "Nenhum servidor de dev em execução",
+                         emptyHint: "Inicie um com next dev, vite ou php artisan serve e ele aparece aqui.",
+                         open: "Abrir", copyURL: "Copiar URL", copied: "Copiado", kill: "Encerrar", confirmKill: "Encerrar?",
+                         stopping: "Parando…", dockerOwned: "O Docker encaminha esta porta. Pare o contêiner no Docker.",
+                         runningFor: "Em execução há %@", started: "Novo servidor de dev", running: "%@ em execução",
+                         detect: "Detectar servidores de dev",
+                         detectCaption: "Lê as mesmas portas em escuta do Gerenciador de portas, só enquanto a página ou o widget estiver na tela, a menos que uma opção abaixo precise de mais.",
+                         announce: "Avisar sobre novos servidores",
+                         announceCaption: "Um aviso com Abrir quando um servidor de dev inicia. Reiniciar o mesmo projeto na mesma porta em até 30 segundos não gera aviso. Verifica a cada 10 segundos, mais ou menos.",
+                         indicator: "Mostrar a contagem na ilha fechada",
+                         indicatorCaption: "Um ponto verde e quantos servidores estão rodando, como atividade ao vivo.",
+                         extraPorts: "Também estas portas", extraPortsPlaceholder: "8080, 9000-9002",
+                         extraNames: "Também estes processos", extraNamesPlaceholder: "caddy, hugo",
+                         extrasCaption: "Escutas nestas portas, ou de processos com estes nomes, também contam como servidores de dev.")
+        case .tr:
+            return .init(title: "Geliştirme sunucuları",
+                         summary: "Bu Mac’te çalışan geliştirme sunucularını listeler; açabilir, kopyalayabilir veya durdurabilirsiniz.",
+                         empty: "Çalışan geliştirme sunucusu yok",
+                         emptyHint: "next dev, vite veya php artisan serve ile birini başlatın, burada görünür.",
+                         open: "Aç", copyURL: "URL’yi kopyala", copied: "Kopyalandı", kill: "Sonlandır", confirmKill: "Sonlandır?",
+                         stopping: "Durduruluyor…", dockerOwned: "Bu bağlantı noktasını Docker yönlendiriyor. Konteyneri Docker’dan durdurun.",
+                         runningFor: "%@ süredir çalışıyor", started: "Yeni geliştirme sunucusu", running: "%@ çalışıyor",
+                         detect: "Geliştirme sunucularını algıla",
+                         detectCaption: "Port Yöneticisi ile aynı dinlenen bağlantı noktalarını okur; aşağıdaki bir seçenek daha fazlasını gerektirmedikçe yalnızca sayfa veya widget’ı ekrandayken.",
+                         announce: "Yeni sunucuları duyur",
+                         announceCaption: "Bir geliştirme sunucusu başladığında Aç düğmeli bir bildirim. Aynı projenin aynı bağlantı noktasında 30 saniye içinde yeniden başlaması sessiz kalır. Yaklaşık 10 saniyede bir kontrol eder.",
+                         indicator: "Kapalı adada sayıyı göster",
+                         indicatorCaption: "Canlı etkinlik olarak yeşil bir nokta ve kaç sunucunun çalıştığı.",
+                         extraPorts: "Ayrıca bu bağlantı noktaları", extraPortsPlaceholder: "8080, 9000-9002",
+                         extraNames: "Ayrıca bu işlemler", extraNamesPlaceholder: "caddy, hugo",
+                         extrasCaption: "Bu bağlantı noktalarındaki veya bu adlara sahip işlemlerden gelen dinleyiciler de geliştirme sunucusu sayılır.")
+        case .ru:
+            return .init(title: "Dev-серверы",
+                         summary: "Показывает dev-серверы, запущенные на этом Mac, чтобы открыть, скопировать или остановить их.",
+                         empty: "Нет запущенных dev-серверов",
+                         emptyHint: "Запустите next dev, vite или php artisan serve, и сервер появится здесь.",
+                         open: "Открыть", copyURL: "Скопировать URL", copied: "Скопировано", kill: "Завершить", confirmKill: "Завершить?",
+                         stopping: "Останавливается…", dockerOwned: "Этот порт пробрасывает Docker. Остановите контейнер в Docker.",
+                         runningFor: "Работает %@", started: "Новый dev-сервер", running: "Запущено: %@",
+                         detect: "Находить dev-серверы",
+                         detectCaption: "Читает те же прослушиваемые порты, что и Менеджер портов, только пока страница или её виджет на экране, если параметр ниже не требует большего.",
+                         announce: "Сообщать о новых серверах",
+                         announceCaption: "Уведомление с кнопкой «Открыть», когда запускается dev-сервер. Перезапуск того же проекта на том же порту в течение 30 секунд проходит без уведомления. Проверка примерно раз в 10 секунд.",
+                         indicator: "Показывать число в закрытом острове",
+                         indicatorCaption: "Зелёная точка и число запущенных серверов как живая активность.",
+                         extraPorts: "Также эти порты", extraPortsPlaceholder: "8080, 9000-9002",
+                         extraNames: "Также эти процессы", extraNamesPlaceholder: "caddy, hugo",
+                         extrasCaption: "Слушатели на этих портах или процессы с такими именами тоже считаются dev-серверами.")
+        case .es:
+            return .init(title: "Servidores de desarrollo",
+                         summary: "Muestra los servidores de desarrollo que se ejecutan en este Mac para abrirlos, copiarlos o detenerlos.",
+                         empty: "No hay servidores de desarrollo en ejecución",
+                         emptyHint: "Inicia uno con next dev, vite o php artisan serve y aparecerá aquí.",
+                         open: "Abrir", copyURL: "Copiar URL", copied: "Copiado", kill: "Terminar", confirmKill: "¿Terminar?",
+                         stopping: "Deteniendo…", dockerOwned: "Docker reenvía este puerto. Detén el contenedor en Docker.",
+                         runningFor: "En ejecución desde hace %@", started: "Nuevo servidor de desarrollo", running: "%@ en ejecución",
+                         detect: "Detectar servidores de desarrollo",
+                         detectCaption: "Lee los mismos puertos en escucha que el Gestor de puertos, solo mientras la página o su widget están en pantalla, salvo que una opción de abajo necesite más.",
+                         announce: "Avisar de servidores nuevos",
+                         announceCaption: "Un aviso con Abrir cuando se inicia un servidor de desarrollo. Reiniciar el mismo proyecto en el mismo puerto en menos de 30 segundos no avisa. Comprueba cada 10 segundos aproximadamente.",
+                         indicator: "Mostrar el número en la isla cerrada",
+                         indicatorCaption: "Un punto verde y cuántos servidores se ejecutan, como actividad en vivo.",
+                         extraPorts: "También estos puertos", extraPortsPlaceholder: "8080, 9000-9002",
+                         extraNames: "También estos procesos", extraNamesPlaceholder: "caddy, hugo",
+                         extrasCaption: "Lo que escuche en estos puertos, o los procesos con estos nombres, también cuentan como servidores de desarrollo.")
+        case .sk:
+            return .init(title: "Vývojové servery",
+                         summary: "Zobrazuje vývojové servery spustené na tomto Macu, aby ste ich mohli otvoriť, skopírovať alebo zastaviť.",
+                         empty: "Nebeží žiadny vývojový server",
+                         emptyHint: "Spustite ho cez next dev, vite alebo php artisan serve a zobrazí sa tu.",
+                         open: "Otvoriť", copyURL: "Kopírovať URL", copied: "Skopírované", kill: "Ukončiť", confirmKill: "Ukončiť?",
+                         stopping: "Zastavuje sa…", dockerOwned: "Tento port presmerúva Docker. Kontajner zastavte v Dockeri.",
+                         runningFor: "Beží %@", started: "Nový vývojový server", running: "Beží: %@",
+                         detect: "Rozpoznávať vývojové servery",
+                         detectCaption: "Číta tie isté počúvajúce porty ako Správca portov, len keď je stránka alebo jej widget na obrazovke, ak niektorá voľba nižšie nepotrebuje viac.",
+                         announce: "Oznamovať nové servery",
+                         announceCaption: "Oznámenie s tlačidlom Otvoriť, keď sa spustí vývojový server. Reštart toho istého projektu na tom istom porte do 30 sekúnd zostane potichu. Kontroluje približne každých 10 sekúnd.",
+                         indicator: "Zobraziť počet v zatvorenom ostrove",
+                         indicatorCaption: "Zelená bodka a počet bežiacich serverov ako živá aktivita.",
+                         extraPorts: "Aj tieto porty", extraPortsPlaceholder: "8080, 9000-9002",
+                         extraNames: "Aj tieto procesy", extraNamesPlaceholder: "caddy, hugo",
+                         extrasCaption: "Poslucháči na týchto portoch alebo procesy s týmito názvami sa tiež počítajú ako vývojové servery.")
+        case .de:
+            return .init(title: "Dev-Server",
+                         summary: "Zeigt die Dev-Server, die auf diesem Mac laufen, zum Öffnen, Kopieren oder Beenden.",
+                         empty: "Keine Dev-Server aktiv",
+                         emptyHint: "Starte einen mit next dev, vite oder php artisan serve, dann erscheint er hier.",
+                         open: "Öffnen", copyURL: "URL kopieren", copied: "Kopiert", kill: "Beenden", confirmKill: "Beenden?",
+                         stopping: "Wird beendet…", dockerOwned: "Docker leitet diesen Port weiter. Stoppe den Container in Docker.",
+                         runningFor: "Läuft seit %@", started: "Neuer Dev-Server", running: "%@ aktiv",
+                         detect: "Dev-Server erkennen",
+                         detectCaption: "Liest dieselben offenen Ports wie die Portverwaltung, nur solange die Seite oder ihr Widget sichtbar ist, außer eine Option unten braucht mehr.",
+                         announce: "Neue Server melden",
+                         announceCaption: "Eine Mitteilung mit Öffnen, wenn ein Dev-Server startet. Ein Neustart desselben Projekts auf demselben Port innerhalb von 30 Sekunden bleibt still. Prüft etwa alle 10 Sekunden.",
+                         indicator: "Anzahl in der geschlossenen Insel zeigen",
+                         indicatorCaption: "Ein grüner Punkt und die Zahl laufender Server als Live-Aktivität.",
+                         extraPorts: "Auch diese Ports", extraPortsPlaceholder: "8080, 9000-9002",
+                         extraNames: "Auch diese Prozesse", extraNamesPlaceholder: "caddy, hugo",
+                         extrasCaption: "Listener auf diesen Ports oder von Prozessen mit diesen Namen zählen ebenfalls als Dev-Server.")
+        case .fr:
+            return .init(title: "Serveurs de dev",
+                         summary: "Liste les serveurs de développement lancés sur ce Mac, pour les ouvrir, les copier ou les arrêter.",
+                         empty: "Aucun serveur de dev en cours",
+                         emptyHint: "Lancez-en un avec next dev, vite ou php artisan serve et il s’affichera ici.",
+                         open: "Ouvrir", copyURL: "Copier l’URL", copied: "Copiée", kill: "Arrêter", confirmKill: "Arrêter ?",
+                         stopping: "Arrêt…", dockerOwned: "Docker redirige ce port. Arrêtez le conteneur dans Docker.",
+                         runningFor: "Lancé depuis %@", started: "Nouveau serveur de dev", running: "%@ en cours",
+                         detect: "Détecter les serveurs de dev",
+                         detectCaption: "Lit les mêmes ports en écoute que le Gestionnaire de ports, seulement quand la page ou son widget est à l’écran, sauf si une option ci-dessous demande plus.",
+                         announce: "Annoncer les nouveaux serveurs",
+                         announceCaption: "Une notification avec Ouvrir quand un serveur de dev démarre. Un redémarrage du même projet sur le même port en moins de 30 secondes reste discret. Vérifie environ toutes les 10 secondes.",
+                         indicator: "Afficher le nombre dans l’île fermée",
+                         indicatorCaption: "Un point vert et le nombre de serveurs lancés, comme activité en direct.",
+                         extraPorts: "Aussi ces ports", extraPortsPlaceholder: "8080, 9000-9002",
+                         extraNames: "Aussi ces processus", extraNamesPlaceholder: "caddy, hugo",
+                         extrasCaption: "Ce qui écoute sur ces ports, ou les processus portant ces noms, compte aussi comme serveur de dev.")
+        case .it:
+            return .init(title: "Server di sviluppo",
+                         summary: "Elenca i server di sviluppo attivi su questo Mac, per aprirli, copiarli o fermarli.",
+                         empty: "Nessun server di sviluppo attivo",
+                         emptyHint: "Avviane uno con next dev, vite o php artisan serve e apparirà qui.",
+                         open: "Apri", copyURL: "Copia URL", copied: "Copiato", kill: "Termina", confirmKill: "Terminare?",
+                         stopping: "Arresto…", dockerOwned: "Docker inoltra questa porta. Ferma il container in Docker.",
+                         runningFor: "Attivo da %@", started: "Nuovo server di sviluppo", running: "%@ attivi",
+                         detect: "Rileva server di sviluppo",
+                         detectCaption: "Legge le stesse porte in ascolto di Gestione porte, solo mentre la pagina o il suo widget sono sullo schermo, a meno che un’opzione qui sotto non chieda di più.",
+                         announce: "Annuncia i nuovi server",
+                         announceCaption: "Un avviso con Apri quando parte un server di sviluppo. Un riavvio dello stesso progetto sulla stessa porta entro 30 secondi resta silenzioso. Controlla circa ogni 10 secondi.",
+                         indicator: "Mostra il numero nell’isola chiusa",
+                         indicatorCaption: "Un punto verde e quanti server sono attivi, come attività dal vivo.",
+                         extraPorts: "Anche queste porte", extraPortsPlaceholder: "8080, 9000-9002",
+                         extraNames: "Anche questi processi", extraNamesPlaceholder: "caddy, hugo",
+                         extrasCaption: "Ciò che ascolta su queste porte, o i processi con questi nomi, conta anche come server di sviluppo.")
+        case .ja:
+            return .init(title: "開発サーバ",
+                         summary: "この Mac で動いている開発サーバを一覧にし、開く、コピー、停止ができます。",
+                         empty: "実行中の開発サーバはありません",
+                         emptyHint: "next dev、vite、php artisan serve などで起動するとここに表示されます。",
+                         open: "開く", copyURL: "URL をコピー", copied: "コピーしました", kill: "終了", confirmKill: "終了しますか？",
+                         stopping: "停止中…", dockerOwned: "このポートは Docker が転送しています。コンテナは Docker で停止してください。",
+                         runningFor: "%@ 実行中", started: "新しい開発サーバ", running: "%@ 件実行中",
+                         detect: "開発サーバを検出",
+                         detectCaption: "ポートマネージャと同じ待ち受けポートを読み取ります。下のオプションが必要としない限り、ページかウィジェットが表示されている間だけです。",
+                         announce: "新しいサーバを通知",
+                         announceCaption: "開発サーバが起動すると「開く」付きの通知を表示します。同じプロジェクトが同じポートで 30 秒以内に再起動した場合は通知しません。約 10 秒ごとに確認します。",
+                         indicator: "閉じたアイランドに数を表示",
+                         indicatorCaption: "緑の点と実行中のサーバ数をライブアクティビティとして表示します。",
+                         extraPorts: "追加のポート", extraPortsPlaceholder: "8080, 9000-9002",
+                         extraNames: "追加のプロセス", extraNamesPlaceholder: "caddy, hugo",
+                         extrasCaption: "これらのポートで待ち受けるもの、またはこれらの名前のプロセスも開発サーバとして扱います。")
+        case .ko:
+            return .init(title: "개발 서버",
+                         summary: "이 Mac에서 실행 중인 개발 서버를 보여 주고 열기, 복사, 중지를 할 수 있습니다.",
+                         empty: "실행 중인 개발 서버 없음",
+                         emptyHint: "next dev, vite 또는 php artisan serve로 시작하면 여기에 나타납니다.",
+                         open: "열기", copyURL: "URL 복사", copied: "복사됨", kill: "종료", confirmKill: "종료할까요?",
+                         stopping: "중지 중…", dockerOwned: "이 포트는 Docker가 전달합니다. 컨테이너는 Docker에서 중지하세요.",
+                         runningFor: "%@ 동안 실행 중", started: "새 개발 서버", running: "%@개 실행 중",
+                         detect: "개발 서버 감지",
+                         detectCaption: "포트 관리자와 같은 수신 대기 포트를 읽습니다. 아래 옵션이 더 필요로 하지 않는 한 페이지나 위젯이 화면에 있을 때만 확인합니다.",
+                         announce: "새 서버 알리기",
+                         announceCaption: "개발 서버가 시작되면 열기 버튼이 있는 알림을 띄웁니다. 같은 프로젝트가 같은 포트에서 30초 안에 다시 시작되면 알리지 않습니다. 약 10초마다 확인합니다.",
+                         indicator: "닫힌 아일랜드에 개수 표시",
+                         indicatorCaption: "초록 점과 실행 중인 서버 수를 실시간 현황으로 표시합니다.",
+                         extraPorts: "추가 포트", extraPortsPlaceholder: "8080, 9000-9002",
+                         extraNames: "추가 프로세스", extraNamesPlaceholder: "caddy, hugo",
+                         extrasCaption: "이 포트에서 수신 대기하거나 이 이름을 가진 프로세스도 개발 서버로 봅니다.")
+        case .uk:
+            return .init(title: "Dev-сервери",
+                         summary: "Показує dev-сервери, запущені на цьому Mac, щоб відкрити, скопіювати або зупинити їх.",
+                         empty: "Немає запущених dev-серверів",
+                         emptyHint: "Запустіть next dev, vite або php artisan serve, і сервер з’явиться тут.",
+                         open: "Відкрити", copyURL: "Скопіювати URL", copied: "Скопійовано", kill: "Завершити", confirmKill: "Завершити?",
+                         stopping: "Зупиняється…", dockerOwned: "Цей порт перенаправляє Docker. Зупиніть контейнер у Docker.",
+                         runningFor: "Працює %@", started: "Новий dev-сервер", running: "Запущено: %@",
+                         detect: "Знаходити dev-сервери",
+                         detectCaption: "Читає ті самі порти, що слухаються, що й Менеджер портів, лише поки сторінка або її віджет на екрані, якщо параметр нижче не потребує більшого.",
+                         announce: "Повідомляти про нові сервери",
+                         announceCaption: "Сповіщення з кнопкою «Відкрити», коли запускається dev-сервер. Перезапуск того самого проєкту на тому самому порту протягом 30 секунд минає тихо. Перевіряє приблизно що 10 секунд.",
+                         indicator: "Показувати число в закритому острові",
+                         indicatorCaption: "Зелена крапка й кількість запущених серверів як жива активність.",
+                         extraPorts: "Також ці порти", extraPortsPlaceholder: "8080, 9000-9002",
+                         extraNames: "Також ці процеси", extraNamesPlaceholder: "caddy, hugo",
+                         extrasCaption: "Слухачі на цих портах або процеси з такими назвами теж вважаються dev-серверами.")
+        case .zhHans:
+            return .init(title: "开发服务器",
+                         summary: "列出这台 Mac 上正在运行的开发服务器，可以打开、复制或停止。",
+                         empty: "没有正在运行的开发服务器",
+                         emptyHint: "用 next dev、vite 或 php artisan serve 启动一个，它就会出现在这里。",
+                         open: "打开", copyURL: "复制 URL", copied: "已复制", kill: "结束", confirmKill: "要结束吗？",
+                         stopping: "正在停止…", dockerOwned: "此端口由 Docker 转发，请在 Docker 中停止容器。",
+                         runningFor: "已运行 %@", started: "新的开发服务器", running: "%@ 个正在运行",
+                         detect: "检测开发服务器",
+                         detectCaption: "读取与端口管理器相同的监听端口。除非下方选项需要，否则只在页面或其小组件显示时检查。",
+                         announce: "通知新的服务器",
+                         announceCaption: "开发服务器启动时显示带有“打开”的通知。同一项目在同一端口 30 秒内重启不会再通知。大约每 10 秒检查一次。",
+                         indicator: "在收起的灵动岛中显示数量",
+                         indicatorCaption: "以实时活动显示绿点和正在运行的服务器数量。",
+                         extraPorts: "额外端口", extraPortsPlaceholder: "8080, 9000-9002",
+                         extraNames: "额外进程", extraNamesPlaceholder: "caddy, hugo",
+                         extrasCaption: "在这些端口上监听的程序，或具有这些名称的进程，也视为开发服务器。")
+        case .zhTW:
+            return .init(title: "開發伺服器",
+                         summary: "列出這台 Mac 上正在執行的開發伺服器，可以打開、複製或停止。",
+                         empty: "沒有正在執行的開發伺服器",
+                         emptyHint: "用 next dev、vite 或 php artisan serve 啟動一個，它就會出現在這裡。",
+                         open: "打開", copyURL: "拷貝 URL", copied: "已拷貝", kill: "結束", confirmKill: "要結束嗎？",
+                         stopping: "正在停止…", dockerOwned: "此埠由 Docker 轉送，請在 Docker 中停止容器。",
+                         runningFor: "已執行 %@", started: "新的開發伺服器", running: "%@ 個正在執行",
+                         detect: "偵測開發伺服器",
+                         detectCaption: "讀取與埠管理器相同的監聽埠。除非下方選項需要，否則只在頁面或其小工具顯示時檢查。",
+                         announce: "通知新的伺服器",
+                         announceCaption: "開發伺服器啟動時顯示附有「打開」的通知。同一專案在同一埠 30 秒內重新啟動不會再通知。大約每 10 秒檢查一次。",
+                         indicator: "在收合的動態島中顯示數量",
+                         indicatorCaption: "以即時動態顯示綠點和正在執行的伺服器數量。",
+                         extraPorts: "額外的埠", extraPortsPlaceholder: "8080, 9000-9002",
+                         extraNames: "額外的程序", extraNamesPlaceholder: "caddy, hugo",
+                         extrasCaption: "在這些埠上監聽的程式，或具有這些名稱的程序，也視為開發伺服器。")
+        case .zhHK:
+            return .init(title: "開發伺服器",
+                         summary: "列出這部 Mac 上正在執行的開發伺服器，可以打開、拷貝或停止。",
+                         empty: "沒有正在執行的開發伺服器",
+                         emptyHint: "用 next dev、vite 或 php artisan serve 啟動一個，它就會出現在這裡。",
+                         open: "打開", copyURL: "拷貝 URL", copied: "已拷貝", kill: "結束", confirmKill: "要結束嗎？",
+                         stopping: "正在停止…", dockerOwned: "此埠由 Docker 轉送，請在 Docker 中停止容器。",
+                         runningFor: "已執行 %@", started: "新的開發伺服器", running: "%@ 個正在執行",
+                         detect: "偵測開發伺服器",
+                         detectCaption: "讀取與埠管理器相同的監聽埠。除非下方選項需要，否則只在頁面或其小工具顯示時檢查。",
+                         announce: "通知新的伺服器",
+                         announceCaption: "開發伺服器啟動時顯示附有「打開」的通知。同一專案在同一埠 30 秒內重新啟動不會再通知。大約每 10 秒檢查一次。",
+                         indicator: "在收合的動態島中顯示數量",
+                         indicatorCaption: "以即時動態顯示綠點和正在執行的伺服器數量。",
+                         extraPorts: "額外的埠", extraPortsPlaceholder: "8080, 9000-9002",
+                         extraNames: "額外的程序", extraNamesPlaceholder: "caddy, hugo",
+                         extrasCaption: "在這些埠上監聽的程式，或具有這些名稱的程序，也視為開發伺服器。")
+        }
+    }
+}
+
 /// Zenith fork: the export tracker (ExportTrackerSupport), its live activity,
 /// notice and Settings card.
 struct ZenithExportTrackerStrings {

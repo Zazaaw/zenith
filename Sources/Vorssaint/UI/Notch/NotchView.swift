@@ -245,6 +245,7 @@ struct NotchView: View {
             case .command: CommandCapsuleStrip(service: service, size: size) // Zenith fork
             case .cardImport: CardImportCapsuleStrip(service: service, size: size) // Zenith fork
             case .export: ExportCapsuleStrip(service: service, size: size) // Zenith fork
+            case .devServers: DevServersCapsuleStrip(service: service, size: size) // Zenith fork
             }
         } else {
             // Handed down, the wings stay as they were drawn while a strip
@@ -263,6 +264,7 @@ struct NotchView: View {
             case .command: CommandActivityStrip(service: service, displayGeometry: geometry) // Zenith fork
             case .cardImport: CardImportActivityStrip(service: service, displayGeometry: geometry) // Zenith fork
             case .export: ExportActivityStrip(service: service, displayGeometry: geometry) // Zenith fork
+            case .devServers: DevServersActivityStrip(service: service, displayGeometry: geometry) // Zenith fork
             }
         }
     }
@@ -617,6 +619,7 @@ struct NotchView: View {
             case .vercel: NotchVercelView(size: pageSize)
             case .github: NotchGitHubView(size: pageSize)
             case .cardImport: CardImportPage(size: pageSize) // Zenith fork
+            case .devServers: DevServersPage(size: pageSize) // Zenith fork
             }
         }
     }
@@ -836,6 +839,7 @@ extension NotchModule: PanelOrderItem {
         case .vercel: return "Vercel"
         case .github: return "GitHub"
         case .cardImport: return ZenithStrings.cardImport(language).title // Zenith fork
+        case .devServers: return ZenithStrings.devServers(language).title // Zenith fork
         }
     }
 }

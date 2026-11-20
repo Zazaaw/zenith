@@ -18,6 +18,8 @@ import Foundation
 /// A widget the home page's card row can hold.
 enum ZenithHomeWidget: String, CaseIterable, Identifiable {
     case nowPlaying, timer, clipboard, calendar, weather, system, agents, shelf
+    /// Up to three running dev servers (DevServersService).
+    case devServers
 
     var id: String { rawValue }
 
@@ -33,6 +35,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .system: return .system
         case .agents: return .agents
         case .shelf: return .files
+        case .devServers: return .devServers
         }
     }
 
@@ -47,6 +50,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .system: return "cpu.fill"
         case .agents: return "sparkles"
         case .shelf: return "tray.full.fill"
+        case .devServers: return "server.rack"
         }
     }
 
@@ -63,6 +67,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .system: return 0x4ADE80
         case .agents: return 0xFB923C
         case .shelf: return 0x2DD4BF
+        case .devServers: return 0x86EFAC
         }
     }
 
@@ -79,6 +84,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .system: return 196
         case .agents: return 196
         case .shelf: return 216
+        case .devServers: return 216
         }
     }
 
