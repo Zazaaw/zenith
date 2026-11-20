@@ -627,6 +627,90 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     (`ZDOTDIR` sementara, bukan `~/.zshrc` asli): escape JSON, status exit, baris berawalan spasi, waktu.
     Perlu dicek di Mac: putaran arc dan roll digit di 120 Hz, morph ✓/✗ dan bump, lebar wing saat lewat
     1 jam, kapsul, alert install, dan perilaku di beberapa tab terminal.
+- **Export tracker (branch `feat/export-tracker`):** render DaVinci Resolve, rekaman OBS, dan export
+  foto tampil di island tertutup selama filenya tumbuh, lalu ✓ dengan ukuran dan durasinya, plus notice
+  kapsul, suara, dan notifikasi kalau island tidak kelihatan. DaVinci Resolve versi gratis tidak punya
+  scripting dari luar, jadi deteksinya lewat folder yang diawasi, bukan lewat app. Kode di
+  `Services/ExportTracker/ExportTrackerSupport.swift` (murni: filter, state machine, produser, format),
+  `ExportWriterProbe.swift` (libproc: siapa yang membuka file dan untuk apa), `ExportTrackerService.swift`
+  (FSEvents, sampling, pengumuman), `UI/Notch/ExportTrackerViews.swift` (layout, mark, strip) dan
+  `UI/Notch/ExportTrackerSettings.swift`. Teks di `ZenithStrings.exportTracker` (15 bahasa). Test di
+  `Tests/ExportTrackerTests.swift` (suite `export-tracker`). Support dan probe ikut `TEST_SOURCES`.
+  - **Folder:** satu `FSEventStreamCreate` dengan event per file (`FileEvents`, `IgnoreSelf` supaya tulisan
+    Zenith sendiri tidak pernah datang, latensi 0,5 dtk), rekursif. Default `~/Movies` dan `~/Desktop` nyala,
+    `~/Downloads` ada di daftar tapi mati. Disimpan sebagai `~/…` (`notchExportFolders` + `notchExportFoldersOff`)
+    supaya backup terbaca di Mac lain; folder di drive lain tetap path absolut. Folder di dalam folder lain
+    tidak diawasi dua kali; drive yang belum dipasang dilewati dan diambil lagi saat `didMount`.
+  - **File yang dihitung:** mov, mp4, mxf, m4v, mkv (format lama OBS), braw, wav, aac, mp3, jpg/jpeg, png,
+    tif/tiff, heic, psd, pdf. Dilewati: nama berawalan `.` atau `~$`, akhiran sementara di mana pun di nama
+    (`.part`, `.partial`, `.tmp`, `.temp`, `.crdownload`, `.download`), folder tersembunyi, `CacheClip`,
+    `.gallery`, `ProxyMedia`, `OptimizedMedia`, dan isi paket/library (`.fcpbundle` (render files Final Cut
+    di ~/Movies), `.photoslibrary`, `.lrdata`, `.app`, dll.). File di bawah ukuran minimum (1/10/50/200 MB,
+    default 1) tidak tampil. Maksimal 200 file dilacak sekaligus.
+  - **State machine** (`ExportTrackerSupport.Tracker`, jam palsu di test): event folder mulai melacak file;
+    selama ada yang dilacak ukurannya dibaca `lstat` tiap ~1 dtk, tanpa itu tidak ada timer sama sekali.
+    File jadi "exporting" kalau tumbuh dan sudah melewati minimum (waktunya dihitung dari birthtime kalau
+    < 24 jam, jadi file yang ketahuan telat tetap benar durasinya). Selesai kalau ukurannya diam 4 dtk **dan**
+    tidak ada proses yang masih membukanya untuk menulis; selama masih terbuka (render lambat, rekaman di-pause)
+    dicek lagi tiap detik. Kalau kernel tidak bisa menjawab, ukuran diam 4 dtk saja yang memutuskan. File yang
+    mendarat utuh (copy) dibuang diam-diam setelah 4 dtk; file yang sudah selesai tidak dilacak lagi 10 menit
+    kecuali ukurannya berubah, dan kalau menulis lagi < 8 dtk setelah ✓ ia lanjut dari awal yang sama.
+    ✓ tampil 8 dtk.
+  - **Siapa yang menulis** (`ExportWriterProbe`): `proc_listpidspath` mencari proses yang membuka file itu
+    (seluruh sistem, ~0,2 dtk, jadi hanya saat atribusi dan cek selesai tanpa penulis yang dikenal), lalu
+    `PROC_PIDLISTFDS` + `PROC_PIDFDVNODEPATHINFO` membaca mode buka (`FWRITE`) per fd. Setelah penulisnya
+    ketahuan, cek selesai hanya membaca fd proses itu. Hanya penulis yang dihitung (pembaca seperti Spotlight
+    atau QuickLook tidak). Atribusi dicoba sampai 5 kali dengan jeda 2, 4, 8, 16 dtk. Nama dari `.app` terluar
+    di path executable (XPC di dalam app ikut app-nya): DaVinci Resolve, OBS, Final Cut Pro, Compressor, iMovie,
+    Premiere Pro, After Effects, Media Encoder, Lightroom/Lightroom Classic, Photoshop, Photos, Capture One,
+    Affinity Photo, Pixelmator Pro, CapCut, ffmpeg, HandBrake, Screenshot, QuickTime Player, Logic Pro,
+    GarageBand, Audacity; app lain tampil dengan namanya sendiri. Penulis yang bukan export (Finder, cp, ditto,
+    rsync, browser, iCloud `bird`, Dropbox, dll.) dan Zenith sendiri membuat file itu dilepas.
+  - **Batch foto:** gambar yang mendarat utuh (atau tumbuh < 2 dtk) di satu folder dikumpulkan jadi satu
+    export kalau ≥ 3 dan ada app yang bisa mengekspor gambar sedang jalan (dicari dari `proc_listallpids`,
+    hanya `.app`, app foto didahulukan). Tanpa app seperti itu dianggap copy dan tidak pernah tampil. Batch
+    selesai 4 dtk setelah gambar terakhir: "24 images · 84 MB".
+  - **Island:** `NotchCompactActivity.export`, urutan otomatis setelah `command`, ikut picker, tidak pernah jadi
+    pasangan, wing geometri Watch (56–150 pt). Kiri: ikon app penulis (dari bundle-nya) atau glyph SF berwarna
+    palet island (film untuk file tanpa penulis), lalu ukuran mono di slot selebar `00.0 GB`; kanan: "Exporting"
+    (atau "Recording" untuk OBS/QuickTime/Screenshot) abu-abu, nama file putih yang terpotong di tengah, `+N`.
+    Selesai: ✓ emerald + ukuran akhir di kiri, durasi mono + nama di kanan (`4.2 GB` | `12:31 Wedding.mov`).
+    Kapsul melayang: satu baris. Klik membuka Finder dengan file terpilih. Beberapa export: yang terbaru + `+N`;
+    yang baru selesai didahulukan selama ✓-nya. Ukuran yang tumbuh dipublish terpisah (`live`), jadi island
+    hanya di-layout ulang saat export mulai/selesai/bertambah, bukan tiap detik. Rate (MB/s) hanya dibacakan
+    VoiceOver; di strip tidak muat.
+  - **Gerak:** ukuran `.contentTransition(.numericText())` di lebar tetap; mark bernapas pelan (skala 1 → 0,88,
+    opacity 1 → 0,7, 1,1 dtk bolak-balik) lewat `.animation(_:body:)` yang hanya menyentuh transform/opacity;
+    selesai: mark mengecil keluar dan ✓ membesar masuk lalu bump spring 1,0 → 1,12 → 1,0 (`keyframeAnimator`,
+    sama dengan command). Reduce Motion: diam, ganti dengan fade.
+  - **Notice dan notifikasi:** `ZenithNotice.Kind.export` (prioritas 1, kedaluwarsa 30 dtk): judul "Export
+    finished"/"Recording saved", subjudul "nama · 4.2 GB · DaVinci Resolve" (terpotong di tengah), thumbnail
+    QuickLook, centang, klik = Reveal in Finder. Suara `Glass` 0,5 (`notchExportSound`, default nyala). Kalau Mac
+    terkunci atau island tidak menampilkan feedback (tersembunyi, full screen), notifikasi macOS lewat
+    `Notifier.post(title:body:revealing:)` (baru, di samping `opening:` milik Vercel; klik = file terpilih di
+    Finder), saklar "Notify when done" (`notchExportNotify`, default nyala; izin diminta saat diaktifkan).
+  - **Settings:** kartu "Exports" di Dynamic Island → Activity, di bawah Terminal commands. Saklar "Export
+    tracker" (`notchExportTracker`, default mati), daftar folder (nama Finder + path, saklar per folder, tombol
+    hapus, "Add Folder…" lewat open panel, folder yang hilang ditandai), segmented ukuran minimum, saklar suara
+    dan notifikasi. Judul digambar sendiri dan saklar `ZenithSwitchRow`/`ZenithSwitchStyle`, jadi tidak masuk
+    test search coverage. Semua opsi terdaftar (ikut backup).
+  - Edit di file upstream hanya baris bertanda `// Zenith fork`: `NotchSupport` (case, judul, modul, simbol,
+    urutan), `NotchService` (`hasExportActivity`, wing, kapsul, sync/stop, langganan `$activity`),
+    `NotchView`/`NotchMirrorView` (strip), `NotchTimerStrip`/`NotchCapsuleViews` (tidak berpasangan),
+    `NotchSettings` (kartu), `Notifier` + `AppDelegate` (notifikasi yang membuka Finder), `Defaults`, `build.sh`,
+    `Tests/MetricsTests.swift`. Test double `NotchMusicVisibilityTests` diberi `hasExportActivity` dan
+    `exportStripWing`. File fork yang ikut diubah: `ZenithNoticeSupport/Service/View` (kind `.export`).
+  - **Izin:** ~/Movies tidak dilindungi TCC; ~/Desktop dan ~/Downloads akan memicu prompt macOS sekali saat file
+    pertama di sana dibaca. Teks `NSDesktopFolderUsageDescription` belum menyebut fitur ini.
+  - **Belum diverifikasi di app:** UI app tidak dijalankan. Probe libproc dan state machine dicoba dengan file
+    sungguhan yang ditulis bertahap (test). Di program scratch (bukan app) FSEvents + tracker + probe dicoba
+    dengan proses lain yang menulis 4 × 0,8 MB lalu diam 6 dtk dengan file masih terbuka: tetap running, ✓
+    sekitar 1 dtk setelah file ditutup; `.hidden.mov` dan `.tmp` dilewati, mp4 yang mendarat utuh tidak tampil.
+    Ikon app, strip, notice dan notifikasi belum dicoba di Mac.
+    Perlu dicek: render DaVinci Resolve sungguhan (apakah menulis langsung ke nama akhir atau lewat nama
+    sementara lalu rename, apakah atribusinya "DaVinci Resolve", jeda tulis saat efek berat), rekaman OBS
+    (mkv/mp4/hybrid mp4, pause, remux otomatis), export Lightroom/Photos (batch), wing di 120 Hz, bump ✓,
+    prompt TCC Desktop.
 - **Aksi foto di island (branch `feat/notch-transform`):** drag gambar ke island, pilih aksinya di
   sana. Kode di `Services/Notch/NotchPhotoActionsSupport.swift` (logika murni: target, format,
   resep, ukuran, nama file, bacaan), `NotchPhotoActionsEncoder.swift` (Image I/O dan Core Image,
