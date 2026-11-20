@@ -250,6 +250,7 @@ struct NotchSettings: View {
                           isOn: liquidGlassIsOn ? .constant(true) : $translucentBackground)
                     .disabled(liquidGlassIsOn)
             }
+            ZenithTabBarSettings() // Zenith fork: what the tab pill under the open island holds.
             // Only a display without a camera can float the island.
             if NotchSupport.hasDisplayWithoutNotch {
                 SettingsCard(title: text.withoutNotch) {

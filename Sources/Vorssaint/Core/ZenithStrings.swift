@@ -5360,6 +5360,168 @@ extension ZenithStrings {
     }
 }
 
+// MARK: - Tab bar
+
+/// Zenith fork: the Tab bar card in Settings → Dynamic Island → Layout
+/// (ZenithTabBarSettings), which chooses what the open island's pill holds.
+struct ZenithTabBarStrings {
+    let section: String
+    let show: String
+    let showHint: String
+    /// Above the list of sections.
+    let tabs: String
+    /// `%d` is the most tabs the pill pins.
+    let limitFormat: String
+    /// Every pin taken: the remaining switches are off limits.
+    let full: String
+    /// The gallery's fixed row at the end of the list.
+    let alwaysLast: String
+    let currentPage: String
+    let currentPageHint: String
+    let badges: String
+    let badgesHint: String
+    /// A pinned row's buttons and VoiceOver actions.
+    let moveUp: String
+    let moveDown: String
+    /// VoiceOver's name for the pill drawn at the top of the card.
+    let preview: String
+
+    func limit(_ count: Int) -> String { String(format: limitFormat, count) }
+}
+
+extension ZenithStrings {
+    static func tabBar(_ language: AppLanguage) -> ZenithTabBarStrings {
+        switch language {
+        case .enUS:
+            return .init(section: "Tab bar", show: "Show the tab bar",
+                         showHint: "The pill under the open island. Turned off, the island’s top row shows the button for every section again.",
+                         tabs: "Tabs", limitFormat: "Up to %d tabs. The last one always opens every section.",
+                         full: "The tab bar is full. Turn a tab off to pin another.", alwaysLast: "Always last",
+                         currentPage: "Show the current page", currentPageHint: "Adds a tab for the open page while it isn’t pinned.",
+                         badges: "Badges", badgesHint: "How many files are held and how many notifications are waiting.",
+                         moveUp: "Move up", moveDown: "Move down", preview: "Tab bar preview")
+        case .ptBR:
+            return .init(section: "Barra de abas", show: "Mostrar a barra de abas",
+                         showHint: "A pílula sob a ilha aberta. Desativada, a fileira de cima da ilha volta a mostrar o botão de todas as seções.",
+                         tabs: "Abas", limitFormat: "Até %d abas. A última sempre abre todas as seções.",
+                         full: "A barra de abas está cheia. Desative uma aba para fixar outra.", alwaysLast: "Sempre por último",
+                         currentPage: "Mostrar a página atual",
+                         currentPageHint: "Adiciona uma aba para a página aberta enquanto ela não estiver fixada.",
+                         badges: "Contadores", badgesHint: "Quantos arquivos estão guardados e quantas notificações esperam.",
+                         moveUp: "Mover para cima", moveDown: "Mover para baixo", preview: "Prévia da barra de abas")
+        case .tr:
+            return .init(section: "Sekme çubuğu", show: "Sekme çubuğunu göster",
+                         showHint: "Açık adanın altındaki hap. Kapalıyken adanın üst satırı tüm bölümlerin düğmesini yeniden gösterir.",
+                         tabs: "Sekmeler", limitFormat: "En fazla %d sekme. Sonuncusu her zaman tüm bölümleri açar.",
+                         full: "Sekme çubuğu dolu. Başka birini sabitlemek için bir sekmeyi kapatın.", alwaysLast: "Her zaman sonda",
+                         currentPage: "Geçerli sayfayı göster", currentPageHint: "Açık sayfa sabitlenmemişken onun için bir sekme ekler.",
+                         badges: "Rozetler", badgesHint: "Kaç dosyanın tutulduğunu ve kaç bildirimin beklediğini gösterir.",
+                         moveUp: "Yukarı taşı", moveDown: "Aşağı taşı", preview: "Sekme çubuğu önizlemesi")
+        case .ru:
+            return .init(section: "Панель вкладок", show: "Показывать панель вкладок",
+                         showHint: "Капсула под открытым островом. Если выключено, в верхнем ряду острова снова появляется кнопка всех разделов.",
+                         tabs: "Вкладки", limitFormat: "До %d вкладок. Последняя всегда открывает все разделы.",
+                         full: "Панель вкладок заполнена. Выключите вкладку, чтобы закрепить другую.", alwaysLast: "Всегда последняя",
+                         currentPage: "Показывать текущую страницу",
+                         currentPageHint: "Добавляет вкладку для открытой страницы, пока она не закреплена.",
+                         badges: "Счётчики", badgesHint: "Сколько файлов отложено и сколько уведомлений ждёт.",
+                         moveUp: "Переместить вверх", moveDown: "Переместить вниз", preview: "Предпросмотр панели вкладок")
+        case .es:
+            return .init(section: "Barra de pestañas", show: "Mostrar la barra de pestañas",
+                         showHint: "La píldora bajo la isla abierta. Si está desactivada, la fila superior de la isla vuelve a mostrar el botón de todas las secciones.",
+                         tabs: "Pestañas", limitFormat: "Hasta %d pestañas. La última siempre abre todas las secciones.",
+                         full: "La barra de pestañas está llena. Desactiva una pestaña para fijar otra.", alwaysLast: "Siempre al final",
+                         currentPage: "Mostrar la página actual",
+                         currentPageHint: "Añade una pestaña para la página abierta mientras no esté fijada.",
+                         badges: "Contadores", badgesHint: "Cuántos archivos se guardan y cuántas notificaciones esperan.",
+                         moveUp: "Subir", moveDown: "Bajar", preview: "Vista previa de la barra de pestañas")
+        case .sk:
+            return .init(section: "Panel kariet", show: "Zobraziť panel kariet",
+                         showHint: "Kapsula pod otvoreným ostrovom. Keď je vypnutá, horný riadok ostrova znova ukáže tlačidlo všetkých sekcií.",
+                         tabs: "Karty", limitFormat: "Najviac %d kariet. Posledná vždy otvorí všetky sekcie.",
+                         full: "Panel kariet je plný. Vypnite kartu, aby ste pripli inú.", alwaysLast: "Vždy posledná",
+                         currentPage: "Zobraziť aktuálnu stránku", currentPageHint: "Pridá kartu pre otvorenú stránku, kým nie je pripnutá.",
+                         badges: "Odznaky", badgesHint: "Koľko súborov je odložených a koľko upozornení čaká.",
+                         moveUp: "Posunúť nahor", moveDown: "Posunúť nadol", preview: "Náhľad panela kariet")
+        case .de:
+            return .init(section: "Tableiste", show: "Tableiste zeigen",
+                         showHint: "Die Pille unter der geöffneten Insel. Ausgeschaltet zeigt die obere Reihe der Insel wieder die Taste für alle Bereiche.",
+                         tabs: "Tabs", limitFormat: "Bis zu %d Tabs. Der letzte öffnet immer alle Bereiche.",
+                         full: "Die Tableiste ist voll. Schalte einen Tab aus, um einen anderen anzuheften.", alwaysLast: "Immer zuletzt",
+                         currentPage: "Aktuelle Seite zeigen",
+                         currentPageHint: "Fügt einen Tab für die geöffnete Seite hinzu, solange sie nicht angeheftet ist.",
+                         badges: "Zähler", badgesHint: "Wie viele Dateien abgelegt sind und wie viele Mitteilungen warten.",
+                         moveUp: "Nach oben", moveDown: "Nach unten", preview: "Vorschau der Tableiste")
+        case .fr:
+            return .init(section: "Barre d’onglets", show: "Afficher la barre d’onglets",
+                         showHint: "La pilule sous l’île ouverte. Désactivée, la rangée du haut de l’île affiche de nouveau le bouton de toutes les sections.",
+                         tabs: "Onglets", limitFormat: "Jusqu’à %d onglets. Le dernier ouvre toujours toutes les sections.",
+                         full: "La barre d’onglets est pleine. Désactivez un onglet pour en épingler un autre.", alwaysLast: "Toujours en dernier",
+                         currentPage: "Afficher la page actuelle",
+                         currentPageHint: "Ajoute un onglet pour la page ouverte tant qu’elle n’est pas épinglée.",
+                         badges: "Pastilles", badgesHint: "Combien de fichiers sont gardés et combien de notifications attendent.",
+                         moveUp: "Monter", moveDown: "Descendre", preview: "Aperçu de la barre d’onglets")
+        case .it:
+            return .init(section: "Barra delle schede", show: "Mostra la barra delle schede",
+                         showHint: "La pillola sotto l’isola aperta. Disattivata, la riga in alto dell’isola mostra di nuovo il pulsante di tutte le sezioni.",
+                         tabs: "Schede", limitFormat: "Fino a %d schede. L’ultima apre sempre tutte le sezioni.",
+                         full: "La barra delle schede è piena. Disattiva una scheda per fissarne un’altra.", alwaysLast: "Sempre per ultima",
+                         currentPage: "Mostra la pagina attuale", currentPageHint: "Aggiunge una scheda per la pagina aperta finché non è fissata.",
+                         badges: "Contatori", badgesHint: "Quanti file sono conservati e quante notifiche aspettano.",
+                         moveUp: "Sposta su", moveDown: "Sposta giù", preview: "Anteprima della barra delle schede")
+        case .ja:
+            return .init(section: "タブバー", show: "タブバーを表示",
+                         showHint: "開いたアイランドの下にあるピル。オフにすると、アイランドの上段にすべてのセクションのボタンが戻ります。",
+                         tabs: "タブ", limitFormat: "タブは%d個まで。最後のタブはいつでもすべてのセクションを開きます。",
+                         full: "タブバーがいっぱいです。別のタブを固定するには、どれかをオフにしてください。", alwaysLast: "常に最後",
+                         currentPage: "現在のページを表示", currentPageHint: "開いているページが固定されていないあいだ、そのタブを追加します。",
+                         badges: "バッジ", badgesHint: "保管中のファイル数と、待っている通知の数。",
+                         moveUp: "上へ移動", moveDown: "下へ移動", preview: "タブバーのプレビュー")
+        case .ko:
+            return .init(section: "탭 막대", show: "탭 막대 표시",
+                         showHint: "열린 아일랜드 아래의 알약 모양 막대입니다. 끄면 아일랜드 윗줄에 모든 섹션 버튼이 다시 나타납니다.",
+                         tabs: "탭", limitFormat: "탭은 최대 %d개입니다. 마지막 탭은 항상 모든 섹션을 엽니다.",
+                         full: "탭 막대가 가득 찼습니다. 다른 탭을 고정하려면 탭 하나를 끄세요.", alwaysLast: "항상 마지막",
+                         currentPage: "현재 페이지 표시", currentPageHint: "열린 페이지가 고정되지 않은 동안 그 페이지의 탭을 추가합니다.",
+                         badges: "배지", badgesHint: "보관 중인 파일 수와 기다리는 알림 수입니다.",
+                         moveUp: "위로 이동", moveDown: "아래로 이동", preview: "탭 막대 미리 보기")
+        case .uk:
+            return .init(section: "Панель вкладок", show: "Показувати панель вкладок",
+                         showHint: "Капсула під відкритим островом. Якщо вимкнено, у верхньому ряду острова знову з’являється кнопка всіх розділів.",
+                         tabs: "Вкладки", limitFormat: "До %d вкладок. Остання завжди відкриває всі розділи.",
+                         full: "Панель вкладок заповнена. Вимкніть вкладку, щоб закріпити іншу.", alwaysLast: "Завжди остання",
+                         currentPage: "Показувати поточну сторінку",
+                         currentPageHint: "Додає вкладку для відкритої сторінки, поки її не закріплено.",
+                         badges: "Лічильники", badgesHint: "Скільки файлів відкладено і скільки сповіщень чекає.",
+                         moveUp: "Перемістити вгору", moveDown: "Перемістити вниз", preview: "Попередній перегляд панелі вкладок")
+        case .zhHans:
+            return .init(section: "标签栏", show: "显示标签栏",
+                         showHint: "打开的灵动岛下方的胶囊。关闭后，灵动岛顶行会重新显示所有分区的按钮。",
+                         tabs: "标签", limitFormat: "最多 %d 个标签。最后一个始终打开所有分区。",
+                         full: "标签栏已满。关闭一个标签才能固定另一个。", alwaysLast: "始终在最后",
+                         currentPage: "显示当前页面", currentPageHint: "打开的页面未固定时，为它添加一个标签。",
+                         badges: "标记", badgesHint: "暂存的文件数和等待中的通知数。",
+                         moveUp: "上移", moveDown: "下移", preview: "标签栏预览")
+        case .zhTW:
+            return .init(section: "標籤列", show: "顯示標籤列",
+                         showHint: "打開的動態島下方的膠囊。關閉後，動態島頂列會重新顯示所有區塊的按鈕。",
+                         tabs: "標籤", limitFormat: "最多 %d 個標籤。最後一個一律打開所有區塊。",
+                         full: "標籤列已滿。關閉一個標籤才能固定另一個。", alwaysLast: "一律在最後",
+                         currentPage: "顯示目前頁面", currentPageHint: "打開的頁面未固定時，為它加入一個標籤。",
+                         badges: "標記", badgesHint: "暫存的檔案數與等待中的通知數。",
+                         moveUp: "上移", moveDown: "下移", preview: "標籤列預覽")
+        case .zhHK:
+            return .init(section: "標籤列", show: "顯示標籤列",
+                         showHint: "打開的動態島下方的膠囊。關閉後，動態島頂行會重新顯示所有區塊的按鈕。",
+                         tabs: "標籤", limitFormat: "最多 %d 個標籤。最後一個總是打開所有區塊。",
+                         full: "標籤列已滿。關閉一個標籤才可固定另一個。", alwaysLast: "總是在最後",
+                         currentPage: "顯示目前頁面", currentPageHint: "打開的頁面未固定時，為它加入一個標籤。",
+                         badges: "標記", badgesHint: "暫存的檔案數和等待中的通知數。",
+                         moveUp: "上移", moveDown: "下移", preview: "標籤列預覽")
+        }
+    }
+}
+
 // MARK: - Card import
 
 /// Zenith fork: importing camera cards (CardImportService), in the island and in Settings.

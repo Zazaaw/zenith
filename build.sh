@@ -306,6 +306,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Notch/ZenithNoticeSupport.swift
         Sources/Vorssaint/Services/Notch/ZenithHomeLayoutSupport.swift
         Sources/Vorssaint/Services/Notch/ZenithHomeShortcutsSupport.swift
+        Sources/Vorssaint/Services/Notch/ZenithTabBarSupport.swift
         Sources/Vorssaint/Services/CardImport/CardImportSupport.swift
         Sources/Vorssaint/Services/CardImport/CardImportCopier.swift
         Sources/Vorssaint/Services/Notifications/ZenithReplySupport.swift

@@ -1546,6 +1546,65 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     (segmented, ✕/✓, ganti sisi), drag shortcut (tetangga bergeser, drop, drag sampai keluar island, rail dua baris
     di Spacious), ikon terbang dari strip, hapus, island melebar/meninggi saat shortcut bertambah, tooltip redup,
     Reduce Motion, VoiceOver.
+- **Isi pil tab dipilih dari Settings (branch `feat/tab-bar-settings`):** Faiz ingin memilih modul apa saja yang ada di
+  pil tab dan urutannya, hanya dari Settings (tanpa mode edit di island).
+  - **Kartu "Tab bar"** di Settings › Dynamic Island › Layout, di bawah kartu ukuran (`UI/Settings/ZenithTabBarSettings.swift`,
+    kait satu baris di `NotchSettings.layoutPage`). Judul digambar sendiri di atas kartu hairline (`SettingsCard` tanpa
+    `title:`, seperti kartu Notices, supaya test cakupan pencarian tidak menuntut judul baru), isinya dari atas:
+    - preview pil yang hidup, digambar dengan view pil yang sama dengan island (`ZenithIslandDockPill`) di tile abu-abu;
+      tab yang dipilih: halaman sekarang contoh (modul pertama yang tampil tapi tidak di-pin) kalau "Show the current
+      page" nyala, kalau tidak tab pin pertama. Badge memakai jumlah asli, dengan contoh (3 dan 2) selama kosong, supaya
+      saklarnya kelihatan efeknya. Berubah dengan spring morph saat saklar/urutan berubah.
+    - saklar "Show the tab bar" (default nyala);
+    - "Tabs": semua modul island dalam urutan pil (yang di-pin dulu, lalu sisanya dalam urutan island), tiap baris tile
+      glyph lembut (`ZenithIslandGlyphTile` + `zenithTint`), nama, saklar (nyala = di-pin). Baris yang di-pin punya
+      handle drag (`PanelReorderableItem`, drag yang sama dengan daftar Sections di tab Content) plus tombol ▲/▼ dan aksi
+      VoiceOver Move up/Move down (drag di Settings belum bisa dicek di sini, jadi tombol jadi jalur pasti). Modul yang
+      tidak bisa tampil diredupkan dengan alasannya: mati di tab Content ("Show “X” on the Content tab.", kalimat
+      upstream), fiturnya mati (`enableReason`), GitHub tanpa gh, selain itu teks `disabled` upstream; saklarnya mati.
+    - baris tetap terakhir "Explore" (glyph grid, "Always last", gembok), tidak bisa dimatikan atau dipindah;
+    - caption batas "Up to 6 tabs…", berganti "The tab bar is full…" saat penuh; saklar sisanya dimatikan;
+    - saklar "Show the current page" dan "Badges" (default nyala).
+    Saat bar mati, semua di bawah saklar utama diredupkan dan tidak bisa diubah (pilihan tetap tersimpan).
+  - **Kunci** (semua terdaftar di `registeredDefaults`, jadi ikut backup): `zenithTabBarEnabled` (Bool, `true`),
+    `zenithTabBarModules` (raw value modul dipisah koma, urutan pil, default `controls,files`), `zenithTabBarCurrentPage`
+    (Bool, `true`), `zenithTabBarBadges` (Bool, `true`). Nama yang tidak dikenal dan modul yang tidak tampil dilewati saat
+    dibaca, tapi tetap disimpan di tempatnya (backup dari versi lebih baru tidak kehilangan pin; modul yang kembali tampil
+    muncul lagi di posisinya). Modul baru di versi berikutnya tidak otomatis di-pin. `""` = tidak ada pin (bukan default).
+  - **Model murni** `Services/Notch/ZenithTabBarSupport.swift` (ikut `TEST_SOURCES`): `ZenithTabBarItem`
+    (`module`/`page`/`gallery`), `ZenithTabBarPins` (decode/encode, `visible` = dikenal + tampil + maks. 6, `canPin`,
+    `pinning` di akhir, `unpinning`, `moving`/`reordering` hanya menggeser slot yang tampil, `listed` untuk kartu),
+    `ZenithTabBarConfiguration`, `ZenithTabBar` (`maximumPinned` 6, `layout`, `badge`, `symbol`, `configuration(in:)`,
+    `sectionsButtonInRow`), `ZenithTabBarAvailability` (`available`/`hidden`/`unavailable`).
+  - **Perilaku pil:** `ZenithIslandDockView` membaca tiga kunci lewat `@AppStorage`, jadi perubahan dari Settings langsung
+    dipakai dan bergerak dengan spring morph yang sama (kapsul pilihan tetap meluncur). Isi: pin yang tampil (≤ 6) dalam
+    urutannya, lalu tab halaman sekarang kalau halaman itu tidak di-pin atau sedang ada detail (dan saklarnya nyala),
+    lalu galeri selalu terakhir. Kalau saklar halaman sekarang mati dan halaman tidak di-pin, tidak ada tab terpilih.
+    Klik tab pin membuka modulnya; tab halaman di detail tetap kembali. Badge: jumlah Shelf di Files dan jumlah notifikasi
+    di Notifications (`NotchNotificationService.items`), bisa dimatikan. Glyph Home/Files tetap versi filled
+    (`house.fill`, `tray.fill`), modul lain glyph modulnya. Menu klik kanan Customize Home tetap di tab Home.
+    `maximumWidth` (koridor hover) 220 → 360: muat 8 tab dengan dua badge. Pil digambar ulang sebagai
+    `ZenithIslandDockPill` (dipakai island dan preview Settings); `ZenithIslandDockItem` diganti `ZenithTabBarItem`, id
+    aksesibilitas tetap (`notch.dock.home`, `.files`, `.page`, `.sections`; pin lain `notch.dock.<raw>`).
+  - **Bar mati:** pil tidak tampil (`dock:` di `present` ikut `ZenithTabBar.isEnabled()`), jendela tidak lagi memesan ruang
+    di bawah island, dan tombol galeri di baris atas kembali dengan aturan upstream (`!access.actions.contains(.explore)`)
+    lewat `ZenithTabBar.sectionsButtonInRow`, juga di preview island Settings (`NotchService.previewGeometry`,
+    `NotchLayoutEditor`, yang ikut digambar ulang lewat `@AppStorage`). Shortcut keyboard dan galeri tidak berubah.
+  - Edit di file upstream bertanda `// Zenith fork`: `Defaults` (4 kunci + default), `NotchService` (`dock:`, reservasi
+    ruang, `sectionsButtonInRow`, `previewGeometry`), `NotchLayoutEditor` (preview), `NotchSettings` (kartu), `build.sh`
+    (`TEST_SOURCES`), `Tests/MetricsTests.swift` (suite). Teks di `ZenithStrings.tabBar` (15 bahasa, apostrof lengkung,
+    tanpa em dash; "Drag to reorder" dipakai ulang dari `homeShortcuts`, "Explore" dari `sectionsTitle`).
+  - **Test:** baru `Tests/TabBarTests.swift` (suite `tab-bar`): parse/serialisasi dan nama asing, ketersediaan
+    (routed/hidden/unavailable, pin yang kembali di tempatnya, daftar kartu), batas 6 (yang ketujuh ditolak, hanya pin
+    yang tampil dihitung), urutan (geser, clamp, drag hanya permutasi pin yang tampil), galeri selalu terakhir dan
+    sekali, aturan halaman sekarang (nyala/mati, pin, detail), badge, default = pil lama persis (dibandingkan dengan
+    aturan lama di semua halaman, detail, galeri, dengan/tanpa Files), tombol galeri baris atas kembali saat bar mati
+    (dan tidak saat tombol mengambang Explore ada), kunci terdaftar + ikut backup + save tanpa perubahan tidak menulis, teks.
+  - **Belum diverifikasi visual:** app UI tidak dijalankan. Perlu dicek di Mac: kartu Tab bar (light/dark, lebar Settings
+    sempit, preview pil di tile, baris redup + alasan, caption batas, Explore terkunci), drag baris pin dan tombol ▲/▼,
+    pil di island berubah langsung saat saklar/urutan diganti (spring, kapsul pilihan meluncur, tab masuk/keluar), 6 pin +
+    halaman sekarang + badge (lebar pil dan koridor hover), bar mati (pil hilang, tombol galeri kembali di baris atas
+    island dan preview Settings, tanpa ruang kosong di bawah island), badge notifikasi, VoiceOver.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.

@@ -5,10 +5,11 @@ import AppKit
 import SwiftUI
 
 // Zenith fork: the open island's tab pill. A small black capsule floats just
-// below the island, apart from it, with Home, Files (the Shelf, with a count
-// of what it holds), the page on screen when it is neither (in its own
-// colour) and the section gallery. The chosen tab sits in a grey capsule that
-// slides between them.
+// below the island, apart from it, with the sections pinned in Settings
+// (ZenithTabBar: Home and Files, with the Shelf's count, unless chosen
+// otherwise), the page on screen when it is none of them (in its own colour)
+// and the section gallery, always last. The chosen tab sits in a grey capsule
+// that slides between them.
 //
 // It is drawn in the island's own window, on the floating-controls layer
 // that already reaches below the island (`NotchQuickAccessContainer`), so it
@@ -18,7 +19,8 @@ import SwiftUI
 // window stays as it was.
 //
 // The island's top row no longer repeats the gallery's button; the pill, the
-// island's menu, Command-K and the module shortcuts all still reach it.
+// island's menu, Command-K and the module shortcuts all still reach it. With
+// the tab bar switched off the pill goes and the row gets its button back.
 
 enum ZenithIslandDockLayout {
     static let height: CGFloat = 26
@@ -33,8 +35,9 @@ enum ZenithIslandDockLayout {
     static let badgeSize: CGFloat = 15
     /// Below the pill, room for its shadow.
     static let bottomMargin: CGFloat = 10
-    /// The widest the pill gets: four tabs and a badge, with room to spare.
-    static let maximumWidth: CGFloat = 220
+    /// The widest the pill gets: six pins, the open page and the gallery,
+    /// two of them with a badge, with room to spare.
+    static let maximumWidth: CGFloat = 360
     /// Around the pill the pointer still counts as over the island.
     static let hoverMargin: CGFloat = 14
 
@@ -122,53 +125,50 @@ final class ZenithIslandDockHost: NSHostingView<AnyView> {
     }
 }
 
-enum ZenithIslandDockItem: Hashable, Identifiable {
-    case home, files, page(NotchModule), sections
-    var id: Self { self }
+
+/// What the pill shows: its tabs, the chosen one, and whether a detail (the
+/// app panel, a metric) covers the open page, whose tab then leads back.
+struct ZenithIslandDockTabs: Equatable {
+    var layout: ZenithTabBarLayout
+    var detail: Bool
 }
 
 struct ZenithIslandDockView: View {
     @ObservedObject var service: NotchService
     @ObservedObject var motion: ZenithIslandDockMotion
     @ObservedObject private var shelf = ShelfService.shared
-    @ObservedObject private var l10n = L10n.shared
+    @ObservedObject private var notifications = NotchNotificationService.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.colorSchemeContrast) private var contrast
-    @Namespace private var selection
+    // What Settings → Dynamic Island → Layout → Tab bar chose, read live.
+    @AppStorage(DefaultsKey.zenithTabBarModules) private var pins = ZenithTabBar.defaultEncoded
+    @AppStorage(DefaultsKey.zenithTabBarCurrentPage) private var currentPage = true
+    @AppStorage(DefaultsKey.zenithTabBarBadges) private var badges = true
     /// What the pill shows, moved on the morph's spring rather than with the
     /// island's page, which changes with animations switched off.
-    @State private var shown: Tabs?
+    @State private var shown: ZenithIslandDockTabs?
 
     private static let space = "zenith.island.dock"
 
-    struct Tabs: Equatable {
-        var items: [ZenithIslandDockItem]
-        var chosen: ZenithIslandDockItem?
-        var detail: Bool
+    private var current: ZenithIslandDockTabs {
+        let detail = service.showingAppPanel || service.selectedMetric != nil
+        let configuration = ZenithTabBarConfiguration(pins: ZenithTabBarPins(encoded: pins), currentPage: currentPage)
+        return ZenithIslandDockTabs(layout: ZenithTabBar.layout(configuration, available: service.modules,
+                                                                page: service.showingSections ? nil : service.selected,
+                                                                detail: detail),
+                                    detail: detail)
     }
 
-    private var current: Tabs {
-        let modules = service.modules
-        let detail = service.showingAppPanel || service.selectedMetric != nil
-        var items: [ZenithIslandDockItem] = []
-        if modules.contains(.controls) { items.append(.home) }
-        if modules.contains(.files) { items.append(.files) }
-        var chosen: ZenithIslandDockItem? = service.showingSections ? .sections : nil
-        if !service.showingSections {
-            let page = service.selected
-            if !detail, page == .controls, items.contains(.home) { chosen = .home }
-            else if !detail, page == .files, items.contains(.files) { chosen = .files }
-            else { items.append(.page(page)); chosen = .page(page) }
-        }
-        items.append(.sections)
-        return Tabs(items: items, chosen: chosen, detail: detail)
+    private var counts: [NotchModule: Int] {
+        badges ? [.files: shelf.items.count, .notifications: notifications.items.count] : [:]
     }
 
     var body: some View {
         let tabs = shown ?? current
         ZStack(alignment: .topLeading) {
             Color.clear
-            pill(tabs)
+            ZenithIslandDockPill(tabs: tabs, counts: counts, shown: motion.visible, arrivalDelay: motion.arrivalDelay,
+                                 detailTitle: service.detailTitle, appPanel: service.showingAppPanel, service: service,
+                                 activate: activate)
                 .fixedSize()
                 .modifier(ZenithIslandDockEntrance(shown: motion.visible, still: reduceMotion))
                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { motion.pillFrame = $0 }
@@ -184,24 +184,53 @@ struct ZenithIslandDockView: View {
         .onAppear { shown = current }
         .onChange(of: current) { _, next in
             // A fresh transaction: the island changes its page with
-            // animations disabled, and the pill still slides to it.
+            // animations disabled, and the pill still slides to it. A change
+            // made in Settings moves on the same spring.
             withTransaction(Transaction(animation: motion.visible ? ZenithMorph.animation(reduceMotion: reduceMotion) : nil)) {
                 shown = next
             }
         }
     }
 
-    private func pill(_ tabs: Tabs) -> some View {
+    private func activate(_ item: ZenithTabBarItem, detail: Bool) {
+        switch item {
+        case .gallery: service.toggleSections()
+        case .module(let module): service.select(module)
+        case .page(let module): if detail { service.goBack() } else { service.select(module) }
+        }
+    }
+}
+
+/// The pill itself: the island hangs it below the open island, and Settings
+/// draws the same view as the tab bar's preview.
+struct ZenithIslandDockPill: View {
+    let tabs: ZenithIslandDockTabs
+    /// The counts the badged tabs show; empty with badges off.
+    var counts: [NotchModule: Int] = [:]
+    var shown = true
+    var arrivalDelay: TimeInterval = 0
+    /// While a detail covers the page, its tab wears the detail's title.
+    var detailTitle = ""
+    var appPanel = false
+    /// The island's service, for the Home tab's menu; nil in a preview.
+    var service: NotchService? = nil
+    var activate: ((ZenithTabBarItem, Bool) -> Void)? = nil
+    @ObservedObject private var l10n = L10n.shared
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorSchemeContrast) private var contrast
+    @Namespace private var selection
+
+    var body: some View {
         HStack(spacing: ZenithIslandDockLayout.segmentSpacing) {
-            ForEach(Array(tabs.items.enumerated()), id: \.element) { index, item in
-                tab(item, chosen: tabs.chosen == item, detail: tabs.detail)
-                    .modifier(ZenithIslandDockEntrance(shown: motion.visible, still: reduceMotion, tab: true))
+            ForEach(Array(tabs.layout.items.enumerated()), id: \.element) { index, item in
+                tab(item, chosen: tabs.layout.chosen == item, detail: tabs.detail)
+                    .modifier(ZenithIslandDockEntrance(shown: shown, still: reduceMotion, tab: true))
                     // Each tab follows the pill in, 40 ms after the one before.
-                    .animation(motion.visible
+                    .animation(shown
                                    ? ZenithMorph.animation(reduceMotion: reduceMotion)
-                                       .delay(motion.arrivalDelay + ZenithMotion.layerDelay(index + 1))
+                                       .delay(arrivalDelay + ZenithMotion.layerDelay(index + 1))
                                    : .easeIn(duration: ZenithIslandDockMotion.departure),
-                               value: motion.visible)
+                               value: shown)
                     .transition(.zenithMorph(reduceMotion: reduceMotion))
             }
         }
@@ -219,13 +248,14 @@ struct ZenithIslandDockView: View {
         .accessibilityLabel(FeatureStrings.notch(l10n.language).switchSection)
     }
 
-    private func tab(_ item: ZenithIslandDockItem, chosen: Bool, detail: Bool) -> some View {
-        let count = shelf.items.count
+    private func tab(_ item: ZenithTabBarItem, chosen: Bool, detail: Bool) -> some View {
+        let count = ZenithTabBar.badge(item, counts: counts, enabled: true, detail: detail)
         let title = title(item, detail: detail)
-        return Button { activate(item, detail: detail) } label: {
+        return Button { activate?(item, detail) } label: {
             HStack(spacing: 5) {
-                ZenithIslandDockGlyph(symbol: symbol(item, detail: detail), tint: tint(item), chosen: chosen)
-                if item == .files, count > 0 {
+                ZenithIslandDockGlyph(symbol: symbol(item, detail: detail),
+                                      tint: item.module?.zenithTint ?? ZenithIsland.primary, chosen: chosen)
+                if let count {
                     Text(count > 99 ? "99+" : "\(count)")
                         .font(ZenithType.mono(9.5, weight: .semibold))
                         .monospacedDigit()
@@ -235,6 +265,7 @@ struct ZenithIslandDockView: View {
                         .frame(minWidth: ZenithIslandDockLayout.badgeSize, minHeight: ZenithIslandDockLayout.badgeSize)
                         .background(Color.white.opacity(0.14), in: Capsule())
                         .animation(ZenithMotion.respecting(.snappy(duration: 0.28)), value: count)
+                        .transition(.zenithMorph(reduceMotion: reduceMotion))
                 }
             }
             .padding(.horizontal, 10)
@@ -253,63 +284,41 @@ struct ZenithIslandDockView: View {
         .buttonStyle(ZenithIslandDockButtonStyle())
         .help(shortcut(item).map { "\(title)  \($0)" } ?? title)
         .accessibilityLabel(title)
-        .accessibilityValue(item == .files && count > 0 ? "\(count)" : "")
+        .accessibilityValue(count.map { "\($0)" } ?? "")
         .accessibilityAddTraits(chosen ? .isSelected : [])
         .accessibilityIdentifier("notch.dock.\(identifier(item))")
-        .modifier(ZenithDockHomeMenu(home: item == .home, service: service))
+        .modifier(ZenithDockHomeMenu(home: item == .module(.controls), service: service))
     }
 
-    private func module(_ item: ZenithIslandDockItem) -> NotchModule? {
+    private func symbol(_ item: ZenithTabBarItem, detail: Bool) -> String {
         switch item {
-        case .home: return .controls
-        case .files: return .files
-        case .page(let module): return module
-        case .sections: return nil
+        case .module(let module): return ZenithTabBar.symbol(module)
+        case .page(let module): return detail && appPanel ? "macwindow" : module.symbol
+        case .gallery: return "square.grid.2x2.fill"
         }
     }
 
-    private func symbol(_ item: ZenithIslandDockItem, detail: Bool) -> String {
-        switch item {
-        case .home: return "house.fill"
-        case .files: return "tray.fill"
-        case .page(let module): return detail && service.showingAppPanel ? "macwindow" : module.symbol
-        case .sections: return "square.grid.2x2.fill"
-        }
-    }
-
-    private func tint(_ item: ZenithIslandDockItem) -> Color {
-        module(item)?.zenithTint ?? ZenithIsland.primary
-    }
-
-    private func title(_ item: ZenithIslandDockItem, detail: Bool) -> String {
+    private func title(_ item: ZenithTabBarItem, detail: Bool) -> String {
         let language = l10n.language
         switch item {
-        case .sections: return FeatureStrings.notch(language).sectionsTitle
-        case .page(let module) where detail: return service.detailTitle.isEmpty ? module.title(language) : service.detailTitle
-        default: return module(item)?.title(language) ?? ""
+        case .gallery: return FeatureStrings.notch(language).sectionsTitle
+        case .page(let module) where detail: return detailTitle.isEmpty ? module.title(language) : detailTitle
+        case .module(let module), .page(let module): return module.title(language)
         }
     }
 
-    private func shortcut(_ item: ZenithIslandDockItem) -> String? {
-        if item == .sections { return "⌘K" }
-        return module(item).map { "⌥⌘\($0.shortcutKey.uppercased())" }
+    private func shortcut(_ item: ZenithTabBarItem) -> String? {
+        if item == .gallery { return "⌘K" }
+        return item.module.map { "⌥⌘\($0.shortcutKey.uppercased())" }
     }
 
-    private func identifier(_ item: ZenithIslandDockItem) -> String {
+    private func identifier(_ item: ZenithTabBarItem) -> String {
         switch item {
-        case .home: return "home"
-        case .files: return "files"
+        case .module(.controls): return "home"
+        case .module(.files): return "files"
+        case .module(let module): return module.rawValue
         case .page: return "page"
-        case .sections: return "sections"
-        }
-    }
-
-    private func activate(_ item: ZenithIslandDockItem, detail: Bool) {
-        switch item {
-        case .home: service.select(.controls)
-        case .files: service.select(.files)
-        case .sections: service.toggleSections()
-        case .page(let module): if detail { service.goBack() } else { service.select(module) }
+        case .gallery: return "sections"
         }
     }
 }
@@ -363,10 +372,10 @@ private struct ZenithIslandDockButtonStyle: ButtonStyle {
 /// The Home tab's secondary click offers Customize Home.
 private struct ZenithDockHomeMenu: ViewModifier {
     let home: Bool
-    let service: NotchService
+    let service: NotchService?
 
     func body(content: Content) -> some View {
-        if home {
+        if home, let service {
             content.contextMenu { ZenithHomeMenuItem(service: service) }
         } else {
             content
