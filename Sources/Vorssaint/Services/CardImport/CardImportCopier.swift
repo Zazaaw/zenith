@@ -32,6 +32,10 @@ final class CardImportJob: @unchecked Sendable {
         var current: String?
         /// Ledger keys of the files finished since the last drain.
         var finishedKeys: [String] = []
+        /// Where the files finished since the last drain landed: the card's
+        /// path, the event folder's path and the size, for the check of the
+        /// card against the import (CardBackupService).
+        var placed: [CardBackupPair] = []
         /// Set once the copy has ended, well or not.
         var finished = false
         /// Why it ended early, if it did.
@@ -78,6 +82,7 @@ final class CardImportJob: @unchecked Sendable {
         lock.withLock {
             let snapshot = state
             state.finishedKeys.removeAll()
+            state.placed.removeAll()
             return snapshot
         }
     }
@@ -126,10 +131,14 @@ final class CardImportJob: @unchecked Sendable {
             if isCancelled { result = .cancelled; break }
             update { $0.current = item.file.name }
             do {
-                _ = try copy(item)
+                let landed = try copy(item)
+                let placed = CardBackupPair(source: item.file.relativePath,
+                                            copy: Self.relativePath(of: landed, in: destination) ?? item.destination,
+                                            size: item.file.size)
                 update {
                     $0.copiedFiles += 1
                     $0.finishedKeys.append(item.file.ledgerKey)
+                    $0.placed.append(placed)
                 }
             } catch let error as CardImportCopyError {
                 result = error
@@ -151,27 +160,35 @@ final class CardImportJob: @unchecked Sendable {
     /// checked, its dates set, then moved to the first free name. Returns
     /// where it landed.
     func copy(_ item: CardImportPlan.Item) throws -> URL {
-        let from = source.appendingPathComponent(item.file.relativePath, isDirectory: false)
-        let target = destination.appendingPathComponent(item.destination, isDirectory: false)
+        try copyFile(item.file.relativePath, size: item.file.size, to: item.destination)
+    }
+
+    /// One file by its path under `source`, to its path under `destination`,
+    /// as a card import copies it. The backup (CardBackupJob) copies an event
+    /// folder file by file through this too.
+    func copyFile(_ relativePath: String, size: Int64, to destinationPath: String) throws -> URL {
+        let name = (relativePath as NSString).lastPathComponent
+        let from = source.appendingPathComponent(relativePath, isDirectory: false)
+        let target = destination.appendingPathComponent(destinationPath, isDirectory: false)
         let folder = target.deletingLastPathComponent()
         do {
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         } catch {
-            throw Self.writeError(errno: Self.posixCode(error), file: item.file.name)
+            throw Self.writeError(errno: Self.posixCode(error), file: name)
         }
         let partial = folder.appendingPathComponent(Self.partialPrefix + UUID().uuidString + Self.partialSuffix,
                                                     isDirectory: false)
         do {
-            let copied = try copyData(from: from, to: partial, name: item.file.name)
-            guard copied == item.file.size, Self.size(of: partial) == item.file.size else {
-                throw CardImportCopyError.failed(file: item.file.name)
+            let copied = try copyData(from: from, to: partial, name: name)
+            guard copied == size, Self.size(of: partial) == size else {
+                throw CardImportCopyError.failed(file: name)
             }
             try Self.copyDates(from: from, to: partial)
             return try Self.place(partial, at: target)
         } catch {
             try? FileManager.default.removeItem(at: partial)
             if let error = error as? CardImportCopyError { throw error }
-            throw CardImportCopyError.failed(file: item.file.name)
+            throw CardImportCopyError.failed(file: name)
         }
     }
 
@@ -238,6 +255,13 @@ final class CardImportJob: @unchecked Sendable {
 
     // MARK: Files
 
+    /// `url`'s path under `folder`, with `/` between folders.
+    static func relativePath(of url: URL, in folder: URL) -> String? {
+        let path = url.standardizedFileURL.path, root = folder.standardizedFileURL.path
+        guard path.hasPrefix(root + "/") else { return nil }
+        return String(path.dropFirst(root.count + 1))
+    }
+
     static func size(of url: URL) -> Int64? {
         (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber)?.int64Value
     }
@@ -268,7 +292,12 @@ final class CardImportJob: @unchecked Sendable {
 
     /// Partial files an earlier copy into these folders left behind.
     static func removePartials(in destination: URL, plan: CardImportPlan) {
-        let folders = Set(plan.items.map { destination.appendingPathComponent($0.destination).deletingLastPathComponent() })
+        removePartials(in: destination, paths: plan.items.map(\.destination))
+    }
+
+    /// Partial files left in the folders of these paths under `destination`.
+    static func removePartials(in destination: URL, paths: [String]) {
+        let folders = Set(paths.map { destination.appendingPathComponent($0).deletingLastPathComponent() })
         for folder in folders {
             let names = (try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? []
             for name in names where name.hasPrefix(partialPrefix) && name.hasSuffix(partialSuffix) {

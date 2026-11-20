@@ -75,6 +75,8 @@ struct ZenithNotice: Equatable {
         case openURL(URL)
         /// Opens the island's Today page.
         case openRecap
+        /// Backs up the card imports still without a verified backup (CardBackupService).
+        case backUpCards
     }
 
     let kind: Kind
@@ -210,6 +212,8 @@ enum ZenithNoticeKey {
     static func audio(_ name: String) -> String { "audio." + name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
     static func download(_ url: URL) -> String { "download." + url.standardizedFileURL.path }
     static func card(_ volume: String) -> String { "card." + volume }
+    /// Card imports without a verified backup: one notice, updated in place.
+    static let cardBackup = "card-backup"
     /// An export: one file, or a batch of images by its folder.
     static func export(_ id: String) -> String { "export." + id }
     /// A dev server: its project (or framework) and port, so a restart updates it.

@@ -1513,6 +1513,90 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   - **Belum diverifikasi dengan kartu sungguhan:** app UI tidak dijalankan dan tidak ada volume yang
     di-mount, dibaca, atau di-eject saat pengerjaan. Scan, rencana, ledger, dan salin (termasuk tanggal,
     tabrakan, partial, kartu hilang, disk penuh dari errno) dites di folder sementara.
+- **Backup terverifikasi untuk import kartu (branch `feat/backup-verify`):** aturan 3-2-1 untuk fotografer
+  acara: foto klien harus ada di minimal dua tempat sebelum kartu diformat. Setiap import masuk ledger
+  sebagai "imported only"; backup menyalin folder event ke drive backup (SSD eksternal atau folder NAS),
+  lalu membandingkan setiap file dengan SHA-256. Kode di `Services/CardImport/BackupSupport.swift` (murni,
+  ikut `TEST_SOURCES`: identitas drive, tujuan, setelan, scan, rencana, perbandingan, manifest, ledger,
+  pasangan kartu→import, pengingat, activity, format), `BackupJob.swift` (`CardBackupJob`, hash, ikut
+  `TEST_SOURCES`), `BackupService.swift` (drive, antrean, ledger di disk, notice, pengingat),
+  `UI/Notch/BackupViews.swift` (panel di hasil import, daftar Backups, tombol pending) dan
+  `UI/Notch/BackupSettings.swift`. Teks di `ZenithStrings.cardBackup` (15 bahasa, bentuk jamak
+  one/few/many untuk file, event, dan mismatch). Test di `Tests/BackupTests.swift` (suite `card-backup`).
+  - **Tujuan backup:** maks. dua, di Settings → Dynamic Island → Content → Card Import (bagian Backup).
+    Disimpan sebagai identitas volume + path relatif dari akar drive (JSON di `notchCardBackupDestinations`),
+    jadi drive yang di-mount ulang di `/Volumes/T7 Shield 1` tetap dikenali. Identitas: `volumeUUIDString`
+    (huruf besar), UUID Disk Arbitration untuk volume lokal tanpa UUID, alamat share tanpa akun untuk NAS
+    (`share:smb://nas.local/Photos`), cadangannya `name:<nama>-<kapasitas>`. Folder di drive yang sama
+    dengan folder import ditolak ("same drive"), begitu juga drive yang punya folder kamera (kartu).
+  - **Alur setelah import:** `CardImportService.finish` mengirim pasangan file yang benar-benar mendarat
+    (path kartu → path event, dari `CardImportJob.State.placed`) ke `CardBackupService.importFinished`,
+    juga untuk run yang gagal atau di-stop (yang sudah tersalin tetap butuh backup). Folder event yang sama
+    = satu record; import berikutnya ke folder itu menambah file dan membuat state turun ke imported.
+    Halaman hasil import menampilkan panel lembut: "Back up now" (padat warna modul; Reveal in Finder jadi
+    outline) kalau drive ada, "Connect T7 Shield to back up." kalau tidak, atau ajakan menambah drive di
+    Settings. "Back up automatically" (default mati) langsung mengantre backup kalau import selesai dan drive
+    ter-mount.
+  - **Salin:** `CardBackupJob` memakai copier import yang sama (`CardImportJob.copyFile`, hasil refactor dari
+    `copy(_:)`): partial tersembunyi, ukuran dicek, tanggal dipasang, `renamex_np(RENAME_EXCL)`. Tujuan
+    `<drive>/<path>/<nama folder event>/<struktur sama>`. Rencana (`CardBackupPlanner`): file berukuran sama
+    di path yang sama dianggap sudah ada (hash yang memutuskan); file lain di path itu tidak pernah ditimpa,
+    salinan ke `-1`, `-2` (dan run berikutnya menemukan salinan itu lagi). File tersembunyi (`.DS_Store`,
+    partial, manifest) tidak ikut. Cek ruang kosong + margin 256 MB (share yang tidak melapor tidak ditahan).
+    Drive dicabut = device folder tujuan hilang/berubah → "Backup drive removed".
+  - **Verifikasi:** setiap pasangan di-hash dua sisi dengan CryptoKit `SHA256`, potongan 4 MB, `F_NOCACHE`,
+    di `Task.detached(priority: .utility)` dengan `setiopolicy_np(IOPOL_UTILITY)` per thread (dikembalikan
+    sesudahnya). Ukuran beda = langsung mismatch tanpa hash. Jenis mismatch: `missing`, `size`, `content`,
+    `unreadable`. Manifest `.zenith-backup.json` di folder event backup: `file`, `size`, `sha256`, `date`
+    (ISO 8601), `source` kalau path-nya beda, plus daftar mismatch. Hasil: "Verified 1,248 files · 52 GB"
+    atau "3 files don’t match" dengan nama file. Saklar "Verify after backup" (default nyala); kalau mati,
+    tombol Verify di panel memaksa verifikasi.
+  - **Kartu vs import:** "Verify card vs import" (panel hasil, atau baris di daftar Backups kalau kartunya
+    dicolok lagi) meng-hash file kartu dan salinannya di folder event dari pasangan yang disimpan di
+    `<container>/CardImport/BackupPairs/pairs-<id>.json`. Hasil: "Card matches the import" plus "Safe to format
+    the card" (hanya kalau backup juga verified) atau "Back up before you format the card". Kartu dan folder
+    import hanya dibaca; "safe to format" hanya teks, tidak pernah aksi. Catatan: "Eject when done" (default
+    nyala) mengeluarkan kartu setelah import, jadi cek kartu perlu kartunya dicolok lagi.
+  - **Ledger** (`<container>/CardImport/backups.json`, 0600, maks. 200 record terbaru, tidak ikut settings
+    backup): per folder event: nama, folder (`~`), tanggal import terakhir, jumlah file/byte, kartu (dengan
+    tanggal dan hasil ceknya), salinan per tujuan (tanggal backup, tanggal verifikasi, masalah), tanggal
+    pengingat. State dihitung: salinan hanya berlaku kalau tanggal backup-nya (= waktu mulai backup) ≥ import
+    terakhir; `verified` kalau ada salinan berlaku yang terverifikasi tanpa masalah, `backedUp` kalau ada
+    salinan berlaku, selain itu `imported`.
+  - **Pengingat:** notice `.card` (prioritas dan durasinya sama dengan kartu), key `card-backup` (satu notice,
+    di-update di tempat), glyph `externaldrive.badge.exclamationmark` amber, aksesori `.action("Back up")`,
+    aksi baru `ZenithNotice.Action.backUpCards` (buka halaman Card Import di daftar Backups dan mulai backup
+    kalau drive ada). Muncul kalau import belum punya backup terverifikasi setelah N jam (6/12/24/48, default
+    24, atau Off), lalu tiap N jam lagi; import baru ke folder yang sama mereset hitungannya. Juga muncul saat
+    drive backup yang dikenal di-mount dan ada event pending (`2 events not backed up · T7 Shield connected`);
+    dengan auto-backup nyala langsung dibackup tanpa notice. Folder event yang sudah hilang tidak diingatkan.
+  - **Activity:** tidak ada case `NotchCompactActivity` baru. `CardImportActivity` dapat case
+    `.backup(CardBackupActivity)`; `CardImportService.activity` = activity import, atau backup kalau tidak ada
+    import, jadi slot `.cardImport`, wing, kapsul, dan langganan `NotchService` tidak berubah sama sekali.
+    Strip: glyph `externaldrive.fill` saat menyalin, `checkmark.shield.fill` saat verifikasi (berganti dengan
+    skala + opacity), persen `numericText`, `812 left · 3m`, bar 2 pt; selesai ✓ + `1,248 · 52 GB` (8 dtk),
+    gagal ✗ + "3 files don’t match"/"Backup drive removed" (15 dtk). Progres punya `CardBackupMeter` sendiri.
+  - **Daftar Backups:** stage baru halaman Card Import (`CardBackupService.showsList`): header dengan status
+    tiap drive ("T7 Shield · Connected"), Back up all, tutup; baris per event (state berwarna: amber imported
+    only, biru backed up, emerald verified), file · ukuran · tanggal, lalu satu aksi: Back up, Verify, Verify
+    card, atau progres. Klik kanan: Reveal in Finder. Dibuka dari tombol drive amber di header kartu (hanya
+    kalau ada pending), dari halaman kosong ("2 events not backed up" + tombol Backups), atau dari notice.
+  - **Gerak:** SwiftUI saja; panel dan aksi baris berganti lewat `.zenithMorph`, angka `numericText`, bar
+    `scaleEffect`. Reduce Motion: fade, tanpa gulir angka.
+  - **Settings:** di bawah opsi Card Import: judul Backup + keterangan, baris tujuan (nama drive, path mono,
+    titik Connected/Not connected, Remove), Add backup folder… (`NSOpenPanel`, mulai di `/Volumes`), saklar
+    Back up automatically dan Verify after backup (`ZenithSwitchRow`), Remind me (menu Off/6/12/24/48 h,
+    `.fixedSize()`). Tanpa `SettingsRow`. Kunci `notchCardBackup*` terdaftar di `registeredDefaults`.
+  - Edit di luar file backup: `CardImportCopier` (`copyFile`, `placed`, `relativePath`, `removePartials(paths:)`),
+    `CardImportSupport` (case activity), `CardImportService` (activity gabungan, `placed`, `backupRecord`,
+    sync/stop backup, `diskArbitrationUUID` internal), `CardImportPage` (stage, panel, tombol; style dan
+    header jadi internal), `CardImportStrip` (case backup), `CardImportSettings` (satu baris),
+    `ZenithNoticeSupport`/`Service` (aksi, key, `cardBackupPending`). File upstream yang disentuh hanya
+    `Defaults` (kunci + `registeredDefaults`, bertanda `// Zenith fork`), `build.sh` (`TEST_SOURCES`) dan
+    `Tests/MetricsTests.swift` (suite); `NotchService`, `NotchSupport`, dan view island tidak berubah.
+  - **Belum diverifikasi dengan kartu dan drive sungguhan:** app UI tidak dijalankan, tidak ada volume yang
+    di-mount, dibaca, atau ditulis. Rencana, salin, hash, manifest, mismatch (byte berubah, file hilang, ukuran
+    beda), cek kartu, ledger, dan pengingat (jam palsu) dites di folder sementara.
 - **Bahu island penuh + mirror kamera otomatis (branch `feat/island-shoulders-camera`):** dua permintaan
   Faiz setelah melihat fondasi island.
   - **Bahu:** island terbuka sekarang memakai flare penuh dari referensi: bahu cekung lingkaran 27 pt lebar

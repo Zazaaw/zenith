@@ -992,6 +992,13 @@ enum DefaultsKey {
     static let notchCardImportSkipImported = "notchCardImportSkipImported"
     static let notchCardImportRename = "notchCardImportRename" // CardRenamePattern.rawValue
     static let notchCardImportEject = "notchCardImportEject"
+    // Zenith fork: verified backups of card imports (CardBackupService): up to two destinations (JSON,
+    // a drive by its identity plus a path on it), backing up when an import ends, verifying after, and
+    // the reminder delay in hours (0 is off).
+    static let notchCardBackupDestinations = "notchCardBackupDestinations"
+    static let notchCardBackupAutomatic = "notchCardBackupAutomatic"
+    static let notchCardBackupVerify = "notchCardBackupVerify"
+    static let notchCardBackupReminderHours = "notchCardBackupReminderHours"
     // Zenith fork: dev servers in the island (DevServersService): detection, the notice, the closed
     // island's count, and ports or process names that also count (comma-separated).
     static let notchDevServersEnabled = "notchDevServersEnabled"
@@ -1738,6 +1745,10 @@ enum Defaults {
         DefaultsKey.notchCardImportSkipImported: true, // Zenith fork
         DefaultsKey.notchCardImportRename: CardRenamePattern.original.rawValue, // Zenith fork
         DefaultsKey.notchCardImportEject: true, // Zenith fork
+        DefaultsKey.notchCardBackupDestinations: "", // Zenith fork
+        DefaultsKey.notchCardBackupAutomatic: false, // Zenith fork
+        DefaultsKey.notchCardBackupVerify: true, // Zenith fork
+        DefaultsKey.notchCardBackupReminderHours: 24, // Zenith fork
         DefaultsKey.notchDevServersEnabled: true, // Zenith fork
         DefaultsKey.notchDevServersAnnounce: true, // Zenith fork
         DefaultsKey.notchDevServersIndicator: false, // Zenith fork

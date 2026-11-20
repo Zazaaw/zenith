@@ -468,6 +468,25 @@ enum CardImportActivity: Equatable, Sendable {
     case copying(totalFiles: Int)
     case finished(files: Int, bytes: Int64)
     case failed(CardImportFailure)
+    /// A backup of an import, or a card checked against it (CardBackupService),
+    /// shown in the same place while no import is under way.
+    case backup(CardBackupActivity)
+
+    /// Under way, with a percentage and a bar.
+    var showsProgress: Bool {
+        switch self {
+        case .copying, .backup(.running): return true
+        default: return false
+        }
+    }
+
+    /// The files the reading may count down from, while under way.
+    var runningFiles: Int? {
+        switch self {
+        case .copying(let total), .backup(.running(_, let total)): return total
+        default: return nil
+        }
+    }
 }
 
 enum CardImportTiming {

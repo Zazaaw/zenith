@@ -15,13 +15,15 @@ struct CardImportPage: View {
     let size: CGSize
     @ObservedObject private var service = CardImportService.shared
     @ObservedObject private var l10n = L10n.shared
+    @ObservedObject private var backups = CardBackupService.shared
 
     private var text: ZenithCardImportStrings { ZenithStrings.cardImport(l10n.language) }
 
     /// Which state shows; a change swaps the page through the morph.
-    private enum Stage: Hashable { case empty, reading(String), ready(String), copying, finished, failed }
+    private enum Stage: Hashable { case empty, reading(String), ready(String), copying, finished, failed, backups }
 
     private var stage: Stage {
+        if backups.showsList { return .backups }
         if let session = service.session, service.card?.id == session.cardID || session.isRunning
             || !service.cards.contains(where: { $0.id == session.cardID }) {
             switch session.phase {
@@ -44,7 +46,11 @@ struct CardImportPage: View {
     @ViewBuilder private var content: some View {
         switch stage {
         case .empty:
-            CardImportEmpty(symbol: "sdcard", message: text.empty)
+            CardImportEmpty(symbol: "sdcard", message: text.empty) {
+                CardBackupPendingSummary(language: l10n.language)
+            }
+        case .backups:
+            CardBackupList(language: l10n.language)
         case .reading:
             VStack(spacing: 10) {
                 ProgressView().controlSize(.small)
@@ -102,7 +108,7 @@ extension CardImportEmpty where Actions == EmptyView {
 }
 
 /// The page's one main step on a solid capsule in the module's colour.
-private struct CardImportPrimaryStyle: ButtonStyle {
+struct CardImportPrimaryStyle: ButtonStyle {
     @Environment(\.isEnabled) private var enabled
 
     func makeBody(configuration: Configuration) -> some View {
@@ -121,7 +127,7 @@ private struct CardImportPrimaryStyle: ButtonStyle {
 }
 
 /// A card's name with its tile and what it holds.
-private struct CardImportHeader<Trailing: View>: View {
+struct CardImportHeader<Trailing: View>: View {
     let symbol: String
     let title: String
     let detail: String
@@ -168,6 +174,7 @@ private struct CardImportReadyView: View {
             CardImportHeader(symbol: "sdcard.fill", title: card.name,
                              detail: [CardImportFormat.contents(scan, text: text, language: language),
                                       CardImportFormat.bytes(scan.bytes)].filter { !$0.isEmpty }.joined(separator: " · ")) {
+                CardBackupPendingButton(language: language)
                 if service.cards.count > 1 { cardMenu }
                 NotchIconButton(symbol: "eject", title: text.eject) { service.eject() }
                     .help(text.eject)
@@ -377,11 +384,15 @@ private struct CardImportResultView: View {
         return nil
     }
 
+    /// Zenith fork: the import's backup and the card's check, under a finished import.
+    private var backupRecord: String? { failure == nil ? session.backupRecord : nil }
+
     var body: some View {
-        VStack(spacing: 12) {
+        let compact = backupRecord != nil
+        VStack(spacing: compact ? 8 : 12) {
             Spacer(minLength: 0)
             CardImportResultMark(failure: failure)
-                .frame(width: 46, height: 46)
+                .frame(width: compact ? 34 : 46, height: compact ? 34 : 46)
             VStack(spacing: 4) {
                 Text(title)
                     .font(.system(size: 15, weight: .semibold))
@@ -391,11 +402,14 @@ private struct CardImportResultView: View {
                     .font(.system(size: 11.5))
                     .foregroundStyle(ZenithIsland.secondary)
                     .multilineTextAlignment(.center)
-                    .lineLimit(3)
+                    .lineLimit(compact ? 2 : 3)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: 340)
             HStack(spacing: 8) { actions }
+            if let backupRecord {
+                CardBackupPanel(record: backupRecord, card: session.cardID, language: language)
+            }
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -440,8 +454,13 @@ private struct CardImportResultView: View {
     @ViewBuilder private var actions: some View {
         let cardHere = service.cards.contains { $0.id == session.cardID && $0.scan != nil }
         if failure == nil {
-            Button(text.reveal) { service.reveal() }
-                .buttonStyle(CardImportPrimaryStyle())
+            // Zenith fork: with the backup below, that is the next step, so Reveal steps back.
+            if backupRecord != nil {
+                Button(text.reveal) { service.reveal() }.buttonStyle(ZenithIslandOutlineButtonStyle(height: 28))
+            } else {
+                Button(text.reveal) { service.reveal() }
+                    .buttonStyle(CardImportPrimaryStyle())
+            }
             switch session.eject {
             case .ejected:
                 ZenithStatusLine(color: ZenithStatus.success, text: text.ejected, size: 11)
