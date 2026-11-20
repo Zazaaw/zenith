@@ -1903,6 +1903,76 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     roll digit, ganti ke "Waktunya …", bump glyph), kapsul, halaman Sky (tile, hero, arc dan penanda, morph antar tab,
     island kaca), widget home, item lock screen dan baris readout, notice kapsul + suara (system dan file sendiri),
     prompt izin lokasi dari tombol Sky, Settings (stepper, field lat/long), Reduce Motion, Increase Contrast.
+- **Penyembunyi ikon menu bar (branch `feat/menubar-hider`):** ide yang sama dengan Ice/Hidden Bar, ditulis
+  sendiri tanpa kode pihak ketiga. Kode di `Services/MenuBarHider/MenuBarHiderSupport.swift` (murni: setelan,
+  state machine, panjang, urutan, notch, hover, penempatan awal, kurva glyph, `MenuBarHiderCore` di balik protokol
+  `MenuBarHiderItemHost`/`MenuBarHiderSensing`), `MenuBarHiderItems.swift` (status item dan glyph),
+  `MenuBarHiderService.swift` (event, timer, probe window server), dan `UI/Settings/MenuBarHiderSettings.swift`.
+  Teks di `ZenithStrings.menuBarHider` (15 bahasa, disisipkan setelah blok Camera). Test di
+  `Tests/MenuBarHiderTests.swift` (suite `menubar-hider`); file Support ikut `TEST_SOURCES`.
+  - **Teknik:** tiga status item milik Zenith, dari kanan ke kiri: chevron (20 pt), divider, dan opsional divider
+    "always hidden" (titik tiga). Divider yang di-collapse panjangnya `max(10.000, 2 × layar terlebar)` pt, jadi
+    semua item di kirinya terdorong keluar layar; saat terbuka divider jadi garis tipis 10 pt (always 12 pt).
+    Pengguna mengatur ikon dengan ⌘-drag melewati divider (gesture bawaan macOS). Posisi disimpan macOS sendiri
+    lewat `autosaveName` (`ZenithMenuBarHiderChevron`, `…Divider`, `…AlwaysDivider`) di kunci
+    `NSStatusItem Preferred Position <nama>`; ini state Mac, tidak ikut backup. Pertama kali, posisi di-seed
+    satu poin di kiri posisi tersimpan ikon Zenith (+1, +2, +3; kalau ikon belum punya posisi, dihitung dari
+    frame-nya), supaya chevron lahir di samping ikon Zenith, bukan di ujung kiri dekat notch. `behavior = []`
+    (bisa diurutkan, tidak bisa di-drag keluar), kunci `NSStatusItem Visible` dibersihkan sebelum dibuat.
+  - **Bagian:** collapsed (hanya ikon terlihat), hidden (bagian tersembunyi), all (termasuk always hidden).
+    Klik chevron atau shortcut: buka/tutup bagian hidden. ⌥-klik: buka semua / tutup. Always hidden hanya
+    terbuka lewat ⌥-klik atau menu chevron (klik kanan: Show Hidden Icons / Show All Icons / Hide Icons, daftar
+    ikon di balik notch, Menu Bar Settings…), tidak pernah lewat hover atau shortcut. Divider yang sedang
+    panjang menutupi area kosong menu bar; tombolnya dimatikan supaya klik di situ tidak menyorot seluruh bar,
+    dan klik itu dibaca monitor lokal sebagai klik chevron.
+  - **Auto-collapse:** 5/10/30 dtk/never (default 10, `menuBarHiderDelay`, 0 = never). Klik di luar menu bar
+    (default nyala, `menuBarHiderCollapseOnClick`) memajukan collapse ke 0,3 dtk. Mac terkunci, tidur, layar
+    tidur, atau ganti user: langsung collapse. Saat jatuh tempo, collapse ditunda per 1 dtk selama ada menu
+    terbuka (window apa pun di level pop-up menu, dari `CGWindowListCopyWindowInfo`, tanpa izin), tombol mouse
+    ditekan, atau pointer masih di menu bar. Popover non-menu milik app lain tidak terdeteksi; delay yang jadi
+    pengamannya.
+  - **Hover** (default mati, `menuBarHiderShowOnHover`): monitor `mouseMoved` global+lokal hanya selama
+    collapsed (atau terbuka karena hover). Pointer diam 0,25 dtk di pita kosong antara batas kiri dan divider
+    → bagian hidden terbuka; keluar dari menu bar → collapse 0,8 dtk kemudian. Batas kiri: tepi kanan notch
+    dan/atau ujung menu app depan (AX, hanya kalau Accessibility sudah diizinkan, dibaca di background saat app
+    berganti); tanpa keduanya hanya 160 pt di samping ikon.
+  - **Ikon Zenith selalu terlihat:** sebelum collapse urutan dicek dari frame window (tepi kanan, jadi tetap
+    benar walau divider sedang panjang). Kalau ikon Zenith atau chevron ada di kiri divider, collapse ditolak,
+    bar tetap terbuka tanpa timer, dan Settings menulis alasannya (amber). Dicek juga 1 dtk setelah item dibuat
+    dan setelah ganti layar; kalau ikon sudah terlanjur tersembunyi, bar dibuka lagi. Divider always hidden yang
+    ada di kanan divider utama diabaikan (tetap pendek) dengan peringatan. Island dan window-nya tidak disentuh;
+    `NotchMenuBarSpace` sudah membuang window status yang lebih lebar dari layar.
+  - **Notch:** gap kamera dari `auxiliaryTopLeftArea`/`auxiliaryTopRightArea`. "Hide items that would sit behind
+    the notch" (default nyala, `menuBarHiderNotchGuard`, hanya tampil di Mac bernotch, aktif kalau always hidden
+    nyala): 0,15 dtk setelah ⌥-klik, kalau divider always hidden atau ikon di bagiannya mulai di kiri tepi kanan
+    notch, Zenith kembali ke bagian hidden saja (timer tetap). Nama app yang ikonnya sekarang di balik notch
+    (owner window, tanpa izin) tampil di Settings dan menu chevron. Batasnya: Zenith tidak bisa memindahkan ikon
+    app lain dari balik notch atau menampilkannya di panel terpisah seperti Ice Bar.
+  - **Glyph:** chevron template tipis (`‹`, garis 1,6 pt) yang berputar setengah lingkaran dengan kurva spring
+    Style Kit `(.34, 1.36, .5, 1)` 0,3 dtk, digambar ulang tiap frame lewat `NSView.displayLink` (120 Hz di
+    ProMotion); Reduce Motion: langsung. Divider: garis 1,2 pt alpha 0,55; always hidden: tiga titik.
+  - **Shortcut:** role `GlobalShortcutRole.menuBarHider`, default ⌃⌥⌘B, mati sampai `menuBarHiderShortcutEnabled`
+    dinyalakan (juga butuh `menuBarHiderEnabled`). Hotkey `QuickToolHotkey(id: 97)`. Role-nya didaftarkan ke
+    fitur `.quickToggles` hanya untuk halaman Shortcuts; hotkey sendiri tidak bergantung pada fitur itu. Setelah
+    perekaman shortcut, `ShortcutCapture.end` mengirim `.zenithShortcutCaptureEnded` supaya hotkey terdaftar lagi.
+  - **Settings:** section "Menu bar hiding" di bawah kartu Menu bar (Settings → Menu bar): saklar utama (default
+    mati), peringatan urutan, Always hidden section, Hide again after (menu), Hide when clicking elsewhere, Show on
+    hover, Hide items behind the notch, Keyboard shortcut + `ShortcutPreferenceRow`; lalu "How to arrange" dengan
+    ilustrasi menu bar mini (ikon beraksen dengan badge ⌘ di-drag dari ikon terlihat melewati divider, loop
+    `TimelineView` 3,6 dtk dengan spring yang sama; Reduce Motion: diam di posisi akhir) dan langkah-langkahnya.
+    Semua `ZenithSwitchRow`, judul digambar sendiri, tanpa `SettingsRow`/`SettingsCard(title:)`. Kata kuncinya
+    ditambahkan ke item pencarian Menu bar. Menyalakan saklar membuat item dengan bar terbuka dan terkunci
+    (tanpa timer) supaya tidak ada ikon yang tiba-tiba hilang sebelum diatur; saat launch berikutnya bar mulai
+    collapsed. Mematikan: divider dipendekkan dulu, lalu item dihapus. Semua kunci `menuBarHider*` terdaftar di
+    `registeredDefaults` (ikut backup).
+  - Edit di file upstream bertanda `// Zenith fork`: `AppDelegate` (start setelah status item, pendekkan divider
+    saat quit), `ShortcutCapture` (notifikasi), `GlobalShortcut` (default dan role), `Defaults` (kunci),
+    `GeneralToolSettings` (section), `SettingsDirectory` (kata kunci), `build.sh` (`TEST_SOURCES`),
+    `Tests/MetricsTests.swift` (suite).
+  - **Belum diverifikasi di Mac:** app UI tidak dijalankan. Perlu dicek: posisi awal chevron di samping ikon Zenith,
+    ⌘-drag melewati divider, collapse/expand dengan putaran chevron, posisi tetap setelah relaunch (dan setelah
+    quit dalam keadaan collapsed), ⌥-klik, hover, menu chevron, klik area kosong, auto-collapse dengan menu ikon
+    tersembunyi terbuka, lock, notch guard di MacBook bernotch, bar yang penuh sesak, dan Reduce Motion.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
