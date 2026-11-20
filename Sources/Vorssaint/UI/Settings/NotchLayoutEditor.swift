@@ -307,7 +307,7 @@ struct NotchLayoutEditor: View {
                                       width: contentWidth, spacing: NotchLayout.shortcutSpacing,
                                       leastSpacing: NotchLayout.shortcutLeastSpacing,
                                       rowSpacing: controls.shortcutRowSpacing) { item in
-                                NotchActionTile(symbol: item.symbol, title: item.title(l10n)) {}
+                                NotchActionTile(symbol: item.symbol, title: item.title(l10n), iconHex: item.zenithIconHex) {} // Zenith fork
                             }
                         }
                     }

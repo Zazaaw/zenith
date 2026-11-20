@@ -263,12 +263,16 @@ struct QuickLauncherView: View {
                     RoundedRectangle(cornerRadius: notchSize == nil ? 12 : 16, style: .continuous)
                         .fill(iconBackground(item, isSelected: isSelected, isHovered: isHovered))
                         .frame(width: notchSize == nil ? 46 : 32, height: notchSize == nil ? 46 : 32)
-                        .overlay(
-                            Image(systemName: icon(for: item))
-                                .font(.system(size: notchSize == nil ? 19 : 18, // Zenith fork: a plain glyph in the island
-                                              weight: notchSize == nil ? .semibold : .regular))
-                                .foregroundStyle(iconColor(item))
-                        )
+                        .overlay {
+                            if notchSize != nil { // Zenith fork: a colourful app icon in the island
+                                ZenithAppIcon(symbol: icon(for: item),
+                                              hex: item == .micMute && micMute.isMuted ? 0xEF4444 : item.zenithIconHex, size: 32)
+                            } else {
+                                Image(systemName: icon(for: item))
+                                    .font(.system(size: 19, weight: .semibold))
+                                    .foregroundStyle(iconColor(item))
+                            }
+                        }
                     if launcher.isEditing {
                         Button {
                             withAnimation(.easeOut(duration: 0.15)) {
