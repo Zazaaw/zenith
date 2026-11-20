@@ -4,72 +4,74 @@
 import AppKit
 import SwiftUI
 
-// Zenith fork: the About page, after the maker's portfolio (p441z.my.id). A
-// profile hero with the rotating decrypt word and the shiny subtitle, social
-// buttons, figures that count up, the bio rising in word by word, a "Now"
-// timeline, the stack in slow marquee rows, then the studio and the app.
+// Zenith fork: the About page, about Zenith first. The app with its rotating
+// decrypt headline and shiny line, figures that count up, a bento of what it
+// can do (each tile opens that part of Settings), then a little about who
+// makes it, the studio and the source.
 //
 // Motion stays in SwiftUI's animation system and only moves transform and
 // opacity. The one exception is the decrypt effect, which is discrete by
 // design: it swaps one string per ~34 ms step. Everything continuous (the
-// marquee, the rotating word, the shimmer, the status ping) stops when the
-// page is left or the Settings window is closed or covered, and Reduce
-// Motion turns it all into plain fades.
+// rotating word, the shimmer, the status ping) stops when the page is left
+// or the Settings window is closed or covered, and Reduce Motion turns it all
+// into plain fades.
 
 struct ZenithAboutPage: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var settingsWindow = SettingsWindowVisibility.shared
 
     var body: some View {
-        let strings = ZenithStrings.maker(l10n.language)
+        let strings = ZenithStrings.about(l10n.language)
         let visible = settingsWindow.isVisible
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 ZenithAboutReveal(order: 0) { _ in
-                    ZenithAboutIdentity(strings: strings, active: visible)
+                    ZenithAboutHero()
                 }
                 ZenithAboutReveal(order: 1) { shown in
                     ZenithAboutHeadline(active: visible && shown)
                 }
-                .padding(.top, 24)
+                .padding(.top, 26)
                 ZenithAboutReveal(order: 2) { shown in
-                    ZenithShinyText(text: ZenithMaker.subtitle, active: visible && shown)
+                    ZenithShinyText(text: strings.subtitle, active: visible && shown)
                 }
                 .padding(.top, 8)
-                ZenithAboutReveal(order: 3) { _ in
-                    ZenithAboutSocialRow(strings: strings)
+                ZenithAboutReveal(order: 3) { shown in
+                    ZenithAboutStats(stats: [
+                        ZenithAboutStat(value: ZenithAbout.featureCount, label: strings.featureCount),
+                        ZenithAboutStat(value: ZenithAbout.languageCount, label: strings.languageCount),
+                        ZenithAboutStat(value: ZenithAbout.accountCount, label: strings.accountCount),
+                    ], play: shown)
                 }
-                .padding(.top, 20)
-                ZenithAboutReveal(order: 4) { shown in
-                    ZenithAboutStats(strings: strings, play: shown)
+                .padding(.top, 28)
+
+                ZenithAboutReveal(order: 4, waitsForScroll: true) { shown in
+                    VStack(alignment: .leading, spacing: 6) {
+                        ZenithAboutTitle(text: strings.featuresTitle, play: shown)
+                        Text(strings.featuresCaption)
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
-                .padding(.top, 30)
+                .padding(.top, 48)
+                ZenithAboutFeatures(strings: strings)
+                    .padding(.top, 16)
 
                 ZenithAboutReveal(order: 5, waitsForScroll: true) { shown in
-                    VStack(alignment: .leading, spacing: 14) {
-                        ZenithAboutTitle(text: strings.aboutTitle, play: shown)
-                        ZenithRevealParagraph(text: strings.bio, play: shown)
+                    VStack(alignment: .leading, spacing: 12) {
+                        ZenithAboutTitle(text: strings.madeBy, play: shown)
+                        ZenithMakerCard(strings: strings, active: visible && shown)
+                        ZenithLinkCard(title: AppInfo.maker, caption: strings.studioCaption, url: AppInfo.websiteURL) {
+                            BrandBadge(size: 40)
+                        }
                     }
                 }
-                .padding(.top, 44)
-                ZenithAboutReveal(order: 6, waitsForScroll: true) { shown in
-                    VStack(alignment: .leading, spacing: 18) {
-                        ZenithAboutTitle(text: strings.nowTitle, play: shown)
-                        ZenithAboutTimeline(entries: ZenithMaker.timeline, strings: strings, play: shown)
-                    }
+                .padding(.top, 48)
+                ZenithAboutReveal(order: 6, waitsForScroll: true) { _ in
+                    ZenithAboutClosing()
                 }
-                .padding(.top, 44)
-                ZenithAboutReveal(order: 7, waitsForScroll: true) { shown in
-                    VStack(alignment: .leading, spacing: 16) {
-                        ZenithAboutTitle(text: strings.stackTitle, play: shown)
-                        ZenithStackMarquee(running: visible && shown)
-                    }
-                }
-                .padding(.top, 44)
-                ZenithAboutReveal(order: 8, waitsForScroll: true) { _ in
-                    ZenithAboutStudio(strings: strings)
-                }
-                .padding(.top, 44)
+                .padding(.top, 36)
             }
             .frame(maxWidth: 640, alignment: .leading)
             .padding(.horizontal, 28)
@@ -84,8 +86,8 @@ struct ZenithAboutPage: View {
 
 /// One block of the page rising in (8 pt and opacity, on the reveal curve)
 /// the first time it shows, a few tens of milliseconds after the one above.
-/// Blocks below the fold wait until they are scrolled to, so their titles,
-/// figures and timeline play where they can be seen.
+/// Blocks below the fold wait until they are scrolled to, so their titles
+/// and figures play where they can be seen.
 private struct ZenithAboutReveal<Content: View>: View {
     let order: Int
     let waitsForScroll: Bool
@@ -122,21 +124,24 @@ private struct ZenithAboutReveal<Content: View>: View {
 }
 
 /// Runs `action` once the view is on screen: on appear, or, for blocks that
-/// wait for the scroll, when half of it is inside the scroll view (macOS 15).
-/// A fallback shows it after two seconds anyway, so nothing can stay hidden.
+/// wait for the scroll, when a third of it is inside the scroll view (macOS
+/// 15). If the scroll view never reports either way, a fallback shows it
+/// after two seconds, so nothing can stay hidden.
 private struct ZenithWhenVisible: ViewModifier {
     let waitsForScroll: Bool
     let action: () -> Void
+    @State private var reported = false
 
     func body(content: Content) -> some View {
         if waitsForScroll, #available(macOS 15.0, *) {
             content
                 .onScrollVisibilityChange(threshold: 0.3) { visible in
+                    reported = true
                     if visible { action() }
                 }
                 .task {
                     try? await Task.sleep(for: .seconds(2))
-                    if !Task.isCancelled { action() }
+                    if !Task.isCancelled, !reported { action() }
                 }
         } else {
             content.onAppear(perform: action)
@@ -146,42 +151,509 @@ private struct ZenithWhenVisible: ViewModifier {
 
 // MARK: - Hero
 
-private struct ZenithAboutIdentity: View {
-    let strings: ZenithMakerStrings
-    let active: Bool
+/// The app: its icon, name and version (and, in developer builds only, the
+/// commit it was built from).
+private struct ZenithAboutHero: View {
+    @ObservedObject private var l10n = L10n.shared
 
     var body: some View {
-        HStack(alignment: .center, spacing: 20) {
-            avatar
-            VStack(alignment: .leading, spacing: 5) {
-                Text(verbatim: ZenithMaker.name)
-                    .font(.system(size: 26, weight: .bold))
-                    .tracking(-0.7)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                    .textSelection(.enabled)
-                Text(verbatim: "@\(ZenithMaker.handle)")
-                    .font(ZenithType.mono(12.5))
-                    .foregroundStyle(.secondary)
-                ZenithStatusChip(text: strings.status, active: active)
-                    .padding(.top, 5)
+        HStack(alignment: .center, spacing: 18) {
+            ZenithAppIcon(size: 80)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(AppInfo.name)
+                    .font(ZenithType.pageTitle)
+                    .tracking(ZenithType.pageTitleTracking)
+                ZenithFlowRow(spacing: 8) {
+                    Text("\(l10n.s.versionPrefix) \(AppInfo.version)")
+                        .font(ZenithType.mono(11.5))
+                        .foregroundStyle(.secondary)
+                    if AppInfo.isBeta {
+                        Text(l10n.s.betaBadgeLabel.uppercased())
+                            .font(ZenithType.mono(9, weight: .semibold))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(ZenithStatus.fill(ZenithStatus.warning), in: Capsule())
+                            .overlay(Capsule().strokeBorder(ZenithStatus.stroke(ZenithStatus.warning)))
+                            .foregroundStyle(ZenithStatus.warning)
+                    }
+                    if AppInfo.isDeveloperBuild, let commit = AppInfo.buildCommit {
+                        // Dev-only: which source commit this build came from. Never shipped.
+                        Text(commit)
+                            .font(ZenithType.mono(10.5))
+                            .foregroundStyle(.tertiary)
+                            .textSelection(.enabled)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Zenith's own icon from the bundle, else the Satu Visual badge it is made from.
+private struct ZenithAppIcon: View {
+    let size: CGFloat
+
+    private static let icon: NSImage? = Bundle.main.image(forResource: "AppIcon")
+
+    var body: some View {
+        if let icon = Self.icon {
+            // The artwork sits inside a transparent margin; drawn a little
+            // larger, its body is `size` across.
+            Image(nsImage: icon)
+                .resizable()
+                .interpolation(.high)
+                .frame(width: size * 1.22, height: size * 1.22)
+                .frame(width: size, height: size)
+                .accessibilityHidden(true)
+        } else {
+            BrandBadge(size: size)
+                .accessibilityHidden(true)
+        }
+    }
+}
+
+/// “Your Mac, at its ⟨word⟩”, the word in the serif italic accent face about
+/// 1.18× larger. On one line when it fits, else broken after the comma;
+/// either way the word's box is as wide as the widest word, so nothing moves
+/// as it changes.
+private struct ZenithAboutHeadline: View {
+    let active: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var index = 0
+    @State private var frame: ZenithDecryptFrame?
+
+    private static let size: CGFloat = 27
+    private static let wordSize = size * 1.18
+    private static let leadFont = Font.system(size: size, weight: .bold)
+    private static let wordFont = Font.system(size: wordSize, weight: .medium, design: .serif).italic()
+
+    var body: some View {
+        let words = ZenithAbout.rotatingWords
+        let word = words[index % words.count]
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                lead("\(ZenithAbout.headlineLead) \(ZenithAbout.headlineJoin)")
+                wordView(word)
+            }
+            VStack(alignment: .leading, spacing: 0) {
+                lead(ZenithAbout.headlineLead)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    lead(ZenithAbout.headlineJoin)
+                    wordView(word)
+                }
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(ZenithAbout.headlineLead) \(ZenithAbout.headlineJoin) \(word)")
+        .accessibilityAddTraits(.isHeader)
+        .task(id: active) {
+            guard active else {
+                frame = nil
+                return
+            }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(3))
+                guard !Task.isCancelled else { break }
+                let next = (index + 1) % words.count
+                if reduceMotion {
+                    withAnimation(.easeInOut(duration: 0.35)) { index = next }
+                } else {
+                    index = next
+                    await ZenithDecrypt.play(words[next]) { frame = $0 }
+                }
+            }
+            frame = nil
+        }
+    }
+
+    private func lead(_ text: String) -> some View {
+        Text(verbatim: text)
+            .font(Self.leadFont)
+            .tracking(-0.6)
+            .lineLimit(1)
+    }
+
+    private func wordView(_ word: String) -> some View {
+        ZStack(alignment: .leading) {
+            ForEach(ZenithAbout.rotatingWords, id: \.self) { Text(verbatim: $0).hidden() }
+            ZenithDecrypt.text(frame ?? .clean(word), size: Self.wordSize)
+                .contentTransition(.opacity)
+        }
+        .font(Self.wordFont)
+        .lineLimit(1)
+        .fixedSize()
+    }
+}
+
+/// A line with a light band passing across it now and then, as magicui's
+/// animated shiny text on the portfolio: out over 2.4 s, a pause, back again.
+/// The band is a gradient mask whose end points move; nothing is laid out.
+private struct ZenithShinyText: View {
+    let text: String
+    let active: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        label
+            .foregroundStyle(.secondary)
+            .overlay {
+                if active && !reduceMotion {
+                    label
+                        .foregroundStyle(Color.primary.opacity(0.85))
+                        .keyframeAnimator(initialValue: CGFloat(-0.3), repeating: true) { shine, x in
+                            shine.mask {
+                                LinearGradient(colors: [.clear, .black, .clear],
+                                               startPoint: UnitPoint(x: x - 0.14, y: 0.5),
+                                               endPoint: UnitPoint(x: x + 0.14, y: 0.5))
+                            }
+                        } keyframes: { _ in
+                            CubicKeyframe(1.3, duration: 2.4)
+                            LinearKeyframe(1.3, duration: 2.4)
+                            CubicKeyframe(-0.3, duration: 2.4)
+                            LinearKeyframe(-0.3, duration: 0.8)
+                        }
+                        .accessibilityHidden(true)
+                }
+            }
+    }
+
+    private var label: some View {
+        Text(text)
+            .font(.system(size: 14.5))
+            .lineSpacing(3)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+// MARK: - Figures
+
+private struct ZenithAboutStat {
+    let value: Int
+    let label: String
+}
+
+/// Big figures that count up, split by hairlines, each over a grey label.
+private struct ZenithAboutStats: View {
+    let stats: [ZenithAboutStat]
+    let play: Bool
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 0) {
+            ForEach(stats.indices, id: \.self) { index in
+                let stat = stats[index]
+                ZenithStatFigure(value: stat.value, label: stat.label,
+                                 play: play, delay: 0.15 + Double(index) * 0.1)
+                    .padding(.leading, index == 0 ? 0 : 22)
+                    .padding(.trailing, 22)
+                    .overlay(alignment: .leading) {
+                        if index > 0 {
+                            Rectangle().fill(ZenithSurface.hairline).frame(width: 1)
+                        }
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(stat.value) \(stat.label)")
+            }
+        }
+    }
+}
+
+private struct ZenithStatFigure: View {
+    let value: Int
+    let label: String
+    let play: Bool
+    let delay: Double
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            // The final figure, hidden, holds the width so nothing shifts as it counts.
+            Text(verbatim: "\(value)")
+                .hidden()
+                .overlay(alignment: .leading) {
+                    ZenithCountUp(value: play || reduceMotion ? Double(value) : 0)
+                        .animation(reduceMotion ? nil : ZenithMotion.reveal(1.2).delay(delay), value: play)
+                }
+                .font(.system(size: 32, weight: .bold).monospacedDigit())
+                .tracking(-0.8)
+            Text(label)
+                .font(.system(size: 12.5))
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+/// A whole number that SwiftUI interpolates frame by frame.
+private struct ZenithCountUp: View, Animatable {
+    var value: Double
+
+    var animatableData: Double {
+        get { value }
+        set { value = newValue }
+    }
+
+    var body: some View {
+        Text(verbatim: "\(Int(value.rounded()))")
+    }
+}
+
+// MARK: - Features
+
+/// The bento of what Zenith does. Each tile rises in as it scrolls into
+/// view, a beat after the tile before it, and opens its part of Settings.
+private struct ZenithAboutFeatures: View {
+    let strings: ZenithAboutStrings
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var revealed: Set<Int> = []
+    @State private var queue = ZenithRevealQueue(step: 0.06)
+    @State private var waiting: [Int] = []
+    @State private var flushing = false
+
+    var body: some View {
+        ZenithAboutBentoGrid(spacing: 10) {
+            ForEach(ZenithAbout.areas.indices, id: \.self) { index in
+                let area = ZenithAbout.areas[index]
+                ZenithFeatureTile(area: area, strings: strings.area(area.id),
+                                  shown: revealed.contains(index))
+                    .modifier(ZenithWhenVisible(waitsForScroll: true) { request(index) })
+                    .layoutValue(key: ZenithAboutBentoSpan.self, value: area.span)
             }
         }
     }
 
-    private var avatar: some View {
-        let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
+    /// Tiles that come into view in the same moment are gathered for a
+    /// frame, then handed their slots in reading order.
+    private func request(_ index: Int) {
+        guard !waiting.contains(index), !revealed.contains(index) else { return }
+        waiting.append(index)
+        guard !flushing else { return }
+        flushing = true
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(16))
+            flush()
+        }
+    }
+
+    private func flush() {
+        flushing = false
+        let slots = queue.schedule(waiting, now: ProcessInfo.processInfo.systemUptime)
+        waiting = []
+        let animation = reduceMotion ? Animation.easeOut(duration: 0.25) : ZenithMotion.reveal(0.55)
+        for slot in slots {
+            Task { @MainActor in
+                if slot.delay > 0 { try? await Task.sleep(for: .milliseconds(Int(slot.delay * 1000))) }
+                withAnimation(animation) { _ = revealed.insert(slot.index) }
+            }
+        }
+    }
+}
+
+private struct ZenithAboutBentoSpan: LayoutValueKey {
+    static let defaultValue = 1
+}
+
+/// Two columns of hairline tiles (one when narrow). A tile may span both;
+/// tiles sharing a row take its tallest height, so their edges line up.
+private struct ZenithAboutBentoGrid: Layout {
+    var spacing: CGFloat = 10
+
+    private struct Row {
+        var indices: [Int]
+        var widths: [CGFloat]
+        var height: CGFloat
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? 640
+        let rows = arrange(width: width, subviews: subviews)
+        let height = rows.map(\.height).reduce(0, +) + spacing * CGFloat(max(rows.count - 1, 0))
+        return CGSize(width: width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var y = bounds.minY
+        for row in arrange(width: bounds.width, subviews: subviews) {
+            var x = bounds.minX
+            for (index, width) in zip(row.indices, row.widths) {
+                subviews[index].place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(width: width, height: row.height))
+                x += width + spacing
+            }
+            y += row.height + spacing
+        }
+    }
+
+    private func arrange(width: CGFloat, subviews: Subviews) -> [Row] {
+        let columns = ZenithBento.columns(for: width)
+        let spans = subviews.map { $0[ZenithAboutBentoSpan.self] }
+        return ZenithBento.rows(spans: spans, columns: columns).map { indices in
+            let available = max(0, width - spacing * CGFloat(indices.count - 1))
+            let shares = ZenithBento.shares(spans: indices.map { spans[$0] }, columns: columns)
+            let widths = shares.map { (available * CGFloat($0)).rounded(.down) }
+            let height = zip(indices, widths).map { index, width in
+                subviews[index].sizeThatFits(ProposedViewSize(width: width, height: nil)).height
+            }.max() ?? 0
+            return Row(indices: indices, widths: widths, height: height)
+        }
+    }
+}
+
+/// One part of Zenith: a symbol tile, the name, a line, and chips naming
+/// what is inside. Lifts 2 pt on hover; a click opens it in Settings, or the
+/// Features page when it is not installed.
+private struct ZenithFeatureTile: View {
+    let area: ZenithFeatureArea
+    let strings: ZenithAboutAreaStrings
+    let shown: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var hovering = false
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: ZenithRadius.panel, style: .continuous)
+        Button(action: open) {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .top) {
+                    symbol
+                    Spacer(minLength: 8)
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(hovering ? Color.primary : Color.secondary)
+                        .opacity(hovering ? 1 : 0.55)
+                        .offset(x: hovering && !reduceMotion ? 2 : 0)
+                        .padding(.top, 2)
+                }
+                Text(strings.title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .tracking(-0.2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 14)
+                Text(strings.caption)
+                    .font(.system(size: 12.5))
+                    .lineSpacing(2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 4)
+                Spacer(minLength: 14)
+                ZenithFlowRow(spacing: 6) {
+                    ForEach(strings.chips, id: \.self) { chip($0) }
+                }
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background(hovering ? ZenithSurface.tileFill : ZenithSurface.cardFill, in: shape)
+            .overlay(shape.strokeBorder(hovering ? ZenithSurface.tileStroke : ZenithSurface.hairline))
+            .offset(y: hovering && !reduceMotion ? -2 : 0)
+            .contentShape(shape)
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .animation(ZenithAboutMotion.hover(reduceMotion), value: hovering)
+        .opacity(shown ? 1 : 0)
+        .offset(y: shown || reduceMotion ? 0 : 12)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(strings.title). \(strings.caption)")
+        .accessibilityAddTraits(.isLink)
+    }
+
+    private var symbol: some View {
+        let shape = RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous)
+        return Image(systemName: area.symbol)
+            .font(.system(size: 15, weight: .medium))
+            .foregroundStyle(hovering ? Color.primary : Color.secondary)
+            .frame(width: 36, height: 36)
+            .background(ZenithSurface.tileFill, in: shape)
+            .overlay(shape.strokeBorder(ZenithSurface.tileStroke))
+    }
+
+    private func chip(_ text: String) -> some View {
+        let shape = RoundedRectangle(cornerRadius: ZenithRadius.medium, style: .continuous)
+        return Text(text)
+            .font(ZenithType.mono(10.5))
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(ZenithSurface.tileFill, in: shape)
+            .overlay(shape.strokeBorder(ZenithSurface.hairline))
+    }
+
+    private func open() {
+        let route = area.route(isAvailable: { $0.isAvailable })
+        SettingsRouter.shared.request(route.destination, targetFeature: route.targetFeature,
+                                      sidebarFeature: route.sidebarFeature)
+    }
+}
+
+// MARK: - Made by
+
+/// The maker, briefly: photo, name, line and handle, the bio, then the
+/// round link buttons.
+private struct ZenithMakerCard: View {
+    let strings: ZenithAboutStrings
+    let active: Bool
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: ZenithRadius.panel, style: .continuous)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .center, spacing: 16) {
+                photo
+                VStack(alignment: .leading, spacing: 4) {
+                    // The status chip sits beside the name only when there is room.
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 10) {
+                            name
+                            ZenithStatusChip(text: strings.status, active: active).fixedSize()
+                        }
+                        name
+                    }
+                    Text(strings.role)
+                        .font(.system(size: 13.5))
+                        .foregroundStyle(.secondary)
+                    Text(verbatim: "@\(ZenithMaker.handle)")
+                        .font(ZenithType.mono(11))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            Text(strings.bio)
+                .font(.system(size: 13))
+                .lineSpacing(3)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .textSelection(.enabled)
+            HStack(spacing: 8) {
+                ForEach(ZenithMaker.socials, id: \.url) { link in
+                    ZenithSocialButton(link: link, title: link.title ?? strings.website)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(18)
+        .background(ZenithSurface.cardFill, in: shape)
+        .overlay(shape.strokeBorder(ZenithSurface.hairline))
+    }
+
+    private var name: some View {
+        Text(verbatim: ZenithMaker.name)
+            .font(.system(size: 21, weight: .bold))
+            .tracking(-0.5)
+            .lineLimit(1)
+            .fixedSize()
+            .textSelection(.enabled)
+    }
+
+    private var photo: some View {
+        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
         return Group {
             if let image = ZenithMaker.photo {
                 Image(nsImage: image).resizable().aspectRatio(contentMode: .fill)
             } else {
                 Text(verbatim: "F")
-                    .font(.system(size: 38, weight: .bold))
+                    .font(.system(size: 30, weight: .bold))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(ZenithSurface.tileFill)
             }
         }
-        .frame(width: 96, height: 96)
+        .frame(width: 76, height: 76)
         .clipShape(shape)
         .overlay(shape.strokeBorder(ZenithSurface.tileStroke))
         .accessibilityLabel(ZenithMaker.name)
@@ -213,134 +685,13 @@ private struct ZenithStatusChip: View {
                 }
             Text(text)
                 .font(.system(size: 11.5, weight: .medium))
+                .lineLimit(1)
         }
         .foregroundStyle(ZenithStatus.success)
         .padding(.horizontal, 9)
         .padding(.vertical, 4)
         .background(ZenithStatus.fill(ZenithStatus.success), in: Capsule())
         .overlay(Capsule().strokeBorder(ZenithStatus.stroke(ZenithStatus.success)))
-    }
-}
-
-/// “I build for the web — and I ⟨word⟩”, the word in the serif italic accent
-/// face about 1.18× larger. On one line when it fits, else broken after the
-/// dash; either way the word's box is as wide as the widest word, so nothing
-/// moves as it changes.
-private struct ZenithAboutHeadline: View {
-    let active: Bool
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var index = 0
-    @State private var frame: ZenithDecryptFrame?
-
-    private static let size: CGFloat = 27
-    private static let wordSize = size * 1.18
-    private static let leadFont = Font.system(size: size, weight: .bold)
-    private static let wordFont = Font.system(size: wordSize, weight: .medium, design: .serif).italic()
-
-    var body: some View {
-        let words = ZenithMaker.rotatingWords
-        let word = words[index % words.count]
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                lead("\(ZenithMaker.headlineLead) \(ZenithMaker.headlineJoin)")
-                wordView(word)
-            }
-            VStack(alignment: .leading, spacing: 0) {
-                lead(ZenithMaker.headlineLead)
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    lead(ZenithMaker.headlineJoin)
-                    wordView(word)
-                }
-            }
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(ZenithMaker.headlineLead) \(ZenithMaker.headlineJoin) \(word)")
-        .accessibilityAddTraits(.isHeader)
-        .task(id: active) {
-            guard active else {
-                frame = nil
-                return
-            }
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(3))
-                guard !Task.isCancelled else { break }
-                let next = (index + 1) % words.count
-                if reduceMotion {
-                    withAnimation(.easeInOut(duration: 0.35)) { index = next }
-                } else {
-                    index = next
-                    await ZenithDecrypt.play(words[next]) { frame = $0 }
-                }
-            }
-            frame = nil
-        }
-    }
-
-    private func lead(_ text: String) -> some View {
-        Text(verbatim: text)
-            .font(Self.leadFont)
-            .tracking(-0.6)
-            .lineLimit(1)
-    }
-
-    private func wordView(_ word: String) -> some View {
-        ZStack(alignment: .leading) {
-            ForEach(ZenithMaker.rotatingWords, id: \.self) { Text(verbatim: $0).hidden() }
-            ZenithDecrypt.text(frame ?? .clean(word), size: Self.wordSize)
-                .contentTransition(.opacity)
-        }
-        .font(Self.wordFont)
-        .lineLimit(1)
-        .fixedSize()
-    }
-}
-
-/// A line with a light band passing across it now and then, as magicui's
-/// animated shiny text on the portfolio: out over 2.4 s, a pause, back again.
-/// The band is a gradient mask whose end points move; nothing is laid out.
-private struct ZenithShinyText: View {
-    let text: String
-    let active: Bool
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        let label = Text(verbatim: text).font(.system(size: 14.5))
-        label
-            .foregroundStyle(.secondary)
-            .overlay {
-                if active && !reduceMotion {
-                    label
-                        .foregroundStyle(Color.primary.opacity(0.85))
-                        .keyframeAnimator(initialValue: CGFloat(-0.3), repeating: true) { shine, x in
-                            shine.mask {
-                                LinearGradient(colors: [.clear, .black, .clear],
-                                               startPoint: UnitPoint(x: x - 0.14, y: 0.5),
-                                               endPoint: UnitPoint(x: x + 0.14, y: 0.5))
-                            }
-                        } keyframes: { _ in
-                            CubicKeyframe(1.3, duration: 2.4)
-                            LinearKeyframe(1.3, duration: 2.4)
-                            CubicKeyframe(-0.3, duration: 2.4)
-                            LinearKeyframe(-0.3, duration: 0.8)
-                        }
-                        .accessibilityHidden(true)
-                }
-            }
-            .fixedSize(horizontal: false, vertical: true)
-    }
-}
-
-// MARK: - Social row
-
-private struct ZenithAboutSocialRow: View {
-    let strings: ZenithMakerStrings
-
-    var body: some View {
-        HStack(spacing: 8) {
-            ForEach(ZenithMaker.socials, id: \.url) { link in
-                ZenithSocialButton(link: link, title: link.title ?? strings.website)
-            }
-        }
     }
 }
 
@@ -407,7 +758,7 @@ private struct ZenithBundledIcon: View {
 
 private enum ZenithBundledIcons {
     private static let images: [String: NSImage] = {
-        var names = ZenithMaker.stack.compactMap(\.icon)
+        var names = ["si-github"]
         for link in ZenithMaker.socials {
             if case let .bundled(name) = link.icon { names.append(name) }
         }
@@ -422,82 +773,6 @@ private enum ZenithBundledIcons {
     }()
 
     static func image(_ name: String) -> NSImage? { images[name] }
-}
-
-// MARK: - Figures
-
-/// Three big figures that count up, split by hairlines, each over a grey label.
-private struct ZenithAboutStats: View {
-    let strings: ZenithMakerStrings
-    let play: Bool
-
-    var body: some View {
-        let stats: [(value: Int, suffix: String, label: String, detail: String?)] = [
-            (ZenithMaker.yearsBuilding, "+", strings.yearsBuilding, nil),
-            (AppLanguage.allCases.count, "", strings.languagesSpoken, nil),
-            (ZenithMaker.disciplines, "", strings.disciplines, strings.disciplinesDetail),
-        ]
-        HStack(alignment: .top, spacing: 0) {
-            ForEach(stats.indices, id: \.self) { index in
-                let stat = stats[index]
-                ZenithStatFigure(value: stat.value, suffix: stat.suffix, label: stat.label,
-                                 play: play, delay: 0.15 + Double(index) * 0.1)
-                    .padding(.leading, index == 0 ? 0 : 22)
-                    .padding(.trailing, 22)
-                    .overlay(alignment: .leading) {
-                        if index > 0 {
-                            Rectangle().fill(ZenithSurface.hairline).frame(width: 1)
-                        }
-                    }
-                    .help(stat.detail ?? "")
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("\(stat.value)\(stat.suffix) \(stat.label)\(stat.detail.map { ", \($0)" } ?? "")")
-            }
-        }
-    }
-}
-
-private struct ZenithStatFigure: View {
-    let value: Int
-    let suffix: String
-    let label: String
-    let play: Bool
-    let delay: Double
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            // The final figure, hidden, holds the width so nothing shifts as it counts.
-            Text(verbatim: "\(value)\(suffix)")
-                .hidden()
-                .overlay(alignment: .leading) {
-                    ZenithCountUp(value: play || reduceMotion ? Double(value) : 0, suffix: suffix)
-                        .animation(reduceMotion ? nil : ZenithMotion.reveal(1.2).delay(delay), value: play)
-                }
-                .font(.system(size: 32, weight: .bold).monospacedDigit())
-                .tracking(-0.8)
-            Text(label)
-                .font(.system(size: 12.5))
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-}
-
-/// A whole number that SwiftUI interpolates frame by frame.
-private struct ZenithCountUp: View, Animatable {
-    var value: Double
-    let suffix: String
-
-    var animatableData: Double {
-        get { value }
-        set { value = newValue }
-    }
-
-    var body: some View {
-        Text(verbatim: "\(Int(value.rounded()))\(suffix)")
-    }
 }
 
 // MARK: - Decrypt
@@ -569,352 +844,15 @@ extension ZenithDecrypt {
     }
 }
 
-// MARK: - About
+// MARK: - Closing
 
-/// The bio rising in word by word (6 pt, a 4 pt blur clearing, opacity),
-/// staggered across 1.2 s, as on the portfolio. One `Text` drawn by a
-/// `TextRenderer`, so the paragraph is laid out once and only redrawn.
-private struct ZenithRevealParagraph: View {
-    let text: String
-    let play: Bool
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var elapsed: Double = 0
-
-    var body: some View {
-        if #available(macOS 15.0, *), !reduceMotion {
-            styled(composed)
-                .textRenderer(ZenithWordRevealRenderer(elapsed: elapsed))
-                .onChange(of: play, initial: true) { _, play in
-                    guard play, elapsed == 0 else { return }
-                    withAnimation(.linear(duration: ZenithWordRevealTiming.total)) {
-                        elapsed = ZenithWordRevealTiming.total
-                    }
-                }
-        } else {
-            styled(Text(text))
-        }
-    }
-
-    private func styled(_ text: Text) -> some View {
-        text
-            .font(.system(size: 14))
-            .lineSpacing(4)
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
-            .textSelection(.enabled)
-    }
-
-    @available(macOS 15.0, *)
-    private var composed: Text {
-        let units = ZenithWordReveal.units(text)
-        return units.enumerated().reduce(Text(verbatim: "")) { text, unit in
-            text + Text(verbatim: unit.element)
-                .customAttribute(ZenithRevealUnit(index: unit.offset, count: units.count))
-        }
-    }
-}
-
-private enum ZenithWordRevealTiming {
-    /// The last word starts this long after the first.
-    static let spread = 1.2
-    /// Each word's own rise.
-    static let each = 0.6
-    static let total = spread + each
-}
-
-@available(macOS 15.0, *)
-private struct ZenithRevealUnit: TextAttribute {
-    let index: Int
-    let count: Int
-}
-
-@available(macOS 15.0, *)
-private struct ZenithWordRevealRenderer: TextRenderer, Animatable {
-    var elapsed: Double
-
-    var animatableData: Double {
-        get { elapsed }
-        set { elapsed = newValue }
-    }
-
-    var displayPadding: EdgeInsets { EdgeInsets(top: 6, leading: 6, bottom: 10, trailing: 6) }
-
-    func draw(layout: Text.Layout, in context: inout GraphicsContext) {
-        let done = elapsed >= ZenithWordRevealTiming.total
-        for line in layout {
-            for run in line {
-                guard !done, let unit = run[ZenithRevealUnit.self] else {
-                    context.draw(run)
-                    continue
-                }
-                let start = ZenithWordRevealTiming.spread * Double(unit.index) / Double(max(unit.count - 1, 1))
-                let progress = min(max((elapsed - start) / ZenithWordRevealTiming.each, 0), 1)
-                if progress >= 1 {
-                    context.draw(run)
-                    continue
-                }
-                guard progress > 0 else { continue }
-                // Ease out: the word decelerates into place.
-                let eased = 1 - pow(1 - progress, 3)
-                var word = context
-                word.opacity = eased
-                word.translateBy(x: 0, y: CGFloat(1 - eased) * 6)
-                word.addFilter(.blur(radius: CGFloat(1 - eased) * 4))
-                word.draw(run)
-            }
-        }
-    }
-}
-
-// MARK: - Now
-
-/// The timeline in the portfolio's style: a dot on a thin rail (green and
-/// filled while ongoing, hollow grey once past), a logo tile, the role in
-/// bold over the organisation and place, and the period in mono.
-private struct ZenithAboutTimeline: View {
-    let entries: [ZenithTimelineEntry]
-    let strings: ZenithMakerStrings
-    let play: Bool
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    private static let dot: CGFloat = 11
-    private static let tile: CGFloat = 44
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ForEach(entries.indices, id: \.self) { index in
-                row(entries[index], index: index)
-            }
-        }
-    }
-
-    private func row(_ entry: ZenithTimelineEntry, index: Int) -> some View {
-        let delay = 0.12 + Double(index) * 0.08
-        return HStack(alignment: .top, spacing: 16) {
-            Color.clear.frame(width: Self.dot, height: 1)
-            tile(entry.tile)
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    Text(entry.roleTitle(strings))
-                        .font(.system(size: 15, weight: .semibold))
-                    Spacer(minLength: 0)
-                    Text(entry.period(strings))
-                        .font(ZenithType.mono(11))
-                        .foregroundStyle(entry.isCurrent ? ZenithStatus.success : Color.secondary)
-                        .lineLimit(1)
-                        .fixedSize()
-                }
-                place(entry)
-                    .font(.system(size: 13))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.top, 3)
-        }
-        .padding(.bottom, index == entries.count - 1 ? 0 : 24)
-        .overlay(alignment: .topLeading) { rail(entry, index: index, delay: delay) }
-        .opacity(play ? 1 : 0)
-        .offset(y: play || reduceMotion ? 0 : 8)
-        .animation(reduceMotion ? .easeOut(duration: 0.25) : ZenithMotion.reveal(0.5).delay(delay), value: play)
-        .accessibilityElement(children: .combine)
-    }
-
-    private func place(_ entry: ZenithTimelineEntry) -> Text {
-        let organisation = Text(verbatim: entry.organisation).foregroundStyle(.secondary)
-        guard let location = entry.location else { return organisation }
-        return organisation + Text(verbatim: ", \(location)").foregroundStyle(.tertiary)
-    }
-
-    /// The dot on its rail. The rail runs between dots only, and draws down
-    /// from each dot as the row arrives.
-    private func rail(_ entry: ZenithTimelineEntry, index: Int, delay: Double) -> some View {
-        let dotTop = (Self.tile - Self.dot) / 2
-        return VStack(spacing: 0) {
-            Rectangle()
-                .fill(ZenithSurface.tileStroke)
-                .frame(width: 1, height: dotTop)
-                .opacity(index == 0 ? 0 : 1)
-            Group {
-                if entry.isCurrent {
-                    Circle().fill(ZenithStatus.success)
-                } else {
-                    Circle().strokeBorder(Color.secondary.opacity(0.55), lineWidth: 2)
-                }
-            }
-            .frame(width: Self.dot, height: Self.dot)
-            Rectangle()
-                .fill(ZenithSurface.tileStroke)
-                .frame(width: 1)
-                .frame(maxHeight: .infinity)
-                .scaleEffect(x: 1, y: play || reduceMotion ? 1 : 0, anchor: .top)
-                .animation(reduceMotion ? nil : ZenithMotion.reveal(0.6).delay(delay + 0.15), value: play)
-                .opacity(index == entries.count - 1 ? 0 : 1)
-        }
-        .frame(width: Self.dot)
-        .accessibilityHidden(true)
-    }
-
-    @ViewBuilder
-    private func tile(_ tile: ZenithTimelineEntry.Tile) -> some View {
-        switch tile {
-        case .studio:
-            BrandBadge(size: Self.tile)
-        case .app:
-            // The icon's artwork sits inside a transparent margin; drawn a
-            // little larger, its body matches the other tiles.
-            Image(nsImage: NSApplication.shared.applicationIconImage)
-                .resizable()
-                .frame(width: Self.tile * 1.22, height: Self.tile * 1.22)
-                .frame(width: Self.tile, height: Self.tile)
-                .accessibilityHidden(true)
-        case let .symbol(name):
-            let shape = RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous)
-            Image(systemName: name)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(.secondary)
-                .frame(width: Self.tile, height: Self.tile)
-                .background(ZenithSurface.tileFill, in: shape)
-                .overlay(shape.strokeBorder(ZenithSurface.tileStroke))
-        }
-    }
-}
-
-// MARK: - Stack
-
-/// The stack in slow marquee rows, the middle one running the other way,
-/// faded at both edges. A row pauses under the pointer; with Reduce Motion
-/// the tags sit still, wrapped.
-private struct ZenithStackMarquee: View {
-    let running: Bool
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    /// Seconds per loop, row by row.
-    private static let periods: [TimeInterval] = [96, 120, 108]
-
-    var body: some View {
-        Group {
-            if reduceMotion {
-                ZenithFlowRow(spacing: 8) {
-                    ForEach(ZenithMaker.stack, id: \.name) { ZenithStackPill(item: $0) }
-                }
-            } else {
-                let rows = ZenithMaker.stackRows(Self.periods.count)
-                VStack(spacing: 10) {
-                    ForEach(rows.indices, id: \.self) { index in
-                        ZenithMarqueeRow(items: rows[index], period: Self.periods[index],
-                                         reversed: index == 1, running: running)
-                    }
-                }
-                .mask {
-                    LinearGradient(stops: [.init(color: .clear, location: 0),
-                                           .init(color: .black, location: 0.08),
-                                           .init(color: .black, location: 0.92),
-                                           .init(color: .clear, location: 1)],
-                                   startPoint: .leading, endPoint: .trailing)
-                }
-            }
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(ZenithMaker.stack.map(\.name).joined(separator: ", "))
-    }
-}
-
-/// One row: two copies of the tags side by side, slid by one copy's width
-/// per loop on the display clock. The time spent paused is banked, so the
-/// row resumes where it stopped.
-private struct ZenithMarqueeRow: View {
-    let items: [ZenithStackItem]
-    let period: TimeInterval
-    let reversed: Bool
-    let running: Bool
-    @State private var copyWidth: CGFloat = 0
-    @State private var hovering = false
-    @State private var banked: TimeInterval = 0
-    @State private var since: Date?
-
-    private static let gap: CGFloat = 8
-    private var moving: Bool { running && !hovering }
-
-    var body: some View {
-        Color.clear
-            .frame(height: ZenithStackPill.height)
-            .overlay(alignment: .leading) {
-                TimelineView(.animation(minimumInterval: nil, paused: !moving)) { context in
-                    let elapsed = banked + (since.map { max(0, context.date.timeIntervalSince($0)) } ?? 0)
-                    let phase = (elapsed / period).truncatingRemainder(dividingBy: 1)
-                    let travel = copyWidth + Self.gap
-                    strip.offset(x: -travel * CGFloat(reversed ? 1 - phase : phase))
-                }
-            }
-            .clipped()
-            .contentShape(Rectangle())
-            .onHover { hovering = $0 }
-            .onChange(of: moving, initial: true) { _, moving in
-                let now = Date()
-                if moving {
-                    since = now
-                } else if let start = since {
-                    banked += now.timeIntervalSince(start)
-                    since = nil
-                }
-            }
-    }
-
-    private var strip: some View {
-        HStack(spacing: Self.gap) {
-            ZenithStackTags(items: items)
-                .equatable()
-                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { copyWidth = $0 }
-            ZenithStackTags(items: items)
-                .equatable()
-        }
-        .fixedSize()
-        .drawingGroup()
-    }
-}
-
-private struct ZenithStackTags: View, Equatable {
-    let items: [ZenithStackItem]
-
-    var body: some View {
-        HStack(spacing: 8) {
-            ForEach(items, id: \.name) { ZenithStackPill(item: $0) }
-        }
-    }
-}
-
-/// An icon and a name in a hairline capsule.
-private struct ZenithStackPill: View {
-    let item: ZenithStackItem
-    static let height: CGFloat = 30
-
-    var body: some View {
-        HStack(spacing: 6) {
-            if let icon = item.icon {
-                ZenithBundledIcon(name: icon, size: 13)
-            }
-            Text(verbatim: item.name)
-                .font(.system(size: 12.5, weight: .medium))
-                .lineLimit(1)
-        }
-        .foregroundStyle(.secondary)
-        .padding(.horizontal, 12)
-        .frame(height: Self.height)
-        .background(ZenithSurface.cardFill, in: Capsule())
-        .overlay(Capsule().strokeBorder(ZenithSurface.tileStroke))
-    }
-}
-
-// MARK: - Studio and app
-
-private struct ZenithAboutStudio: View {
-    let strings: ZenithMakerStrings
+/// The source, the way back into the introduction, updates when they are on,
+/// and the copyright.
+private struct ZenithAboutClosing: View {
     @ObservedObject private var l10n = L10n.shared
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ZenithLinkCard(title: AppInfo.maker, caption: strings.studioCaption, url: AppInfo.websiteURL) {
-                BrandBadge(size: 40)
-            }
+        VStack(alignment: .leading, spacing: 14) {
             ZenithLinkCard(title: AppInfo.repositorySlug, caption: l10n.s.viewOnGitHub, url: AppInfo.repositoryURL) {
                 let shape = RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous)
                 ZenithBundledIcon(name: "si-github", size: 17)
@@ -923,8 +861,16 @@ private struct ZenithAboutStudio: View {
                     .background(ZenithSurface.tileFill, in: shape)
                     .overlay(shape.strokeBorder(ZenithSurface.tileStroke))
             }
-            appBlock
-                .padding(.top, 14)
+            HStack(spacing: 8) {
+                Button(l10n.s.reviewIntro) {
+                    appDelegate()?.showOnboarding()
+                }
+                if AppInfo.showsUpstreamReleaseIntros {
+                    Button(l10n.s.reviewHighlights) {
+                        appDelegate()?.showUpdateHighlights(isReview: true)
+                    }
+                }
+            }
             if AppInfo.updatesEnabled {
                 Form { UpdatesView() }
                     .formStyle(.grouped)
@@ -933,67 +879,7 @@ private struct ZenithAboutStudio: View {
             Text(AppInfo.copyright)
                 .font(ZenithType.mono(10.5))
                 .foregroundStyle(.tertiary)
-                .padding(.top, 6)
         }
-    }
-
-    /// The app itself, compact: icon, name, version (and, in developer
-    /// builds only, the commit), and the way back into the introduction.
-    private var appBlock: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center, spacing: 14) {
-                Image(nsImage: NSApplication.shared.applicationIconImage)
-                    .resizable()
-                    .frame(width: 54, height: 54)
-                    .frame(width: 44, height: 44)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 8) {
-                        Text(AppInfo.name).font(.system(size: 15, weight: .semibold))
-                        if AppInfo.isBeta {
-                            Text(l10n.s.betaBadgeLabel.uppercased())
-                                .font(ZenithType.mono(9, weight: .semibold))
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(ZenithStatus.fill(ZenithStatus.warning), in: Capsule())
-                                .overlay(Capsule().strokeBorder(ZenithStatus.stroke(ZenithStatus.warning)))
-                                .foregroundStyle(ZenithStatus.warning)
-                        }
-                    }
-                    HStack(spacing: 8) {
-                        Text("\(l10n.s.versionPrefix) \(AppInfo.version)")
-                            .font(ZenithType.mono(11))
-                            .foregroundStyle(.secondary)
-                        if AppInfo.isDeveloperBuild, let commit = AppInfo.buildCommit {
-                            // Dev-only: which source commit this build came from. Never shipped.
-                            Text(commit)
-                                .font(ZenithType.mono(10.5))
-                                .foregroundStyle(.tertiary)
-                                .textSelection(.enabled)
-                        }
-                    }
-                }
-                Spacer(minLength: 12)
-                HStack(spacing: 8) {
-                    if AppInfo.showsUpstreamReleaseIntros {
-                        Button(l10n.s.reviewHighlights) {
-                            appDelegate()?.showUpdateHighlights(isReview: true)
-                        }
-                    }
-                    Button(l10n.s.reviewIntro) {
-                        appDelegate()?.showOnboarding()
-                    }
-                }
-            }
-            Text(l10n.s.aboutDescription)
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(14)
-        .background(ZenithSurface.cardFill, in: RoundedRectangle(cornerRadius: ZenithRadius.panel, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: ZenithRadius.panel, style: .continuous)
-            .strokeBorder(ZenithSurface.hairline))
     }
 }
 

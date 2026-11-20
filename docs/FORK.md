@@ -687,43 +687,53 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     cutout dites di suite `photo-actions`; Vision dicoba manual di gambar contoh sistem (bukan di test).
     Perlu dicek di Mac: lima zona drop di lebar compact (teks dua baris), drop sungguhan dari Finder,
     animasi di 120 Hz, panel opsi di bahasa panjang, drag hasil keluar, Copy ke Figma/Slack.
-- **Halaman About ala portofolio (branch `feat/about-portfolio`):** About dibangun ulang mengikuti
-  p441z.my.id. View di `UI/Settings/ZenithAboutPage.swift`; data dan logika murni (pembuat, tautan,
-  linimasa, stack, langkah decrypt, pemecah kata) di `ZenithAboutSupport.swift`, ikut dikompilasi ke
-  test (suite `settings`, `Tests/ZenithAboutTests.swift`). `AboutSettings` di `SettingsView.swift`
-  tinggal memanggil `ZenithAboutPage`. `ZenithMakerCard` dan `ZenithLinkPill` dihapus;
-  `ZenithLinkCard`, `ZenithFlowRow` dan `ZenithMaker` pindah ke file About.
-  - **Urutan:** hero (foto 96 pt, nama, `@p441z`, chip hijau "Building Zenith"), headline "I build for
-    the web — and I ⟨design/code/shoot/ship⟩" dan subtitle (sengaja **tetap Inggris** di semua
-    bahasa), tombol sosial bulat (situs, GitHub, LinkedIn, Instagram; tanpa email/telepon), tiga angka
-    (4+ tahun, jumlah `AppLanguage` = 15, 3 disiplin), About (bio), Now (linimasa), Stack (marquee),
-    lalu kartu Satu Visual, kartu repo, blok app (ikon, versi, commit khusus build dev, Review
-    introduction) dan copyright.
-  - **Linimasa:** array `ZenithMaker.timeline`, sekarang Satu Visual, Jamaah.net dan Zenith. Pekerjaan
-    utama sengaja tidak dicantumkan. Peran bisa `.custom("…")` kalau tidak perlu diterjemahkan.
-  - **Teks:** `ZenithStrings.maker` (15 bahasa) sekarang berisi chip status, label angka, judul
-    bagian, "Present" dan nama peran; `madeBy` dan `role` dihapus karena tidak terpakai.
-  - **Ikon:** SVG monokrom dari simple-icons 11.15.0 (CC0-1.0) di `Resources/Images/si-*.svg`,
-    dimuat sebagai template (seperti `DiscordMark`) dan diwarnai mengikuti label. SwiftUI tanpa ikon;
-    situs memakai SF Symbol `globe`. Ini logo merek pihak ketiga, jadi hanya dipakai untuk menautkan
-    ke profil/alat itu.
-  - **Gerak:** blok masuk naik 8 pt + opacity di kurva reveal, jeda 60 ms (blok di bawah lipatan
-    menunggu di-scroll, `onScrollVisibilityChange` macOS 15, cadangan 2 dtk). Kata berputar tiap
-    3 dtk dengan efek decrypt (noise `_<>*/#` jadi huruf dari kiri ke kanan, blok hijau di depan,
-    langkah 34 ms, satu `Text`); judul bagian juga decrypt saat muncul. Subtitle punya pita kilau
-    (mask gradien di `keyframeAnimator`). Angka menghitung naik lewat view `Animatable`. Bio naik
-    per kata (blur 4 pt hilang, 6 pt, tersebar 1,2 dtk) lewat `TextRenderer` (macOS 15; macOS 14
-    cukup fade). Linimasa: baris masuk berurutan, rel tumbuh dari atas (`scaleEffect`). Stack: tiga
-    baris marquee `TimelineView(.animation)` + `.drawingGroup()`, baris tengah terbalik, 96–120
-    dtk per putaran, tepi memudar, berhenti saat di-hover. Hover tombol sosial dan kartu naik 2 pt
-    (spring 0,3/0,8). Semua gerak terus-menerus berhenti saat halaman ditinggal atau jendela Settings
-    tertutup/tertutupi (`SettingsWindowVisibility`). Reduce Motion: hanya fade, kata berganti
-    cross-fade, stack jadi baris statis yang membungkus.
-  - **Belum diverifikasi visual di app:** UI app tidak dijalankan. Tata letak dicek lewat render
-    statis (`ImageRenderer`, salinan halaman dengan stub) di 480–640 pt, terang/gelap, Inggris,
-    Prancis, Jepang. Perlu dicek di Mac: semua animasi di 120 Hz, decrypt kata dan judul, kilau
-    subtitle, marquee dan pause saat hover, apakah `onScrollVisibilityChange` memicu blok bawah saat
-    di-scroll, word reveal bersama `textSelection`, ikon app di tile Zenith, tooltip tombol sosial.
+- **Halaman About tentang Zenith (branch `feat/about-zenith`, menggantikan `feat/about-portfolio`):**
+  versi portofolio terlalu banyak bercerita tentang pembuatnya, jadi About sekarang menjelaskan Zenith
+  dan fiturnya, dan pembuatnya hanya sedikit (seperti kartu "Made by" sebelumnya). View di
+  `UI/Settings/ZenithAboutPage.swift`; data dan logika murni (`ZenithAbout`: headline, angka, daftar
+  tile dan rutenya; `ZenithBento`: kolom dan baris grid; `ZenithRevealQueue`: jadwal masuk tile;
+  `ZenithMaker`; decrypt) di `ZenithAboutSupport.swift`, ikut dikompilasi ke test (suite `settings`,
+  `Tests/ZenithAboutTests.swift`). `AboutSettings` di `SettingsView.swift` tetap hanya memanggil
+  `ZenithAboutPage`.
+  - **Urutan:** hero (ikon app dari bundle 80 pt, cadangannya `BrandBadge`; "Zenith"; versi mono,
+    badge beta, commit khusus build dev), headline "Your Mac, at its ⟨peak/notch/music/agents/builds/
+    files⟩" (sengaja **tetap Inggris** di semua bahasa), subtitle berkilau (diterjemahkan), tiga angka
+    (jumlah `AppFeature.allCases` = isi halaman Features, sekarang 83; jumlah `AppLanguage` = 15;
+    0 akun/tanpa pelacakan), bagian Features (judul decrypt + satu baris) dengan grid bento, lalu
+    "Made by" (kartu lama: foto, nama, chip hijau "Building Zenith" kalau muat di samping nama, peran,
+    `@p441z`, bio, tombol bulat situs/GitHub/LinkedIn/Instagram), kartu Satu Visual, kartu repo,
+    "Review introduction", `UpdatesView` kalau `updatesEnabled`, copyright.
+  - **Bento:** 10 tile, `ZenithAbout.areas`. Dua kolom kalau lebar ≥ 460 pt, satu kolom kalau lebih
+    sempit; Dynamic Island dan System selebar dua kolom (irama: lebar, dua pasang, lebar, dua pasang).
+    Tile sebaris setinggi tile tertinggi; tile yang sendirian melebar penuh. Tiap tile: SF Symbol di
+    kotak abu-abu, judul tebal, satu baris abu-abu, chip mono. Klik membuka fitur pertama yang masih
+    terpasang; kalau tidak ada satu pun, membuka halaman Features di fitur pertama:
+    Dynamic Island → `.notch`; AI agents → Content › Agents; For developers → Content › Vercel
+    (tanpa island: Command Bar); Files & photos → Shelf (lalu Clipboard); Capture → Screenshot
+    (lalu Recorder, OCR, Color picker); System → Monitor (lalu Keep Awake); Windows & Dock → Switcher
+    (lalu Window Layout, Dock, Quit on close); Mouse & keyboard → Smooth scrolling (lalu fitur mouse
+    lain, Snippets, Super Key); Sound → Mixer (lalu Output, Mic mute); Utilities → Quick panel (lalu
+    Scratchpad, Cleaner, Uninstaller, Homebrew).
+  - **Teks:** `ZenithStrings.about` (15 bahasa) menggantikan `ZenithStrings.maker`: subtitle, label
+    angka, judul/keterangan Features, judul, keterangan dan chip tiap tile, dan teks kartu pembuat
+    (`madeBy`, `role`, bio, status, keterangan studio, "Website"). Nama produk (Claude, Codex, Vercel,
+    GitHub, WakaTime, AirDrop, Homebrew) tetap sama di semua bahasa dan dikunci test.
+  - **Dihapus:** headline "I build for the web…", angka tahun/disiplin, linimasa Now, marquee Stack,
+    bio yang naik per kata (`TextRenderer`), serta 13 SVG stack (`si-swift`, `si-react`, dst.). SVG
+    sosial (`si-github`, `si-linkedin`, `si-instagram`, simple-icons 11.15.0, CC0-1.0) tetap.
+  - **Gerak:** blok masuk naik 8 pt + opacity di kurva reveal, jeda 60 ms; blok di bawah lipatan
+    menunggu di-scroll (`onScrollVisibilityChange` macOS 15; cadangan 2 dtk hanya kalau scroll view
+    tidak pernah melapor). Tile bento masuk satu per satu saat terlihat: naik 12 pt + opacity, jarak
+    60 ms dalam urutan baca, tile yang terlihat belakangan menunggu antrean. Kata headline decrypt
+    tiap 3 dtk, judul bagian decrypt saat muncul, subtitle berkilau, angka menghitung naik, hover tile,
+    tombol sosial dan kartu naik 2 pt dengan spring (0,3/0,8), panah tile bergeser 2 pt. Gerak terus-
+    menerus berhenti saat halaman ditinggal atau jendela Settings tertutup/tertutupi
+    (`SettingsWindowVisibility`). Reduce Motion: hanya fade.
+  - **Belum diverifikasi di app:** UI app tidak dijalankan. Tata letak dicek lewat render statis
+    (`ImageRenderer`, salinan halaman dengan stub) di 480–760 pt, terang/gelap, Inggris, Jerman,
+    Jepang, Rusia. Perlu dicek di Mac: animasi masuk tile saat di-scroll di 120 Hz, decrypt, kilau
+    subtitle, hover tile, klik tile ke halaman yang benar (dan ke Features kalau fitur tidak
+    terpasang), ikon app asli di hero, tombol "Review introduction" (tidak bisa dirender statis).
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
