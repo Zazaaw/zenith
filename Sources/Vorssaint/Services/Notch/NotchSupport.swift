@@ -859,8 +859,9 @@ enum NotchMusicStripLayout {
 enum NotchCompactActivity: String, Identifiable {
     // Zenith fork: vercel is a Vercel build on its way, then how it ended;
     // command a long-running terminal command, then how it ended;
-    // cardImport a camera card being copied, then how it ended.
-    case timer, watch, downloads, agents, calendar, music, keepAwake, vercel, command, cardImport
+    // cardImport a camera card being copied, then how it ended; export a
+    // render, recording or photo export growing in a watched folder.
+    case timer, watch, downloads, agents, calendar, music, keepAwake, vercel, command, cardImport, export
 
     var id: String { rawValue }
 
@@ -876,6 +877,7 @@ enum NotchCompactActivity: String, Identifiable {
         case .vercel: return "Vercel"
         case .command: return ZenithStrings.commandActivity(language).activityTitle // Zenith fork
         case .cardImport: return ZenithStrings.cardImport(language).title // Zenith fork
+        case .export: return ZenithStrings.exportTracker(language).activityTitle // Zenith fork
         }
     }
 
@@ -893,12 +895,14 @@ enum NotchCompactActivity: String, Identifiable {
         case .vercel: return .vercel
         case .command: return .controls // Zenith fork
         case .cardImport: return .cardImport // Zenith fork
+        case .export: return .controls // Zenith fork: a click reveals the file instead
         }
     }
 
     var symbol: String {
         if self == .command { return CommandActivitySupport.symbol } // Zenith fork
         if self == .cardImport { return "camera.fill" } // Zenith fork
+        if self == .export { return ExportTrackerSupport.symbol } // Zenith fork
         return self == .keepAwake ? NotchControlItem.keepAwake.symbol : module.symbol
     }
 }
@@ -1838,10 +1842,10 @@ enum NotchSupport {
     static func compactActivity(timer: Bool, downloads: Bool, agents: Bool = false,
                                 calendar: Bool = false, music: Bool, keepAwake: Bool = false,
                                 vercel: Bool = false, command: Bool = false,
-                                cardImport: Bool = false) -> NotchCompactActivity? { // Zenith fork
+                                cardImport: Bool = false, export: Bool = false) -> NotchCompactActivity? { // Zenith fork
         compactActivities(timer: timer, downloads: downloads, agents: agents,
                           calendar: calendar, music: music, keepAwake: keepAwake, vercel: vercel,
-                          command: command, cardImport: cardImport).first
+                          command: command, cardImport: cardImport, export: export).first
     }
 
     /// Keep Awake comes last: a session can run all day, even more than
@@ -1849,14 +1853,14 @@ enum NotchSupport {
     /// follows the timer: the person started both and is waiting on them.
     /// Zenith fork: a Vercel build follows agents, as work the person
     /// started and waits on that ends on its own; a terminal command
-    /// follows it for the same reason, and a card import after it.
+    /// follows it for the same reason, and a card import and an export after it.
     static func compactActivities(timer: Bool, watch: Bool = false, downloads: Bool, agents: Bool,
                                   calendar: Bool, music: Bool, keepAwake: Bool = false,
                                   vercel: Bool = false, command: Bool = false,
-                                  cardImport: Bool = false) -> [NotchCompactActivity] { // Zenith fork
+                                  cardImport: Bool = false, export: Bool = false) -> [NotchCompactActivity] { // Zenith fork
         let candidates: [(Bool, NotchCompactActivity)] = [
             (timer, .timer), (watch, .watch), (downloads, .downloads), (agents, .agents), (vercel, .vercel),
-            (command, .command), (cardImport, .cardImport),
+            (command, .command), (cardImport, .cardImport), (export, .export),
             (calendar, .calendar), (music, .music), (keepAwake, .keepAwake)
         ]
         return candidates.compactMap { $0.0 ? $0.1 : nil }

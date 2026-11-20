@@ -265,6 +265,7 @@ struct MetricsTests {
             ("vercel", { VercelTests.run(suite) }),
             ("gh", { GitHubTests.run(suite) }),
             ("command-activity", { CommandActivityTests.run(suite) }),
+            ("export-tracker", { ExportTrackerTests.run(suite) }),
             ("claude-hooks", { ClaudeHooksTests.run(suite) }),
             ("photo-actions", { PhotoActionsTests.run(suite) }),
             ("design-overlay", { DesignOverlayTests.run(suite) }),

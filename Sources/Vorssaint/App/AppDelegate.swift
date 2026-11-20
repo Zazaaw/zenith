@@ -2878,6 +2878,9 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         if let url = Notifier.zenithOpenURL(from: response) { // Zenith fork: a failed Vercel build opens its log.
             DispatchQueue.main.async { NSWorkspace.shared.open(url) }
         }
+        if let file = Notifier.zenithRevealURL(from: response) { // Zenith fork: a finished export shows in Finder.
+            DispatchQueue.main.async { NSWorkspace.shared.activateFileViewerSelecting([file]) }
+        }
         completionHandler()
     }
 }

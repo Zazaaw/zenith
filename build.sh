@@ -300,6 +300,8 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Notch/NotchLockScreenWidgetAccess.swift
         Sources/Vorssaint/Services/Vercel/VercelSupport.swift
         Sources/Vorssaint/Services/Command/CommandActivitySupport.swift
+        Sources/Vorssaint/Services/ExportTracker/ExportTrackerSupport.swift
+        Sources/Vorssaint/Services/ExportTracker/ExportWriterProbe.swift
         Sources/Vorssaint/Services/Notch/ZenithNoticeSupport.swift
         Sources/Vorssaint/Services/Notch/ZenithHomeLayoutSupport.swift
         Sources/Vorssaint/Services/CardImport/CardImportSupport.swift

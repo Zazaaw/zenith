@@ -149,6 +149,15 @@ final class ZenithNoticeCenter: ObservableObject {
         if notice?.key == key { dismiss(quickly: true) }
     }
 
+    /// An export finished (ExportTrackerService): its title, the file and its
+    /// size below, the file's thumbnail, and a click reveals it.
+    func exportFinished(_ url: URL, key: String, title: String, subtitle: String) {
+        guard ExportTrackerSupport.isEnabled() else { return }
+        requestThumbnail(url)
+        enqueue(ZenithNotice(kind: .export, key: ZenithNoticeKey.export(key), title: title, subtitle: subtitle,
+                             glyph: .file(url), accessory: .checkmark, action: .reveal(url)))
+    }
+
     private static func reading(_ power: PowerReading) -> ZenithBatteryReading {
         ZenithBatteryReading(percent: power.chargePercent, external: power.externalConnected, charging: power.isCharging)
     }
@@ -573,6 +582,7 @@ final class ZenithNoticeCenter: ObservableObject {
             case .audio: return !defaults.bool(forKey: DefaultsKey.notchNoticeAudio)
             case .download: return !defaults.bool(forKey: DefaultsKey.notchNoticeDownload)
             case .card: return !CardImportOptions.isEnabled(in: defaults)
+            case .export: return !ExportTrackerSupport.isEnabled(in: defaults)
             }
         }
     }

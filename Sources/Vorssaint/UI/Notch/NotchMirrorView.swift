@@ -53,6 +53,7 @@ struct NotchMirrorView: View {
             case .vercel: VercelCapsuleStrip(service: service, size: size, displayGeometry: geometry) // Zenith fork
             case .command: CommandCapsuleStrip(service: service, size: size, displayGeometry: geometry) // Zenith fork
             case .cardImport: CardImportCapsuleStrip(service: service, size: size, displayGeometry: geometry) // Zenith fork
+            case .export: ExportCapsuleStrip(service: service, size: size, displayGeometry: geometry) // Zenith fork
             }
         } else {
             switch activity {
@@ -66,6 +67,7 @@ struct NotchMirrorView: View {
             case .vercel: VercelActivityStrip(service: service, displayGeometry: mirror.strip) // Zenith fork
             case .command: CommandActivityStrip(service: service, displayGeometry: mirror.strip) // Zenith fork
             case .cardImport: CardImportActivityStrip(service: service, displayGeometry: mirror.strip) // Zenith fork
+            case .export: ExportActivityStrip(service: service, displayGeometry: mirror.strip) // Zenith fork
             }
         }
     }

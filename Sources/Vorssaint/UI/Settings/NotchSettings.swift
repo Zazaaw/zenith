@@ -664,6 +664,7 @@ struct NotchSettings: View {
                 switchRow("speaker.wave.2", locked.sounds, caption: locked.soundsHint, isOn: $lockSounds)
             }
             CommandActivitySettings() // Zenith fork: long-running terminal commands in the closed island.
+            ExportTrackerSettings() // Zenith fork: renders, recordings and photo exports in the closed island.
             ZenithNoticeSettings() // Zenith fork: capsule notices for battery, headphones and downloads.
         }
     }
