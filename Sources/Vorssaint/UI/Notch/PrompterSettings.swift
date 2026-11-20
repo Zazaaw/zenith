@@ -178,7 +178,7 @@ struct PrompterSettingsView: View {
             slider(text.lineSpacing, value: Binding(get: { PrompterSettings.clampedLineSpacing(lineSpacing) },
                                                     set: { lineSpacing = PrompterSettings.clampedLineSpacing($0) }),
                    range: PrompterSettings.lineSpacingRange, step: 0.05,
-                   reading: String(format: "%.2f×", PrompterSettings.clampedLineSpacing(lineSpacing)))
+                   reading: String(format: "%.2f×", locale: MetricFormat.locale, PrompterSettings.clampedLineSpacing(lineSpacing)))
             HStack(spacing: 12) {
                 Text(text.alignment)
                 Spacer(minLength: 12)
