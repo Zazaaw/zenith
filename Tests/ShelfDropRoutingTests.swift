@@ -104,6 +104,16 @@ enum ShelfDropRoutingContract {
         }
         func hide() { hides += 1 }
     }
+    /// Zenith fork: the design overlay as the drop path sees it (DesignOverlayTests).
+    final class DesignOverlayService {
+        static var shared = DesignOverlayService()
+        var accepts = true
+        var opened = 0
+        func open(dropped pasteboard: NSPasteboard) -> Bool {
+            opened += 1
+            return accepts
+        }
+    }
     class FileToolsState {
         enum MediaState { case idle, running }
         final class Media { var state = MediaState.idle }

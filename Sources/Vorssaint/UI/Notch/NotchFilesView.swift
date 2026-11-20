@@ -66,10 +66,17 @@ struct NotchFilesView: View {
                     // Zenith fork: images also get the photo actions.
                     ForEach(service.offersPhotoTargets, id: \.self) { target in
                         let photoText = ZenithStrings.photoActions(l10n.language)
-                        dropDestination(target == .transform ? photoText.transform : photoText.removeBackground,
-                                        symbol: target == .transform ? "photo.stack" : "person.and.background.dotted",
-                                        selected: service.photoDropTarget == target, available: photos.canAcceptDrop,
-                                        unavailableNote: photoText.busy, index: zoneIndex(target))
+                        if target == .overlay {
+                            // Zenith fork: the design overlay, which takes the image at any time.
+                            dropDestination(ZenithStrings.designOverlay(l10n.language).dropZone,
+                                            symbol: DesignOverlaySupport.dropSymbol,
+                                            selected: service.photoDropTarget == target, index: zoneIndex(target))
+                        } else {
+                            dropDestination(target == .transform ? photoText.transform : photoText.removeBackground,
+                                            symbol: target == .transform ? "photo.stack" : "person.and.background.dotted",
+                                            selected: service.photoDropTarget == target, available: photos.canAcceptDrop,
+                                            unavailableNote: photoText.busy, index: zoneIndex(target))
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
