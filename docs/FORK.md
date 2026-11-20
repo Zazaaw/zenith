@@ -734,6 +734,84 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     Jepang, Rusia. Perlu dicek di Mac: animasi masuk tile saat di-scroll di 120 Hz, decrypt, kilau
     subtitle, hover tile, klik tile ke halaman yang benar (dan ke Features kalau fitur tidak
     terpasang), ikon app asli di hero, tombol "Review introduction" (tidak bisa dirender statis).
+- **Balas pesan dari island (branch `feat/notifications-reply`):** notifikasi Messages dan WhatsApp
+  bisa dibalas langsung dari island, polanya seperti Droppy. Kode di
+  `Services/Notifications/ZenithReplySupport.swift` (murni, ikut `TEST_SOURCES`: app mana yang dapat
+  baris balas, escape string AppleScript, skrip Messages, parsing daftar chat, resolusi pengirim ke
+  chat, link `whatsapp://`, rencana dan fallback, `ZenithReplyHold`), `ZenithReplyChannels.swift`
+  (protokol `ZenithReplyChannel`, channel Messages dan WhatsApp, helper AX `ZenithAX`),
+  `ZenithReplyComposer.swift` (state baris balas, draft, status, keyboard), `UI/Notch/ZenithReplyRow.swift`
+  dan `UI/Settings/ZenithReplySettings.swift`. Teks di `ZenithStrings.reply` (15 bahasa). Test di
+  `Tests/ReplyTests.swift` (suite `reply`).
+  - **Sumber data:** notifikasi dibaca lewat Accessibility dari banner `com.apple.notificationcenterui`
+    (`NotchNotificationReaderCore`). Yang tersedia hanya label: nama app (header), judul (pengirim
+    atau nama grup), subjudul, isi, plus `AXIdentifier` banner (UUID, bukan id chat). Bundle id sumber
+    diresolusi dari nama app (`NotchNotificationSources`) dan sekarang dibuka lewat
+    `NotchNotificationService.sourceBundleIdentifier(for:)`. Tidak ada nomor telepon atau id chat,
+    kecuali kalau judulnya sendiri berupa nomor/email (kontak yang belum disimpan).
+  - **Messages (`com.apple.MobileSMS`):** di antrean sendiri (NSAppleScript tidak pernah di main thread),
+    skrip pertama membaca maksimal 200 chat: id, nama, dan handle/nama/nama lengkap tiap peserta
+    (tanpa isi pesan). Resolusi: judul berupa nomor/email → chat 1:1 orang itu (iMessage > any > RCS >
+    SMS), kalau tidak ada dikirim langsung ke handle lewat akun iMessage; nama → grup dengan nama itu,
+    atau chat 1:1 yang nama/nama lengkap pesertanya sama (tanpa beda huruf besar, aksen, spasi, tanda
+    arah). Dua grup atau dua handle berbeda dengan nama sama = ambigu, tidak pernah ditebak. Lalu
+    `send … to chat id …` atau `send … to participant … of (1st account whose service type = iMessage)`.
+    Error −1743/−1744 → status "Allow Zenith to control Messages" + tombol "Grant access" (membuka
+    Privacy › Automation). Gagal lain atau chat tidak ketemu → balasan disalin (ditandai
+    `org.nspasteboard.ConcealedType`, riwayat clipboard Zenith melewatinya) dan percakapan dibuka dari
+    notifikasinya (cadangan: buka Messages).
+  - **WhatsApp (`net.whatsapp.WhatsApp`, yang terpasang di Mac ini; juga `desktop.WhatsApp`):** saklar
+    "Send WhatsApp replies automatically" (`notchWhatsAppAutoReply`, default nyala, ikut backup) di
+    Settings › Dynamic Island › Notifications, dengan caption bahwa ini bisa rusak setelah update
+    WhatsApp. Nyala: aktifkan WhatsApp (luncurkan kalau perlu, tunggu jadi frontmost), buka chat (judul
+    berupa nomor → `whatsapp://send?phone=<digit>&text=<encoded>`; nama → field pencarian lewat AX
+    subrole `AXSearchField` atau ⌘F, isi nama lewat AXValue atau paste, tekan hasil pertama yang
+    labelnya sama dengan nama, cadangan ↓ + Return), lalu verifikasi header percakapan di panel kanan
+    memuat nama itu. Teks ditaruh lewat AXValue di composer (`AXTextArea` terbawah yang bukan field
+    cari), dicek dibaca ulang, cadangan paste lewat `TransientPaste` (clipboard dipulihkan). Return
+    dikirim lewat CGEvent hanya saat WhatsApp frontmost; terkirim = composer melepas teksnya dalam 2
+    dtk, kalau tidak, sekali lagi lewat paste. Sukses → app sebelumnya diaktifkan lagi. Batas waktu
+    total 15 dtk, timeout AX 0,5 dtk. Gagal di tahap mana pun → WhatsApp dibuka dengan teks sudah di
+    composer (atau lewat link untuk nomor), atau teks disalin, dan statusnya "Couldn’t send
+    automatically. WhatsApp is open …". Mati: nomor → link dengan teks terisi; nama → buka WhatsApp +
+    salin. Tanpa Accessibility (seharusnya tidak terjadi karena notifikasi butuh itu) → "Grant access".
+  - **UI:** tombol balas (`arrowshape.turn.up.left`) di header sel notifikasi halaman island dan di
+    baris aksi preview yang ditahan pointer. Baris balas: field kapsul dengan placeholder layanan
+    ("iMessage…", "WhatsApp…"), tombol kirim bulat warna layanan (biru iMessage #0A84FF, hijau WhatsApp
+    #25D366; redup saat kosong, spinner saat mengirim) dan tombol emoji (`NSApp.activate()` lalu
+    `orderFrontCharacterPalette`, karena palet mengetik ke app aktif). Return kirim, Esc tutup (di
+    halaman lewat `setPageLayer(.notifications)`, di preview lewat `onExitCommand`). Setelah kirim,
+    baris pesan crossfade blur ke "You: …" warna layanan, jam jadi waktu relatif ("now", "6 sec. ago",
+    `RelativeDateTimeFormatter` per bahasa), teks yang terkirim memudar + blur di atas field yang
+    sudah kosong. Status lain (fallback, izin) tampil amber di baris yang sama. Tidak ada tombol
+    lampiran (tidak ada jalurnya di dua app ini).
+  - **Keyboard:** sama dengan Command Bar di island: `NotchPanel.acceptsKeyFocus = true` + `makeKey()`
+    (panel non-activating, app depan tidak kehilangan aktif), dilepas lewat `resignPanelKey()` saat baris
+    di preview ditutup dan island tidak terbuka.
+  - **Gerak:** preview tumbuh dengan spring pertumbuhan island sendiri (`NotchMotion.growingHeight`)
+    karena `surfaceSize` menambahkan `ZenithReplyHold.extraHeight` (baris 30 pt + jarak 8 pt, plus
+    selisih tinggi status kalau lebih panjang dari pesan). Kontrol baris masuk blur 10→0 + opacity +
+    skala 0,96→1, spring (0,36/0,86), jeda 40 ms per kontrol. Status `.blurReplace`, kurva smooth 0,35
+    dtk. Reduce Motion: hanya fade. Semua animasi SwiftUI.
+  - **Ditahan selama menulis:** `ZenithReplyHold` membuat island tidak menutup saat pointer keluar atau
+    app lain aktif (`keepsWorkingSurface`) dan preview tidak dilepas (`releaseNotification`). Klik di luar
+    menutup baris (island terbuka: lewat monitor island; preview: monitor global milik composer), begitu
+    juga aktivasi app lain yang bukan akibat pengiriman. Setelah ditutup, `hover(false)` dipanggil supaya
+    pointer yang sudah pergi menutup island seperti biasa.
+  - **Privasi:** draft dan balasan terkirim hanya di memori, hilang bersama notifikasinya. Tidak ada log;
+    pesan error AppleScript tidak dibaca (bisa mengutip skrip, jadi balasannya). Hanya label chat yang
+    dibaca dari Messages.
+  - **Izin:** `NSAppleEventsUsageDescription` sudah ada, kalimatnya ditambah "send the replies you write in
+    the Dynamic Island to Messages" di `Info.plist` dan 14 `InfoPlist.strings`. Entitlement
+    `com.apple.security.automation.apple-events` sudah ada, tidak diubah. Accessibility memakai izin
+    yang sudah dipakai notifikasi.
+  - Edit di file upstream bertanda `// Zenith fork`: `NotchService` (`keepsWorkingSurface`,
+    `surfaceSize`, `releaseNotification`), `NotchNotificationService` (`sourceBundleIdentifier`),
+    `NotchNotificationsView` (tombol, slot pesan, slot waktu, baris), `NotchSettings` (saklar), `Defaults`.
+  - **Belum diverifikasi di app:** UI app tidak dijalankan dan tidak ada pesan sungguhan yang dikirim.
+    Skrip AppleScript sudah dicompile (`osacompile`, tanpa dijalankan) dan escape-nya diuji bolak-balik
+    lewat skrip `return "…"`. Alur AX WhatsApp ditulis dari pola AX umum, belum dicoba di jendela
+    WhatsApp Catalyst. Perlu dicek di Mac: lihat laporan "cek manual" di PR.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
