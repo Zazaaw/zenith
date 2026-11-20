@@ -621,6 +621,15 @@ enum DefaultsKey {
     static let clipboardHistoryWindowY = "clipboardHistoryWindowY"
     static let clipboardHistoryMenuBarPreview = "clipboardHistoryMenuBarPreview" // show latest copy next to the menu bar icon
     static let clipboardHistoryMenuBarPreviewLength = "clipboardHistoryMenuBarPreviewLength" // characters shown before truncating
+    // Zenith fork: QR codes (Services/QR). The level codes are made at, the star in the middle,
+    // the shortcuts, and the last ten codes made, as their text.
+    static let zenithQRCorrection = "zenithQRCorrection"
+    static let zenithQRLogo = "zenithQRLogo"
+    static let zenithQRShortcutEnabled = "zenithQRShortcutEnabled"
+    static let zenithQRShortcut = "zenithQRShortcut"
+    static let zenithQRScanShortcutEnabled = "zenithQRScanShortcutEnabled"
+    static let zenithQRScanShortcut = "zenithQRScanShortcut"
+    static let zenithQRHistory = "zenithQRHistory"
 
     // Auto clear: wipes the system pasteboard on a delay or on sleep and lock.
     // Deliberately outside the clipboardHistory family, since it clears the
@@ -2106,6 +2115,13 @@ enum Defaults {
         DefaultsKey.clipboardAutoClearOnSleep: false,
         DefaultsKey.clipboardAutoClearOnDisplaySleep: false,
         DefaultsKey.clipboardAutoClearOnScreenLock: false,
+        DefaultsKey.zenithQRCorrection: "M", // Zenith fork: QR codes
+        DefaultsKey.zenithQRLogo: false, // Zenith fork
+        DefaultsKey.zenithQRShortcutEnabled: true, // Zenith fork
+        DefaultsKey.zenithQRShortcut: GlobalShortcut.zenithQRDefault.storageValue, // Zenith fork
+        DefaultsKey.zenithQRScanShortcutEnabled: true, // Zenith fork
+        DefaultsKey.zenithQRScanShortcut: GlobalShortcut.zenithQRScanDefault.storageValue, // Zenith fork
+        DefaultsKey.zenithQRHistory: [String](), // Zenith fork
         DefaultsKey.finderCutPasteShowHUD: true,
         DefaultsKey.finderPasteImageAsFile: false,
         DefaultsKey.windowPreviewExcludedApps: [String](),

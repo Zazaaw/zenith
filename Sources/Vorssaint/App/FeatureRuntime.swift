@@ -276,6 +276,7 @@ final class FeatureRuntime: ObservableObject {
             // capture toggle: uninstalling the feature stops it, turning history
             // off does not.
             ClipboardAutoClearService.shared.syncWithPreferences()
+            QRService.shared.syncWithPreferences() // Zenith fork: the QR from clipboard shortcut
         },
         .mediaTools: {
             NotchFileToolsService.shared.syncWithPreferences()
@@ -327,6 +328,7 @@ final class FeatureRuntime: ObservableObject {
         .screenOCR: {
             ScreenCaptureService.shared.syncWithPreferences()
             ScreenTextService.shared.syncWithPreferences()
+            QRService.shared.syncWithPreferences() // Zenith fork: the QR scan shortcut
         },
         .screenshot: {
             ScreenCaptureService.shared.syncWithPreferences()

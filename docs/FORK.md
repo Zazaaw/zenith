@@ -2077,6 +2077,87 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     roll digit, ganti ke "Waktunya …", bump glyph), kapsul, halaman Sky (tile, hero, arc dan penanda, morph antar tab,
     island kaca), widget home, item lock screen dan baris readout, notice kapsul + suara (system dan file sendiri),
     prompt izin lokasi dari tombol Sky, Settings (stepper, field lat/long), Reduce Motion, Increase Contrast.
+- **QR code instan (branch `feat/qr`):** Faiz membagikan link di acara (galeri klien, portofolio, WhatsApp,
+  Wi-Fi). Kode di `Services/QR/QRSupport.swift` (murni, ikut `TEST_SOURCES`: payload dan escaping, deteksi isi
+  clipboard, matriks modul, render PNG/SVG, baca kode lewat Vision, tanda keamanan link, riwayat, setelan),
+  `QRService.swift` (shortcut, entry point, cache matriks, scan), `QRExport.swift` (salin gambar, simpan, share),
+  `QRCommandBar.swift`, dan `UI/QR/` (`QRPanel`, `QRCodeView`, `QRPresentation`, `QRScanResult`,
+  `QRIslandViews`, `QRSettingsSection`). Teks di `ZenithStrings.qr` (15 bahasa, apostrof lengkung, tanpa em dash).
+  Test di `Tests/QRTests.swift` (suite `qr`).
+  - **Jenis payload:** link (alamat tanpa skema dengan TLD umum, `www.`, atau path dapat `https://`), teks,
+    Wi-Fi (`WIFI:T:WPA;S:…;P:…;;`, `WEP`, `nopass` tanpa `P`, `H:true` untuk jaringan tersembunyi; `\ ; , : "`
+    di-escape backslash), chat WhatsApp (`https://wa.me/<digit>?text=…`: hanya digit, `+`/`00` berarti sudah
+    internasional, 0 di depan diganti kode negara dari region Mac (tabel kecil, bisa diedit di field), pesan
+    di-percent-encode UTF-8 dengan set unreserved ASCII), kontak (vCard 3.0 minimal: N, FN, ORG, TEL, EMAIL,
+    URL, baris CRLF, `\ , ;` dan baris baru di-escape).
+  - **Deteksi clipboard:** `QRDetector.detect` (maks. 600 karakter, tanpa karakter kontrol): `WIFI:` → Wi-Fi,
+    `BEGIN:VCARD` → kontak, wa.me/api.whatsapp.com → WhatsApp, skema http/https/mailto/tel/sms/geo/facetime →
+    link, alamat polos → link, sisanya teks.
+  - **Kode:** `CIQRCodeGenerator` dengan data UTF-8, koreksi default M (`zenithQRCorrection`), selalu H kalau
+    bintang nyala (`zenithQRLogo`, default mati). Bitmap dibaca per modul lalu margin CoreImage dipotong
+    (bounding box finder pattern). Render sendiri: modul `#0A0A0A` di atas putih (tidak pernah dibalik, modul
+    terang di island gelap sulit dibaca kamera), quiet zone 4 modul, piksel utuh per modul. Di layar
+    `QRCodeView` merender tepat sejumlah piksel layar per modul dan menampilkannya dengan
+    `.interpolation(.none)`, jadi tidak ada resampling atau blur. Bintang Satu Visual (`NotchMascotGeometry.star`,
+    even-odd) di tengah: pad putih ±22% sisi kode (ganjil/genap mengikuti ukuran kode supaya pas di modul,
+    minimal 5 modul), modul di bawahnya dikosongkan, bintang 1 modul di dalam pad. PNG ±1200 px; SVG satu unit
+    per modul, satu path run per baris di atas kotak putih, bintang sebagai path kedua.
+  - **Halaman QR:** panel mengambang sendiri (bukan halaman island, supaya tidak menyentuh `NotchModule` yang
+    juga disentuh agent lain), `OverlayPanel` non-activating yang bisa jadi key untuk field, level floating,
+    bisa digeser dari latar, Esc/⌘W menutup. Kartu gelap gaya island (`QRCardChrome`), kiri: kode 248 pt di
+    tile putih, teks payload mono terpotong di tengah, empat aksi (Copy image, Save → menu PNG/SVG, Present,
+    Share lewat `NSSharingServicePicker` dengan file PNG di folder temp). Kanan: `ZenithSegmented` jenis kode,
+    kartu lembut field per jenis, saklar bintang, dan "Recent". Kode datang dengan skala 0,92 + blur 12 → 0
+    (spring `ZenithMorph`) saat dibuka, ganti jenis, atau pilih dari riwayat; saat mengetik kode berganti di
+    tempat. Reduce Motion: fade. Present: jendela `screenSaver` selebar layar dengan pointer, hitam 94%, kode
+    64% sisi terpendek di tile putih, teks di bawah, Esc/Return/Space/klik menutup.
+  - **Scan dari layar:** `QRService.scanScreen` memakai chooser capture milik OCR (`ScreenCaptureService`,
+    alat text) lewat kait `zenithCaptureImage`: satu capture yang gambarnya dikirim ke QR, bukan ke OCR. Kait
+    dibuang kalau seleksi tidak dimulai (izin Screen Recording belum ada, sesi lain jalan), dibatalkan, atau
+    pengguna pindah alat. Gambar dibaca `VNDetectBarcodesRequest` (QR, microQR, Aztec, DataMatrix, PDF417) di
+    luar main thread, urut atas ke bawah lalu kiri ke kanan, tanpa duplikat. Hasil (maks. 3) tampil di kartu
+    dekat pointer: jenis, isi lengkap (mono, bisa diseleksi), "Goes to" + host untuk link, dan peringatan amber:
+    http bukan https, host IP (IPv4, IPv6, desimal, hex), teks sebelum `@`, punycode/huruf non-ASCII, dan skema
+    bukan web (`javascript:`, `file:`, skema app). Open hanya untuk http/https; dengan peringatan, Return
+    menyalin dan Open harus diklik. Ada juga "Show as QR" (membuka kode yang sama di halaman QR, untuk
+    diteruskan). Tidak ada kode: HUD "No QR code found".
+  - **Entry point:** shortcut global `zenithQR` ⌃⌥⌘R (QR dari clipboard) dan `zenithQRScan` ⌃⌥⇧⌘R (scan),
+    keduanya role `GlobalShortcutRole` (bisa diubah di Settings dan halaman Shortcuts, dicek konflik, default
+    nyala). ⌃⌥⌘Q yang diminta ternyata default Quit all (test upstream melarang dua role berbagi default), jadi
+    dipakai R. Role QR ikut fitur Clipboard history, scan ikut Screen OCR (masuk grup Screen capture sebelum
+    design overlay); hotkey `QuickToolHotkey` id 1900/1901, di-sync lewat `FeatureRuntime` kedua fitur itu
+    (termasuk setelah merekam shortcut). Aksi QR di kartu clipboard island (ikon `qrcode` di baris aksi kartu
+    compact dan expanded, plus menu klik kanan) hanya untuk entri teks yang lolos deteksi. Widget Customize Home
+    `ZenithHomeWidget.qr` (lebar 216, violet 300 `#C4B5FD`, tanpa halaman): kode kecil salinan terakhir + teksnya,
+    klik membuka halaman QR; tanpa salinan yang cocok, klik membuka kode baru. Command Bar
+    (`CommandBarCatalog.qrEntries`): `action.qr.clipboard`, `action.qr.new`, `action.qr.scan` (hanya kalau
+    Screen OCR terpasang).
+  - **Riwayat:** 10 kode terakhir sebagai teks (`zenithQRHistory`, `[String]`, terbaru dulu, tanpa duplikat),
+    gambar selalu dibuat ulang. Dicatat saat kode dibuka dari luar, disalin/disimpan/dibagikan/dipresentasikan,
+    dan saat halaman ditutup. Terdaftar di `registeredDefaults`, jadi ikut backup. Catatan: password Wi-Fi ikut
+    tersimpan di riwayat dan backup karena payload-nya memang teks itu.
+  - **Settings:** section "QR code" di halaman Clipboard (judul digambar sendiri, `ZenithSwitchRow`, tanpa
+    `SettingsRow`): penjelasan, koreksi L/M/Q/H (nonaktif saat bintang nyala), saklar bintang, saklar + perekam
+    untuk kedua shortcut, dan tombol New/From clipboard/Scan.
+  - Edit di file upstream bertanda `// Zenith fork`: `Defaults` (kunci + default), `GlobalShortcut` (default, dua
+    role, urutan capture), `FeatureRuntime` (sync di clipboard dan OCR), `ScreenCaptureService` (kait capture),
+    `NotchClipboardView` (tombol + menu), `CommandBarCatalog.build` (satu baris), `ClipboardSettings` (section),
+    `build.sh` (`TEST_SOURCES`), `Tests/MetricsTests.swift` (suite), `Tests/CommandBarFeatureTests.swift` (stub
+    `qrEntries`), `Tests/HomeLayoutTests.swift` (widget tanpa halaman sekarang weather, workspaces, qr). File fork
+    yang ikut berubah: `ZenithHomeLayoutSupport`/`View`/`Widgets` (widget).
+  - **Test (`qr`):** escaping Wi-Fi (`;,:"\`) bolak-balik, nomor wa.me (spasi, tanda hubung, kurung, `+`, `00`,
+    0 lokal) dan encoding pesan (spasi, baris baru, `& ? # = /`, emoji), vCard baris per baris, deteksi isi
+    clipboard, matriks (ukuran 21 + 4n, finder pattern di sudut, kapasitas, pad bintang), render (quiet zone,
+    hanya dua warna), generate → Vision → sama untuk lima jenis payload dengan dan tanpa bintang (plus link
+    panjang dengan bintang dan dua kode berdampingan), struktur SVG (XML valid, viewBox, run = modul gelap,
+    path bintang di dalam pad), tanda keamanan link, riwayat di suite `com.vorssaint.tests.qr`, registrasi +
+    backup, role shortcut, teks 15 bahasa.
+  - **Belum diverifikasi di Mac:** app UI tidak dijalankan. Perlu dicek: scan dengan kamera iPhone (dari panel,
+    dari layar penuh, dengan dan tanpa bintang, Wi-Fi join, wa.me membuka chat dengan pesan, vCard menambah
+    kontak), mengetik di field panel non-activating, menu Save dan save panel di atas panel floating, share
+    sheet (AirDrop), Present di display kedua, tombol QR di kartu clipboard island (compact/expanded, lebar
+    baris), widget Home, Command Bar, shortcut setelah merekam shortcut lain, scan via chooser (izin Screen
+    Recording, pindah alat, batal), kartu hasil scan (Return, Esc, klik di luar), Reduce Motion, Increase Contrast.
 - **Beautify di editor screenshot (branch `feat/screenshot-beautify`):** membingkai screenshot untuk Instagram dan
   portofolio: latar, padding, sudut, bayangan, bingkai jendela, rasio, dan caption, di resolusi Retina penuh. Kode di
   `Services/QuickTools/ScreenshotBeautifySupport.swift` (gaya, gradien, preset, layout, nama file; ikut test),

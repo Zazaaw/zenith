@@ -630,6 +630,7 @@ extension ZenithHomeWidget {
         if self == .prayer { return ZenithStrings.sky(language).prayerTab }
         if self == .golden { return ZenithStrings.sky(language).goldenTab }
         if self == .workspaces { return ZenithStrings.workspaces(language).title }
+        if self == .qr { return ZenithStrings.qr(language).fromClipboard } // Zenith fork
         return (module ?? .controls).title(language)
     }
 }

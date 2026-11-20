@@ -210,6 +210,12 @@ struct GlobalShortcut: Equatable, Hashable {
     // Zenith fork: B for bar, the menu bar hider's toggle (off until switched on).
     static let menuBarHiderDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_B),
                                                     modifiers: [.control, .option, .command])
+    // Zenith fork: R for the last letter of QR (Q already belongs to Quit all), a QR code of
+    // the clipboard; with Shift, scanning one on the screen.
+    static let zenithQRDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_R),
+                                                modifiers: [.control, .option, .command])
+    static let zenithQRScanDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_R),
+                                                    modifiers: [.control, .option, .shift, .command])
     // V for Vorssaint: the quick launcher's own combination.
     static let quickLauncherDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_V),
                                                      modifiers: [.control, .command])
@@ -748,6 +754,8 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
     case notch
     case designOverlay // Zenith fork
     case menuBarHider // Zenith fork
+    case zenithQR // Zenith fork: a QR code of the clipboard
+    case zenithQRScan // Zenith fork: scan a QR code on the screen
 
     var id: String { storageKey }
 
@@ -789,6 +797,8 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .notch: return DefaultsKey.notchShortcut
         case .designOverlay: return DefaultsKey.designOverlayShortcut // Zenith fork
         case .menuBarHider: return DefaultsKey.menuBarHiderShortcut // Zenith fork
+        case .zenithQR: return DefaultsKey.zenithQRShortcut // Zenith fork
+        case .zenithQRScan: return DefaultsKey.zenithQRScanShortcut // Zenith fork
         }
     }
 
@@ -830,6 +840,8 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .notch: return .notchDefault
         case .designOverlay: return .designOverlayDefault // Zenith fork
         case .menuBarHider: return .menuBarHiderDefault // Zenith fork
+        case .zenithQR: return .zenithQRDefault // Zenith fork
+        case .zenithQRScan: return .zenithQRScanDefault // Zenith fork
         }
     }
 
@@ -915,6 +927,8 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .notch: return FeatureStrings.notch(L10n.shared.language).title
         case .designOverlay: return ZenithStrings.designOverlay(L10n.shared.language).title // Zenith fork
         case .menuBarHider: return ZenithStrings.menuBarHider(L10n.shared.language).shortcut // Zenith fork
+        case .zenithQR: return ZenithStrings.qr(L10n.shared.language).fromClipboard // Zenith fork
+        case .zenithQRScan: return ZenithStrings.qr(L10n.shared.language).scan // Zenith fork
         }
     }
 
@@ -981,6 +995,8 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .notch: return [DefaultsKey.notchEnabled, DefaultsKey.notchShortcutEnabled]
         case .designOverlay: return [DefaultsKey.designOverlayShortcutEnabled] // Zenith fork
         case .menuBarHider: return [DefaultsKey.menuBarHiderEnabled, DefaultsKey.menuBarHiderShortcutEnabled] // Zenith fork
+        case .zenithQR: return [DefaultsKey.zenithQRShortcutEnabled] // Zenith fork
+        case .zenithQRScan: return [DefaultsKey.zenithQRScanShortcutEnabled] // Zenith fork
         }
     }
 
@@ -1018,6 +1034,10 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .designOverlay: return .screenshot
         // Zenith fork: the menu bar hider has no hub entry; its shortcut lists with Quick Controls.
         case .menuBarHider: return .quickToggles
+        // Zenith fork: a QR of the clipboard lists with the clipboard; scanning one uses the
+        // screen text tool's capture, so it follows that tool.
+        case .zenithQR: return .clipboardHistory
+        case .zenithQRScan: return .screenOCR
         }
     }
 
@@ -1105,7 +1125,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
     static let captureDisplayOrder: [GlobalShortcutRole] = [
         .screenshot, .screenRecorder, .screenOCR, .colorPicker, .screenshotScrolling,
         .recentCaptures, .screenshotFullScreen, .screenshotLastCapture, .screenshotClipboard, .screenshotUpload,
-        .designOverlay, // Zenith fork
+        .zenithQRScan, .designOverlay, // Zenith fork
     ]
 
     /// The given roles narrowed to the capture group, in display order. The

@@ -61,6 +61,8 @@ final class ScreenCaptureService: ObservableObject {
     private var countdown: DispatchWorkItem?
     private var countdownTools: [ScreenCaptureTool]?
     private var countdownRemaining = 0
+    // Zenith fork: one text tool capture whose picture goes to the QR scanner instead.
+    private var zenithImageHandler: ((CGImage) -> Void)?
 
     var protectedWindowIDs: Set<CGWindowID> {
         selection?.protectedWindowIDs ?? []
@@ -159,6 +161,15 @@ final class ScreenCaptureService: ObservableObject {
         performAfterDelay(delay, tools: tools) { [weak self] in
             self?.beginSelection(tools: tools, selected: selected, showsCaptureMenu: showsCaptureMenu)
         }
+    }
+
+    /// Zenith fork: the chooser on the text tool for one capture whose picture
+    /// goes to `handler` (QRService's scan) instead of text recognition.
+    /// Nothing is kept when no selection began (no permission, one already up).
+    func zenithCaptureImage(_ handler: @escaping (CGImage) -> Void) {
+        zenithImageHandler = handler
+        capture(initial: .text, fromShortcut: true)
+        if selection == nil { zenithImageHandler = nil }
     }
 
     /// The direct full-screen shortcut and the chooser share one countdown.
@@ -271,6 +282,8 @@ final class ScreenCaptureService: ObservableObject {
     private func route(_ outcome: ScreenshotSelectionController.Outcome,
                        selected: ScreenCaptureTool,
                        recorderAudio: RecorderSelectionAudioOptions) {
+        let zenithHandler = zenithImageHandler // Zenith fork: this capture takes it, whatever it ends as
+        zenithImageHandler = nil
         guard ScreenshotSupport.captureRouteIsAuthorized(selected: selected) else { return }
         switch outcome {
         case .captured(let capture):
@@ -278,7 +291,9 @@ final class ScreenCaptureService: ObservableObject {
             case .screenshot:
                 ScreenshotService.shared.receiveUnifiedCapture(capture)
             case .text:
-                ScreenTextService.shared.receiveUnifiedCapture(capture)
+                if let zenithHandler { zenithHandler(capture.image) } else { // Zenith fork: a QR scan
+                    ScreenTextService.shared.receiveUnifiedCapture(capture)
+                }
             case .recording, .color, .scrolling:
                 showFailure(for: selected)
             }
@@ -329,6 +344,7 @@ final class ScreenCaptureService: ObservableObject {
     }
 
     private func cancelSelection() {
+        zenithImageHandler = nil // Zenith fork
         NotchService.shared.endCaptureControls()
         options?.onPresentationReady = nil
         options?.onCaptureControlsSurfaceChange = nil

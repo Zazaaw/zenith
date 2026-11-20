@@ -398,6 +398,7 @@ struct NotchClipboardView: View {
                     if entry.kind == .image, AppFeature.screenshot.isAvailable {
                         NotchIconButton(symbol: "pencil", title: text.edit) { history.editImage(entry) }
                     }
+                    QRClipboardButton(entry: entry) // Zenith fork: a QR code of a link or a short text
                     NotchIconButton(symbol: copiedID == entry.id ? "checkmark" : "doc.on.doc",
                                     title: copiedID == entry.id ? text.copied : text.copy) { copy(entry) }
                     NotchIconButton(symbol: entry.isPinned ? "pin.fill" : "pin",
@@ -460,6 +461,7 @@ struct NotchClipboardView: View {
                 if entry.kind == .image, AppFeature.screenshot.isAvailable {
                     NotchIconButton(symbol: "pencil", title: text.edit) { history.editImage(entry) }
                 }
+                QRClipboardButton(entry: entry) // Zenith fork: a QR code of a link or a short text
                 NotchIconButton(symbol: copiedID == entry.id ? "checkmark" : "doc.on.doc",
                                 title: copiedID == entry.id ? text.copied : text.copy) { copy(entry) }
                 NotchIconButton(symbol: entry.isPinned ? "pin.fill" : "pin",
@@ -480,6 +482,7 @@ struct NotchClipboardView: View {
             Button(l10n.s.menuPaste) { paste(entry) }
         }
         Button(text.copy) { copy(entry) }
+        QRClipboardMenuItem(entry: entry) // Zenith fork
         Divider()
         Button(entry.isPinned ? text.unpin : text.pin) { history.togglePin(entry) }
         Button(text.moveUp) { move(entry, .up) }

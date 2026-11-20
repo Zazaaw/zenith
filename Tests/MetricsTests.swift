@@ -281,6 +281,7 @@ struct MetricsTests {
             ("dev-servers", { DevServersTests.run(suite) }),
             ("recap", { RecapTests.run(suite) }),
             ("sky", { SkyTests.run(suite) }),
+            ("qr", { QRTests.run(suite) }),
             ("workspaces", { WorkspacesTests.run(suite) }),
             ("repo-status", { GitTests.run(suite) }), // the Git page
         ]
