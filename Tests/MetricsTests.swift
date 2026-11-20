@@ -273,6 +273,7 @@ struct MetricsTests {
             ("reply", { ReplyTests.run(suite) }),
             ("home-layout", { HomeLayoutTests.run(suite) }),
             ("card-import", { CardImportTests.run(suite) }),
+            ("recap", { RecapTests.run(suite) }),
         ]
         var selected = Set<String>()
         var listOnly = false

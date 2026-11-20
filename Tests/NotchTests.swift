@@ -2533,15 +2533,16 @@ enum NotchTests {
         // Zenith fork: WakaTime joins the end on a Mac with ~/.wakatime.cfg,
         // and GitHub on a Mac with the GitHub CLI. Vercel waits until it is
         // turned on (saving a token does that). Card Import shows while card
-        // detection is on, as it is by default.
+        // detection is on, as it is by default. Today (the day's recap) is
+        // always there.
         let wakaTime: [NotchModule] = WakaTimeSupport.hasConfiguration() ? [.wakatime] : []
         let gitHub: [NotchModule] = GitHubCLI.isInstalled() ? [.github] : []
         let upstreamModules: [NotchModule] = [.system, .music, .controls, .mixer, .captures, .files, .tools, .calendar,
                                               .notifications, .timer, .camera, .downloads, .scratchpad, .agents, .watch]
-        suite.expect(NotchSupport.modules(in: defaults) == upstreamModules + wakaTime + gitHub + [.cardImport],
+        suite.expect(NotchSupport.modules(in: defaults) == upstreamModules + wakaTime + gitHub + [.cardImport, .recap],
                "module order ignores unknown ids and duplicates, preserving newly added modules")
         defaults.set(true, forKey: DefaultsKey.notchVercelEnabled)
-        suite.expect(NotchSupport.modules(in: defaults) == upstreamModules + wakaTime + [.vercel] + gitHub + [.cardImport],
+        suite.expect(NotchSupport.modules(in: defaults) == upstreamModules + wakaTime + [.vercel] + gitHub + [.cardImport, .recap],
                "the Vercel section joins once it is turned on")
         defaults.removeObject(forKey: DefaultsKey.notchVercelEnabled)
         suite.expect(NotchSupport.routesShelf(in: defaults) && NotchSupport.revealsShelfDrag(in: defaults),
@@ -2767,7 +2768,9 @@ enum NotchTests {
                && compact.sectionColumns * compact.sectionRows(count: allModules.count) < allModules.count
                && NotchSectionPaging.positions(rows: NotchSectionPaging.rows(count: allModules.count,
                                                                             columns: spacious.sectionColumns),
-                                               visible: spacious.sectionRows(count: allModules.count)) <= 3,
+                                               visible: spacious.sectionRows(count: allModules.count)) > 1,
+               // Zenith fork: every fork page adds a row's worth of steps, so
+               // the count of positions is not pinned, only that rows step.
                "a preset lists the sections in two columns, the narrowest island in one, and steps rows to reach the last ones")
         suite.expect(NotchLayout.railHeight(rows: 8, rowHeight: NotchLayout.sectionTileHeight, spacing: NotchLayout.sectionSpacing)
                    == NotchLayout.sectionListHeight(budget: NotchLayout.pageContentHeight)
