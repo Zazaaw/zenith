@@ -119,18 +119,16 @@ final class NotchPhotoActionsService: ObservableObject {
         return images ? urls : []
     }
 
-    /// The photo targets for a drag, then the design overlay's for one image.
+    /// The photo targets for a drag, then the design overlay's for one image,
+    /// each only while its drop zone is on.
     func dropTargets(for pasteboard: NSPasteboard) -> [NotchDropTarget] {
-        let urls = imageURLs(in: pasteboard)
-        let photo = NotchPhotoActionsSupport.isEnabled
-            ? NotchPhotoActionsSupport.targets(imageCount: urls.count, allImages: !urls.isEmpty) : []
-        return DesignOverlaySupport.dropTargets(photo: photo, imageCount: urls.count,
-                                                overlay: DesignOverlaySupport.isDropEnabled)
+        ZenithDropZones.current().imageTargets(imageCount: imageURLs(in: pasteboard).count,
+                                               overlayAvailable: AppFeature.screenshot.isAvailable)
     }
 
     @discardableResult
     func open(_ target: NotchDropTarget, pasteboard: NSPasteboard) -> Bool {
-        guard let action = NotchPhotoAction(target: target) else { return false }
+        guard let action = NotchPhotoAction(target: target), ZenithDropZones.current().isOn(target) else { return false }
         let urls = imageURLs(in: pasteboard)
         guard NotchPhotoActionsSupport.targets(imageCount: urls.count, allImages: !urls.isEmpty).contains(target)
         else { return false }

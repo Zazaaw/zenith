@@ -249,6 +249,9 @@ enum NotchPresentationRefreshContract {
         var expandedPageTop = NotchPageTop.row
         var modules = NotchModule.allCases
         var homeControls: [NotchControlItem] = []
+        // Zenith fork: a drag's zones, which widen the Files page (ZenithDropZoneLayout).
+        var choosingFileDropDestination = false
+        var dropTargets: [NotchDropTarget] = []
         var expandedGeometry: NotchGeometry { geometry }
         var compactActivityGeometry: NotchGeometry { geometry.compactTimerGeometry(showsDownloads: false) }
         var surfaceSize: CGSize {

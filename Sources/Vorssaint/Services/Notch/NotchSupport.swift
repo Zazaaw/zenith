@@ -2432,6 +2432,8 @@ struct NotchGeometry: Equatable {
     var zenithHome: ZenithHomeIslandGeometry? = nil
     /// Zenith fork: the teleprompter's reading panel, set while it prompts.
     var zenithPrompter: ZenithPrompterIslandGeometry? = nil
+    /// Zenith fork: how many drop zones a drag hovering the Files page offers (ZenithDropZoneLayout).
+    var zenithDropZoneCount = 0
     private var allowsActivityFooter = true
     private var minimumCompactWidth: CGFloat = 0
     /// Narrower wings than this are dropped rather than drawn cramped.
@@ -2845,12 +2847,20 @@ struct NotchGeometry: Equatable {
         } ?? chosen
         // Zenith fork: widgets side by side widen the home page past the chosen width.
         if let home = zenithHome?.contentWidth { preferred = max(preferred, home + inset * 2) }
+        // Zenith fork: three drop zones or more widen the page to a comfortable tile each, within the display.
+        if let zones = ZenithDropZoneLayout.contentWidth(count: zenithDropZoneCount, maximum: zenithDropMaximumContentWidth) {
+            preferred = max(preferred, zones + inset * 2)
+        }
         // Zenith fork: a prompting panel takes its own width on every layout, narrow under the camera.
         if let prompter = zenithPrompter { preferred = prompter.width }
         return min(max(preferred, cameraWidth + 36) + NotchLayout.shoulderFlare * 2, // Zenith fork
                    screen.width - 24 - NotchQuickAccessLayout.gutter * 2)
     }
     var contentWidth: CGFloat { max(0, expandedWidth - NotchLayout.horizontalInset * 2) }
+    /// Zenith fork: the widest page the display leaves the island, as `expandedWidth` bounds it.
+    var zenithDropMaximumContentWidth: CGFloat {
+        max(0, screen.width - 24 - NotchQuickAccessLayout.gutter * 2 - NotchLayout.horizontalInset * 2)
+    }
     /// Content height available before a page needs to scroll.
     var contentBudget: CGFloat {
         switch layout {

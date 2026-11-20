@@ -173,9 +173,11 @@ struct NotchPhotoRecipe: Equatable {
 }
 
 enum NotchPhotoActionsSupport {
-    /// Whether the photo targets appear. Unset reads as on.
+    /// Whether either photo zone is on (Settings › Shelf › Drop zones), so a
+    /// photo session can show. Each zone has its own switch there.
     static var isEnabled: Bool {
-        UserDefaults.standard.object(forKey: DefaultsKey.notchPhotoActionsEnabled) as? Bool ?? true
+        let zones = ZenithDropZones.current()
+        return zones.isOn(.transform) || zones.isOn(.removeBackground)
     }
 
     /// A drag of more files than this is left to the shelf.

@@ -838,58 +838,6 @@ private struct NotchPhotoGlyphButton: View {
     }
 }
 
-// MARK: - Drop zones
-
-/// A drop zone of the island's chooser (Files, AirDrop, Optimize media and
-/// the photo actions). When a drag enters, the zones breathe in one after
-/// another, 40 ms apart: from 0.97 to full size, their dashed hairline fading
-/// up and their glyph rising a few points. The zone under the pointer
-/// brightens and lifts its glyph on a spring.
-struct NotchDropZoneCell: View {
-    let title: String
-    let symbol: String
-    let selected: Bool
-    var available = true
-    var note: String?
-    var index = 0
-    @State private var entered = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        VStack(spacing: 10) {
-            Image(systemName: symbol)
-                .font(.system(size: 24, weight: .light))
-                .foregroundStyle(selected ? ZenithIsland.accent : ZenithIsland.secondary)
-                .scaleEffect(selected && !reduceMotion ? 1.06 : 1)
-                .offset(y: reduceMotion ? 0 : selected ? -3 : entered ? 0 : 5)
-            Text(title)
-                .font(.system(size: 13, weight: .medium))
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .minimumScaleFactor(0.85)
-                .foregroundStyle(selected ? ZenithIsland.primary : ZenithIsland.secondary)
-            if !available, let note, !note.isEmpty {
-                Text(note).font(.caption).foregroundStyle(.secondary)
-            }
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .zenithDropZone(targeted: selected)
-        .scaleEffect(reduceMotion ? 1 : entered ? (selected ? 1.015 : 1) : 0.97)
-        .opacity(entered ? (available ? 1 : 0.5) : 0)
-        .animation(reduceMotion ? .easeOut(duration: ZenithMotion.fast) : .spring(response: 0.34, dampingFraction: 0.84),
-                   value: selected)
-        .onAppear {
-            withAnimation((reduceMotion ? Animation.easeOut(duration: 0.2)
-                           : .spring(response: 0.38, dampingFraction: 0.86)).delay(ZenithMotion.layerDelay(index))) {
-                entered = true
-            }
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-}
-
 // MARK: - Drag out
 
 /// The finished files dragged out of the island as a stack, wherever they are

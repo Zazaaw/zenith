@@ -225,6 +225,9 @@ enum DefaultsKey {
     static let notchAirDropEnabled = "notchAirDropEnabled"
     // Zenith fork: photo actions (Transform, Remove Background) for images dropped on the island.
     static let notchPhotoActionsEnabled = "notchPhotoActionsEnabled"
+    // Zenith fork: the island's drop zones, in order, each on or off (ZenithDropZones.encoded;
+    // "auto" follows the AirDrop, photo actions and Overlay switches above, which saving keeps in step).
+    static let zenithDropZones = "zenithDropZones"
     // Zenith fork: the photo actions' watermark (NotchWatermarkSupport). JSON strings; logos live in the container.
     static let notchWatermarkStyle = "notchWatermarkStyle"           // NotchWatermarkStyle, "" = the default
     static let notchWatermarkPresets = "notchWatermarkPresets"       // [NotchWatermarkPreset], "" = the starters
@@ -1581,6 +1584,7 @@ enum Defaults {
         DefaultsKey.shelfDropZoneEnabled: true,
         DefaultsKey.notchAirDropEnabled: true,
         DefaultsKey.notchPhotoActionsEnabled: true, // Zenith fork
+        DefaultsKey.zenithDropZones: ZenithDropZones.automatic, // Zenith fork
         DefaultsKey.notchWatermarkStyle: "", // Zenith fork
         DefaultsKey.notchWatermarkPresets: "", // Zenith fork
         DefaultsKey.notchWatermarkDefaultPreset: "", // Zenith fork
