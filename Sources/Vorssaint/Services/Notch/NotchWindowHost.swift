@@ -329,6 +329,10 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
             // screen in the resting shape, flushed ahead of the resize, or
             // ahead of the surface drawn beneath it. A fade is not motion.
             canvas.transitionContent(.reveal, shapeSnaps: true)
+        } else if animated, transitionContent == .replace, isPresented, !relocationHidden {
+            // Zenith fork: under Reduce Motion an open page still cross-fades
+            // into the next one; the canvas leaves the blur and dip out.
+            canvas.transitionContent(.replace)
         } else { canvas.restoreContent() }
         guard changesFrame else { configureQuickAccess(); return }
         // An ordered-out panel still has its last expanded shape. Start the
@@ -1591,11 +1595,16 @@ private final class NotchCanvas: NSView {
         CATransaction.setDisableActions(true)
         if kind == .replace {
             contentVisibility.opacity = 1
+            // Zenith fork: an open page swapping for another morphs (ZenithMorph);
+            // a closed strip's reading, and Reduce Motion, keep the plain fade.
+            let morphs = ZenithMorph.morphs(height: contentSize.height)
+                && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
             let transition = CATransition()
             transition.type = .fade
-            transition.duration = 0.18
+            transition.duration = morphs ? ZenithMorph.layerCrossfade : 0.18 // Zenith fork
             transition.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             host.layer?.add(transition, forKey: kCATransition)
+            if morphs { beginMorph() } // Zenith fork
         } else {
             // Mask only the content pixels. A black overlay would obscure the
             // glass; alphaValue would remove the hosting view's AX/hit frame.
@@ -1724,6 +1733,39 @@ private final class NotchCanvas: NSView {
         }
         // A filter left in place, even at no radius, keeps an extra render pass.
         DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self] in
+            guard let self, self.arrivalGeneration == generation else { return }
+            self.endArrival()
+        }
+    }
+
+    /// Zenith fork: the page swap's blur and dip, on the arrival's own blur
+    /// filter and transform key, so whatever ends an arrival ends it too.
+    /// Both peak early, as the crossfade passes its middle, and settle sharp.
+    private func beginMorph() {
+        guard let layer = host.layer else { return }
+        arrivalGeneration += 1
+        let generation = arrivalGeneration
+        let begin = layer.convertTime(CACurrentMediaTime(), from: nil)
+        let keyTimes = [0, NSNumber(value: ZenithMorph.layerPeak), 1]
+        if let filter = Self.makeArrivalBlur() {
+            layer.filters = [filter]
+            let blur = CAKeyframeAnimation(keyPath: "filters.\(Self.arrivalBlurName).inputRadius")
+            blur.values = [0, ZenithMorph.blur, 0]
+            blur.keyTimes = keyTimes
+            blur.timingFunctions = ZenithMorph.layerTimings
+            blur.beginTime = begin
+            blur.duration = ZenithMorph.layerDuration
+            layer.add(blur, forKey: Self.arrivalBlurKey)
+        }
+        let dip = CAKeyframeAnimation(keyPath: "transform")
+        dip.values = [CATransform3DIdentity, arrivalTransform(scale: ZenithMorph.scale, in: layer), CATransform3DIdentity]
+            .map { NSValue(caTransform3D: $0) }
+        dip.keyTimes = keyTimes
+        dip.timingFunctions = ZenithMorph.layerTimings
+        dip.beginTime = begin
+        dip.duration = ZenithMorph.layerDuration
+        layer.add(dip, forKey: Self.arrivalScaleKey)
+        DispatchQueue.main.asyncAfter(deadline: .now() + ZenithMorph.layerDuration) { [weak self] in
             guard let self, self.arrivalGeneration == generation else { return }
             self.endArrival()
         }
