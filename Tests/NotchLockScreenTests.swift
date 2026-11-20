@@ -157,7 +157,8 @@ enum NotchLockScreenTests {
 
     static func contentContracts(_ suite: TestSuite) {
         suite.expect(NotchLockScreenSupport.activities(timer: true, calendar: true, agents: true, downloads: true,
-                                                       wakatime: true, weather: true, reminders: true)
+                                                       wakatime: true, weather: true, reminders: true,
+                                                       prayer: true, golden: true) // Zenith fork
                         == NotchLockScreenActivity.allCases,
                      "the line reads the timer, the next event, agents and downloads, in that order")
         suite.expect(NotchLockScreenSupport.activities(timer: false, calendar: false, agents: true, downloads: true)

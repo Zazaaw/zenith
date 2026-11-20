@@ -24,8 +24,8 @@
 "NSCalendarsFullAccessUsageDescription" = "Zeige deine anstehenden Termine im oberen Bildschirmbereich. Kalenderereignisse bleiben auf diesem Mac.";
 
 /* macOS Location Services permission prompt (Zenith fork: lock screen weather). */
-"NSLocationUsageDescription" = "Zenith verwendet deinen ungefähren Standort nur, um das Wetter auf dem Sperrbildschirm anzuzeigen. Er wird auf etwa einen Kilometer gerundet und nur an Open-Meteo gesendet, um die Vorhersage abzurufen.";
-"NSLocationWhenInUseUsageDescription" = "Zenith verwendet deinen ungefähren Standort nur, um das Wetter auf dem Sperrbildschirm anzuzeigen. Er wird auf etwa einen Kilometer gerundet und nur an Open-Meteo gesendet, um die Vorhersage abzurufen.";
+"NSLocationUsageDescription" = "Zenith verwendet deinen ungefähren Standort nur für das Wetter auf dem Sperrbildschirm sowie für Gebetszeiten und die goldene Stunde. Er wird auf etwa einen Kilometer gerundet. Gebetszeiten werden auf diesem Mac berechnet; nur das Wetter sendet ihn an Open-Meteo, um die Vorhersage abzurufen.";
+"NSLocationWhenInUseUsageDescription" = "Zenith verwendet deinen ungefähren Standort nur für das Wetter auf dem Sperrbildschirm sowie für Gebetszeiten und die goldene Stunde. Er wird auf etwa einen Kilometer gerundet. Gebetszeiten werden auf diesem Mac berechnet; nur das Wetter sendet ihn an Open-Meteo, um die Vorhersage abzurufen.";
 
 /* macOS Reminders permission prompt (Zenith fork: lock screen reminders). */
 "NSRemindersFullAccessUsageDescription" = "Zeige heute fällige Erinnerungen auf dem Sperrbildschirm. Erinnerungen bleiben auf diesem Mac.";

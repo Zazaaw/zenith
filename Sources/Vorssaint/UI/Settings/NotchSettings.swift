@@ -575,6 +575,9 @@ struct NotchSettings: View {
         case .recap:
             // Zenith fork: the daily notice, its time and the sources it reads.
             RecapSettingsView()
+        case .sky:
+            // Zenith fork: the method, the place, the reminders and the golden hour.
+            SkySettingsView()
         case .mixer, .system, .tools:
             EmptyView()
         }
@@ -919,7 +922,7 @@ struct NotchSettings: View {
         case .scratchpad: return .scratchpad
         case .agents: return .notchAgents
         case .watch: return .notchWatch
-        case .wakatime, .vercel, .github, .cardImport, .devServers, .recap: return nil // Zenith fork: cardImport, devServers, recap
+        case .wakatime, .vercel, .github, .cardImport, .devServers, .recap, .sky: return nil // Zenith fork: cardImport, devServers, recap, sky
         }
     }
 

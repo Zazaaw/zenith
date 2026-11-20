@@ -32,6 +32,8 @@ struct ZenithHomeWidgetView: View {
         case .shelf: ZenithHomeShelfWidget(service: service).modifier(ZenithHomeWidgetCard(framed: true))
         case .devServers: DevServersHomeWidget(service: service).modifier(ZenithHomeWidgetCard(framed: true))
         case .today: RecapHomeWidget(service: service).modifier(ZenithHomeWidgetCard(framed: true)) // Zenith fork
+        case .prayer: SkyHomePrayerWidget(service: service).modifier(ZenithHomeWidgetCard(framed: true))
+        case .golden: SkyHomeGoldenWidget(service: service).modifier(ZenithHomeWidgetCard(framed: true))
         }
     }
 }

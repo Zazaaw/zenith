@@ -22,7 +22,14 @@ final class WeatherService: NSObject, ObservableObject {
     static let shared = WeatherService()
 
     @Published private(set) var snapshot: WeatherSupport.Snapshot?
-    @Published private(set) var access: LockScreenWidgetAccess = .notDetermined
+    @Published private(set) var access: LockScreenWidgetAccess = .notDetermined {
+        didSet { if access != oldValue { SkyService.shared.locationAccessChanged(granted: access == .granted) } }
+    }
+    /// The last rounded position, for the prayer times and the golden hour
+    /// (SkyService), which never send it anywhere.
+    @Published private(set) var place: WeatherSupport.Coordinate? {
+        didSet { if place != oldValue { SkyService.shared.locationChanged() } }
+    }
 
     /// The last rounded position and when it was fixed, on this Mac only.
     static let locationKey = "zenithWeatherLocation"
@@ -47,6 +54,7 @@ final class WeatherService: NSObject, ObservableObject {
             let coordinate = WeatherSupport.Coordinate(latitude: latitude, longitude: longitude)
             if coordinate.isValid { cachedLocation = (coordinate, Date(timeIntervalSince1970: fixed)) }
         }
+        place = cachedLocation?.coordinate
     }
 
     private func locationManager() -> CLLocationManager {
@@ -107,6 +115,28 @@ final class WeatherService: NSObject, ObservableObject {
         pauseIfHidden()
     }
 
+    // MARK: Sky
+
+    /// Zenith fork: the prayer times need a position, not the weather. With
+    /// access already granted and no position fixed within `maximumAge`, ask
+    /// Location Services once; never prompts, never reads the weather.
+    func locateForSky(maximumAge: TimeInterval) {
+        guard refreshAccess() == .granted, !locating else { return }
+        if let cachedLocation, age(of: cachedLocation.fixed) < maximumAge { return }
+        locating = true
+        locationManager().requestLocation()
+        let timeout = Timer(timeInterval: 20, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated { self?.finishLocating(with: nil, fetches: true) }
+        }
+        RunLoop.main.add(timeout, forMode: .common)
+        locateTimeout = timeout
+    }
+
+    private func age(of fixed: Date) -> TimeInterval {
+        let age = Date().timeIntervalSince(fixed)
+        return age >= 0 ? age : .infinity
+    }
+
     private func resume() {
         guard refreshAccess() == .granted else { return }
         if WeatherSupport.isFresh(snapshot, now: Date()) {
@@ -160,10 +190,12 @@ final class WeatherService: NSObject, ObservableObject {
             let place = WeatherSupport.coarse(coordinate)
             let now = Date()
             cachedLocation = (place, now)
+            if self.place != place { self.place = place }
             UserDefaults.standard.set(["latitude": place.latitude, "longitude": place.longitude,
                                        "fixed": now.timeIntervalSince1970], forKey: Self.locationKey)
         }
-        guard fetches else { return }
+        // Located for the prayer times alone: no weather to read.
+        guard fetches, showing else { return }
         if let place = cachedLocation?.coordinate {
             fetch(place)
         } else {
@@ -195,6 +227,7 @@ final class WeatherService: NSObject, ObservableObject {
     private func forgetLocation() {
         cachedLocation = nil
         snapshot = nil
+        place = nil
         UserDefaults.standard.removeObject(forKey: Self.locationKey)
     }
 }

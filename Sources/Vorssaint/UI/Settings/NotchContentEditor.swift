@@ -184,6 +184,7 @@ struct NotchPagePreview: View {
         case .cardImport: CardImportPage(size: size) // Zenith fork
         case .devServers: DevServersPage(size: size) // Zenith fork
         case .recap: RecapPage(size: size) // Zenith fork
+        case .sky: SkyPage(size: size) // Zenith fork
         }
     }
 
@@ -412,7 +413,7 @@ extension NotchModule {
         case .scratchpad: return .yellow
         case .agents: return Color(red: 0.85, green: 0.47, blue: 0.34)
         case .watch: return .purple
-        case .wakatime, .vercel, .github, .cardImport, .devServers, .recap: return .gray // Zenith fork: cardImport, devServers, recap
+        case .wakatime, .vercel, .github, .cardImport, .devServers, .recap, .sky: return .gray // Zenith fork: cardImport, devServers, recap, sky
         }
     }
 

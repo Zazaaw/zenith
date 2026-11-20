@@ -123,7 +123,9 @@ final class NotchLockScreenService {
                 && !(frames.terminal != nil && NotchLockScreenTerminal.configuration()?.sources.contains(.waka) == true),
             // Zenith fork: weather and reminders also need their permission.
             weather: NotchLockScreenWidgets.showsWeather(),
-            reminders: NotchLockScreenWidgets.showsReminders())
+            reminders: NotchLockScreenWidgets.showsReminders(),
+            // Zenith fork: worked out on this Mac, so only their switches.
+            prayer: NotchLockScreenItem.prayer.isOn(), golden: NotchLockScreenItem.golden.isOn())
         if model.gates != gates { model.gates = gates }
         var scene: [NotchLockScreenPanel] = []
         // Without the Music section there is no player to show or to click.

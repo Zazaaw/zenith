@@ -153,6 +153,8 @@ struct NotchLockScreenTerminalSettings: View {
         case .sys: return text.system
         case .dl: return NotchModule.downloads.title(l10n.language)
         case .timer: return NotchModule.timer.title(l10n.language)
+        case .prayer: return ZenithStrings.sky(l10n.language).lockPrayer // Zenith fork
+        case .golden: return ZenithStrings.sky(l10n.language).lockGolden // Zenith fork
         }
     }
 }

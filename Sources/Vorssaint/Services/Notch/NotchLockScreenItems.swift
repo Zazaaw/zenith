@@ -14,6 +14,9 @@ import SwiftUI
 enum NotchLockScreenItem: String, CaseIterable, Identifiable {
     case music, timer, agents, downloads, calendar, wakatime
     case weather, reminders
+    /// The next prayer and the golden hour (SkyService): worked out offline,
+    /// they start off so the lock screen line stays as it was.
+    case prayer, golden
 
     var id: String { rawValue }
 
@@ -27,6 +30,8 @@ enum NotchLockScreenItem: String, CaseIterable, Identifiable {
         case .wakatime: return DefaultsKey.notchLockScreenWakaTime
         case .weather: return DefaultsKey.notchLockScreenWeather
         case .reminders: return DefaultsKey.notchLockScreenReminders
+        case .prayer: return DefaultsKey.notchLockScreenPrayer
+        case .golden: return DefaultsKey.notchLockScreenGolden
         }
     }
 
@@ -39,7 +44,7 @@ enum NotchLockScreenItem: String, CaseIterable, Identifiable {
         case .downloads: return .downloads
         case .calendar: return .calendar
         case .wakatime: return .wakatime
-        case .weather, .reminders: return nil
+        case .weather, .reminders, .prayer, .golden: return nil
         }
     }
 
@@ -47,6 +52,8 @@ enum NotchLockScreenItem: String, CaseIterable, Identifiable {
         switch self {
         case .weather: return "cloud.sun"
         case .reminders: return "checklist"
+        case .prayer: return "moon.stars"
+        case .golden: return "sun.horizon"
         default: return module?.symbol ?? "circle"
         }
     }
@@ -55,6 +62,8 @@ enum NotchLockScreenItem: String, CaseIterable, Identifiable {
         switch self {
         case .weather: return ZenithStrings.lockScreenWidgets(language).weather
         case .reminders: return ZenithStrings.lockScreenWidgets(language).reminders
+        case .prayer: return ZenithStrings.sky(language).lockPrayer
+        case .golden: return ZenithStrings.sky(language).lockGolden
         default: return module?.title(language) ?? rawValue
         }
     }
@@ -62,7 +71,7 @@ enum NotchLockScreenItem: String, CaseIterable, Identifiable {
     /// Items that need a permission start off.
     var isOnByDefault: Bool {
         switch self {
-        case .weather, .reminders: return false
+        case .weather, .reminders, .prayer, .golden: return false
         default: return true
         }
     }

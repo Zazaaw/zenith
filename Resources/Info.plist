@@ -65,9 +65,9 @@
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Show your upcoming appointments in the notch. Calendar events stay on this Mac.</string>
 	<key>NSLocationUsageDescription</key>
-	<string>Zenith uses your approximate location only to show the weather on the lock screen. It is rounded to about a kilometer and sent only to Open-Meteo to get the forecast.</string>
+	<string>Zenith uses your approximate location only for the weather on the lock screen and for prayer times and the golden hour. It is rounded to about a kilometer. Prayer times are worked out on this Mac; only the weather sends it, to Open-Meteo, to get the forecast.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Zenith uses your approximate location only to show the weather on the lock screen. It is rounded to about a kilometer and sent only to Open-Meteo to get the forecast.</string>
+	<string>Zenith uses your approximate location only for the weather on the lock screen and for prayer times and the golden hour. It is rounded to about a kilometer. Prayer times are worked out on this Mac; only the weather sends it, to Open-Meteo, to get the forecast.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>
 	<string>Show reminders due today on the lock screen. Reminders stay on this Mac.</string>
 	<key>NSCameraUsageDescription</key>

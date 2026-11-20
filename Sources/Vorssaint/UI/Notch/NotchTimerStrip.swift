@@ -136,7 +136,7 @@ struct NotchCompanionMark: View {
         case .music:
             NotchMusicCover(artwork: music.artwork, side: geometry.compactMusicArtworkSide,
                             radius: geometry.compactMusicArtworkRadius, source: music.playback?.track)
-        case .timer, .keepAwake, .watch, .vercel, .command, .cardImport, .export, .devServers: // Zenith fork: vercel, command, card import and export never pair
+        case .timer, .keepAwake, .watch, .vercel, .command, .cardImport, .export, .devServers, .prayer, .golden: // Zenith fork: vercel, command, card import and export never pair
             EmptyView()
         }
     }
@@ -174,7 +174,7 @@ struct NotchCompanionMark: View {
             return geometry.compactMusicArtworkInset
         case .calendar:
             return geometry.compactActivityEdgeInset(boxHeight: 9, radius: 0)
-        case .downloads, .timer, .keepAwake, .watch, .vercel, .command, .cardImport, .export, .devServers: // Zenith fork
+        case .downloads, .timer, .keepAwake, .watch, .vercel, .command, .cardImport, .export, .devServers, .prayer, .golden: // Zenith fork
             let side = min(13, NotchTimerSupport.stripIconSize(height: geometry.compactActivityContentHeight))
             return geometry.compactActivityEdgeInset(boxHeight: side, radius: side / 2)
         }
@@ -195,7 +195,7 @@ struct NotchCompanionMark: View {
             let playback = NotchMusicService.shared.playback
             let title = playback?.track.title ?? FeatureStrings.radialMenu(language).mediaNowPlaying
             return [title, playback?.track.artist].compactMap { $0 }.joined(separator: ", ")
-        case .timer, .keepAwake, .watch, .vercel, .command, .cardImport, .export, .devServers: // Zenith fork
+        case .timer, .keepAwake, .watch, .vercel, .command, .cardImport, .export, .devServers, .prayer, .golden: // Zenith fork
             return companion.title(language)
         }
     }

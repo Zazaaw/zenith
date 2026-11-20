@@ -627,6 +627,8 @@ extension ZenithHomeWidget {
     /// The widget's name: its page's, or the lock screen's word for weather.
     func title(_ language: AppLanguage) -> String {
         if self == .weather { return ZenithStrings.lockScreenWidgets(language).weather }
+        if self == .prayer { return ZenithStrings.sky(language).prayerTab }
+        if self == .golden { return ZenithStrings.sky(language).goldenTab }
         return (module ?? .controls).title(language)
     }
 }

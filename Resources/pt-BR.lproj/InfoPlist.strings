@@ -24,8 +24,8 @@
 "NSCalendarsFullAccessUsageDescription" = "Mostra seus próximos compromissos na parte superior da tela. Os eventos do calendário ficam neste Mac.";
 
 /* macOS Location Services permission prompt (Zenith fork: lock screen weather). */
-"NSLocationUsageDescription" = "O Zenith usa sua localização aproximada só para mostrar o tempo na tela de bloqueio. Ela é arredondada para cerca de um quilômetro e enviada apenas ao Open-Meteo para obter a previsão.";
-"NSLocationWhenInUseUsageDescription" = "O Zenith usa sua localização aproximada só para mostrar o tempo na tela de bloqueio. Ela é arredondada para cerca de um quilômetro e enviada apenas ao Open-Meteo para obter a previsão.";
+"NSLocationUsageDescription" = "O Zenith usa sua localização aproximada só para o tempo na tela de bloqueio e para os horários de oração e a hora dourada. Ela é arredondada para cerca de um quilômetro. Os horários são calculados neste Mac; só o tempo a envia ao Open-Meteo para obter a previsão.";
+"NSLocationWhenInUseUsageDescription" = "O Zenith usa sua localização aproximada só para o tempo na tela de bloqueio e para os horários de oração e a hora dourada. Ela é arredondada para cerca de um quilômetro. Os horários são calculados neste Mac; só o tempo a envia ao Open-Meteo para obter a previsão.";
 
 /* macOS Reminders permission prompt (Zenith fork: lock screen reminders). */
 "NSRemindersFullAccessUsageDescription" = "Mostre na tela de bloqueio os lembretes para hoje. Os lembretes ficam neste Mac.";

@@ -101,6 +101,7 @@ struct NotchEditorStrings {
         case .cardImport: return ZenithStrings.cardImport(L10n.shared.language).summary
         case .devServers: return ZenithStrings.devServers(L10n.shared.language).summary // Zenith fork
         case .recap: return ZenithStrings.recap(L10n.shared.language).summary
+        case .sky: return ZenithStrings.sky(L10n.shared.language).summary
         }
     }
 }

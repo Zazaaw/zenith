@@ -7419,3 +7419,439 @@ extension ZenithStrings {
         }
     }
 }
+
+// MARK: - Sky
+
+/// Zenith fork: prayer times and the golden hour (SkyService), in the island,
+/// on the lock screen, on the home page and in Settings.
+struct ZenithSkyStrings {
+    /// The module, its page and its section in Settings.
+    let title: String
+    let summary: String
+    let prayerTab: String
+    let goldenTab: String
+    /// Imsak, Fajr, Sunrise, Dhuhr, Asr, Maghrib and Isha, in that order,
+    /// in this language. Indonesian names come from `Prayer.indonesianName`.
+    let prayerNames: [String]
+    /// "Time for Dhuhr", at the prayer's time.
+    let timeFor: String
+    let next: String
+    let blueHour: String
+    let morning: String
+    let evening: String
+    let tomorrow: String
+    /// "Golden hour in 32 min" and "Golden hour · 18 min left".
+    let goldenIn: String
+    let goldenLeft: String
+    let minutes: String
+    let sun: String
+    let noWindows: String
+    let needsLocation: String
+    let locationDenied: String
+    let chooseCity: String
+    let approximated: String
+    // Settings.
+    let calculation: String
+    let method: String
+    let asr: String
+    let shafii: String
+    let hanafi: String
+    let adjustments: String
+    let adjustmentsCaption: String
+    let names: String
+    let namesAutomatic: String
+    let namesIndonesian: String
+    let namesApp: String
+    let location: String
+    let sourceAutomatic: String
+    let sourceCity: String
+    let sourceCustom: String
+    let latitude: String
+    let longitude: String
+    let automaticCaption: String
+    let manualCaption: String
+    let reminders: String
+    let remindersCaption: String
+    let prayerActivity: String
+    let prayerActivityCaption: String
+    let lead: String
+    let sound: String
+    let soundCaption: String
+    let chooseSound: String
+    let systemSound: String
+    let goldenActivity: String
+    let goldenActivityCaption: String
+    let lockPrayer: String
+    let lockGolden: String
+
+    /// The prayer's name in this language.
+    func name(_ prayer: Prayer, indonesian: Bool) -> String {
+        indonesian ? prayer.indonesianName : prayerNames.indices.contains(prayer.index) ? prayerNames[prayer.index] : prayer.rawValue
+    }
+
+    /// "Waktunya Dzuhur" with Indonesian names, otherwise this language's own.
+    func arrival(_ prayer: Prayer, indonesian: Bool) -> String {
+        indonesian ? "Waktunya " + prayer.indonesianName : filling(timeFor, name(prayer, indonesian: false))
+    }
+
+    func minutes(_ count: Int) -> String { minutes.replacingOccurrences(of: "%d", with: "\(count)") }
+
+    func filling(_ format: String, _ value: String) -> String { format.replacingOccurrences(of: "%@", with: value) }
+}
+
+extension ZenithStrings {
+    static func sky(_ language: AppLanguage) -> ZenithSkyStrings {
+        switch language {
+        case .enUS:
+            return .init(title: "Sky", summary: "Prayer times and the golden hour, worked out on this Mac.",
+                         prayerTab: "Prayer times", goldenTab: "Golden hour",
+                         prayerNames: ["Imsak", "Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"],
+                         timeFor: "Time for %@", next: "Next", blueHour: "Blue hour", morning: "Morning", evening: "Evening",
+                         tomorrow: "Tomorrow", goldenIn: "Golden hour in %@", goldenLeft: "Golden hour · %@ left", minutes: "%d min",
+                         sun: "Sun", noWindows: "The sun stays out of the golden hour today.",
+                         needsLocation: "Prayer times and the golden hour need your approximate location or a city.",
+                         locationDenied: "Location access is off for Zenith. Choose a city or allow it in System Settings.",
+                         chooseCity: "Choose a City", approximated: "Approximated for a high latitude",
+                         calculation: "Calculation", method: "Method", asr: "Asr", shafii: "Shafi’i", hanafi: "Hanafi",
+                         adjustments: "Adjustments", adjustmentsCaption: "Minutes added to or taken from each time, after the method’s own.",
+                         names: "Prayer names", namesAutomatic: "Automatic", namesIndonesian: "Indonesian", namesApp: "App language",
+                         location: "Location", sourceAutomatic: "Approximate", sourceCity: "City", sourceCustom: "Custom",
+                         latitude: "Latitude", longitude: "Longitude",
+                         automaticCaption: "Uses the weather’s approximate location, rounded to about a kilometer. The times are worked out on this Mac; nothing is sent.",
+                         manualCaption: "The times are worked out on this Mac for this place, in the Mac’s time zone.",
+                         reminders: "Reminders", remindersCaption: "Each prayer switched on gets the countdown and a notice at its time.",
+                         prayerActivity: "Countdown in the closed island", prayerActivityCaption: "Shows the next prayer and the time left, then its arrival for two minutes.",
+                         lead: "Starts", sound: "Sound at prayer time",
+                         soundCaption: "A soft system sound, or an audio file of your own. No adhan recording is included.",
+                         chooseSound: "Choose Sound File…", systemSound: "Use System Sound",
+                         goldenActivity: "Golden hour in the closed island",
+                         goldenActivityCaption: "Starts 30 minutes before the evening golden hour and counts down while it lasts.",
+                         lockPrayer: "Next prayer", lockGolden: "Golden hour")
+        case .ptBR:
+            return .init(title: "Céu", summary: "Horários de oração e a hora dourada, calculados neste Mac.",
+                         prayerTab: "Orações", goldenTab: "Hora dourada",
+                         prayerNames: ["Imsak", "Fajr", "Nascer do sol", "Dhuhr", "Asr", "Maghrib", "Isha"],
+                         timeFor: "Hora do %@", next: "Próxima", blueHour: "Hora azul", morning: "Manhã", evening: "Tarde",
+                         tomorrow: "Amanhã", goldenIn: "Hora dourada em %@", goldenLeft: "Hora dourada · faltam %@", minutes: "%d min",
+                         sun: "Sol", noWindows: "Hoje o sol não passa pela hora dourada.",
+                         needsLocation: "Os horários de oração e a hora dourada precisam da sua localização aproximada ou de uma cidade.",
+                         locationDenied: "O acesso à localização está desativado para o Zenith. Escolha uma cidade ou permita nos Ajustes do Sistema.",
+                         chooseCity: "Escolher Cidade", approximated: "Aproximado para uma latitude alta",
+                         calculation: "Cálculo", method: "Método", asr: "Asr", shafii: "Shafi’i", hanafi: "Hanafi",
+                         adjustments: "Ajustes", adjustmentsCaption: "Minutos somados ou tirados de cada horário, depois dos do método.",
+                         names: "Nomes das orações", namesAutomatic: "Automático", namesIndonesian: "Indonésio", namesApp: "Idioma do app",
+                         location: "Localização", sourceAutomatic: "Aproximada", sourceCity: "Cidade", sourceCustom: "Personalizada",
+                         latitude: "Latitude", longitude: "Longitude",
+                         automaticCaption: "Usa a localização aproximada do clima, arredondada a cerca de um quilômetro. Os horários são calculados neste Mac; nada é enviado.",
+                         manualCaption: "Os horários são calculados neste Mac para este lugar, no fuso horário do Mac.",
+                         reminders: "Lembretes", remindersCaption: "Cada oração ativada ganha a contagem regressiva e um aviso no seu horário.",
+                         prayerActivity: "Contagem na ilha fechada", prayerActivityCaption: "Mostra a próxima oração e o tempo que falta, depois a chegada por dois minutos.",
+                         lead: "Começa", sound: "Som na hora da oração",
+                         soundCaption: "Um som suave do sistema ou um arquivo de áudio seu. Nenhuma gravação de adhan é incluída.",
+                         chooseSound: "Escolher Arquivo de Som…", systemSound: "Usar Som do Sistema",
+                         goldenActivity: "Hora dourada na ilha fechada",
+                         goldenActivityCaption: "Começa 30 minutos antes da hora dourada da tarde e faz a contagem enquanto ela dura.",
+                         lockPrayer: "Próxima oração", lockGolden: "Hora dourada")
+        case .tr:
+            return .init(title: "Gökyüzü", summary: "Namaz vakitleri ve altın saat, bu Mac’te hesaplanır.",
+                         prayerTab: "Namaz vakitleri", goldenTab: "Altın saat",
+                         prayerNames: ["İmsak", "Sabah", "Güneş", "Öğle", "İkindi", "Akşam", "Yatsı"],
+                         timeFor: "%@ vakti", next: "Sıradaki", blueHour: "Mavi saat", morning: "Sabah", evening: "Akşam",
+                         tomorrow: "Yarın", goldenIn: "Altın saate %@", goldenLeft: "Altın saat · %@ kaldı", minutes: "%d dk",
+                         sun: "Güneş", noWindows: "Güneş bugün altın saate girmiyor.",
+                         needsLocation: "Namaz vakitleri ve altın saat için yaklaşık konumun ya da bir şehir gerekir.",
+                         locationDenied: "Zenith için konum erişimi kapalı. Bir şehir seç ya da Sistem Ayarları’ndan izin ver.",
+                         chooseCity: "Şehir Seç", approximated: "Yüksek enlem için yaklaşık",
+                         calculation: "Hesaplama", method: "Yöntem", asr: "İkindi", shafii: "Şafii", hanafi: "Hanefi",
+                         adjustments: "Düzeltmeler", adjustmentsCaption: "Yöntemin kendi ayarlarından sonra her vakte eklenen ya da çıkarılan dakikalar.",
+                         names: "Vakit adları", namesAutomatic: "Otomatik", namesIndonesian: "Endonezyaca", namesApp: "Uygulama dili",
+                         location: "Konum", sourceAutomatic: "Yaklaşık", sourceCity: "Şehir", sourceCustom: "Özel",
+                         latitude: "Enlem", longitude: "Boylam",
+                         automaticCaption: "Hava durumunun yaklaşık konumunu kullanır, yaklaşık bir kilometreye yuvarlanır. Vakitler bu Mac’te hesaplanır; hiçbir şey gönderilmez.",
+                         manualCaption: "Vakitler bu Mac’te bu yer için, Mac’in saat diliminde hesaplanır.",
+                         reminders: "Hatırlatmalar", remindersCaption: "Açık olan her vakit geri sayımı ve vaktinde bir bildirimi alır.",
+                         prayerActivity: "Kapalı adada geri sayım", prayerActivityCaption: "Sıradaki vakti ve kalan süreyi, sonra iki dakika boyunca vaktin girdiğini gösterir.",
+                         lead: "Başlangıç", sound: "Vakitte ses",
+                         soundCaption: "Yumuşak bir sistem sesi ya da kendi ses dosyan. Ezan kaydı eklenmez.",
+                         chooseSound: "Ses Dosyası Seç…", systemSound: "Sistem Sesini Kullan",
+                         goldenActivity: "Kapalı adada altın saat",
+                         goldenActivityCaption: "Akşamki altın saatten 30 dakika önce başlar ve sürdüğü sürece geri sayar.",
+                         lockPrayer: "Sıradaki vakit", lockGolden: "Altın saat")
+        case .ru:
+            return .init(title: "Небо", summary: "Время намаза и золотой час, рассчитанные на этом Mac.",
+                         prayerTab: "Время намаза", goldenTab: "Золотой час",
+                         prayerNames: ["Имсак", "Фаджр", "Восход", "Зухр", "Аср", "Магриб", "Иша"],
+                         timeFor: "Время намаза: %@", next: "Далее", blueHour: "Синий час", morning: "Утро", evening: "Вечер",
+                         tomorrow: "Завтра", goldenIn: "Золотой час через %@", goldenLeft: "Золотой час · осталось %@", minutes: "%d мин",
+                         sun: "Солнце", noWindows: "Сегодня солнце не входит в золотой час.",
+                         needsLocation: "Для времени намаза и золотого часа нужно приблизительное местоположение или город.",
+                         locationDenied: "Доступ Zenith к геопозиции выключен. Выберите город или разрешите доступ в Системных настройках.",
+                         chooseCity: "Выбрать город", approximated: "Приблизительно для высокой широты",
+                         calculation: "Расчёт", method: "Метод", asr: "Аср", shafii: "Шафиитский", hanafi: "Ханафитский",
+                         adjustments: "Поправки", adjustmentsCaption: "Минуты, добавленные к каждому времени или убранные из него после поправок метода.",
+                         names: "Названия намазов", namesAutomatic: "Автоматически", namesIndonesian: "Индонезийские", namesApp: "Язык приложения",
+                         location: "Место", sourceAutomatic: "Приблизительно", sourceCity: "Город", sourceCustom: "Вручную",
+                         latitude: "Широта", longitude: "Долгота",
+                         automaticCaption: "Использует приблизительную геопозицию погоды, округлённую примерно до километра. Время рассчитывается на этом Mac; ничего не отправляется.",
+                         manualCaption: "Время рассчитывается на этом Mac для этого места, в часовом поясе Mac.",
+                         reminders: "Напоминания", remindersCaption: "Каждый включённый намаз получает обратный отсчёт и уведомление в своё время.",
+                         prayerActivity: "Отсчёт на закрытом острове", prayerActivityCaption: "Показывает следующий намаз и оставшееся время, затем его наступление в течение двух минут.",
+                         lead: "Начало", sound: "Звук во время намаза",
+                         soundCaption: "Мягкий системный звук или ваш аудиофайл. Записи азана нет.",
+                         chooseSound: "Выбрать звуковой файл…", systemSound: "Системный звук",
+                         goldenActivity: "Золотой час на закрытом острове",
+                         goldenActivityCaption: "Начинается за 30 минут до вечернего золотого часа и ведёт отсчёт, пока он длится.",
+                         lockPrayer: "Следующий намаз", lockGolden: "Золотой час")
+        case .es:
+            return .init(title: "Cielo", summary: "Horarios de oración y la hora dorada, calculados en este Mac.",
+                         prayerTab: "Oraciones", goldenTab: "Hora dorada",
+                         prayerNames: ["Imsak", "Fajr", "Amanecer", "Dhuhr", "Asr", "Magrib", "Isha"],
+                         timeFor: "Hora de %@", next: "Siguiente", blueHour: "Hora azul", morning: "Mañana", evening: "Tarde",
+                         tomorrow: "Mañana", goldenIn: "Hora dorada en %@", goldenLeft: "Hora dorada · quedan %@", minutes: "%d min",
+                         sun: "Sol", noWindows: "Hoy el sol no pasa por la hora dorada.",
+                         needsLocation: "Los horarios de oración y la hora dorada necesitan tu ubicación aproximada o una ciudad.",
+                         locationDenied: "El acceso a la ubicación está desactivado para Zenith. Elige una ciudad o permítelo en Ajustes del Sistema.",
+                         chooseCity: "Elegir Ciudad", approximated: "Aproximado para una latitud alta",
+                         calculation: "Cálculo", method: "Método", asr: "Asr", shafii: "Shafi’i", hanafi: "Hanafi",
+                         adjustments: "Ajustes", adjustmentsCaption: "Minutos sumados o restados a cada horario, después de los del método.",
+                         names: "Nombres de las oraciones", namesAutomatic: "Automático", namesIndonesian: "Indonesio", namesApp: "Idioma de la app",
+                         location: "Ubicación", sourceAutomatic: "Aproximada", sourceCity: "Ciudad", sourceCustom: "Personalizada",
+                         latitude: "Latitud", longitude: "Longitud",
+                         automaticCaption: "Usa la ubicación aproximada del tiempo, redondeada a un kilómetro más o menos. Los horarios se calculan en este Mac; no se envía nada.",
+                         manualCaption: "Los horarios se calculan en este Mac para este lugar, en la zona horaria del Mac.",
+                         reminders: "Recordatorios", remindersCaption: "Cada oración activada tiene su cuenta atrás y un aviso a su hora.",
+                         prayerActivity: "Cuenta atrás en la isla cerrada", prayerActivityCaption: "Muestra la siguiente oración y el tiempo que falta, y después su llegada durante dos minutos.",
+                         lead: "Empieza", sound: "Sonido a la hora de la oración",
+                         soundCaption: "Un sonido suave del sistema o un archivo de audio tuyo. No se incluye ninguna grabación del adhan.",
+                         chooseSound: "Elegir Archivo de Sonido…", systemSound: "Usar Sonido del Sistema",
+                         goldenActivity: "Hora dorada en la isla cerrada",
+                         goldenActivityCaption: "Empieza 30 minutos antes de la hora dorada de la tarde y cuenta atrás mientras dura.",
+                         lockPrayer: "Siguiente oración", lockGolden: "Hora dorada")
+        case .sk:
+            return .init(title: "Obloha", summary: "Časy modlitieb a zlatá hodinka, vypočítané na tomto Macu.",
+                         prayerTab: "Časy modlitieb", goldenTab: "Zlatá hodinka",
+                         prayerNames: ["Imsák", "Fadžr", "Východ slnka", "Zuhr", "Asr", "Magrib", "Iša"],
+                         timeFor: "Čas na %@", next: "Ďalšia", blueHour: "Modrá hodinka", morning: "Ráno", evening: "Večer",
+                         tomorrow: "Zajtra", goldenIn: "Zlatá hodinka o %@", goldenLeft: "Zlatá hodinka · ešte %@", minutes: "%d min",
+                         sun: "Slnko", noWindows: "Slnko sa dnes do zlatej hodinky nedostane.",
+                         needsLocation: "Časy modlitieb a zlatá hodinka potrebujú vašu približnú polohu alebo mesto.",
+                         locationDenied: "Prístup k polohe je pre Zenith vypnutý. Vyberte mesto alebo ho povoľte v Systémových nastaveniach.",
+                         chooseCity: "Vybrať mesto", approximated: "Približne pre vysokú zemepisnú šírku",
+                         calculation: "Výpočet", method: "Metóda", asr: "Asr", shafii: "Šáfiovská", hanafi: "Hanafíjska",
+                         adjustments: "Úpravy", adjustmentsCaption: "Minúty pridané ku každému času alebo odobraté po úpravách metódy.",
+                         names: "Názvy modlitieb", namesAutomatic: "Automaticky", namesIndonesian: "Indonézske", namesApp: "Jazyk aplikácie",
+                         location: "Poloha", sourceAutomatic: "Približná", sourceCity: "Mesto", sourceCustom: "Vlastná",
+                         latitude: "Zemepisná šírka", longitude: "Zemepisná dĺžka",
+                         automaticCaption: "Používa približnú polohu počasia zaokrúhlenú asi na kilometer. Časy sa počítajú na tomto Macu; nič sa neodosiela.",
+                         manualCaption: "Časy sa počítajú na tomto Macu pre toto miesto, v časovom pásme Macu.",
+                         reminders: "Pripomienky", remindersCaption: "Každá zapnutá modlitba má odpočet a oznámenie v jej čase.",
+                         prayerActivity: "Odpočet v zatvorenom ostrove", prayerActivityCaption: "Ukazuje ďalšiu modlitbu a zostávajúci čas, potom jej príchod počas dvoch minút.",
+                         lead: "Začína", sound: "Zvuk v čase modlitby",
+                         soundCaption: "Jemný systémový zvuk alebo váš vlastný zvukový súbor. Nahrávka azánu nie je súčasťou.",
+                         chooseSound: "Vybrať zvukový súbor…", systemSound: "Použiť systémový zvuk",
+                         goldenActivity: "Zlatá hodinka v zatvorenom ostrove",
+                         goldenActivityCaption: "Začína 30 minút pred večernou zlatou hodinkou a odpočítava, kým trvá.",
+                         lockPrayer: "Ďalšia modlitba", lockGolden: "Zlatá hodinka")
+        case .de:
+            return .init(title: "Himmel", summary: "Gebetszeiten und die goldene Stunde, berechnet auf diesem Mac.",
+                         prayerTab: "Gebetszeiten", goldenTab: "Goldene Stunde",
+                         prayerNames: ["Imsak", "Fadschr", "Sonnenaufgang", "Dhuhr", "Asr", "Maghrib", "Ischa"],
+                         timeFor: "Zeit für %@", next: "Nächstes", blueHour: "Blaue Stunde", morning: "Morgens", evening: "Abends",
+                         tomorrow: "Morgen", goldenIn: "Goldene Stunde in %@", goldenLeft: "Goldene Stunde · noch %@", minutes: "%d Min.",
+                         sun: "Sonne", noWindows: "Die Sonne erreicht heute keine goldene Stunde.",
+                         needsLocation: "Gebetszeiten und die goldene Stunde brauchen deinen ungefähren Standort oder eine Stadt.",
+                         locationDenied: "Der Standortzugriff ist für Zenith aus. Wähle eine Stadt oder erlaube ihn in den Systemeinstellungen.",
+                         chooseCity: "Stadt wählen", approximated: "Angenähert für einen hohen Breitengrad",
+                         calculation: "Berechnung", method: "Methode", asr: "Asr", shafii: "Schafiitisch", hanafi: "Hanafitisch",
+                         adjustments: "Korrekturen", adjustmentsCaption: "Minuten, die nach denen der Methode zu jeder Zeit hinzukommen oder abgezogen werden.",
+                         names: "Gebetsnamen", namesAutomatic: "Automatisch", namesIndonesian: "Indonesisch", namesApp: "App-Sprache",
+                         location: "Ort", sourceAutomatic: "Ungefähr", sourceCity: "Stadt", sourceCustom: "Eigener",
+                         latitude: "Breitengrad", longitude: "Längengrad",
+                         automaticCaption: "Nutzt den ungefähren Standort des Wetters, auf etwa einen Kilometer gerundet. Die Zeiten werden auf diesem Mac berechnet; nichts wird gesendet.",
+                         manualCaption: "Die Zeiten werden auf diesem Mac für diesen Ort berechnet, in der Zeitzone des Mac.",
+                         reminders: "Erinnerungen", remindersCaption: "Jedes eingeschaltete Gebet bekommt den Countdown und einen Hinweis zu seiner Zeit.",
+                         prayerActivity: "Countdown in der geschlossenen Insel", prayerActivityCaption: "Zeigt das nächste Gebet und die verbleibende Zeit, danach zwei Minuten lang, dass es Zeit ist.",
+                         lead: "Beginnt", sound: "Ton zur Gebetszeit",
+                         soundCaption: "Ein sanfter Systemton oder eine eigene Audiodatei. Keine Adhan-Aufnahme enthalten.",
+                         chooseSound: "Tondatei wählen …", systemSound: "Systemton verwenden",
+                         goldenActivity: "Goldene Stunde in der geschlossenen Insel",
+                         goldenActivityCaption: "Beginnt 30 Minuten vor der goldenen Stunde am Abend und zählt herunter, solange sie dauert.",
+                         lockPrayer: "Nächstes Gebet", lockGolden: "Goldene Stunde")
+        case .fr:
+            return .init(title: "Ciel", summary: "Heures de prière et heure dorée, calculées sur ce Mac.",
+                         prayerTab: "Heures de prière", goldenTab: "Heure dorée",
+                         prayerNames: ["Imsak", "Fajr", "Lever du soleil", "Dhuhr", "Asr", "Maghrib", "Isha"],
+                         timeFor: "C’est l’heure de %@", next: "Suivante", blueHour: "Heure bleue", morning: "Matin", evening: "Soir",
+                         tomorrow: "Demain", goldenIn: "Heure dorée dans %@", goldenLeft: "Heure dorée · encore %@", minutes: "%d min",
+                         sun: "Soleil", noWindows: "Le soleil n’atteint pas l’heure dorée aujourd’hui.",
+                         needsLocation: "Les heures de prière et l’heure dorée ont besoin de votre position approximative ou d’une ville.",
+                         locationDenied: "L’accès à la position est désactivé pour Zenith. Choisissez une ville ou autorisez-le dans Réglages Système.",
+                         chooseCity: "Choisir une ville", approximated: "Approximé pour une latitude élevée",
+                         calculation: "Calcul", method: "Méthode", asr: "Asr", shafii: "Chaféite", hanafi: "Hanafite",
+                         adjustments: "Ajustements", adjustmentsCaption: "Minutes ajoutées à chaque heure ou retirées, après celles de la méthode.",
+                         names: "Noms des prières", namesAutomatic: "Automatique", namesIndonesian: "Indonésien", namesApp: "Langue de l’app",
+                         location: "Lieu", sourceAutomatic: "Approximative", sourceCity: "Ville", sourceCustom: "Personnalisée",
+                         latitude: "Latitude", longitude: "Longitude",
+                         automaticCaption: "Utilise la position approximative de la météo, arrondie à environ un kilomètre. Les heures sont calculées sur ce Mac ; rien n’est envoyé.",
+                         manualCaption: "Les heures sont calculées sur ce Mac pour ce lieu, dans le fuseau horaire du Mac.",
+                         reminders: "Rappels", remindersCaption: "Chaque prière activée a son compte à rebours et un avis à son heure.",
+                         prayerActivity: "Compte à rebours dans l’île fermée", prayerActivityCaption: "Affiche la prière suivante et le temps restant, puis son arrivée pendant deux minutes.",
+                         lead: "Commence", sound: "Son à l’heure de la prière",
+                         soundCaption: "Un son système doux, ou votre propre fichier audio. Aucun enregistrement d’adhan n’est inclus.",
+                         chooseSound: "Choisir un fichier son…", systemSound: "Utiliser le son système",
+                         goldenActivity: "Heure dorée dans l’île fermée",
+                         goldenActivityCaption: "Commence 30 minutes avant l’heure dorée du soir et décompte tant qu’elle dure.",
+                         lockPrayer: "Prière suivante", lockGolden: "Heure dorée")
+        case .it:
+            return .init(title: "Cielo", summary: "Orari di preghiera e ora d’oro, calcolati su questo Mac.",
+                         prayerTab: "Orari di preghiera", goldenTab: "Ora d’oro",
+                         prayerNames: ["Imsak", "Fajr", "Alba", "Dhuhr", "Asr", "Maghrib", "Isha"],
+                         timeFor: "È l’ora di %@", next: "Prossima", blueHour: "Ora blu", morning: "Mattina", evening: "Sera",
+                         tomorrow: "Domani", goldenIn: "Ora d’oro tra %@", goldenLeft: "Ora d’oro · mancano %@", minutes: "%d min",
+                         sun: "Sole", noWindows: "Oggi il sole non entra nell’ora d’oro.",
+                         needsLocation: "Gli orari di preghiera e l’ora d’oro hanno bisogno della tua posizione approssimativa o di una città.",
+                         locationDenied: "L’accesso alla posizione è disattivato per Zenith. Scegli una città o consentilo in Impostazioni di Sistema.",
+                         chooseCity: "Scegli una città", approximated: "Approssimato per una latitudine alta",
+                         calculation: "Calcolo", method: "Metodo", asr: "Asr", shafii: "Sciafeita", hanafi: "Hanafita",
+                         adjustments: "Correzioni", adjustmentsCaption: "Minuti aggiunti o tolti a ogni orario, dopo quelli del metodo.",
+                         names: "Nomi delle preghiere", namesAutomatic: "Automatico", namesIndonesian: "Indonesiano", namesApp: "Lingua dell’app",
+                         location: "Luogo", sourceAutomatic: "Approssimativa", sourceCity: "Città", sourceCustom: "Personalizzata",
+                         latitude: "Latitudine", longitude: "Longitudine",
+                         automaticCaption: "Usa la posizione approssimativa del meteo, arrotondata a circa un chilometro. Gli orari sono calcolati su questo Mac; non viene inviato nulla.",
+                         manualCaption: "Gli orari sono calcolati su questo Mac per questo luogo, nel fuso orario del Mac.",
+                         reminders: "Promemoria", remindersCaption: "Ogni preghiera attivata ha il suo conto alla rovescia e un avviso al suo orario.",
+                         prayerActivity: "Conto alla rovescia nell’isola chiusa", prayerActivityCaption: "Mostra la prossima preghiera e il tempo che manca, poi il suo arrivo per due minuti.",
+                         lead: "Inizia", sound: "Suono all’ora della preghiera",
+                         soundCaption: "Un suono di sistema delicato o un tuo file audio. Non è inclusa nessuna registrazione dell’adhan.",
+                         chooseSound: "Scegli file audio…", systemSound: "Usa suono di sistema",
+                         goldenActivity: "Ora d’oro nell’isola chiusa",
+                         goldenActivityCaption: "Inizia 30 minuti prima dell’ora d’oro della sera e fa il conto alla rovescia finché dura.",
+                         lockPrayer: "Prossima preghiera", lockGolden: "Ora d’oro")
+        case .ja:
+            return .init(title: "空", summary: "礼拝時刻とゴールデンアワーを、このMacで計算します。",
+                         prayerTab: "礼拝時刻", goldenTab: "ゴールデンアワー",
+                         prayerNames: ["イムサーク", "ファジュル", "日の出", "ズフル", "アスル", "マグリブ", "イシャー"],
+                         timeFor: "%@の時刻です", next: "次", blueHour: "ブルーアワー", morning: "朝", evening: "夕方",
+                         tomorrow: "明日", goldenIn: "ゴールデンアワーまで%@", goldenLeft: "ゴールデンアワー · 残り%@", minutes: "%d分",
+                         sun: "太陽", noWindows: "今日は太陽がゴールデンアワーの高さに入りません。",
+                         needsLocation: "礼拝時刻とゴールデンアワーには、おおよその位置情報か都市が必要です。",
+                         locationDenied: "Zenithの位置情報へのアクセスがオフです。都市を選ぶか、システム設定で許可してください。",
+                         chooseCity: "都市を選択", approximated: "高緯度のため近似値",
+                         calculation: "計算", method: "方式", asr: "アスル", shafii: "シャーフィイー派", hanafi: "ハナフィー派",
+                         adjustments: "調整", adjustmentsCaption: "方式の調整のあとで、各時刻に足したり引いたりする分数です。",
+                         names: "礼拝の名前", namesAutomatic: "自動", namesIndonesian: "インドネシア語", namesApp: "アプリの言語",
+                         location: "場所", sourceAutomatic: "おおよその位置", sourceCity: "都市", sourceCustom: "カスタム",
+                         latitude: "緯度", longitude: "経度",
+                         automaticCaption: "天気と同じおおよその位置情報を約1キロメートル単位に丸めて使います。時刻はこのMacで計算され、何も送信されません。",
+                         manualCaption: "時刻はこの場所についてこのMacで、Macのタイムゾーンで計算されます。",
+                         reminders: "リマインダー", remindersCaption: "オンにした礼拝ごとに、カウントダウンと時刻の通知が出ます。",
+                         prayerActivity: "閉じたアイランドのカウントダウン", prayerActivityCaption: "次の礼拝と残り時間を表示し、時刻になると2分間お知らせします。",
+                         lead: "開始", sound: "礼拝時刻のサウンド",
+                         soundCaption: "やさしいシステムサウンド、または自分のオーディオファイル。アザーンの録音は含まれません。",
+                         chooseSound: "サウンドファイルを選択…", systemSound: "システムサウンドを使用",
+                         goldenActivity: "閉じたアイランドのゴールデンアワー",
+                         goldenActivityCaption: "夕方のゴールデンアワーの30分前に始まり、続くあいだカウントダウンします。",
+                         lockPrayer: "次の礼拝", lockGolden: "ゴールデンアワー")
+        case .ko:
+            return .init(title: "하늘", summary: "기도 시간과 골든아워를 이 Mac에서 계산합니다.",
+                         prayerTab: "기도 시간", goldenTab: "골든아워",
+                         prayerNames: ["임삭", "파즈르", "일출", "주흐르", "아스르", "마그립", "이샤"],
+                         timeFor: "%@ 시간입니다", next: "다음", blueHour: "블루아워", morning: "아침", evening: "저녁",
+                         tomorrow: "내일", goldenIn: "골든아워까지 %@", goldenLeft: "골든아워 · %@ 남음", minutes: "%d분",
+                         sun: "태양", noWindows: "오늘은 해가 골든아워 높이에 들지 않습니다.",
+                         needsLocation: "기도 시간과 골든아워에는 대략적인 위치나 도시가 필요합니다.",
+                         locationDenied: "Zenith의 위치 접근이 꺼져 있습니다. 도시를 선택하거나 시스템 설정에서 허용하세요.",
+                         chooseCity: "도시 선택", approximated: "고위도라 근사값",
+                         calculation: "계산", method: "방식", asr: "아스르", shafii: "샤피이", hanafi: "하나피",
+                         adjustments: "조정", adjustmentsCaption: "방식 자체의 조정 뒤에 각 시간에 더하거나 빼는 분입니다.",
+                         names: "기도 이름", namesAutomatic: "자동", namesIndonesian: "인도네시아어", namesApp: "앱 언어",
+                         location: "위치", sourceAutomatic: "대략적인 위치", sourceCity: "도시", sourceCustom: "직접 입력",
+                         latitude: "위도", longitude: "경도",
+                         automaticCaption: "날씨와 같은 대략적인 위치를 약 1킬로미터로 반올림해 사용합니다. 시간은 이 Mac에서 계산되며 아무것도 전송되지 않습니다.",
+                         manualCaption: "시간은 이 장소를 기준으로 이 Mac에서, Mac의 시간대로 계산됩니다.",
+                         reminders: "알림", remindersCaption: "켠 기도마다 카운트다운과 그 시간의 알림이 표시됩니다.",
+                         prayerActivity: "닫힌 아일랜드의 카운트다운", prayerActivityCaption: "다음 기도와 남은 시간을 보여 주고, 시간이 되면 2분 동안 알려 줍니다.",
+                         lead: "시작", sound: "기도 시간 사운드",
+                         soundCaption: "부드러운 시스템 사운드 또는 직접 고른 오디오 파일입니다. 아잔 녹음은 포함되지 않습니다.",
+                         chooseSound: "사운드 파일 선택…", systemSound: "시스템 사운드 사용",
+                         goldenActivity: "닫힌 아일랜드의 골든아워",
+                         goldenActivityCaption: "저녁 골든아워 30분 전에 시작해 골든아워가 이어지는 동안 카운트다운합니다.",
+                         lockPrayer: "다음 기도", lockGolden: "골든아워")
+        case .uk:
+            return .init(title: "Небо", summary: "Час молитви й золота година, обчислені на цьому Mac.",
+                         prayerTab: "Час молитви", goldenTab: "Золота година",
+                         prayerNames: ["Імсак", "Фаджр", "Схід сонця", "Зухр", "Аср", "Магриб", "Іша"],
+                         timeFor: "Час молитви: %@", next: "Далі", blueHour: "Синя година", morning: "Ранок", evening: "Вечір",
+                         tomorrow: "Завтра", goldenIn: "Золота година через %@", goldenLeft: "Золота година · лишилося %@", minutes: "%d хв",
+                         sun: "Сонце", noWindows: "Сьогодні сонце не входить у золоту годину.",
+                         needsLocation: "Для часу молитви й золотої години потрібне приблизне розташування або місто.",
+                         locationDenied: "Доступ Zenith до геопозиції вимкнено. Виберіть місто або дозвольте доступ у Системних параметрах.",
+                         chooseCity: "Вибрати місто", approximated: "Приблизно для високої широти",
+                         calculation: "Обчислення", method: "Метод", asr: "Аср", shafii: "Шафіїтський", hanafi: "Ханафітський",
+                         adjustments: "Поправки", adjustmentsCaption: "Хвилини, додані до кожного часу чи відняті від нього після поправок методу.",
+                         names: "Назви молитов", namesAutomatic: "Автоматично", namesIndonesian: "Індонезійські", namesApp: "Мова застосунку",
+                         location: "Місце", sourceAutomatic: "Приблизно", sourceCity: "Місто", sourceCustom: "Вручну",
+                         latitude: "Широта", longitude: "Довгота",
+                         automaticCaption: "Використовує приблизну геопозицію погоди, округлену приблизно до кілометра. Час обчислюється на цьому Mac; нічого не надсилається.",
+                         manualCaption: "Час обчислюється на цьому Mac для цього місця, у часовому поясі Mac.",
+                         reminders: "Нагадування", remindersCaption: "Кожна ввімкнена молитва має зворотний відлік і сповіщення у свій час.",
+                         prayerActivity: "Відлік на закритому острові", prayerActivityCaption: "Показує наступну молитву й час, що лишився, а потім її настання протягом двох хвилин.",
+                         lead: "Початок", sound: "Звук у час молитви",
+                         soundCaption: "М’який системний звук або ваш аудіофайл. Запису азану немає.",
+                         chooseSound: "Вибрати звуковий файл…", systemSound: "Системний звук",
+                         goldenActivity: "Золота година на закритому острові",
+                         goldenActivityCaption: "Починається за 30 хвилин до вечірньої золотої години й веде відлік, поки вона триває.",
+                         lockPrayer: "Наступна молитва", lockGolden: "Золота година")
+        case .zhHans:
+            return .init(title: "天空", summary: "礼拜时间和黄金时刻，在这台 Mac 上计算。",
+                         prayerTab: "礼拜时间", goldenTab: "黄金时刻",
+                         prayerNames: ["封斋", "晨礼", "日出", "晌礼", "晡礼", "昏礼", "宵礼"],
+                         timeFor: "%@时间到了", next: "下一个", blueHour: "蓝调时刻", morning: "早晨", evening: "傍晚",
+                         tomorrow: "明天", goldenIn: "%@后进入黄金时刻", goldenLeft: "黄金时刻 · 还剩%@", minutes: "%d 分钟",
+                         sun: "太阳", noWindows: "今天太阳不会进入黄金时刻。",
+                         needsLocation: "礼拜时间和黄金时刻需要你的大致位置或一个城市。",
+                         locationDenied: "Zenith 的位置访问已关闭。请选择一个城市，或在系统设置中允许。",
+                         chooseCity: "选择城市", approximated: "高纬度近似值",
+                         calculation: "计算", method: "方法", asr: "晡礼", shafii: "沙斐仪派", hanafi: "哈乃斐派",
+                         adjustments: "调整", adjustmentsCaption: "在方法自身的调整之后，为每个时间加上或减去的分钟数。",
+                         names: "礼拜名称", namesAutomatic: "自动", namesIndonesian: "印度尼西亚语", namesApp: "App 语言",
+                         location: "位置", sourceAutomatic: "大致位置", sourceCity: "城市", sourceCustom: "自定",
+                         latitude: "纬度", longitude: "经度",
+                         automaticCaption: "使用天气的大致位置，取整到约一公里。时间在这台 Mac 上计算，不会发送任何内容。",
+                         manualCaption: "时间按这个地点在这台 Mac 上计算，使用 Mac 的时区。",
+                         reminders: "提醒", remindersCaption: "每个打开的礼拜都会显示倒计时，并在时间到时提示。",
+                         prayerActivity: "收起的灵动岛中显示倒计时", prayerActivityCaption: "显示下一个礼拜和剩余时间，时间到后显示两分钟。",
+                         lead: "开始于", sound: "礼拜时间的声音",
+                         soundCaption: "柔和的系统声音，或你自己的音频文件。不附带任何宣礼录音。",
+                         chooseSound: "选择声音文件…", systemSound: "使用系统声音",
+                         goldenActivity: "收起的灵动岛中显示黄金时刻",
+                         goldenActivityCaption: "在傍晚黄金时刻前 30 分钟开始，并在其持续期间倒计时。",
+                         lockPrayer: "下一个礼拜", lockGolden: "黄金时刻")
+        case .zhTW, .zhHK:
+            return .init(title: "天空", summary: "禮拜時間和黃金時刻，在這台 Mac 上計算。",
+                         prayerTab: "禮拜時間", goldenTab: "黃金時刻",
+                         prayerNames: ["封齋", "晨禮", "日出", "晌禮", "晡禮", "昏禮", "宵禮"],
+                         timeFor: "%@時間到了", next: "下一個", blueHour: "藍調時刻", morning: "早晨", evening: "傍晚",
+                         tomorrow: "明天", goldenIn: "%@後進入黃金時刻", goldenLeft: "黃金時刻 · 還剩%@", minutes: "%d 分鐘",
+                         sun: "太陽", noWindows: "今天太陽不會進入黃金時刻。",
+                         needsLocation: "禮拜時間和黃金時刻需要你的大概位置或一個城市。",
+                         locationDenied: "Zenith 的位置取用已關閉。請選擇一個城市，或在系統設定中允許。",
+                         chooseCity: "選擇城市", approximated: "高緯度近似值",
+                         calculation: "計算", method: "方法", asr: "晡禮", shafii: "沙斐儀派", hanafi: "哈乃斐派",
+                         adjustments: "調整", adjustmentsCaption: "在方法本身的調整之後，為每個時間加上或減去的分鐘數。",
+                         names: "禮拜名稱", namesAutomatic: "自動", namesIndonesian: "印尼語", namesApp: "App 語言",
+                         location: "位置", sourceAutomatic: "大概位置", sourceCity: "城市", sourceCustom: "自訂",
+                         latitude: "緯度", longitude: "經度",
+                         automaticCaption: "使用天氣的大概位置，取整到約一公里。時間在這台 Mac 上計算，不會傳送任何內容。",
+                         manualCaption: "時間依這個地點在這台 Mac 上計算，使用 Mac 的時區。",
+                         reminders: "提醒", remindersCaption: "每個開啟的禮拜都會顯示倒數，並在時間到時提示。",
+                         prayerActivity: "收起的動態島中顯示倒數", prayerActivityCaption: "顯示下一個禮拜和剩餘時間，時間到後顯示兩分鐘。",
+                         lead: "開始於", sound: "禮拜時間的聲音",
+                         soundCaption: "柔和的系統聲音，或你自己的音訊檔案。不附帶任何宣禮錄音。",
+                         chooseSound: "選擇聲音檔案…", systemSound: "使用系統聲音",
+                         goldenActivity: "收起的動態島中顯示黃金時刻",
+                         goldenActivityCaption: "在傍晚黃金時刻前 30 分鐘開始，並在其持續期間倒數。",
+                         lockPrayer: "下一個禮拜", lockGolden: "黃金時刻")
+        }
+    }
+}

@@ -24,8 +24,8 @@
 "NSCalendarsFullAccessUsageDescription" = "화면 상단에 예정된 일정을 표시합니다. 캘린더 일정은 이 Mac에만 보관됩니다.";
 
 /* macOS Location Services permission prompt (Zenith fork: lock screen weather). */
-"NSLocationUsageDescription" = "Zenith는 잠금 화면에 날씨를 표시하기 위해서만 대략적인 위치를 사용합니다. 위치는 약 1킬로미터 단위로 반올림되며 예보를 받기 위해 Open-Meteo에만 전송됩니다.";
-"NSLocationWhenInUseUsageDescription" = "Zenith는 잠금 화면에 날씨를 표시하기 위해서만 대략적인 위치를 사용합니다. 위치는 약 1킬로미터 단위로 반올림되며 예보를 받기 위해 Open-Meteo에만 전송됩니다.";
+"NSLocationUsageDescription" = "Zenith는 잠금 화면의 날씨와 기도 시간, 골든아워를 위해서만 대략적인 위치를 사용합니다. 위치는 약 1킬로미터 단위로 반올림됩니다. 기도 시간은 이 Mac에서 계산되며, 예보를 받기 위해 날씨만 Open-Meteo에 전송합니다.";
+"NSLocationWhenInUseUsageDescription" = "Zenith는 잠금 화면의 날씨와 기도 시간, 골든아워를 위해서만 대략적인 위치를 사용합니다. 위치는 약 1킬로미터 단위로 반올림됩니다. 기도 시간은 이 Mac에서 계산되며, 예보를 받기 위해 날씨만 Open-Meteo에 전송합니다.";
 
 /* macOS Reminders permission prompt (Zenith fork: lock screen reminders). */
 "NSRemindersFullAccessUsageDescription" = "오늘 마감인 미리 알림을 잠금 화면에 표시합니다. 미리 알림은 이 Mac 밖으로 나가지 않습니다.";

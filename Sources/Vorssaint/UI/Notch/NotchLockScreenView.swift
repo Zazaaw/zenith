@@ -18,6 +18,8 @@ final class NotchLockScreenModel: ObservableObject {
         var wakatime = false
         var weather = false
         var reminders = false
+        var prayer = false
+        var golden = false
     }
 
     @Published var gates = Gates()
@@ -348,7 +350,9 @@ struct NotchLockScreenActivities: View {
             downloads: gates.downloads && downloads.items.contains { $0.active && !$0.completed },
             wakatime: gates.wakatime && (wakaTime.today?.totalSeconds ?? 0) > 0,
             weather: gates.weather && WeatherSupport.isShowable(weather.snapshot, now: date),
-            reminders: gates.reminders && !reminderSelection(at: date).isEmpty)
+            reminders: gates.reminders && !reminderSelection(at: date).isEmpty,
+            prayer: gates.prayer && SkyLockScreen.showsPrayer(at: date), // Zenith fork
+            golden: gates.golden && SkyLockScreen.showsGolden(at: date)) // Zenith fork
     }
 
     // Zenith fork: worked out on every tick, so a reminder turns overdue on time.
@@ -488,6 +492,10 @@ struct NotchLockScreenActivities: View {
             }
             .accessibilityElement(children: .contain)
             .accessibilityLabel(text.reminders)
+        case .prayer:
+            SkyLockScreenPrayerEntry(date: date) // Zenith fork
+        case .golden:
+            SkyLockScreenGoldenEntry(date: date) // Zenith fork
         }
     }
 }
