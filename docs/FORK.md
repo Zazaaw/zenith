@@ -2580,6 +2580,87 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     360 pt), island kaca, Reduce Motion, dan Settings (editor, rename, import, shortcut). Prompt izin mikrofon masih
     memakai `NSMicrophoneUsageDescription` lama (menyebut rekaman layar); belum diubah karena menyentuh Info.plist dan 14
     `InfoPlist.strings` upstream.
+- **Zona drop bisa dipilih + island melebar saat drag (branch `feat/drop-zones`):** feedback Faiz dari rekaman layar:
+  drag satu gambar memunculkan lima zona (Files, AirDrop, Transform, Remove Background, Overlay, plus Optimize untuk
+  media) di lebar island biasa, jadi tiap zona kolom tinggi yang sempit, "Remove Background" pecah dua baris dan
+  terpotong pratinjau drag, ikon duduk rendah. Dua permintaan: tiap zona bisa dimatikan, dan UI drop lebih lega.
+  - **Model murni** `Services/Notch/ZenithDropZonesSupport.swift` (ikut `TEST_SOURCES`): `ZenithDropZones` (urutan +
+    nyala/mati per target, nama asing dipertahankan di slotnya, target yang belum tercatat masuk di akhir dalam keadaan
+    nyala, `setting`, `moving`, `reordering`, `arranged`, `imageTargets`, `targets(for:)`), `ZenithDropDrag` (file biasa,
+    media, n gambar, satu gambar), `ZenithDropZoneLayout` (lebar halaman, baris, frame tile, hit-test), plus glyph,
+    warna, nama penuh, nama pendek dan keterangan per `NotchDropTarget` (sekarang `String, CaseIterable`; raw value
+    `files`, `airDrop`, `media`, `transform`, `removeBackground`, `overlay`, jangan diganti).
+  - **Kunci dan migrasi:** satu kunci baru `zenithDropZones` (terdaftar, jadi ikut backup), daftar dipisah koma
+    dalam urutan island, yang mati diberi akhiran `:off`, mis. `files,airDrop,media,transform,removeBackground:off,overlay`.
+    Default terdaftar `auto` = kartu belum pernah diubah: zona mengikuti saklar lama (`notchAirDropEnabled` → AirDrop,
+    `notchPhotoActionsEnabled` → Transform dan Remove Background, `designOverlayDropEnabled` → Overlay; Files dan
+    Optimize nyala). Jadi backup lama (yang tidak punya kunci baru; impor menghapus kunci lalu mengisinya) dan file
+    config lama tetap berarti sama. Menyimpan dari kartu menulis daftar dan menyamakan tiga saklar lama (AirDrop =
+    zona AirDrop, photo actions = Transform atau Remove Background, Overlay = zona Overlay), hanya yang berubah; simpan
+    tanpa perubahan tidak menulis apa pun. Semua pembaca lewat model: `NotchAirDropSupport.isEnabled`,
+    `NotchPhotoActionsSupport.isEnabled` (Transform atau Remove Background nyala), `DesignOverlaySupport.isDropEnabled`
+    (tool Screenshot + zona Overlay), `NotchPhotoActionsService.dropTargets/open`. Setelah kartu menyimpan daftarnya,
+    saklar lama yang diubah dari luar (mis. config) tidak lagi dibaca.
+  - **Aturan minimal satu:** Files atau AirDrop selalu nyala (zona yang diterima semua drag), jadi setiap drag punya
+    tempat mendarat; saklar yang terakhir dikunci dengan tooltip + caption aturan. Zona gambar dan media bebas dimatikan
+    semua. Daftar yang ditulis tangan dengan keduanya mati mendapat Files kembali.
+  - **Routing (`NotchService`, kait `// Zenith fork`):** `offersFilesDrop` = shelf menerima + zona Files nyala;
+    `offersMediaDrop` = shelf menerima + zona Optimize nyala (tidak lagi bergantung pada Files, jadi Optimize bisa tetap
+    ada saat Files mati); `dropTargets` diurutkan dengan `arranged`; target awal sebelum pointer bergerak = zona paling
+    kiri menurut urutan pilihan (termasuk Optimize); `accept` menolak jalur shelf kalau zona Files mati (kecuali
+    Optimize); `canAccept` di window host ikut aturan yang sama. `zenithDropTargets` untuk view.
+  - **Melebar:** `NotchGeometry.zenithDropZoneCount` diisi `expandedGeometry` hanya di halaman Files selama chooser
+    terbuka. `ZenithDropZoneLayout.contentWidth`: di bawah 3 zona tidak berubah; 3+ zona minta 124 pt per zona + jarak
+    12; kalau tidak muat tapi 116 pt per zona masih muat, pakai lebar maksimum (satu baris); kalau tidak, dua baris
+    (kolom = ⌈n/2⌉, 124 pt). Batas = batas `expandedWidth` yang sudah ada (`screen.width − 24 − gutter × 2`), lewat
+    `zenithDropMaximumContentWidth`. Lebar pilihan yang sudah lebih besar tidak pernah dikecilkan, tinggi halaman tetap.
+    Contoh di 1440 pt, compact: 5 zona → isi 668 pt (island 750), 6 zona → 804. Perubahan lewat `refreshPresentation()`
+    (dari `open(.files)` saat drag masuk dan `endFileDrop` saat keluar/selesai), jadi island melebar dan kembali dengan
+    spring siluetnya sendiri; tidak ada frame jendela yang diubah langsung.
+  - **Tile** (`UI/Notch/ZenithDropZonesView.swift`, kait satu baris di `NotchFilesView`; `NotchDropZoneCell` lama
+    dihapus): lebar sama rata mengisi halaman, tinggi maksimal 0,88 × lebar (landscape/persegi) di tengah halaman, baris
+    terakhir yang pendek di tengah, radius `ZenithIsland.cardRadius` (20, konsentris dengan sudut island 34). Glyph 22 pt
+    di atas label satu baris 12,5 medium; kalau nama penuh tidak muat dipakai nama pendek ("Remove BG", "Freistellen",
+    "Détourer", "去背", …), nama penuh tetap di tooltip dan label aksesibilitas. Diam: garis putus-putus lama, glyph abu.
+    Zona target: isi warna zona 10%, garis 20% (50% dengan Increase Contrast), glyph warna 100% naik 4 pt dan membesar
+    1,12 dengan spring (0,34/0,8); zona lain redup ke 72%. Warna tenang per zona: Files teal #2DD4BF (warna modul Files),
+    AirDrop sky #38BDF8, Optimize violet #A78BFA, Transform indigo #818CF8, Remove Background pink #F472B6, Overlay cyan
+    #22D3EE. Masuk: berurutan 40 ms, blur 6 → 0, skala 0,96 → 1, naik 5 pt, opacity (spring `ZenithMorph`). Hanya
+    transform/opacity/blur (warna glyph dan garis lewat cross-fade dua layer). Reduce Motion: fade saja.
+  - **Settings:** satu Section "Drop zones" di Settings › Shelf (`UI/Settings/ZenithDropZonesSettings.swift`, kait di
+    `ShelfSettings`) menggantikan saklar AirDrop, saklar photo actions, dan saklar zona Overlay di kartu Design overlay
+    (diganti satu baris keterangan yang menunjuk ke kartu ini). Isi: pratinjau hidup (tile island asli di potongan island
+    hitam, diskalakan agar muat, zona untuk satu gambar dengan zona pertama sebagai target), caption, enam baris (grip
+    drag `PanelReorderableItem`, `ZenithIslandGlyphTile` 26 pt berwarna zona, nama, keterangan kapan muncul atau alasan
+    tidak tersedia: shelf mati, fitur Media tools/Screenshot mati lewat `enableReason`, halaman Files tidak tampil lewat
+    kalimat upstream, tombol ▲/▼ + aksi VoiceOver Move up/Move down, saklar `ZenithSwitchStyle`), lalu caption aturan.
+    Watermark tetap di tempatnya, tampil selama Transform nyala.
+  - **Teks:** `ZenithStrings.dropZones` (15 bahasa, disisipkan setelah blok design overlay; apostrof lengkung, tanpa em
+    dash). Move up/down dari `tabBar`, Drag to reorder dari `homeShortcuts`, nama zona dari string yang sudah ada.
+    `airDrop.toggle/caption`, `photoActions.toggle/caption` dan `designOverlay.dropToggle` sekarang tidak dipakai UI
+    (dibiarkan).
+  - Edit di file upstream bertanda `// Zenith fork`: `NotchService` (geometri, begin/accept, `canAccept`,
+    `zenithDropTargets`), `NotchSupport` (`zenithDropZoneCount`, lebar, batas), `NotchFilesView` (chooser),
+    `ShelfSettings`, `Defaults`, `build.sh` (`TEST_SOURCES`), `Tests/MetricsTests.swift` (suite),
+    `Tests/NotchPresentationRefreshTests.swift` (state double mendapat `choosingFileDropDestination`/`dropTargets`
+    karena `expandedGeometry` disalin ke sana). File fork lain: `NotchAirDropSupport` (raw value, hit-test baru),
+    `NotchPhotoActionsSupport`/`Service`, `DesignOverlaySupport`, `DesignOverlaySettings`, `NotchPhotoActionsView`.
+  - **Test:** baru `Tests/DropZonesTests.swift` (suite `drop-zones`, UserDefaults `com.vorssaint.tests.drop-zones`):
+    parsing/encode dan nama asing, nyala/mati per zona, urutan (pindah, clamp, permutasi, nama asing tetap di slot,
+    `arranged`), aturan Files/AirDrop, migrasi dari tiga saklar lama dan `auto`, registrasi + backup + simpan tanpa
+    perubahan + saklar lama ikut + restore backup lama, zona per jenis drag (file biasa, media, beberapa gambar, satu
+    gambar, > 100 gambar, bukan file, tanpa shelf/media tools/halaman Files/Screenshot, urutan pilihan), lebar (2 zona
+    tetap, 5/6 zona, maksimum, wrap, batas layar, spacious tidak dikecilkan, layar kecil dua baris), frame tile, hit-test
+    di layout (tengah tile, celah, tepi, dua baris) dan lewat `NotchAirDropSupport.target` di island yang dilebarkan,
+    teks 15 bahasa dan nama pendek yang muat satu baris di tile 116 pt (diukur dengan font sistem). Diubah:
+    `ShelfDropRoutingTests` (double `expandedGeometry`/`surfaceSize` sekarang ikut melebar seperti `NotchService`, jadi
+    kolom yang dihitung test tetap satu baris; ekspektasi tidak berubah).
+  - **Belum diverifikasi di Mac:** app UI tidak dijalankan, tidak ada drag sungguhan. Perlu dicek: drag 1 gambar dari
+    Finder (island melebar dengan spring di 120 Hz lalu kembali saat keluar/drop, tile masuk berurutan dengan blur, zona
+    di bawah pointer menyala, label satu baris, pratinjau drag macOS tidak menutupi label), drag beberapa gambar, video,
+    PDF, teks/URL (hanya Files), urutan dan saklar dari Settings langsung terpakai, Files mati + drop teks ditolak, layar
+    kecil (dua baris), Reduce Motion, Increase Contrast, island kaca, kartu Settings (light/dark, drag baris, ▲/▼,
+    pratinjau diskalakan, saklar terkunci), dan backup/restore.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.

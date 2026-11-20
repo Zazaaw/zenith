@@ -262,10 +262,10 @@ enum DesignOverlaySupport {
     static let dropSymbol = "square.on.square"
 
     /// Whether dropping one image on the island offers the Overlay zone. It
-    /// follows the screenshot tool, which carries the overlay's settings.
+    /// follows the screenshot tool, which carries the overlay's settings, and
+    /// its switch in Settings › Shelf › Drop zones.
     static var isDropEnabled: Bool {
-        AppFeature.screenshot.isAvailable
-            && UserDefaults.standard.object(forKey: DefaultsKey.designOverlayDropEnabled) as? Bool ?? true
+        AppFeature.screenshot.isAvailable && ZenithDropZones.current().isOn(.overlay)
     }
 
     /// An image drag's targets with Overlay after the photo actions: one

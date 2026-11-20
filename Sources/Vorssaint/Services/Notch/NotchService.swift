@@ -1058,6 +1058,8 @@ final class NotchService: ObservableObject {
                                                                       controls: ZenithHomeIsland.controls(homeControls), // Zenith fork
                                                                       within: geometry.contentWidth)
             if selected == .controls { result.zenithHome = ZenithHomeIsland.geometry(modules: modules) } // Zenith fork
+            // Zenith fork: a drag offering three zones or more widens the Files page to fit them.
+            if selected == .files, choosingFileDropDestination { result.zenithDropZoneCount = dropTargets.count }
             // Zenith fork: prompting, the page is a tall, narrow reading panel right under the camera.
             if selected == .prompter, let prompter = ZenithPrompterIsland.geometry {
                 result.zenithPrompter = prompter
@@ -2495,19 +2497,20 @@ final class NotchService: ObservableObject {
     func beginFileDrop(_ pasteboard: NSPasteboard) {
         guard canAcceptFileDrop(pasteboard) else { return }
         let files = NotchAirDropSupport.fileURLs(in: pasteboard)
-        offersFilesDrop = acceptsShelfDrop
+        let zones = ZenithDropZones.current() // Zenith fork: each zone has its own switch
+        offersFilesDrop = acceptsShelfDrop && zones.isOn(.files)
         offersAirDrop = acceptsAirDropDrop && !files.isEmpty
-        offersMediaDrop = offersFilesDrop && AppFeature.mediaTools.isAvailable
+        offersMediaDrop = acceptsShelfDrop && zones.isOn(.media) && AppFeature.mediaTools.isAvailable
             && NotchFileToolsService.shared.mediaDropContent(for: pasteboard) != nil
         airDropAvailable = offersAirDrop && NotchAirDropSupport.canSend(files)
         // Zenith fork: images also get Transform and, alone, Remove Background.
         offersPhotoTargets = acceptsPhotoDrop ? NotchPhotoActionsService.shared.dropTargets(for: pasteboard) : []
-        guard offersFilesDrop || offersAirDrop || !offersPhotoTargets.isEmpty else { return }
+        guard offersFilesDrop || offersAirDrop || offersMediaDrop || !offersPhotoTargets.isEmpty else { return }
         // Zenith fork: any file drag offers AirDrop, so the chooser opens for files too.
         choosingFileDropDestination = offersMediaDrop || offersAirDrop || !offersPhotoTargets.isEmpty
-        targetsMediaDrop = false
         // Before the pointer moves, the leftmost zone is the target: Files when the
-        // shelf takes drops, otherwise AirDrop.
+        // shelf takes drops, otherwise the first zone in the person's order.
+        targetsMediaDrop = dropTargets.first == .media // Zenith fork: the order is chosen in Settings
         targetsAirDrop = dropTargets.first == .airDrop
         photoDropTarget = dropTargets.first.flatMap { $0.isPhotoAction ? $0 : nil }
         // AirDrop alone may open the Files page the island otherwise hides.
@@ -2516,9 +2519,13 @@ final class NotchService: ObservableObject {
     }
 
     private var dropTargets: [NotchDropTarget] {
-        NotchAirDropSupport.targets(files: offersFilesDrop, airDrop: offersAirDrop, media: offersMediaDrop,
-                                   photo: offersPhotoTargets) // Zenith fork
+        // Zenith fork: the zones in the order chosen in Settings › Shelf › Drop zones.
+        ZenithDropZones.current().arranged(NotchAirDropSupport.targets(files: offersFilesDrop, airDrop: offersAirDrop,
+                                                                       media: offersMediaDrop, photo: offersPhotoTargets))
     }
+
+    /// Zenith fork: the zones the chooser draws, left to right, as the drop reads them.
+    var zenithDropTargets: [NotchDropTarget] { choosingFileDropDestination ? dropTargets : [] }
 
     @discardableResult
     func updateFileDrop(at point: CGPoint) -> Bool {
@@ -2600,6 +2607,8 @@ final class NotchService: ObservableObject {
         }
         guard acceptsShelfDrop else { return false }
         let optimize = choosingFileDropDestination && targetsMediaDrop
+        // Zenith fork: with the Files zone off, the shelf takes nothing dropped on the island.
+        guard optimize || ZenithDropZones.current().isOn(.files) else { return false }
         let accepted = optimize
             ? NotchFileToolsService.shared.openMediaDrop(pasteboard)
             : ShelfService.shared.acceptDrop(pasteboard: pasteboard)
@@ -3950,7 +3959,11 @@ final class NotchService: ObservableObject {
                     guard let self, !ShelfService.shared.isInternalDragActive,
                           !NotchPhotoActionsService.shared.isDraggingOut, // Zenith fork
                           self.canAcceptFileDrop(pasteboard) else { return false }
-                    return (self.acceptsShelfDrop && ShelfService.shared.canAcceptPasteboard(pasteboard))
+                    return (self.acceptsShelfDrop && ZenithDropZones.current().isOn(.files) // Zenith fork
+                            && ShelfService.shared.canAcceptPasteboard(pasteboard))
+                        || (self.acceptsShelfDrop && ZenithDropZones.current().isOn(.media) // Zenith fork: Optimize alone
+                            && AppFeature.mediaTools.isAvailable
+                            && NotchFileToolsService.shared.mediaDropContent(for: pasteboard) != nil)
                         || (self.acceptsAirDropDrop && !NotchAirDropSupport.fileURLs(in: pasteboard).isEmpty)
                         || (self.acceptsPhotoDrop && !NotchPhotoActionsService.shared.dropTargets(for: pasteboard).isEmpty)
                 },

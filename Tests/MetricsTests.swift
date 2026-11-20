@@ -276,6 +276,7 @@ struct MetricsTests {
             ("reply", { ReplyTests.run(suite) }),
             ("home-layout", { HomeLayoutTests.run(suite) }),
             ("tab-bar", { TabBarTests.run(suite) }),
+            ("drop-zones", { DropZonesTests.run(suite) }),
             ("card-import", { CardImportTests.run(suite) }),
             ("card-backup", { BackupTests.run(suite) }), // Zenith fork
             ("dev-servers", { DevServersTests.run(suite) }),

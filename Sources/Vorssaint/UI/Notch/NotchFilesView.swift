@@ -47,39 +47,9 @@ struct NotchFilesView: View {
     var body: some View {
         VStack(spacing: NotchLayout.rowSpacing) {
             if choosesDropDestination {
-                HStack(spacing: NotchFileToolsSupport.dropSpacing) {
-                    if service.offersFilesDrop {
-                        dropDestination(FeatureStrings.notch(l10n.language).files, symbol: "tray.and.arrow.down",
-                                        selected: !service.targetsMediaDrop && !service.targetsAirDrop
-                                            && service.photoDropTarget == nil, // Zenith fork
-                                        index: zoneIndex(.files))
-                    }
-                    if service.offersAirDrop {
-                        dropDestination("AirDrop", symbol: "dot.radiowaves.left.and.right",
-                                        selected: service.targetsAirDrop, available: service.airDropAvailable,
-                                        unavailableNote: "", index: zoneIndex(.airDrop))
-                    }
-                    if service.offersMediaDrop {
-                        dropDestination(text.optimizeMedia, symbol: "wand.and.stars", selected: service.targetsMediaDrop,
-                                        available: archives.canAcceptMediaDrop, index: zoneIndex(.media))
-                    }
-                    // Zenith fork: images also get the photo actions.
-                    ForEach(service.offersPhotoTargets, id: \.self) { target in
-                        let photoText = ZenithStrings.photoActions(l10n.language)
-                        if target == .overlay {
-                            // Zenith fork: the design overlay, which takes the image at any time.
-                            dropDestination(ZenithStrings.designOverlay(l10n.language).dropZone,
-                                            symbol: DesignOverlaySupport.dropSymbol,
-                                            selected: service.photoDropTarget == target, index: zoneIndex(target))
-                        } else {
-                            dropDestination(target == .transform ? photoText.transform : photoText.removeBackground,
-                                            symbol: target == .transform ? "photo.stack" : "person.and.background.dotted",
-                                            selected: service.photoDropTarget == target, available: photos.canAcceptDrop,
-                                            unavailableNote: photoText.busy, index: zoneIndex(target))
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // Zenith fork: the zones in the chosen order, as tiles laid out to fit (ZenithDropZoneLayout).
+                ZenithDropZonesView(service: service)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let session = photoSession {
                 // Zenith fork: the photo actions' options, progress and result.
                 NotchPhotoActionsView(session: session, height: service.contentSize.height)
@@ -154,21 +124,6 @@ struct NotchFilesView: View {
         // second SwiftUI update leaves the new controls inside the old frame,
         // and an unrelated preference refresh can settle it without animation.
         if archives.mediaContentHeight != previous { service.refreshPresentation() }
-    }
-
-    private func dropDestination(_ title: String, symbol: String, selected: Bool, available: Bool = true,
-                                 unavailableNote: String? = nil, index: Int = 0) -> some View {
-        // Zenith fork: a dashed zone that breathes in with the drag; the one under the file brightens,
-        // lifts its glyph and takes the accent. AirDrop passes an empty note and is only dimmed when off.
-        NotchDropZoneCell(title: title, symbol: symbol, selected: selected, available: available,
-                          note: unavailableNote ?? l10n.s.mediaRunning, index: index)
-    }
-
-    /// Zenith fork: a zone's place in the row, for its staggered entrance.
-    private func zoneIndex(_ target: NotchDropTarget) -> Int {
-        NotchAirDropSupport.targets(files: service.offersFilesDrop, airDrop: service.offersAirDrop,
-                                    media: service.offersMediaDrop, photo: service.offersPhotoTargets)
-            .firstIndex(of: target) ?? 0
     }
 
     // A sheet dims the window's transparent margins. A native menu keeps the

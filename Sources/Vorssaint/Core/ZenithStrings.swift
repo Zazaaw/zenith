@@ -5312,6 +5312,275 @@ extension ZenithStrings {
     }
 }
 
+// MARK: - Drop zones (Zenith fork)
+
+/// The Drop zones card in Settings › Shelf (ZenithDropZones) and the short
+/// names the island's tiles fall back to when a full name needs two lines.
+struct ZenithDropZonesStrings {
+    let title: String
+    let caption: String
+    let preview: String
+    let filesWhen: String
+    let airDropWhen: String
+    let mediaWhen: String
+    let transformWhen: String
+    let removeBackgroundWhen: String
+    let overlayWhen: String
+    let shelfOff: String
+    let rule: String
+    let optimizeShort: String
+    let transformShort: String
+    let removeBackgroundShort: String
+    let overlayMoved: String
+}
+
+extension ZenithStrings {
+    static func dropZones(_ language: AppLanguage) -> ZenithDropZonesStrings {
+        switch language {
+        case .enUS:
+            return .init(title: "Drop zones",
+                         caption: "Where files land when you drag them onto the island. Switch off the zones you don’t use and drag them into the order you like.",
+                         preview: "How an image drag sees them",
+                         filesWhen: "Any file, kept on the shelf",
+                         airDropWhen: "Any file, sent to a nearby device",
+                         mediaWhen: "Images and videos to optimize",
+                         transformWhen: "Images only, up to 100",
+                         removeBackgroundWhen: "One image",
+                         overlayWhen: "One image, as a design reference",
+                         shelfOff: "Turn on the shelf to use it.",
+                         rule: "Files or AirDrop stays on, so every drag has somewhere to land.",
+                         optimizeShort: "Optimize",
+                         transformShort: "Transform",
+                         removeBackgroundShort: "Remove BG",
+                         overlayMoved: "The island’s Overlay zone is in Shelf settings, under Drop zones.")
+        case .ptBR:
+            return .init(title: "Zonas de soltar",
+                         caption: "Para onde vão os arquivos que você arrasta até a ilha. Desative as zonas que não usa e arraste-as na ordem que preferir.",
+                         preview: "Como uma imagem arrastada as vê",
+                         filesWhen: "Qualquer arquivo, guardado na área temporária",
+                         airDropWhen: "Qualquer arquivo, enviado a um dispositivo próximo",
+                         mediaWhen: "Imagens e vídeos para otimizar",
+                         transformWhen: "Só imagens, até 100",
+                         removeBackgroundWhen: "Uma imagem",
+                         overlayWhen: "Uma imagem, como referência de design",
+                         shelfOff: "Ative a área temporária para usar.",
+                         rule: "Arquivos ou AirDrop fica ativado, para que todo arrasto tenha onde cair.",
+                         optimizeShort: "Otimizar",
+                         transformShort: "Transformar",
+                         removeBackgroundShort: "Sem fundo",
+                         overlayMoved: "A zona Sobrepor da ilha fica nos ajustes da Área temporária, em Zonas de soltar.")
+        case .tr:
+            return .init(title: "Bırakma alanları",
+                         caption: "Adaya sürüklediğin dosyaların gideceği yerler. Kullanmadığın alanları kapat, sürükleyerek istediğin sıraya koy.",
+                         preview: "Bir görsel sürüklenince böyle görünür",
+                         filesWhen: "Her dosya, rafta tutulur",
+                         airDropWhen: "Her dosya, yakındaki bir cihaza gönderilir",
+                         mediaWhen: "İyileştirilecek görsel ve videolar",
+                         transformWhen: "Yalnızca görseller, en fazla 100",
+                         removeBackgroundWhen: "Tek görsel",
+                         overlayWhen: "Tek görsel, tasarım referansı olarak",
+                         shelfOff: "Kullanmak için rafı aç.",
+                         rule: "Dosyalar veya AirDrop açık kalır, böylece her sürükleme bir yere bırakılabilir.",
+                         optimizeShort: "İyileştir",
+                         transformShort: "Dönüştür",
+                         removeBackgroundShort: "Arka planı sil",
+                         overlayMoved: "Adanın Katman alanı Raf ayarlarında, Bırakma alanları altında.")
+        case .ru:
+            return .init(title: "Зоны для файлов",
+                         caption: "Куда попадают файлы, которые вы перетаскиваете на остров. Отключите ненужные зоны и перетащите остальные в удобном порядке.",
+                         preview: "Так их видит перетаскиваемое изображение",
+                         filesWhen: "Любой файл, остаётся на полке",
+                         airDropWhen: "Любой файл, отправка на устройство поблизости",
+                         mediaWhen: "Изображения и видео для оптимизации",
+                         transformWhen: "Только изображения, до 100",
+                         removeBackgroundWhen: "Одно изображение",
+                         overlayWhen: "Одно изображение, как дизайн-референс",
+                         shelfOff: "Включите полку, чтобы пользоваться.",
+                         rule: "«Файлы» или AirDrop остаются включены, чтобы каждому файлу было куда попасть.",
+                         optimizeShort: "Оптимизация",
+                         transformShort: "Изменить",
+                         removeBackgroundShort: "Без фона",
+                         overlayMoved: "Зона «Наложение» на острове находится в настройках полки, в разделе «Зоны для файлов».")
+        case .es:
+            return .init(title: "Zonas para soltar",
+                         caption: "Adónde van los archivos que arrastras a la isla. Desactiva las zonas que no uses y arrástralas en el orden que prefieras.",
+                         preview: "Así las ve una imagen arrastrada",
+                         filesWhen: "Cualquier archivo, guardado en el estante",
+                         airDropWhen: "Cualquier archivo, enviado a un dispositivo cercano",
+                         mediaWhen: "Imágenes y vídeos para optimizar",
+                         transformWhen: "Solo imágenes, hasta 100",
+                         removeBackgroundWhen: "Una imagen",
+                         overlayWhen: "Una imagen, como referencia de diseño",
+                         shelfOff: "Activa el estante para usarla.",
+                         rule: "Archivos o AirDrop sigue activado, para que cada arrastre tenga dónde caer.",
+                         optimizeShort: "Optimizar",
+                         transformShort: "Transformar",
+                         removeBackgroundShort: "Sin fondo",
+                         overlayMoved: "La zona Superponer de la isla está en los ajustes del Estante, en Zonas para soltar.")
+        case .sk:
+            return .init(title: "Zóny na pustenie",
+                         caption: "Kam idú súbory, ktoré pretiahnete na ostrov. Vypnite zóny, ktoré nepoužívate, a pretiahnite ich do poradia, ktoré vám vyhovuje.",
+                         preview: "Takto ich vidí pretiahnutý obrázok",
+                         filesWhen: "Akýkoľvek súbor, zostane na polici",
+                         airDropWhen: "Akýkoľvek súbor, poslaný do zariadenia v blízkosti",
+                         mediaWhen: "Obrázky a videá na optimalizáciu",
+                         transformWhen: "Len obrázky, najviac 100",
+                         removeBackgroundWhen: "Jeden obrázok",
+                         overlayWhen: "Jeden obrázok, ako dizajnová predloha",
+                         shelfOff: "Zapnite policu, aby ste ju mohli použiť.",
+                         rule: "Súbory alebo AirDrop zostávajú zapnuté, aby mal každý súbor kam dopadnúť.",
+                         optimizeShort: "Optimalizovať",
+                         transformShort: "Upraviť",
+                         removeBackgroundShort: "Bez pozadia",
+                         overlayMoved: "Zóna Prekryť na ostrove je v nastaveniach Police, v časti Zóny na pustenie.")
+        case .de:
+            return .init(title: "Ablagezonen",
+                         caption: "Wohin Dateien gehen, die du auf die Insel ziehst. Schalte Zonen aus, die du nicht brauchst, und zieh sie in die Reihenfolge, die dir passt.",
+                         preview: "So sieht sie ein gezogenes Bild",
+                         filesWhen: "Jede Datei, bleibt in der Ablage",
+                         airDropWhen: "Jede Datei, an ein Gerät in der Nähe gesendet",
+                         mediaWhen: "Bilder und Videos zum Optimieren",
+                         transformWhen: "Nur Bilder, bis zu 100",
+                         removeBackgroundWhen: "Ein Bild",
+                         overlayWhen: "Ein Bild, als Design-Vorlage",
+                         shelfOff: "Schalte die Ablage ein, um sie zu nutzen.",
+                         rule: "Dateien oder AirDrop bleibt an, damit jede gezogene Datei einen Platz hat.",
+                         optimizeShort: "Optimieren",
+                         transformShort: "Umwandeln",
+                         removeBackgroundShort: "Freistellen",
+                         overlayMoved: "Die Overlay-Zone der Insel findest du in den Einstellungen der Ablage, unter Ablagezonen.")
+        case .fr:
+            return .init(title: "Zones de dépôt",
+                         caption: "Où vont les fichiers que vous faites glisser sur l’île. Désactivez les zones inutiles et faites-les glisser dans l’ordre qui vous convient.",
+                         preview: "Ce que voit une image glissée",
+                         filesWhen: "Tout fichier, gardé sur l’étagère",
+                         airDropWhen: "Tout fichier, envoyé à un appareil à proximité",
+                         mediaWhen: "Images et vidéos à optimiser",
+                         transformWhen: "Images uniquement, jusqu’à 100",
+                         removeBackgroundWhen: "Une seule image",
+                         overlayWhen: "Une seule image, comme référence de design",
+                         shelfOff: "Activez l’étagère pour l’utiliser.",
+                         rule: "Fichiers ou AirDrop reste activé, pour que chaque glisser ait où se poser.",
+                         optimizeShort: "Optimiser",
+                         transformShort: "Transformer",
+                         removeBackgroundShort: "Détourer",
+                         overlayMoved: "La zone Calque de l’île se trouve dans les réglages de l’Étagère, sous Zones de dépôt.")
+        case .it:
+            return .init(title: "Zone di rilascio",
+                         caption: "Dove finiscono i file che trascini sull’isola. Disattiva le zone che non usi e trascinale nell’ordine che preferisci.",
+                         preview: "Come le vede un’immagine trascinata",
+                         filesWhen: "Qualsiasi file, tenuto sul ripiano",
+                         airDropWhen: "Qualsiasi file, inviato a un dispositivo vicino",
+                         mediaWhen: "Immagini e video da ottimizzare",
+                         transformWhen: "Solo immagini, fino a 100",
+                         removeBackgroundWhen: "Una sola immagine",
+                         overlayWhen: "Una sola immagine, come riferimento di design",
+                         shelfOff: "Attiva il ripiano per usarla.",
+                         rule: "File o AirDrop resta attivo, così ogni trascinamento ha dove atterrare.",
+                         optimizeShort: "Ottimizza",
+                         transformShort: "Trasforma",
+                         removeBackgroundShort: "Scontorna",
+                         overlayMoved: "La zona Sovrapponi dell’isola si trova nelle impostazioni del Ripiano, in Zone di rilascio.")
+        case .ja:
+            return .init(title: "ドロップゾーン",
+                         caption: "アイランドにドラッグしたファイルの行き先です。使わないゾーンはオフにし、ドラッグして好きな順番に並べられます。",
+                         preview: "画像をドラッグしたときの表示",
+                         filesWhen: "すべてのファイル、シェルフに保管",
+                         airDropWhen: "すべてのファイル、近くのデバイスに送信",
+                         mediaWhen: "最適化する画像とビデオ",
+                         transformWhen: "画像のみ、最大100件",
+                         removeBackgroundWhen: "画像1枚",
+                         overlayWhen: "画像1枚、デザインの参照として",
+                         shelfOff: "使うにはシェルフをオンにしてください。",
+                         rule: "「ファイル」かAirDropのどちらかはオンのままなので、ドラッグしたものは必ずどこかに置けます。",
+                         optimizeShort: "最適化",
+                         transformShort: "変換",
+                         removeBackgroundShort: "背景削除",
+                         overlayMoved: "アイランドの「オーバーレイ」ゾーンは、シェルフ設定の「ドロップゾーン」にあります。")
+        case .ko:
+            return .init(title: "드롭 영역",
+                         caption: "아일랜드로 드래그한 파일이 가는 곳입니다. 쓰지 않는 영역은 끄고, 드래그해서 원하는 순서로 놓으세요.",
+                         preview: "이미지를 드래그할 때 보이는 모습",
+                         filesWhen: "모든 파일, 선반에 보관",
+                         airDropWhen: "모든 파일, 근처 기기로 전송",
+                         mediaWhen: "최적화할 이미지와 동영상",
+                         transformWhen: "이미지만, 최대 100개",
+                         removeBackgroundWhen: "이미지 한 장",
+                         overlayWhen: "이미지 한 장, 디자인 참고용",
+                         shelfOff: "사용하려면 선반을 켜세요.",
+                         rule: "파일이나 AirDrop 중 하나는 켜져 있어, 드래그한 항목은 늘 놓을 곳이 있습니다.",
+                         optimizeShort: "최적화",
+                         transformShort: "변환",
+                         removeBackgroundShort: "배경 제거",
+                         overlayMoved: "아일랜드의 오버레이 영역은 선반 설정의 드롭 영역에 있습니다.")
+        case .uk:
+            return .init(title: "Зони для файлів",
+                         caption: "Куди потрапляють файли, які ви перетягуєте на острів. Вимкніть непотрібні зони й перетягніть решту у зручному порядку.",
+                         preview: "Так їх бачить перетягнуте зображення",
+                         filesWhen: "Будь-який файл, лишається на полиці",
+                         airDropWhen: "Будь-який файл, надсилання на пристрій поблизу",
+                         mediaWhen: "Зображення й відео для оптимізації",
+                         transformWhen: "Лише зображення, до 100",
+                         removeBackgroundWhen: "Одне зображення",
+                         overlayWhen: "Одне зображення, як дизайн-референс",
+                         shelfOff: "Увімкніть полицю, щоб користуватися.",
+                         rule: "«Файли» або AirDrop лишаються ввімкненими, щоб кожному файлу було куди потрапити.",
+                         optimizeShort: "Оптимізація",
+                         transformShort: "Змінити",
+                         removeBackgroundShort: "Без фону",
+                         overlayMoved: "Зона «Накладання» на острові є в налаштуваннях полиці, у розділі «Зони для файлів».")
+        case .zhHans:
+            return .init(title: "放置区域",
+                         caption: "拖到灵动岛上的文件会去往这些区域。关闭不用的区域，并拖动排列成你喜欢的顺序。",
+                         preview: "拖动图像时的样子",
+                         filesWhen: "任意文件，保存在暂存架",
+                         airDropWhen: "任意文件，发送到附近的设备",
+                         mediaWhen: "要优化的图像和视频",
+                         transformWhen: "仅限图像，最多 100 个",
+                         removeBackgroundWhen: "单张图像",
+                         overlayWhen: "单张图像，作为设计参考",
+                         shelfOff: "打开暂存架后即可使用。",
+                         rule: "“文件”或 AirDrop 至少有一个保持打开，拖来的东西总有地方放。",
+                         optimizeShort: "优化",
+                         transformShort: "转换",
+                         removeBackgroundShort: "去背景",
+                         overlayMoved: "灵动岛的“叠加”区域在暂存架设置的“放置区域”中。")
+        case .zhTW:
+            return .init(title: "放置區域",
+                         caption: "拖到動態島上的檔案會前往這些區域。關閉不用的區域，並拖移排成你喜歡的順序。",
+                         preview: "拖移影像時的樣子",
+                         filesWhen: "任何檔案，保留在暫存架",
+                         airDropWhen: "任何檔案，傳送到附近的裝置",
+                         mediaWhen: "要最佳化的影像和影片",
+                         transformWhen: "僅限影像，最多 100 個",
+                         removeBackgroundWhen: "單張影像",
+                         overlayWhen: "單張影像，作為設計參考",
+                         shelfOff: "開啟暫存架後即可使用。",
+                         rule: "「檔案」或 AirDrop 至少有一個保持開啟，拖來的東西總有地方放。",
+                         optimizeShort: "最佳化",
+                         transformShort: "轉換",
+                         removeBackgroundShort: "去背",
+                         overlayMoved: "動態島的「疊加」區域在暫存架設定的「放置區域」中。")
+        case .zhHK:
+            return .init(title: "放置區域",
+                         caption: "拖到動態島上的檔案會前往這些區域。關閉不用的區域，並拖移排成你喜歡的次序。",
+                         preview: "拖移圖像時的樣子",
+                         filesWhen: "任何檔案，保留在暫存架",
+                         airDropWhen: "任何檔案，傳送到附近的裝置",
+                         mediaWhen: "要最佳化的圖像和影片",
+                         transformWhen: "只限圖像，最多 100 個",
+                         removeBackgroundWhen: "單張圖像",
+                         overlayWhen: "單張圖像，作為設計參考",
+                         shelfOff: "開啟暫存架後即可使用。",
+                         rule: "「檔案」或 AirDrop 至少有一個保持開啟，拖來的東西總有地方放。",
+                         optimizeShort: "最佳化",
+                         transformShort: "轉換",
+                         removeBackgroundShort: "去背",
+                         overlayMoved: "動態島的「疊加」區域在暫存架設定的「放置區域」中。")
+        }
+    }
+}
+
 // MARK: - QR codes (Zenith fork)
 
 struct ZenithQRStrings {

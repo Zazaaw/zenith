@@ -15,7 +15,6 @@ struct DesignOverlaySettingsSection: View {
     @AppStorage(DefaultsKey.designOverlayDefaultOpacity) private var opacity = DesignOverlaySupport.defaultOpacity
     @AppStorage(DefaultsKey.designOverlayDefaultBlend) private var blend = DesignOverlayBlend.normal.rawValue
     @AppStorage(DefaultsKey.designOverlayGridPreset) private var preset = DesignOverlayGridPreset.desktop.rawValue
-    @AppStorage(DefaultsKey.designOverlayDropEnabled) private var dropOn = true
 
     private var text: ZenithDesignOverlayStrings { ZenithStrings.designOverlay(l10n.language) }
 
@@ -68,7 +67,11 @@ struct DesignOverlaySettingsSection: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            ZenithSwitchRow(text.dropToggle, isOn: $dropOn) { Text(text.dropToggle) }
+            // The island's Overlay zone is switched with the other drop zones, in Shelf settings.
+            Text(ZenithStrings.dropZones(l10n.language).overlayMoved)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 8) {
                 Button(text.choose) { service.chooseImage() }
                 Button(text.paste) { service.pasteFromClipboard() }

@@ -22,6 +22,7 @@ struct ShelfSettings: View {
     @State private var islandShowsFiles = NotchSupport.showsFiles()
     @AppStorage(DefaultsKey.notchAirDropEnabled) private var airDrop = true
     @AppStorage(DefaultsKey.notchPhotoActionsEnabled) private var photoActions = true // Zenith fork
+    @AppStorage(DefaultsKey.zenithDropZones) private var dropZones = ZenithDropZones.automatic // Zenith fork
 
     var body: some View {
         Form {
@@ -48,29 +49,13 @@ struct ShelfSettings: View {
                 bullet("3", l10n.s.shelfStep3)
             }
 
-            // Zenith fork: AirDrop works on its own, with the shelf on or off.
-            Section {
-                Toggle(ZenithStrings.airDrop(l10n.language).toggle, isOn: $airDrop)
-                Text(ZenithStrings.airDrop(l10n.language).caption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            // Zenith fork: every zone a drag on the island can land on (AirDrop, Transform,
+            // Remove Background, Overlay and the shelf's own), switched and ordered in one card.
+            ZenithDropZonesSettingsSection(islandShowsFiles: islandShowsFiles)
+            // Zenith fork: Transform's watermark.
+            if ZenithDropZones(encoded: dropZones, airDrop: airDrop, photoActions: photoActions).isOn(.transform) {
+                NotchWatermarkSettingsSection()
             }
-
-            // Zenith fork: Transform and Remove Background for images dropped on the island.
-            Section {
-                let text = ZenithStrings.photoActions(l10n.language)
-                VStack(alignment: .leading, spacing: 3) {
-                    ZenithSwitchRow(text.toggle, isOn: $photoActions) {
-                        Text(text.toggle)
-                    }
-                    .onChange(of: photoActions) { _, _ in NotchPhotoActionsService.shared.syncWithPreferences() }
-                    Text(text.caption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            if photoActions { NotchWatermarkSettingsSection() } // Zenith fork: the photo actions' watermark
 
             if enabled {
                 // Mirrors the island page's Files choice, which only matters while the island shows Files.
