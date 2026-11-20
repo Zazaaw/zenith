@@ -54,8 +54,11 @@ enum TabBarTests {
     }
 
     private static func availability(_ suite: TestSuite) {
+        // Set explicitly: other suites register the app's defaults, which every
+        // defaults suite in the process then reads.
         let defaults = freshDefaults()
         defaults.set(true, forKey: AppFeature.shelf.availabilityKey)
+        defaults.set(false, forKey: AppFeature.clipboardHistory.availabilityKey)
         defaults.set("music", forKey: DefaultsKey.notchHiddenModules)
         let routed = NotchSupport.modules(in: defaults)
         suite.expect(routed.contains(.controls) && routed.contains(.files) && !routed.contains(.music)
