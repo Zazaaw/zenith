@@ -25,6 +25,8 @@ enum SettingsSearchCoverageTests {
         // Every feature's name is a search result of its own.
         ("Sources/Vorssaint/UI/Settings/FeatureHubSettings.swift", "    func hubTitle(", nil),
         ("Sources/Vorssaint/Core/NotchMascotStrings.swift", "    var searchKeywords:", "NotchMascotStrings"),
+        // Zenith fork: the fork's own sections.
+        ("Sources/Vorssaint/UI/Settings/ZenithSettingsSearch.swift", "    static func items(", nil),
     ]
 
     /// Labels that name no setting, so a search for them has nowhere to go.
@@ -230,7 +232,8 @@ enum SettingsSearchCoverageTests {
             }
             if links.count == 3, links[2] == .call, case .name(let root) = links[0],
                case .name(let factory) = links[1] {
-                if root == "FeatureStrings", let types = providers[factory], types.count == 1 {
+                if root == "FeatureStrings" || root == "ZenithStrings", // Zenith fork: ZenithStrings
+                   let types = providers[factory], types.count == 1 {
                     return types.first
                 }
                 return factory == "localized" ? Self.stringsType(root) : nil

@@ -58,6 +58,7 @@ struct ZenithDropZonesSettingsSection: View {
             }
             .padding(.vertical, 4)
         }
+        .settingsFormSectionAnchor(.zenithDropZones) // Settings search lands here
     }
 
     // MARK: Preview

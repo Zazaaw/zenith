@@ -583,6 +583,7 @@ struct WakaTimeTokenSettings: View {
             Divider().padding(.vertical, 4)
             goalPicker
         }
+        .zenithSectionAnchor(.zenithWakaTime) // Settings search lands here
     }
 
     private var goalPicker: some View {

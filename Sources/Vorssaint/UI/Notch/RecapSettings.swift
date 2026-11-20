@@ -51,6 +51,7 @@ struct RecapSettingsView: View {
             Text(text.includeCaption).font(ZenithType.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .zenithSectionAnchor(.zenithRecap) // Settings search lands here
         .onChange(of: enabled) { _, _ in
             RecapService.shared.settingsChanged()
             ZenithNoticeCenter.shared.syncWithPreferences()

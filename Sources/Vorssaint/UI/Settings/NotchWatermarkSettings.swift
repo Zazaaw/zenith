@@ -81,6 +81,7 @@ struct NotchWatermarkSettingsSection: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .settingsFormSectionAnchor(.zenithWatermark) // Settings search lands here
     }
 
     /// The custom colour as `#RRGGBB`, read and written through sRGB.

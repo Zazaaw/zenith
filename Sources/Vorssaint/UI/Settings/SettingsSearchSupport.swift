@@ -63,6 +63,9 @@ struct SettingsSearchItem: Identifiable {
     /// whose `id` stays `.page(...)` for identity stability. `nil` for a
     /// purely generic page (Features itself, General, ...).
     var feature: AppFeature?
+    /// Zenith fork: other words for this result, such as Indonesian ones.
+    /// They find it like keywords but show its title rather than themselves.
+    var aliases: [String] = []
 
     init(id: ID, destination: FeatureSettingsDestination, title: String, icon: String,
          keywords: [String] = [], terms: [SettingsSearchTerms] = [], feature: AppFeature? = nil) {
@@ -259,7 +262,7 @@ enum SettingsSearchSupport {
         for item in items {
             switch matchRank(foldedQuery: foldedQuery,
                              title: item.title,
-                             keywords: item.keywords) {
+                             keywords: item.keywords + item.aliases) { // Zenith fork: aliases
             case .exactTitle: exactTitleMatches.append(item)
             case .title: titleMatches.append(item)
             case .keyword: keywordMatches.append(item)
@@ -319,10 +322,10 @@ enum SettingsSearchSupport {
 
             let isPage = item.id == .page(page)
             if isPage {
-                if matchRank(foldedQuery: foldedQuery, title: item.title, keywords: []) != nil {
+                if matchRank(foldedQuery: foldedQuery, title: item.title, keywords: item.aliases) != nil { // Zenith fork
                     builder.parentMatches = true
                 }
-            } else if matches(query: query, title: item.title) {
+            } else if matches(query: query, title: item.title, keywords: item.aliases) { // Zenith fork: aliases
                 appendSuggestion(
                     SettingsSearchSuggestion(id: .item(page, item.id),
                                              title: item.title,

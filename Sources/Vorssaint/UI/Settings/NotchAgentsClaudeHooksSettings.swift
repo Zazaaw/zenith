@@ -55,6 +55,7 @@ struct NotchAgentsClaudeHooksSettings: View {
             Text(text.privacy).font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .zenithSectionAnchor(.zenithClaudeHooks) // Settings search lands here
         .onAppear(perform: refresh)
     }
 

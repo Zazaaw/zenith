@@ -79,5 +79,6 @@ struct DesignOverlaySettingsSection: View {
         } header: {
             Text(text.title)
         }
+        .settingsFormSectionAnchor(.zenithDesignOverlay) // Settings search lands here
     }
 }

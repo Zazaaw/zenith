@@ -36,6 +36,7 @@ struct ExportTrackerSettings: View {
                 if enabled { options }
             }
         }
+        .zenithSectionAnchor(.zenithExportTracker, cornerRadius: ZenithRadius.panel + 6, inset: 6) // Settings search lands here
         .onAppear { folders = Support.folders() }
         .onChange(of: enabled) { _, on in
             if on, notify { Notifier.requestPermission() }

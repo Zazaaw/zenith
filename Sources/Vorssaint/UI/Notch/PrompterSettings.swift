@@ -51,6 +51,7 @@ struct PrompterSettingsView: View {
             Divider().padding(.vertical, 2)
             shortcutRow
         }
+        .zenithSectionAnchor(.zenithPrompter) // Settings search lands here
         .onAppear {
             nameDraft = service.selectedScript?.name ?? ""
             microphone = AVCaptureDevice.authorizationStatus(for: .audio)

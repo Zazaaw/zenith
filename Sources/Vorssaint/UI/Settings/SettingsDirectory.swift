@@ -206,11 +206,7 @@ enum SettingsDirectory {
                 .general, sectionAnchor: .panelConfiguration),
             title: s.menuBarSection, icon: "menubar.rectangle",
             keywords: [s.showMenuBarIcon, FeatureStrings.generalSettings(language).menuBarIconTitle,
-                       FeatureStrings.generalSettings(language).iconMissingTitle, "SF Symbols",
-                       // Zenith fork: the menu bar hider's section on the same page.
-                       ZenithStrings.menuBarHider(language).title, ZenithStrings.menuBarHider(language).enable,
-                       ZenithStrings.menuBarHider(language).alwaysHidden, ZenithStrings.menuBarHider(language).hover,
-                       ZenithStrings.menuBarHider(language).notch, ZenithStrings.menuBarHider(language).shortcut]))
+                       FeatureStrings.generalSettings(language).iconMissingTitle, "SF Symbols"]))
         items.append(SettingsSearchSupport.scrollingScreenshotItem(language: language))
         let alerts = FeatureStrings.monitorAlerts(language)
         items.append(SettingsSearchItem(
@@ -231,6 +227,7 @@ enum SettingsDirectory {
         if state.hardware.keyboardLight {
             items.append(SettingsSearchSupport.keyboardBrightnessShortcutItem(language: language))
         }
+        ZenithSettingsSearch.extend(&items, language: language, state: state) // Zenith fork
         return items
     }
 

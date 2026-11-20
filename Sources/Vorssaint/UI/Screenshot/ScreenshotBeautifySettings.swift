@@ -26,5 +26,6 @@ struct ScreenshotBeautifySettingsSection: View {
         } header: {
             Text(text.title)
         }
+        .settingsFormSectionAnchor(.zenithBeautify) // Settings search lands here
     }
 }

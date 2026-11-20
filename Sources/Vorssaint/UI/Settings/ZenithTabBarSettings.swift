@@ -75,6 +75,7 @@ struct ZenithTabBarSettings: View {
                 .opacity(enabled ? 1 : 0.45)
             }
         }
+        .zenithSectionAnchor(.zenithTabBar, cornerRadius: ZenithRadius.panel + 6, inset: 6) // Settings search lands here
     }
 
     // MARK: Preview
