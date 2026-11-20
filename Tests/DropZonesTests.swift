@@ -144,9 +144,11 @@ enum DropZonesTests {
         suite.expect(defaults.string(forKey: DefaultsKey.zenithDropZones) == next.encoded
                         && ZenithDropZones.current(in: defaults) == next,
                      "saved zones read back as they were")
-        suite.expect(defaults.object(forKey: DefaultsKey.notchAirDropEnabled) as? Bool == false
-                        && defaults.object(forKey: DefaultsKey.designOverlayDropEnabled) == nil
-                        && defaults.object(forKey: DefaultsKey.notchPhotoActionsEnabled) == nil,
+        // The stored values alone: other suites register the app's defaults in this process.
+        let written = defaults.persistentDomain(forName: suiteName) ?? [:]
+        suite.expect(written[DefaultsKey.notchAirDropEnabled] as? Bool == false
+                        && written[DefaultsKey.designOverlayDropEnabled] == nil
+                        && written[DefaultsKey.notchPhotoActionsEnabled] == nil,
                      "the earlier switches move with the zones, and only those that changed are written")
         ZenithDropZones.save(next.setting(.transform, on: false), in: defaults)
         suite.expect(defaults.object(forKey: DefaultsKey.notchPhotoActionsEnabled) as? Bool == false,
