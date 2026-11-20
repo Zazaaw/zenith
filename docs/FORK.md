@@ -687,6 +687,103 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     cutout dites di suite `photo-actions`; Vision dicoba manual di gambar contoh sistem (bukan di test).
     Perlu dicek di Mac: lima zona drop di lebar compact (teks dua baris), drop sungguhan dari Finder,
     animasi di 120 Hz, panel opsi di bahasa panjang, drag hasil keluar, Copy ke Figma/Slack.
+- **Notice kapsul ala Droppy (branch `feat/island-notices`):** event sistem yang singkat tumbuh dari
+  island tertutup jadi pil lebar, tampil beberapa detik, lalu menyusut balik. Yang diambil dari
+  referensi (`reference/live-activities-*.mp4`) hanya pola dan geraknya, tanpa ikon atau nama Droppy.
+  Kode di `Services/Notch/ZenithNoticeSupport.swift` (murni, ikut `TEST_SOURCES`: model, antrean,
+  threshold baterai + hysteresis, setelan, ukuran, format), `Services/Notch/ZenithNoticeService.swift`
+  (`ZenithNoticeCenter`: sumber, antrean, jendela, gerak, interaksi), `UI/Notch/ZenithNoticeView.swift`
+  (bentuk, isi, aksesori) dan `UI/Settings/ZenithNoticeSettings.swift`. Teks di
+  `ZenithStrings.notices` (15 bahasa). Test di `Tests/ZenithNoticeTests.swift` (suite `notices`).
+  - **Ukuran:** di frame referensi kapsulnya 824 × 162 px (rasio ±5:1) dan judul 13 pt menempatkannya
+    di sekitar 400 × 79 pt. Zenith memakai rentang brief: lebar 380 pt (mengikuti island kalau island
+    lebih lebar, maks. 420, selalu 12 pt dari tepi layar), baris 62 pt. Glyph/thumbnail 30–32 pt,
+    ring 30 pt, saklar Low Power 50 × 28, inset 16, jarak 12, judul semibold 13 putih 95%, subjudul
+    11,5 putih 55%.
+  - **Bentuk:** island yang melayang (capsule di layar tanpa notch) jadi pil penuh (radius = setengah
+    tinggi, hairline putih 12%). Island yang menggantung dari tepi atas (layar ber-notch) tidak bisa
+    jadi pil penuh tanpa menaruh teks di bawah kamera, jadi bagian atasnya tetap rata dengan bahu
+    island dan barisnya di bawah kamera dengan sudut bawah 31 pt (setengah tinggi baris); tinggi total
+    `stripHeight + 56`. Bentuk island sendiri (`NotchShape`) tidak disentuh.
+  - **Jendela sendiri:** kapsul digambar di `NotchPanel` terpisah satu level di atas island (masih di
+    bawah menu native), selebar gabungan outline island dan kapsul, dan hanya ada selama notice
+    tampil. Jadi bentuk, transisi, strip dan halaman island tidak berubah (area agent A); kapsul mulai
+    dari outline island saat itu (`surfaceSize`, `surfaceShift`, `capsuleBody` untuk capsule, bahu dan
+    `surfaceRadius` untuk notch) dan kembali ke outline island saat itu juga.
+  - **Gerak:** bentuk memakai spring (response 0,4, damping 0,82) hanya pada ukuran dan posisi
+    (frame + bahu/radius). Isi masuk 0,14 dtk setelah mulai (±60% tumbuh): glyph, judul, subjudul,
+    aksesori, masing-masing blur 10 → 0 + opacity 0,24 dtk dengan jeda 40 ms; keluar urutan terbalik,
+    lalu bentuk menyusut (spring 0,34 tanpa pantul) dan jendela ditutup. Ring terisi dengan `trim`
+    0,6 dtk, centang download digambar dengan `trim` (lingkaran lalu centang), saklar Low Power meluncur
+    dengan spring. Update di tempat (notice yang sama) memakai `blurReplace`. Reduce Motion: kapsul
+    langsung di ukuran akhir dan hanya fade 0,2 dtk.
+  - **Antrean (`ZenithNoticeQueue`):** satu notice sekaligus. Prioritas: baterai sangat lemah 5,
+    lemah 4, headphone 3, charger 2, batas charge dan download 1; sama prioritas = urutan datang.
+    Notice dengan key sama di-coalesce (yang menunggu diganti di tempat, yang tampil diperbarui dan
+    timernya diulang). Charger dicolok membuang peringatan baterai lemah yang menunggu; dicabut
+    membuang hint 80%; status charger terbaru yang menang. Yang prioritasnya lebih tinggi memotong yang
+    sedang tampil. Maks. 6 menunggu (yang terlama dengan prioritas terendah dibuang). Kedaluwarsa
+    kalau menunggu island terlalu lama: baterai 90 dtk, headphone/charger 12 dtk, lainnya 30 dtk.
+  - **Kapan boleh tampil:** island jalan, `showsSystemFeedback` (ikut "hidden until hover" dan
+    "show activity"), tertutup, tidak peeking/drag/capture controls/command bar/picker activity, tidak
+    full screen, dan tidak ada notice kecil island yang sedang tampil (volume dll. selesai dulu). Kalau
+    tidak boleh, dicoba lagi tiap 0,5 dtk sampai kedaluwarsa. Saat tampil: island terbuka, peek, drag,
+    full screen, atau notice kecil prioritas ≥ 3 (volume, brightness, layout keyboard, mic) langsung
+    menyuruhnya pergi.
+  - **Durasi dan interaksi:** 4 dtk (baterai lemah 6 dtk). Pointer di atas kapsul menahannya, lalu
+    1,5 dtk setelah pointer pergi. Klik di tempat lain (monitor global + lokal, tanpa izin baru) atau
+    swipe ke atas di trackpad (kalau gesture island nyala, pakai `NotchGestureSupport`) menutupnya.
+    Klik di kapsul menjalankan aksinya lalu menutup. Jendela menerima klik pertama. Isi diumumkan ke
+    VoiceOver.
+  - **Notice dan sumbernya:**
+    - *Baterai 20% / 10%* (merah, saklar Low Power): dari `powerChanged` island (IOPS). Hanya saat tidak
+      dicolok. Judul "20% Battery", subjudul "Click for Low Power Mode" atau "Low Power Mode is on"
+      (saklar amber, ikut berubah lewat `NSProcessInfoPowerStateDidChange` saat tampil).
+    - *Charger dicolok/dicabut*: "Charging · 46%" (bolt + ring hijau) / "On Battery · 46%" (steker,
+      ring hijau/amber/merah menurut sisa).
+    - *Charge mencapai 80%* (hint kesehatan): "Charging · 80%", daun + ring hijau, subjudul "Unplugging
+      around here is easier on the battery". Hanya saat dicolok, tidak di 100%.
+    - *Headphone/speaker Bluetooth tersambung*: dari `NotchAccessoryConnectionMonitor` (hanya simbol
+      audio dari katalog aksesori: AirPods, AirPods Pro/Max, headphone, speaker). Baterai dibaca dari
+      `SystemMonitor` (`peripheralBatterySample`, bacaan terendah dengan nama yang sama). Kalau belum
+      ada, ditunggu 1,6 dtk; bacaan yang datang kemudian mengisi ring di tempat. Tanpa bacaan, tanpa
+      ring. Aksesori lain (keyboard, mouse, dll.) tetap memakai notice kecil.
+    - *Download selesai*: dari `NotchDownloadService.onArrival`. Thumbnail QuickLook
+      (`QLThumbnailGenerator`, ikon Finder sampai siap), nama file (dipotong di tengah), "1.6 MB ·
+      Downloads" (nama folder dari Finder), centang hijau. Klik = Reveal in Finder.
+    - *Focus*: **tidak dibuat.** Zenith belum bisa mendeteksi Focus (tidak ada pembaca Focus/DND di
+      kode; notice yang ada adalah layout keyboard), dan macOS tidak memberi tahu app pihak ketiga.
+  - **Hysteresis baterai (`ZenithBatteryNoticeState`):** bacaan pertama hanya baseline (Mac yang sudah
+    di bawah 20% saat app dibuka diam sampai naik lagi). Tiap threshold bunyi sekali, lalu baru aktif
+    lagi setelah charge kembali 3 poin melewatinya (≥ 23% untuk 20%, ≤ 77% untuk 80%). Satu bacaan yang
+    melompati dua threshold (setelah sleep) hanya memberi peringatan yang lebih dalam. Colok-cabut di
+    level yang sama tidak mengulang peringatan.
+  - **Low Power Mode:** perlu admin (`pmset -a lowpowermode 1`). Helper fan control
+    (`Sources/FanControlHelper`, root, XPC dengan code requirement) **tidak** ditambah: harus menambah
+    method di protokol XPC bersama dan versi helper, memperluas daemon root dari kipas ke setelan daya,
+    dan hanya jalan untuk yang sudah menyetujui helper Fan Control (mendaftarkannya sekarang = prompt
+    admin yang tidak diharapkan). Jadi klik membuka System Settings › Battery
+    (`x-apple.systempreferences:com.apple.Battery-Settings.extension`), tempat saklarnya ada. Tidak ada
+    prompt admin, `pmset` tidak pernah dijalankan.
+  - **Setelan:** kartu "Notices" di Dynamic Island → Activity, di bawah Terminal commands. Judul digambar
+    sendiri (bukan `SettingsCard(title:)`), saklar `ZenithSwitchStyle`/`ZenithSwitchRow`, jadi tidak
+    masuk test search coverage. Baris: Low battery (15/20/25/30%, default 20), Very low battery
+    (5/10/15%, default 10), Charge reaches (80/85/90/95%, default 80), Charger connected or removed,
+    Headphones connected, Download finished. Semua default nyala, terdaftar di `registeredDefaults`
+    (ikut backup). Baris baterai hanya muncul di Mac ber-baterai. Saklar dimatikan = island kembali ke
+    notice kecilnya untuk event itu; toggle event lama (Battery, Accessories, Downloads di grid
+    Activity) tetap jadi gerbang utama (`NotchSupport.routes`).
+  - Edit di file upstream bertanda `// Zenith fork`: `NotchService.powerChanged` (lapor ke center,
+    notice kecil dilewati kalau kapsul menggantikannya; reaksi maskot tetap), `onArrival` download,
+    `NotchAccessoryService.handleConnection`, `NotchSettings` (kartu), `Defaults`, `build.sh`
+    (`TEST_SOURCES`), `Tests/MetricsTests.swift` (suite). Tidak ada case activity baru, jadi test double
+    tidak berubah.
+  - **Belum diverifikasi di app:** UI app tidak dijalankan. Tampilan akhir dicek lewat render statis
+    (`ImageRenderer`, stub center) versi melayang dan menggantung. Perlu dicek di Mac: morph dari island
+    (notch dan capsule) dan baliknya ke strip activity yang sedang tampil, blur masuk/keluar di 120 Hz,
+    hover menahan, klik di luar, swipe ke atas, klik membuka Battery settings/Finder, AirPods sungguhan
+    (kapan bacaan baterainya datang), thumbnail QuickLook, island yang terbuka karena hover saat
+    pointer melewati kapsul, Increase Contrast, Reduce Motion, dan beberapa display.
 - **Halaman About tentang Zenith (branch `feat/about-zenith`, menggantikan `feat/about-portfolio`):**
   versi portofolio terlalu banyak bercerita tentang pembuatnya, jadi About sekarang menjelaskan Zenith
   dan fiturnya, dan pembuatnya hanya sedikit (seperti kartu "Made by" sebelumnya). View di
