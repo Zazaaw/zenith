@@ -331,9 +331,10 @@ enum ZenithNoticeTests {
                      && registered[DefaultsKey.notchNoticeBatteryCriticalLevel] as? Int == 10
                      && registered[DefaultsKey.notchNoticeBatteryHighLevel] as? Int == 80,
                      "every notice is on by default, at 20%, 10% and 80%, and registered so it joins backups")
-        let suiteName = "ZenithNoticeTests.\(UUID().uuidString)"
-        guard let defaults = UserDefaults(suiteName: suiteName) else { return suite.expect(false, "test defaults") }
-        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let domain = "com.vorssaint.tests.notices"
+        guard let defaults = UserDefaults(suiteName: domain) else { return suite.expect(false, "test defaults") }
+        defaults.removePersistentDomain(forName: domain)
+        defer { defaults.removePersistentDomain(forName: domain) }
         defaults.register(defaults: registered)
         suite.expect(ZenithBatterySettings.current(in: defaults) == ZenithBatterySettings(), "the defaults read back")
         defaults.set(25, forKey: DefaultsKey.notchNoticeBatteryLowLevel)
