@@ -461,6 +461,7 @@ struct NotchSettings: View {
             let notifications = FeatureStrings.notchNotifications(l10n.language)
             switchRow("bell.slash", notifications.hideSystemBanner, caption: notifications.hideSystemBannerHint,
                       isOn: $dismissNativeNotifications)
+            ZenithReplySettings() // Zenith fork: replies from the island
             if notificationsEnabled, !permissions.accessibility { PermissionRow(kind: .accessibility) }
         case .downloads:
             NotchDownloadsSettingsControls()

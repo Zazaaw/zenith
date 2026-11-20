@@ -251,7 +251,10 @@ final class NotchService: ObservableObject {
     private var fileInteractionActive = false
     /// A screenshot preview stays when the pointer leaves or another app
     /// activates. It leaves on its own timer or on a click elsewhere.
-    private var keepsWorkingSurface: Bool { keepsSurfaceOnClick || showsCapturePreview }
+    private var keepsWorkingSurface: Bool {
+        keepsSurfaceOnClick || showsCapturePreview
+            || ZenithReplyHold.isComposing // Zenith fork: a reply being written stays
+    }
     private var keepsSurfaceOnClick: Bool {
         pinned || trackingMenu || NSApp.modalWindow != nil || panel?.attachedSheet != nil
             || NotchLyricsService.shared.isImporting
@@ -1014,7 +1017,8 @@ final class NotchService: ObservableObject {
         if let notice {
             guard noticeExpanded else { return geometry.noticeSize(wings: notice.wings(in: geometry)) }
             return geometry.notificationPreviewSize(
-                contentHeight: notice.previewContentHeight(width: geometry.notificationPreviewContentWidth))
+                contentHeight: notice.previewContentHeight(width: geometry.notificationPreviewContentWidth)
+                    + ZenithReplyHold.extraHeight(for: notice.notificationID)) // Zenith fork: the reply row
         }
         if peeking { return geometry.peek }
         if showsCompactActivityPicker { return compactActivityPickerLayout.size }
@@ -1801,6 +1805,7 @@ final class NotchService: ObservableObject {
     /// full time again, so a quick pass over it never cuts it short.
     private func releaseNotification() {
         guard let notice, notice.notificationID != nil else { return }
+        if noticeExpanded, ZenithReplyHold.holds(notice.notificationID) { return } // Zenith fork: writing a reply
         if noticeExpanded { dismissNotice() }
         else if noticeWork == nil { scheduleNoticeDismissal(after: notice.event.duration) }
     }
