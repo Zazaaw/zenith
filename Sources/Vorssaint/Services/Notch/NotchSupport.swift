@@ -401,7 +401,9 @@ enum NotchLayout {
     /// keeps the cutout's own corners, so the closed island and the last
     /// frames of a collapse sit inside the notch instead of outlining a
     /// rounder one; the open island reaches the full radius and shoulder.
-    static func surfaceRadius(height: CGFloat) -> CGFloat { min(28, height * 0.34) }
+    // Zenith fork: the open island's corner is larger (ZenithIslandSilhouette);
+    // strips below 82 points keep upstream's 0.34 of their height.
+    static func surfaceRadius(height: CGFloat) -> CGFloat { min(ZenithIslandSilhouette.openCornerRadius, height * 0.34) }
     static func shoulder(height: CGFloat) -> CGFloat { min(shoulder, height * 0.19) }
     /// The optional outline's stroke. Only its inner half, inside the island, shows.
     static let outlineWidth: CGFloat = 2

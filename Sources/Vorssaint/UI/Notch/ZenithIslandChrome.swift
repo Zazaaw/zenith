@@ -51,9 +51,10 @@ enum ZenithIsland {
     static let accent = Color(nsColor: .controlAccentColor)
 
     /// Upstream's island radii, moved onto the `ZenithRadius` steps: large
-    /// cards take `panel`, smaller ones `card`, controls `large`.
+    /// cards, which sit on the page, run concentric with the island's corner
+    /// (`cardRadius`, ZenithIslandKit), smaller ones take `card`, controls `large`.
     static func radius(_ upstream: CGFloat) -> CGFloat {
-        if upstream >= 16 { return ZenithRadius.panel }
+        if upstream >= 16 { return cardRadius }
         if upstream >= 11 { return ZenithRadius.card }
         if upstream >= 8 { return ZenithRadius.large }
         if upstream >= 6 { return ZenithRadius.medium }
