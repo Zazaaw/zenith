@@ -26,6 +26,8 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
     case prayer, golden
     /// The workspaces that are on, as calm tiles that run them (WorkspaceService).
     case workspaces
+    /// A QR code of the latest copy, which opens the QR page (QRService).
+    case qr
 
     var id: String { rawValue }
 
@@ -45,6 +47,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .today: return .recap
         case .prayer, .golden: return .sky
         case .workspaces: return nil
+        case .qr: return nil
         }
     }
 
@@ -64,6 +67,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .prayer: return "moon.stars.fill"
         case .golden: return "sun.horizon.fill"
         case .workspaces: return "square.grid.2x2.fill"
+        case .qr: return "qrcode"
         }
     }
 
@@ -85,6 +89,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .prayer: return 0x93C5FD
         case .golden: return 0xFCD34D
         case .workspaces: return 0x67E8F9 // cyan 300: it has no page whose colour to wear
+        case .qr: return 0xC4B5FD // violet 300, beside the clipboard it reads
         }
     }
 
@@ -106,6 +111,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .prayer: return 196
         case .golden: return 216
         case .workspaces: return 252
+        case .qr: return 216
         }
     }
 

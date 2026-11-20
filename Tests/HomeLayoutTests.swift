@@ -137,8 +137,8 @@ enum HomeLayoutTests {
         suite.expect(layout.shown(modules: [.controls, .music]) == [.nowPlaying, .weather]
                      && layout.shown(modules: [.controls, .timer]) == [.nowPlaying, .timer, .weather],
                      "a widget whose page is off waits, still chosen, while the player and the weather stand alone")
-        // Zenith fork: workspaces have no island page either.
-        suite.expect(ZenithHomeWidget.allCases.filter { $0.module == nil } == [.weather, .workspaces]
+        // Zenith fork: workspaces and the clipboard's QR code have no island page either.
+        suite.expect(ZenithHomeWidget.allCases.filter { $0.module == nil } == [.weather, .workspaces, .qr]
                      && ZenithHomeWidget.allCases.allSatisfy { $0.isAvailable(modules: NotchModule.allCases) },
                      "every widget shows with every page on")
         suite.expect(Set(ZenithHomeWidget.allCases.map(\.hex)).count == ZenithHomeWidget.allCases.count
