@@ -314,6 +314,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/DevServers/DevServersSupport.swift
         Sources/Vorssaint/Services/DevServers/DevServersProbe.swift
         Sources/Vorssaint/Services/Recap/RecapSupport.swift
+        Sources/Vorssaint/Services/Workspaces/WorkspaceSupport.swift
         Sources/Vorssaint/Services/Notifications/ZenithReplySupport.swift
         Sources/Vorssaint/Services/GitHub/GitHubSupport.swift
         Sources/Vorssaint/Core/ZenithStrings.swift

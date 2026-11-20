@@ -277,6 +277,7 @@ struct MetricsTests {
             ("dev-servers", { DevServersTests.run(suite) }),
             ("recap", { RecapTests.run(suite) }),
             ("sky", { SkyTests.run(suite) }),
+            ("workspaces", { WorkspacesTests.run(suite) }),
         ]
         var selected = Set<String>()
         var listOnly = false
