@@ -24,8 +24,8 @@
 "NSCalendarsFullAccessUsageDescription" = "Yaklaşan randevularınızı ekranın üst kısmında gösterir. Takvim etkinlikleri bu Mac’te kalır.";
 
 /* macOS Location Services permission prompt (Zenith fork: lock screen weather). */
-"NSLocationUsageDescription" = "Zenith yaklaşık konumunu yalnızca kilit ekranında hava durumunu göstermek için kullanır. Konum yaklaşık bir kilometreye yuvarlanır ve tahmini almak için yalnızca Open-Meteo’ya gönderilir.";
-"NSLocationWhenInUseUsageDescription" = "Zenith yaklaşık konumunu yalnızca kilit ekranında hava durumunu göstermek için kullanır. Konum yaklaşık bir kilometreye yuvarlanır ve tahmini almak için yalnızca Open-Meteo’ya gönderilir.";
+"NSLocationUsageDescription" = "Zenith yaklaşık konumunu yalnızca kilit ekranındaki hava durumu, namaz vakitleri ve altın saat için kullanır. Konum yaklaşık bir kilometreye yuvarlanır. Namaz vakitleri bu Mac’te hesaplanır; tahmini almak için konumu yalnızca hava durumu Open-Meteo’ya gönderir.";
+"NSLocationWhenInUseUsageDescription" = "Zenith yaklaşık konumunu yalnızca kilit ekranındaki hava durumu, namaz vakitleri ve altın saat için kullanır. Konum yaklaşık bir kilometreye yuvarlanır. Namaz vakitleri bu Mac’te hesaplanır; tahmini almak için konumu yalnızca hava durumu Open-Meteo’ya gönderir.";
 
 /* macOS Reminders permission prompt (Zenith fork: lock screen reminders). */
 "NSRemindersFullAccessUsageDescription" = "Bugün süresi dolan anımsatıcıları kilit ekranında göster. Anımsatıcılar bu Mac’te kalır.";

@@ -24,8 +24,8 @@
 "NSCalendarsFullAccessUsageDescription" = "画面上部に今後の予定を表示します。カレンダーの予定がこのMacの外に送信されることはありません。";
 
 /* macOS Location Services permission prompt (Zenith fork: lock screen weather). */
-"NSLocationUsageDescription" = "Zenithはおおよその位置情報を、ロック画面に天気を表示するためだけに使用します。位置は約1キロメートル単位に丸められ、予報を取得するためにOpen-Meteoにのみ送信されます。";
-"NSLocationWhenInUseUsageDescription" = "Zenithはおおよその位置情報を、ロック画面に天気を表示するためだけに使用します。位置は約1キロメートル単位に丸められ、予報を取得するためにOpen-Meteoにのみ送信されます。";
+"NSLocationUsageDescription" = "Zenithはおおよその位置情報を、ロック画面の天気と、礼拝時刻・ゴールデンアワーのためだけに使用します。位置は約1キロメートル単位に丸められます。礼拝時刻はこのMacで計算され、予報を取得するために天気だけがOpen-Meteoに送信します。";
+"NSLocationWhenInUseUsageDescription" = "Zenithはおおよその位置情報を、ロック画面の天気と、礼拝時刻・ゴールデンアワーのためだけに使用します。位置は約1キロメートル単位に丸められます。礼拝時刻はこのMacで計算され、予報を取得するために天気だけがOpen-Meteoに送信します。";
 
 /* macOS Reminders permission prompt (Zenith fork: lock screen reminders). */
 "NSRemindersFullAccessUsageDescription" = "今日が期限のリマインダーをロック画面に表示します。リマインダーはこのMacから出ません。";

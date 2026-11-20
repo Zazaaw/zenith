@@ -966,6 +966,24 @@ enum DefaultsKey {
     static let notchCardImportSkipImported = "notchCardImportSkipImported"
     static let notchCardImportRename = "notchCardImportRename" // CardRenamePattern.rawValue
     static let notchCardImportEject = "notchCardImportEject"
+    // Zenith fork: prayer times and golden hour (SkyService, PrayerTimesSupport).
+    static let notchSkyMethod = "notchSkyMethod" // PrayerMethod.rawValue
+    static let notchSkyAsr = "notchSkyAsr" // PrayerAsrSchool.rawValue
+    static let notchSkyAdjustments = "notchSkyAdjustments" // PrayerAdjustments.encoded, minutes per time
+    static let notchSkyLocationSource = "notchSkyLocationSource" // SkyLocationSource.rawValue
+    static let notchSkyCity = "notchSkyCity" // SkyCity.id
+    static let notchSkyLatitude = "notchSkyLatitude"
+    static let notchSkyLongitude = "notchSkyLongitude"
+    static let notchSkyNames = "notchSkyNames" // PrayerTimesSupport.NameStyle.rawValue
+    static let notchSkyReminded = "notchSkyReminded" // the prayers reminded of, comma-separated
+    static let notchSkyPrayerActivity = "notchSkyPrayerActivity"
+    static let notchSkyPrayerLead = "notchSkyPrayerLead" // minutes: 10, 15 or 30
+    static let notchSkyPrayerSound = "notchSkyPrayerSound"
+    // The chosen sound's file name in the container; unregistered, so it stays out of backups.
+    static let notchSkyPrayerSoundFile = "notchSkyPrayerSoundFile"
+    static let notchSkyGoldenActivity = "notchSkyGoldenActivity"
+    // The island page's tab; unregistered, it is only where the page was left.
+    static let notchSkyPage = "notchSkyPage"
     static let notchCalendarEnabled = "notchCalendarEnabled"
     static let notchCalendarCountdown = "notchCalendarCountdown"
     static let notchCalendarCountdownLead = "notchCalendarCountdownLead" // minutes before a start, chosen events included
@@ -1057,6 +1075,9 @@ enum DefaultsKey {
     // Zenith fork: off until switched on, since each needs a permission.
     static let notchLockScreenWeather = "notchLockScreenWeather"
     static let notchLockScreenReminders = "notchLockScreenReminders"
+    // Zenith fork: the next prayer and the golden hour (SkyService), off until switched on.
+    static let notchLockScreenPrayer = "notchLockScreenPrayer"
+    static let notchLockScreenGolden = "notchLockScreenGolden"
     // Zenith fork: the terminal readout under the lock screen clock (NotchLockScreenTerminalSupport).
     static let notchLockScreenTerminal = "notchLockScreenTerminal"
     static let notchLockScreenTerminalLines = "notchLockScreenTerminalLines" // NotchLockScreenTerminalSelection.stored
@@ -1668,6 +1689,19 @@ enum Defaults {
         DefaultsKey.notchCardImportSkipImported: true, // Zenith fork
         DefaultsKey.notchCardImportRename: CardRenamePattern.original.rawValue, // Zenith fork
         DefaultsKey.notchCardImportEject: true, // Zenith fork
+        DefaultsKey.notchSkyMethod: PrayerMethod.kemenag.rawValue, // Zenith fork
+        DefaultsKey.notchSkyAsr: PrayerAsrSchool.shafii.rawValue, // Zenith fork
+        DefaultsKey.notchSkyAdjustments: SkySettings.defaultAdjustments, // Zenith fork
+        DefaultsKey.notchSkyLocationSource: SkyLocationSource.automatic.rawValue, // Zenith fork
+        DefaultsKey.notchSkyCity: SkyCity.defaultID, // Zenith fork
+        DefaultsKey.notchSkyLatitude: -6.2, // Zenith fork
+        DefaultsKey.notchSkyLongitude: 106.8, // Zenith fork
+        DefaultsKey.notchSkyNames: PrayerTimesSupport.NameStyle.automatic.rawValue, // Zenith fork
+        DefaultsKey.notchSkyReminded: SkySettings.defaultReminded, // Zenith fork
+        DefaultsKey.notchSkyPrayerActivity: true, // Zenith fork
+        DefaultsKey.notchSkyPrayerLead: PrayerTimesSupport.defaultLead, // Zenith fork
+        DefaultsKey.notchSkyPrayerSound: false, // Zenith fork
+        DefaultsKey.notchSkyGoldenActivity: true, // Zenith fork
         DefaultsKey.notchEnabled: false,
         DefaultsKey.notchDisplay: NotchDisplay.automatic.rawValue,
         DefaultsKey.notchSilhouette: NotchSilhouette.capsule.rawValue,
@@ -1717,6 +1751,8 @@ enum Defaults {
         DefaultsKey.notchLockScreenWakaTime: true,
         DefaultsKey.notchLockScreenWeather: false,
         DefaultsKey.notchLockScreenReminders: false,
+        DefaultsKey.notchLockScreenPrayer: false, // Zenith fork
+        DefaultsKey.notchLockScreenGolden: false, // Zenith fork
         DefaultsKey.notchLockScreenTerminal: false,
         DefaultsKey.notchLockScreenTerminalLines: NotchLockScreenTerminalSelection.defaultValue,
         DefaultsKey.notchLockScreenTerminalProjects: false,

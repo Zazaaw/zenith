@@ -24,8 +24,8 @@
 "NSCalendarsFullAccessUsageDescription" = "在螢幕頂部顯示即將到來的行程。日曆行程只會保留在這部 Mac 上。";
 
 /* macOS Location Services permission prompt (Zenith fork: lock screen weather). */
-"NSLocationUsageDescription" = "Zenith 只會使用你的大概位置在上鎖畫面上顯示天氣。位置會四捨五入到約一公里，並只會傳送給 Open-Meteo 以取得天氣預報。";
-"NSLocationWhenInUseUsageDescription" = "Zenith 只會使用你的大概位置在上鎖畫面上顯示天氣。位置會四捨五入到約一公里，並只會傳送給 Open-Meteo 以取得天氣預報。";
+"NSLocationUsageDescription" = "Zenith 只會使用你的大概位置來顯示上鎖畫面上的天氣，以及禮拜時間和黃金時刻。位置會四捨五入到約一公里。禮拜時間在這台 Mac 上計算；只有天氣會把位置傳送給 Open-Meteo 以取得天氣預報。";
+"NSLocationWhenInUseUsageDescription" = "Zenith 只會使用你的大概位置來顯示上鎖畫面上的天氣，以及禮拜時間和黃金時刻。位置會四捨五入到約一公里。禮拜時間在這台 Mac 上計算；只有天氣會把位置傳送給 Open-Meteo 以取得天氣預報。";
 
 /* macOS Reminders permission prompt (Zenith fork: lock screen reminders). */
 "NSRemindersFullAccessUsageDescription" = "在上鎖畫面上顯示今天到期的提醒事項。提醒事項會保留在這部 Mac 上。";

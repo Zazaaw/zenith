@@ -24,8 +24,8 @@
 "NSCalendarsFullAccessUsageDescription" = "Mostra i tuoi prossimi appuntamenti nella parte superiore dello schermo. Gli eventi del calendario restano su questo Mac.";
 
 /* macOS Location Services permission prompt (Zenith fork: lock screen weather). */
-"NSLocationUsageDescription" = "Zenith usa la tua posizione approssimativa solo per mostrare il meteo nella schermata di blocco. Viene arrotondata a circa un chilometro e inviata solo a Open-Meteo per ottenere le previsioni.";
-"NSLocationWhenInUseUsageDescription" = "Zenith usa la tua posizione approssimativa solo per mostrare il meteo nella schermata di blocco. Viene arrotondata a circa un chilometro e inviata solo a Open-Meteo per ottenere le previsioni.";
+"NSLocationUsageDescription" = "Zenith usa la tua posizione approssimativa solo per il meteo nella schermata di blocco, gli orari di preghiera e l’ora d’oro. Viene arrotondata a circa un chilometro. Gli orari sono calcolati su questo Mac; solo il meteo la invia a Open-Meteo per ottenere le previsioni.";
+"NSLocationWhenInUseUsageDescription" = "Zenith usa la tua posizione approssimativa solo per il meteo nella schermata di blocco, gli orari di preghiera e l’ora d’oro. Viene arrotondata a circa un chilometro. Gli orari sono calcolati su questo Mac; solo il meteo la invia a Open-Meteo per ottenere le previsioni.";
 
 /* macOS Reminders permission prompt (Zenith fork: lock screen reminders). */
 "NSRemindersFullAccessUsageDescription" = "Mostra nella schermata di blocco i promemoria di oggi. I promemoria restano su questo Mac.";
