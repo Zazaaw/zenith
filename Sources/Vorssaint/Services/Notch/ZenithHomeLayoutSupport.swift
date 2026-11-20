@@ -220,8 +220,9 @@ enum ZenithHomeIsland {
     /// The layout's key in settings, registered so backups carry it.
     static let defaultsKey = DefaultsKey.zenithHomeLayout
 
-    /// The edit strip: the widgets' icons over their names, and Cancel and Done.
-    static let stripHeight: CGFloat = 58
+    /// The edit strip: the Widgets and Shortcuts switch with Cancel and Done
+    /// (26 points and 6 below), then the icons over their names (52).
+    static let stripHeight: CGFloat = 84
     /// Above the strip, as the home page spaces its rows.
     static let stripSpacing: CGFloat = 10
 

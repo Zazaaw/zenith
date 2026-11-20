@@ -248,6 +248,8 @@ final class NotchService: ObservableObject {
     /// The home page's controls as the preferences last saved them, read with
     /// the preferences: the open page's geometry is read on every layout pass.
     private var homeControls: [NotchControlItem] = []
+    /// Zenith fork: the home page's edit mode saved its shortcuts; read them before the next layout.
+    func zenithReloadHomeControls() { homeControls = NotchSupport.controls() }
     private var fileInteractionActive = false
     /// A screenshot preview stays when the pointer leaves or another app
     /// activates. It leaves on its own timer or on a click elsewhere.
@@ -953,7 +955,7 @@ final class NotchService: ObservableObject {
     private func pageSize(in geometry: NotchGeometry, module: NotchModule, detail: Bool, panel: Bool,
                           detailHeight: CGFloat?, musicExtraHeight: CGFloat, fileMediaHeight: CGFloat?, toolCount: Int?,
                           capturePreviewHeight: CGFloat?) -> CGSize {
-        let controls = NotchSupport.controls()
+        let controls = ZenithHomeIsland.controls(NotchSupport.controls()) // Zenith fork: the edit mode's shortcuts
         let sliders = controls.filter(\.isLevel).count
         let shortcuts = controls.filter { !$0.isLevel && $0 != .music }.count
         return geometry.expandedSize(module: module, detail: detail, panel: panel, detailHeight: detailHeight,
@@ -1003,7 +1005,8 @@ final class NotchService: ObservableObject {
         // width, and lead their row with their own way back instead of the
         // sections.
         if !showingSections, !showingAppPanel, selectedMetric == nil, !modules.isEmpty {
-            result.pageContentWidth = NotchLayout.naturalContentWidth(selected, controls: homeControls,
+            result.pageContentWidth = NotchLayout.naturalContentWidth(selected,
+                                                                      controls: ZenithHomeIsland.controls(homeControls), // Zenith fork
                                                                       within: geometry.contentWidth)
             if selected == .controls { result.zenithHome = ZenithHomeIsland.geometry(modules: modules) } // Zenith fork
         } else {

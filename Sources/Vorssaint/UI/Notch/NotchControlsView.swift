@@ -15,9 +15,9 @@ struct NotchControlsView: View {
     @Namespace private var homeWidgets // Zenith fork: icons flying from the edit strip
 
     var body: some View {
-        let items = NotchSupport.controls()
         // Zenith fork: the card row holds the chosen widgets, and edit mode adds its strip below.
         let homeEditing = homeEditor.editing && !preview
+        let items = homeEditor.controls(NotchSupport.controls(), editing: homeEditing) // Zenith fork: the edit mode's shortcuts
         let homeCards = !homeEditor.shown(modules: service.modules).isEmpty || homeEditing
         let stripRoom = homeEditing ? ZenithHomeIsland.stripHeight + ZenithHomeIsland.stripSpacing : 0
         let levels = items.filter(\.isLevel)
@@ -28,6 +28,7 @@ struct NotchControlsView: View {
         let bandLevels = Array(levels.prefix(inBand))
         let belowLevels = Array(levels.dropFirst(inBand))
         let shortcuts = items.filter { !$0.isLevel && $0 != .music }
+        let shortcutCapacity = homeEditing ? homeEditor.shortcutCapacity(service: service) : .max // Zenith fork
         let layout = NotchLayout.controls(hasCards: homeCards, levelRow: !belowLevels.isEmpty, // Zenith fork
                                           shortcutCount: shortcuts.count, width: size.width,
                                           height: size.height - stripRoom) // Zenith fork
@@ -49,6 +50,9 @@ struct NotchControlsView: View {
                               leastSpacing: NotchLayout.shortcutLeastSpacing, rowSpacing: layout.shortcutRowSpacing,
                               dividers: true) { item in // Zenith fork: glyph buttons parted by hairlines
                         shortcut(item)
+                            .modifier(ZenithHomeShortcutEditing(item: item, index: shortcuts.firstIndex(of: item) ?? 0,
+                                                                capacity: shortcutCapacity, service: service,
+                                                                namespace: homeWidgets)) // Zenith fork: edit mode
                     }
                 }
                 if homeEditing { // Zenith fork: the widgets to add, Cancel and Done
