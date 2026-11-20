@@ -22,7 +22,7 @@ enum HomeLayoutTests {
         strings(suite)
     }
 
-    private static let suiteName = "id.satuvisual.zenith.tests.home-layout"
+    private static let suiteName = "com.vorssaint.tests.home-layout"
 
     private static func freshDefaults() -> UserDefaults {
         let defaults = UserDefaults(suiteName: suiteName)!
@@ -190,7 +190,7 @@ enum HomeLayoutTests {
         ZenithHomeIsland.editing = false
         ZenithHomeIsland.draft = nil
         suite.expect(ZenithHomeIsland.current(in: defaults).widgets == [.nowPlaying]
-                     && defaults.string(forKey: DefaultsKey.zenithHomeLayout) == nil,
+                     && defaults.persistentDomain(forName: suiteName)?[DefaultsKey.zenithHomeLayout] == nil,
                      "cancelling leaves the stored home page untouched")
         ZenithHomeIsland.editing = saved
         ZenithHomeIsland.draft = savedDraft
