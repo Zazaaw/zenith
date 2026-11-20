@@ -318,6 +318,8 @@ if (( TEST )); then
         Sources/Vorssaint/Services/CardImport/BackupJob.swift
         Sources/Vorssaint/Services/DevServers/DevServersSupport.swift
         Sources/Vorssaint/Services/DevServers/DevServersProbe.swift
+        Sources/Vorssaint/Services/Git/GitSupport.swift
+        Sources/Vorssaint/Services/Git/GitRunner.swift
         Sources/Vorssaint/Services/Recap/RecapSupport.swift
         Sources/Vorssaint/Services/Workspaces/WorkspaceSupport.swift
         Sources/Vorssaint/Services/Notifications/ZenithReplySupport.swift

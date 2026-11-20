@@ -22,6 +22,15 @@ final class CommandActivityService: ObservableObject {
     @Published private(set) var activity: CommandActivitySupport.Activity?
     /// When the hook last wrote, kept on this Mac only (never backed up).
     @Published private(set) var lastEvent: Date?
+    /// The folder the newest command started in, read from its shell when
+    /// the start arrives (the hook itself writes only the folder's name).
+    /// The Git page follows it to the repository; it is never shown or stored.
+    @Published private(set) var latestDirectory: CommandDirectory?
+
+    struct CommandDirectory: Equatable {
+        let path: String
+        let time: Date
+    }
 
     private let queue = DispatchQueue(label: "com.vorssaint.zenith.command-activity", qos: .utility)
     /// Main thread: published values are accepted only while running.
@@ -171,6 +180,15 @@ final class CommandActivityService: ObservableObject {
         }
         if !events.isEmpty {
             DispatchQueue.main.async { [weak self] in self?.noteEvent(now) }
+        }
+        let starts: [CommandActivitySupport.Event] = events.map(\.event).filter { $0.phase == .start && $0.pid != nil }
+        let newest: CommandActivitySupport.Event? = starts.max { $0.time < $1.time }
+        if let newest, let pid = newest.pid, let path = DevServersProbe.currentDirectory(pid) {
+            let directory = CommandDirectory(path: path, time: newest.time)
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.active, (self.latestDirectory?.time ?? .distantPast) < directory.time else { return }
+                self.latestDirectory = directory
+            }
         }
         refresh(now: now)
     }

@@ -102,6 +102,7 @@ enum NotchMusicVisibilityTests {
         var hasDevServersActivity = false // Zenith fork
         var hasPrayerActivity = false // Zenith fork
         var hasGoldenActivity = false // Zenith fork
+        var hasGitActivity = false // Zenith fork
         var awaitsTrackNotice = false
         var timerStripWing: CGFloat = 44
         func timerStripWing(for companion: NotchCompactActivity?, in geometry: NotchGeometry) -> CGFloat { timerStripWing }
@@ -130,6 +131,8 @@ enum NotchMusicVisibilityTests {
         func prayerStripWing(in geometry: NotchGeometry) -> CGFloat { prayerStripWing }
         var goldenStripWing: CGFloat = 120 // Zenith fork
         func goldenStripWing(in geometry: NotchGeometry) -> CGFloat { goldenStripWing }
+        var gitStripWing: CGFloat = 96 // Zenith fork
+        func gitStripWing(in geometry: NotchGeometry) -> CGFloat { gitStripWing }
         var notchNeedsMonitor = false
         var heldDrag = false
         var pinned = false

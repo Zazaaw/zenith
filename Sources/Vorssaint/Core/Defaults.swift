@@ -1006,6 +1006,16 @@ enum DefaultsKey {
     static let notchDevServersIndicator = "notchDevServersIndicator"
     static let notchDevServersExtraPorts = "notchDevServersExtraPorts"
     static let notchDevServersExtraNames = "notchDevServersExtraNames"
+    // Zenith fork: the local Git status page (GitService): where the current repository comes from,
+    // the background fetch, the closed island's branch, and the pinned repositories (`~/…`).
+    static let notchGitFromEditor = "notchGitFromEditor"
+    static let notchGitFromTerminal = "notchGitFromTerminal"
+    static let notchGitFetch = "notchGitFetch"
+    static let notchGitFetchMinutes = "notchGitFetchMinutes"
+    static let notchGitIndicator = "notchGitIndicator"
+    static let notchGitPinned = "notchGitPinned"
+    // Unregistered, so it stays out of backups: repositories seen lately, the page's quick switch.
+    static let notchGitRecent = "notchGitRecent"
     // Zenith fork: the end-of-day recap (RecapService): the notice, its time, weekends and the sources it reads.
     static let notchRecapEnabled = "notchRecapEnabled"
     static let notchRecapMinutes = "notchRecapMinutes" // minutes after local midnight, 1020 is 17:00
@@ -1754,6 +1764,12 @@ enum Defaults {
         DefaultsKey.notchDevServersIndicator: false, // Zenith fork
         DefaultsKey.notchDevServersExtraPorts: "", // Zenith fork
         DefaultsKey.notchDevServersExtraNames: "", // Zenith fork
+        DefaultsKey.notchGitFromEditor: true, // Zenith fork
+        DefaultsKey.notchGitFromTerminal: true, // Zenith fork
+        DefaultsKey.notchGitFetch: false, // Zenith fork
+        DefaultsKey.notchGitFetchMinutes: GitOptions.defaultFetchMinutes, // Zenith fork
+        DefaultsKey.notchGitIndicator: false, // Zenith fork
+        DefaultsKey.notchGitPinned: [String](), // Zenith fork
         DefaultsKey.notchRecapEnabled: true, // Zenith fork
         DefaultsKey.notchRecapMinutes: 17 * 60, // Zenith fork
         DefaultsKey.notchRecapWeekdaysOnly: false, // Zenith fork

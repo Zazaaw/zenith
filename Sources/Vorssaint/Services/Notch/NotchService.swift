@@ -614,6 +614,11 @@ final class NotchService: ObservableObject {
         SkyService.shared.goldenActivity != nil
     }
 
+    /// Zenith fork: the current repository's branch, while it shows in the closed island.
+    var hasGitActivity: Bool {
+        GitService.shared.indicator != nil
+    }
+
     var compactActivity: NotchCompactActivity? {
         // A new song waiting for its notice is not drawn yet.
         activitySelection.current(available: awaitsTrackNotice ? compactActivities.filter { $0 != .music } : compactActivities)
@@ -626,7 +631,8 @@ final class NotchService: ObservableObject {
                                       vercel: hasVercelActivity, command: hasCommandActivity,
                                       cardImport: hasCardImportActivity, // Zenith fork
                                       export: hasExportActivity, // Zenith fork
-                                      devServers: hasDevServersActivity, prayer: hasPrayerActivity, golden: hasGoldenActivity) // Zenith fork
+                                      devServers: hasDevServersActivity, prayer: hasPrayerActivity, golden: hasGoldenActivity, // Zenith fork
+                                      git: hasGitActivity) // Zenith fork
     }
 
     var showsCompactActivityPicker: Bool {
@@ -760,6 +766,7 @@ final class NotchService: ObservableObject {
         case .devServers: return geometry.compactWatchGeometry(wing: devServersStripWing(in: geometry)) // Zenith fork
         case .prayer: return geometry.compactWatchGeometry(wing: prayerStripWing(in: geometry)) // Zenith fork
         case .golden: return geometry.compactWatchGeometry(wing: goldenStripWing(in: geometry)) // Zenith fork
+        case .git: return geometry.compactWatchGeometry(wing: gitStripWing(in: geometry)) // Zenith fork
         default: return geometry
         }
     }
@@ -811,6 +818,11 @@ final class NotchService: ObservableObject {
     /// Zenith fork: the wider of the sun and its clock or the golden hour's words.
     private func goldenStripWing(in geometry: NotchGeometry) -> CGFloat {
         SkyStripLayout.stripWing(.golden, language: L10n.shared.language, in: geometry)
+    }
+
+    /// Zenith fork: the branch glyph on one side, the branch and its dot on the other.
+    private func gitStripWing(in geometry: NotchGeometry) -> CGFloat {
+        GitStripLayout.stripWing(GitService.shared.indicator, in: geometry)
     }
 
     private func keepAwakeStripWing(in geometry: NotchGeometry) -> CGFloat {
@@ -1247,6 +1259,8 @@ final class NotchService: ObservableObject {
             return SkyStripLayout.capsuleSurface(.prayer, language: language, geometry: geometry)
         case .golden: // Zenith fork
             return SkyStripLayout.capsuleSurface(.golden, language: language, geometry: geometry)
+        case .git: // Zenith fork
+            return GitStripLayout.capsuleSurface(GitService.shared.indicator, geometry: geometry)
         }
     }
 
@@ -1333,6 +1347,7 @@ final class NotchService: ObservableObject {
         CardImportService.shared.syncWithPreferences() // Zenith fork: watches volumes while detection is on.
         ExportTrackerService.shared.syncWithPreferences() // Zenith fork: watches only while its switch is on.
         DevServersService.shared.syncWithPreferences() // Zenith fork: checks in the background only for its notice or count.
+        GitService.shared.syncWithPreferences() // Zenith fork: follows the editor; reads only while shown or its branch is.
         RecapService.shared.syncWithPreferences() // Zenith fork: one timer for the day's recap notice.
         SkyService.shared.syncWithPreferences() // Zenith fork: one timer for the next prayer and golden hour.
         ClaudeHooksService.shared.syncWithPreferences() // Zenith fork: Claude Code's hooks, while Claude shows.
@@ -1439,6 +1454,7 @@ final class NotchService: ObservableObject {
         CardImportService.shared.stop() // Zenith fork: an import under way finishes on its own
         ExportTrackerService.shared.stop() // Zenith fork
         DevServersService.shared.stop() // Zenith fork
+        GitService.shared.stop() // Zenith fork
         RecapService.shared.stop() // Zenith fork
         SkyService.shared.stop() // Zenith fork
         let cancelCapture = captureControlsCancel
@@ -4616,6 +4632,13 @@ final class NotchService: ObservableObject {
         // Zenith fork: an export showing, ending or another joining it. Its
         // growing size is the strip's alone and never lays the island out.
         ExportTrackerService.shared.$activity.removeDuplicates().dropFirst().receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.syncMenuSpaceMonitoring()
+                self?.objectWillChange.send()
+                self?.refreshPresentation()
+            }.store(in: &subscriptions)
+        // Zenith fork: the current repository's branch showing, changing or going.
+        GitService.shared.$indicator.removeDuplicates().dropFirst().receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.syncMenuSpaceMonitoring()
                 self?.objectWillChange.send()

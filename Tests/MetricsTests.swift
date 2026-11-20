@@ -282,6 +282,7 @@ struct MetricsTests {
             ("recap", { RecapTests.run(suite) }),
             ("sky", { SkyTests.run(suite) }),
             ("workspaces", { WorkspacesTests.run(suite) }),
+            ("repo-status", { GitTests.run(suite) }), // the Git page
         ]
         var selected = Set<String>()
         var listOnly = false

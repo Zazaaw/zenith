@@ -211,6 +211,7 @@ extension NotchModule {
         case .devServers: return "server.rack"
         case .recap: return "sun.horizon.fill"
         case .sky: return "moon.stars.fill"
+        case .git: return GitSupportSymbols.module // Zenith fork
         }
     }
 }
