@@ -92,9 +92,13 @@ final class NotchPhotoActionsService: ObservableObject {
         return images ? urls : []
     }
 
+    /// The photo targets for a drag, then the design overlay's for one image.
     func dropTargets(for pasteboard: NSPasteboard) -> [NotchDropTarget] {
         let urls = imageURLs(in: pasteboard)
-        return NotchPhotoActionsSupport.targets(imageCount: urls.count, allImages: !urls.isEmpty)
+        let photo = NotchPhotoActionsSupport.isEnabled
+            ? NotchPhotoActionsSupport.targets(imageCount: urls.count, allImages: !urls.isEmpty) : []
+        return DesignOverlaySupport.dropTargets(photo: photo, imageCount: urls.count,
+                                                overlay: DesignOverlaySupport.isDropEnabled)
     }
 
     @discardableResult

@@ -20,7 +20,7 @@ enum NotchPhotoAction: String, Equatable {
         switch target {
         case .transform: self = .transform
         case .removeBackground: self = .removeBackground
-        case .files, .airDrop, .media: return nil
+        case .files, .airDrop, .media, .overlay: return nil
         }
     }
 

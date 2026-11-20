@@ -2376,8 +2376,10 @@ final class NotchService: ObservableObject {
     }
 
     /// Zenith fork: the photo actions live on the Files page, so they need the island to show it.
+    /// The design overlay's zone sits beside them.
     var acceptsPhotoDrop: Bool {
-        acceptsUserInteraction && captureControls == nil && modules.contains(.files) && NotchPhotoActionsSupport.isEnabled
+        acceptsUserInteraction && captureControls == nil && modules.contains(.files)
+            && (NotchPhotoActionsSupport.isEnabled || DesignOverlaySupport.isDropEnabled)
     }
 
     func beginFileDrop(_ pasteboard: NSPasteboard) {
@@ -2423,6 +2425,7 @@ final class NotchService: ObservableObject {
         case .airDrop: return airDropAvailable
         case .media: return NotchFileToolsService.shared.canAcceptMediaDrop
         case .transform, .removeBackground: return NotchPhotoActionsService.shared.canAcceptDrop // Zenith fork
+        case .overlay: return true // Zenith fork: the design overlay takes a new reference at any time
         }
     }
 
@@ -2463,6 +2466,16 @@ final class NotchService: ObservableObject {
                 collapse()
             }
             return sent
+        }
+        if choosingFileDropDestination, photoDropTarget == .overlay {
+            // Zenith fork: the design overlay takes the image, and the island gets out of its way.
+            let opened = MainActor.assumeIsolated { DesignOverlayService.shared.open(dropped: pasteboard) }
+            if opened {
+                heldDrag = false
+                dragPlaceholder = false
+                collapse()
+            }
+            return opened
         }
         if choosingFileDropDestination, let photo = photoDropTarget {
             // Zenith fork: the photo action surface opens on the Files page with the images.

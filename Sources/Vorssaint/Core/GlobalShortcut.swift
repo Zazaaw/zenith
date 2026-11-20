@@ -204,6 +204,9 @@ struct GlobalShortcut: Equatable, Hashable {
     // W for webcam, on the same free control-option-command layer.
     static let cameraPreviewDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_W),
                                                      modifiers: [.control, .option, .command])
+    // Zenith fork: O for overlay, the design QA overlay.
+    static let designOverlayDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_O),
+                                                     modifiers: [.option, .command])
     // V for Vorssaint: the quick launcher's own combination.
     static let quickLauncherDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_V),
                                                      modifiers: [.control, .command])
@@ -740,6 +743,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
     case keyboardBrightnessIncrease
     case pointerNextDisplay
     case notch
+    case designOverlay // Zenith fork
 
     var id: String { storageKey }
 
@@ -779,6 +783,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .keyboardBrightnessIncrease: return DefaultsKey.keyboardBrightnessIncreaseShortcut
         case .pointerNextDisplay: return DefaultsKey.pointerDisplayShortcut
         case .notch: return DefaultsKey.notchShortcut
+        case .designOverlay: return DefaultsKey.designOverlayShortcut // Zenith fork
         }
     }
 
@@ -818,6 +823,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .keyboardBrightnessIncrease: return .keyboardBrightnessIncreaseDefault
         case .pointerNextDisplay: return .pointerNextDisplayDefault
         case .notch: return .notchDefault
+        case .designOverlay: return .designOverlayDefault // Zenith fork
         }
     }
 
@@ -901,6 +907,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
             return FeatureStrings.brightness(L10n.shared.language).keyboardBrightnessIncrease
         case .pointerNextDisplay: return PointerDisplayStrings.localized(L10n.shared.language).title
         case .notch: return FeatureStrings.notch(L10n.shared.language).title
+        case .designOverlay: return ZenithStrings.designOverlay(L10n.shared.language).title // Zenith fork
         }
     }
 
@@ -965,6 +972,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
             return [DefaultsKey.keyboardBrightnessShortcutsEnabled]
         case .pointerNextDisplay: return [DefaultsKey.pointerDisplayEnabled]
         case .notch: return [DefaultsKey.notchEnabled, DefaultsKey.notchShortcutEnabled]
+        case .designOverlay: return [DefaultsKey.designOverlayShortcutEnabled] // Zenith fork
         }
     }
 
@@ -998,6 +1006,8 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .keyboardBrightnessDecrease, .keyboardBrightnessIncrease: return .brightness
         case .pointerNextDisplay: return .windowLayout
         case .notch: return .notch
+        // Zenith fork: the overlay's settings sit with the screenshot tool.
+        case .designOverlay: return .screenshot
         }
     }
 
@@ -1085,6 +1095,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
     static let captureDisplayOrder: [GlobalShortcutRole] = [
         .screenshot, .screenRecorder, .screenOCR, .colorPicker, .screenshotScrolling,
         .recentCaptures, .screenshotFullScreen, .screenshotLastCapture, .screenshotClipboard, .screenshotUpload,
+        .designOverlay, // Zenith fork
     ]
 
     /// The given roles narrowed to the capture group, in display order. The

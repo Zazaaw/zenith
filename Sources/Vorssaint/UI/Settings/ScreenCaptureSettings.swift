@@ -46,6 +46,9 @@ struct ScreenCaptureSettings: View {
             }
 
             selectedSettings
+            if AppFeature.screenshot.isAvailable {
+                DesignOverlaySettingsSection() // Zenith fork: the design QA overlay.
+            }
         }
         .formStyle(.grouped)
         .onAppear { reconcileSelection(withDestination: true) }
