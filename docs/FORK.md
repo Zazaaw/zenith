@@ -2216,6 +2216,108 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     output (dengan dan tanpa fitur Mixer), wallpaper (dengan dan tanpa fitur Wallpaper), notice kapsul (siap/masalah,
     notch dan capsule), widget Home (spinner, Reduce Motion), baris Command Bar, shortcut global setelah merekam
     shortcut lain.
+- **Status Git lokal di island (branch `feat/repo-notch`):** branch, perubahan, dan commit terakhir dari proyek yang
+  sedang dikerjakan di editor, sebagai halaman island, widget Home, dan (opsional) branch di island tertutup. Kode di
+  `Services/Git/GitSupport.swift` (murni, ikut `TEST_SOURCES`: parser porcelain v2, operasi yang sedang berjalan, cari
+  root repo, URL GitHub dari remote, judul jendela editor, pilihan repo yang "lengket", opsi, format, lokasi `git`),
+  `GitRunner.swift` (menjalankan `git`, ikut `TEST_SOURCES`), `GitFocusReader.swift` (Accessibility),
+  `GitService.swift` (deteksi, polling, FSEvents, aksi), `UI/Notch/GitPage.swift`, `GitStrip.swift`, `GitWidget.swift`,
+  `GitSettings.swift`. Teks di `ZenithStrings.git` (15 bahasa). Test di `Tests/GitTests.swift` (suite `repo-status`;
+  nama `git` sengaja dihindari, sama seperti `gh`). Nama branch `feat/git-notch` ditolak sandbox agent, jadi
+  `feat/repo-notch`.
+  - **Repo mana yang tampil (`GitRepoSelector`, tanda terbaru menang):**
+    - *Editor di depan:* VS Code (+ Insiders), VSCodium, Cursor, Windsurf, Zed (+ Preview), Xcode, dikenali dari bundle
+      id. Jendela fokus dibaca lewat Accessibility (hanya baca, timeout 0,25 dtk, tanpa izin = tidak membaca apa pun dan
+      tidak pernah meminta): `AXDocument` (URL file; VS Code, Cursor, Xcode mengisinya) lalu naik folder sampai ketemu
+      `.git` (folder, atau file `gitdir:` untuk worktree/submodule, `commondir` dibaca). Kalau tidak ada dokumen, judul
+      jendela dipecah di ` — ` (VS Code `file — folder`, Zed `folder — file`; tanda `●`, `(Workspace)`, nama app
+      dibuang) dan nama foldernya dicocokkan ke repo yang dipin, repo yang baru dilihat, dan folder di `storage.json`
+      milik keluarga VS Code (`~/Library/Application Support/<Code|Cursor|…>/User/globalStorage/storage.json`,
+      `windowsState` + `backupWorkspaces`, di-cache per tanggal ubah). Dibaca saat editor masuk ke depan (0,3 dtk
+      kemudian), saat editor ditinggalkan (jendela fokusnya = proyek terakhir), dan tiap 3 dtk hanya selama halaman tampil.
+    - *Perintah terminal:* `CommandActivityService` (file fork) sekarang menerbitkan `latestDirectory`: folder kerja
+      shell yang menjalankan perintah terbaru, dibaca dari kernel (`proc_pidinfo`, `DevServersProbe.currentDirectory`)
+      saat event start tiba. Hook zsh tidak berubah (tetap hanya menulis nama folder); path lengkap tidak pernah
+      ditampilkan atau disimpan. Butuh "Command activity" + hook terpasang.
+    - *Dipin* di Settings, dan *dipilih* lewat menu nama repo di halaman (repo dipin + 8 repo terakhir,
+      `notchGitRecent`, tidak ikut backup).
+    - Aturan: editor yang pindah ke proyek lain, perintah baru di repo lain, atau pilihan di halaman langsung menang.
+      Melihat lagi proyek editor yang sama tidak membatalkan tanda yang lebih baru (misalnya perintah di terminal
+      terintegrasi), kecuali tanda itu sudah basi; kembali ke editor (aktivasi) membawa proyeknya lagi. Pindah ke app
+      lain: repo tetap 20 menit, lalu repo pin pertama; tanpa pin, repo terakhir tetap. Repo di folder home (dotfiles)
+      dan `/` tidak pernah jadi root kecuali dipin.
+  - **Status (`GitRunner`, off-main lewat `BoundedProcessRunner`, timeout 6 dtk, output maks. 4 MB):**
+    `git --no-optional-locks -c color.ui=false -c core.fsmonitor=false -c credential.interactive=never -C <root>`, env
+    `GIT_TERMINAL_PROMPT=0`, `GIT_OPTIONAL_LOCKS=0`, `GIT_ASKPASS`/`SSH_ASKPASS=/usr/bin/false`,
+    `GIT_SSH_COMMAND="ssh -o BatchMode=yes …"`, `LC_ALL=C`, tanpa `GIT_DIR`/`GIT_WORK_TREE`. Index tidak pernah ditulis
+    (jadi FSEvents tidak memicu dirinya sendiri; dicek di test). `git` dicari di Homebrew, folder developer dari
+    `/var/db/xcode_select_link`, CLT, Xcode, **tidak pernah shim `/usr/bin/git`** (yang menawarkan instal developer
+    tools). Modul hanya tersedia kalau `git` itu ada.
+    - `status --porcelain=v2 --branch --show-stash -z --untracked-files=normal`: branch / HEAD terlepas (SHA pendek) /
+      belum ada commit, upstream, ahead/behind dari `# branch.ab` (sama dengan `rev-list --left-right --count
+      @{u}...HEAD`, tanpa proses tambahan, tanpa fetch), staged/modified/untracked/conflict, stash (`# stash N`, atau
+      hitung baris `logs/refs/stash`). Rename -z: path asal di record berikutnya. Peringatan stderr di depan record
+      (runner memakai satu pipe) dibuang.
+    - Commit terakhir `log -1 --format=%h%x00%s%x00%ct` hanya kalau HEAD berpindah; remote `config --null
+      --get-regexp ^remote\..*\.url$` hanya saat repo baru atau `config` berubah. Jadi polling biasa = 1 proses.
+    - Operasi berjalan dari file state: `rebase-merge/` (msgnum/end → "Rebasing 3/7"), `rebase-apply/` (`applying` = am),
+      `MERGE_HEAD`, `CHERRY_PICK_HEAD`, `REVERT_HEAD`, `BISECT_LOG`.
+    - Fetch opsional (default mati): tiap 10/30/60 menit selama ada yang tampil, hanya remote upstream, `--no-tags
+      --no-recurse-submodules --no-write-fetch-head`, timeout 30 dtk, tidak pernah meminta password.
+    - FSEvents (file-level, latensi 0,3 dtk) pada gitdir (+ commondir untuk worktree) selama ada yang tampil: HEAD,
+      index, refs, packed-refs, config, file operasi, stash; objek dan `.lock` diabaikan; debounce 0,25 dtk. Polling tiap
+      4 dtk selama halaman/widget tampil (perubahan file kerja tidak menyentuh `.git`), tiap 30 dtk kalau hanya branch
+      di island tertutup, selain itu tidak ada timer.
+  - **Halaman `NotchModule.git`** (⌥⌘H, "HEAD"; glyph `arrow.triangle.merge` karena `arrow.triangle.branch` milik
+    GitHub; warna coral `#FCA5A5`, red 300). Atas: tile modul, nama repo (jadi menu kalau ada > 1 pilihan, `.fixedSize()`),
+    chip branch (ikon branch, mono, tint lembut; HEAD terlepas = SHA pendek + bantuan "Detached HEAD"), ↑ahead ↓behind
+    mono dengan `numericText` (atau "No upstream"), spinner kecil saat fetch; kanan: Open in <editor> (editor yang
+    terakhir menampilkan repo itu, kalau tidak ada editor terpasang pertama; Xcode membuka `.xcworkspace`/`.xcodeproj`),
+    Open in Terminal, Copy branch name (ikon jadi ✓ 1,6 dtk), Open on GitHub (https/ssh/alias `github.com-work` →
+    `https://github.com/o/r`, plus `/tree/<branch>` kalau ada upstream). **Pull/Push sengaja tidak ada: read-only.**
+    Lalu banner amber operasi berjalan, pil tinted (Conflicts merah, Staged emerald, Modified amber, Untracked biru,
+    Clean emerald dengan ✓, Stash abu-abu) dengan angka `numericText`, baris commit (SHA tint, subjek dipotong 72,
+    waktu relatif), daftar 8 file teratas (konflik → staged → modified → untracked; huruf status berwarna, path mono
+    dipotong di tengah, "+N more"). Kosong: tile + petunjuk + tombol izin Accessibility kalau belum ada. State halaman
+    dan ganti repo lewat `.zenithMorph(on:)`; baris dan banner naik 6 pt dari blur; pil scale + opacity; Reduce Motion:
+    fade, tanpa gulir angka.
+  - **Widget Home `ZenithHomeWidget.git`** (lebar 216): heading + nama repo mono, branch + ↑↓, titik warna + angka per
+    jenis (atau Clean). Klik membuka halaman; selama tampil dihitung sebagai penonton (polling 4 dtk).
+  - **Island tertutup (opsional, default mati):** `NotchCompactActivity.git`, kiri glyph modul coral, kanan branch mono 11
+    (maks. 16 karakter, dipotong di tengah) + titik amber selama ada perubahan; kapsul: glyph + branch + titik. Wing
+    geometri Watch (56–150 pt). Urutan otomatis setelah dev servers, sebelum Keep Awake; tidak pernah berpasangan; klik
+    membuka halaman. Branch berganti lewat blur, titik scale masuk/keluar.
+  - **Settings:** opsi section Git di Dynamic Island → Content: "Follow the editor" (`notchGitFromEditor`, nyala; kalau
+    Accessibility belum diizinkan muncul peringatan + tombol ke System Settings), "Follow terminal commands"
+    (`notchGitFromTerminal`, nyala), "Pinned repositories" (`notchGitPinned`, `~/…`, ditambah lewat `NSOpenPanel`
+    pilih folder; folder di dalam repo jadi root repo-nya; baris menandai Missing / Not a Git repository), "Fetch in
+    the background" (`notchGitFetch`, mati) + "Every" 10/30/60 menit (`notchGitFetchMinutes`), "Show the branch in the
+    closed island" (`notchGitIndicator`, mati), dan baris "Read-only by design". Semua `ZenithSwitchRow`, tanpa
+    `SettingsRow`; terdaftar di `registeredDefaults` (ikut backup) kecuali `notchGitRecent`.
+  - Edit di file upstream bertanda `// Zenith fork`: `NotchSupport` (case modul dan activity, simbol, shortcut,
+    ketersediaan, tinggi konten, urutan activity), `NotchService` (activity, wing, kapsul, sync/stop, langganan
+    `$indicator`), `NotchView`/`NotchMirrorView` (strip, halaman, judul, tinggi minimum), `NotchTimerStrip`/
+    `NotchCapsuleViews` (tidak berpasangan), `NotchContentEditor`, `NotchEditorStrings`, `NotchSettings`,
+    `ZenithTabBarSettings`, `Defaults`, `build.sh` (`TEST_SOURCES`), `Tests/MetricsTests.swift` (suite). File fork yang
+    ikut berubah: `CommandActivityService` (`latestDirectory`), `ZenithIslandPalette`, `ZenithAppIcon`,
+    `ZenithHomeLayoutSupport`, `ZenithHomeWidgets`. Test diubah: `NotchMusicVisibilityTests` (double diberi
+    `hasGitActivity` dan `gitStripWing`), `NotchTests` (urutan modul + `.git` kalau `git` ada).
+  - **Test (`repo-status`):** porcelain v2 (semua jenis entry, path berspasi, rename, konflik, ignored, noise,
+    peringatan di depan record; header dengan/tanpa upstream, belum ada commit, HEAD terlepas, angka rusak), commit
+    terakhir, operasi dari folder fixture (termasuk bisect di commondir dan rebase yang berhenti di merge), cari root
+    (file dalam, file belum disimpan, `.git/COMMIT_EDITMSG`, repo bersarang, worktree tertaut, `.git` rusak, dotfiles
+    di home), filter FSEvents, ~25 bentuk URL remote (GitHub dan bukan), URL branch, parsing config dan pilihan remote,
+    judul jendela VS Code/Cursor/Zed, `storage.json`, selector dengan jam palsu (editor, terminal, aktivasi, hold 20
+    menit, pin, pilihan, basi, forget), opsi (suite `com.vorssaint.tests.git`), lokasi `git` dan env tanpa prompt,
+    format, island (shortcut/glyph/warna unik, urutan activity, widget), teks 15 bahasa, dan satu repo sungguhan di
+    folder temp (init, belum ada commit, commit, ubah, stage, untracked, index tidak ditulis saat baca, remote GitHub,
+    worktree tertaut, stash, repo hilang) dengan config global/sistem dimatikan, kalau `git` ada.
+  - **Belum diverifikasi di Mac:** app UI tidak dijalankan. Perlu dicek di VS Code dengan repo kotor: halaman mengikuti
+    jendela VS Code (pindah jendela/folder, pindah ke Safari lalu buka island), judul tanpa `AXDocument` (welcome tab),
+    terminal terintegrasi di repo lain, menu ganti repo, tombol Open in VS Code/Terminal/Copy/GitHub, banner saat
+    `git merge` konflik atau `git rebase -i`, pil dan daftar berubah saat simpan/stage (≤ 4 dtk) dan commit/checkout
+    (segera lewat FSEvents), widget Home, branch di island tertutup (notch dan kapsul) dan titik amber, Reduce Motion,
+    tanpa izin Accessibility, fetch berkala dengan remote ssh (tanpa dialog).
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
