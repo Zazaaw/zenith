@@ -88,27 +88,48 @@ struct NotchPhotoActionsView: View {
 
 // MARK: - Panes
 
-/// Transform's options: the step, its choice, the strip chip and Apply.
+/// Transform's options: the step, its choice, the strip and watermark chips
+/// and Apply. The Watermark step sits beside the segmented steps as a soft
+/// tile and swaps the choice for its own controls through the morph.
 private struct NotchPhotoTransformPane: View {
     let session: NotchPhotoSession
     let arrived: Bool
     let text: ZenithPhotoActionsStrings
     @ObservedObject private var photos = NotchPhotoActionsService.shared
+    @ObservedObject private var l10n = L10n.shared
+
+    private var mark: ZenithWatermarkStrings { ZenithStrings.watermark(l10n.language) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            NotchPhotoHeader(label: text.transform, symbol: "photo.stack", meta: inputMeta(session), text: text)
+            NotchPhotoHeader(label: photos.kind == .watermark ? mark.title : text.transform,
+                             symbol: photos.kind == .watermark ? "signature" : "photo.stack",
+                             meta: inputMeta(session), text: text)
                 .modifier(NotchPhotoLayer(index: 0, shown: arrived))
-            ZenithSegmented(selection: $photos.kind, options: [
-                (.convert, text.convert), (.resize, text.resize), (.compress, text.compress), (.strip, text.strip),
-            ], fontSize: 11)
+            HStack(spacing: 6) {
+                ZenithSegmented(selection: $photos.kind, options: [
+                    (.convert, text.convert), (.resize, text.resize), (.compress, text.compress), (.strip, text.strip),
+                ], fontSize: 11)
+                NotchWatermarkStepTile(selected: photos.kind == .watermark, title: mark.title) {
+                    withAnimation(ZenithMotion.respecting(ZenithMotion.toggle())) { photos.kind = .watermark }
+                }
+            }
             .modifier(NotchPhotoLayer(index: 1, shown: arrived))
-            options
-                .frame(height: 45, alignment: .topLeading)
-                .modifier(NotchPhotoLayer(index: 2, shown: arrived))
+            ZStack(alignment: .topLeading) {
+                if photos.kind == .watermark {
+                    NotchWatermarkOptions(text: mark)
+                } else {
+                    options.frame(height: 45, alignment: .topLeading)
+                }
+            }
+            .zenithMorph(on: photos.kind == .watermark)
+            .modifier(NotchPhotoLayer(index: 2, shown: arrived))
             Spacer(minLength: 0)
-            HStack(spacing: 8) {
-                if photos.kind != .strip { stripChip.transition(.opacity) }
+            HStack(spacing: 6) {
+                ViewThatFits(in: .horizontal) {
+                    chips(compact: false)
+                    chips(compact: true)
+                }
                 Spacer(minLength: 6)
                 Button(text.apply) { photos.apply() }
                     .buttonStyle(NotchPhotoPrimaryButtonStyle())
@@ -116,6 +137,26 @@ private struct NotchPhotoTransformPane: View {
             .modifier(NotchPhotoLayer(index: 3, shown: arrived))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    /// The chips that ride along with the chosen step; only glyphs where
+    /// their words do not fit beside Apply.
+    private func chips(compact: Bool) -> some View {
+        HStack(spacing: 6) {
+            if photos.kind != .strip {
+                chip(title: text.alsoStrip, symbol: "location.slash", isOn: photos.alsoStrips, compact: compact) {
+                    photos.alsoStrips.toggle()
+                }
+                .transition(.opacity)
+            }
+            if photos.kind != .watermark {
+                chip(title: mark.title, symbol: "signature", isOn: photos.alsoWatermarks, compact: compact) {
+                    photos.alsoWatermarks.toggle()
+                }
+                .transition(.opacity)
+            }
+        }
+        .fixedSize()
     }
 
     /// The chosen step's choice, cross-faded when the step changes.
@@ -140,6 +181,8 @@ private struct NotchPhotoTransformPane: View {
                         .foregroundStyle(ZenithIsland.secondary)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
+                case .watermark:
+                    EmptyView()
                 }
             }
             .id(photos.kind)
@@ -153,30 +196,37 @@ private struct NotchPhotoTransformPane: View {
         case .resize: return text.longEdge
         case .compress: return text.quality
         case .strip: return "EXIF · GPS"
+        case .watermark: return mark.title
         }
     }
 
-    /// Strip EXIF and GPS along with the chosen step.
-    private var stripChip: some View {
+    /// A step that rides along (Strip EXIF, Watermark): a capsule that turns
+    /// solid while on, its glyph a check.
+    private func chip(title: String, symbol: String, isOn: Bool, compact: Bool,
+                      toggle: @escaping () -> Void) -> some View {
         Button {
-            withAnimation(ZenithMotion.respecting(ZenithMotion.toggle(ZenithMotion.fast))) { photos.alsoStrips.toggle() }
+            withAnimation(ZenithMotion.respecting(ZenithMotion.toggle(ZenithMotion.fast))) { toggle() }
         } label: {
             HStack(spacing: 5) {
-                Image(systemName: photos.alsoStrips ? "checkmark" : "location.slash")
+                Image(systemName: isOn ? "checkmark" : symbol)
                     .font(.system(size: 9, weight: .semibold))
                     .frame(width: 10)
-                Text(text.alsoStrip)
-                    .lineLimit(1)
+                if !compact {
+                    Text(title)
+                        .lineLimit(1)
+                }
             }
             .font(ZenithType.mono(10.5, weight: .medium))
-            .foregroundStyle(photos.alsoStrips ? ZenithIsland.primary : ZenithIsland.secondary)
-            .padding(.horizontal, 10)
+            .foregroundStyle(isOn ? ZenithIsland.primary : ZenithIsland.secondary)
+            .padding(.horizontal, compact ? 7 : 10)
             .frame(height: 24)
-            .modifier(ZenithIslandTabBlock(selected: photos.alsoStrips))
+            .modifier(ZenithIslandTabBlock(selected: isOn))
             .contentShape(Capsule())
         }
         .buttonStyle(NotchPhotoPressStyle())
-        .accessibilityAddTraits(photos.alsoStrips ? .isSelected : [])
+        .help(title)
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }
 
@@ -412,12 +462,18 @@ private struct NotchPhotoPreview: View {
     let side: CGFloat
     let arrived: Bool
     let text: ZenithPhotoActionsStrings
+    @ObservedObject private var photos = NotchPhotoActionsService.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorSchemeContrast) private var contrast
 
     private var result: NotchPhotoResult? {
         if case let .done(result) = session.phase { return result }
         return nil
+    }
+
+    /// Before the result exists, a Transform that carries the watermark shows it.
+    private var showsWatermark: Bool {
+        session.action == .transform && photos.appliesWatermark && result == nil
     }
 
     var body: some View {
@@ -472,6 +528,18 @@ private struct NotchPhotoPreview: View {
                 .resizable()
                 .interpolation(.high)
                 .frame(width: fitted.width, height: fitted.height)
+                .overlay {
+                    // The watermark as it will be written, redrawn as its options move.
+                    if showsWatermark, let mark = photos.watermarkPreview {
+                        Image(decorative: mark, scale: 1)
+                            .resizable()
+                            .interpolation(.high)
+                            .frame(width: fitted.width, height: fitted.height)
+                            .allowsHitTesting(false)
+                            .transition(.opacity)
+                    }
+                }
+                .animation(.easeOut(duration: ZenithMotion.fast), value: showsWatermark && photos.watermarkPreview != nil)
                 .overlay {
                     if session.phase.isWorking { NotchPhotoShimmer() }
                 }
@@ -724,7 +792,7 @@ private struct NotchPhotoPress: ViewModifier {
     }
 }
 
-private struct NotchPhotoPressStyle: ButtonStyle {
+struct NotchPhotoPressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label.modifier(NotchPhotoPress(pressed: configuration.isPressed))
     }

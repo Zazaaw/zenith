@@ -225,6 +225,10 @@ enum DefaultsKey {
     static let notchAirDropEnabled = "notchAirDropEnabled"
     // Zenith fork: photo actions (Transform, Remove Background) for images dropped on the island.
     static let notchPhotoActionsEnabled = "notchPhotoActionsEnabled"
+    // Zenith fork: the photo actions' watermark (NotchWatermarkSupport). JSON strings; logos live in the container.
+    static let notchWatermarkStyle = "notchWatermarkStyle"           // NotchWatermarkStyle, "" = the default
+    static let notchWatermarkPresets = "notchWatermarkPresets"       // [NotchWatermarkPreset], "" = the starters
+    static let notchWatermarkDefaultPreset = "notchWatermarkDefaultPreset" // preset id applied to each drop, "" = none
     static let shelfAutomaticExclusions = "shelfAutomaticExclusions" // [bundle id] blocks automatic opening only
     static let extraBrightnessEnabled = "extraBrightnessEnabled"
     static let extraBrightnessLevel = "extraBrightnessLevel"   // Int percent 0-100
@@ -1520,6 +1524,9 @@ enum Defaults {
         DefaultsKey.shelfDropZoneEnabled: true,
         DefaultsKey.notchAirDropEnabled: true,
         DefaultsKey.notchPhotoActionsEnabled: true, // Zenith fork
+        DefaultsKey.notchWatermarkStyle: "", // Zenith fork
+        DefaultsKey.notchWatermarkPresets: "", // Zenith fork
+        DefaultsKey.notchWatermarkDefaultPreset: "", // Zenith fork
         DefaultsKey.shelfDockPlacement: ShelfDockPlacement.menuBar.rawValue,
         // New Shelf behavior stays opt-in for existing users.
         DefaultsKey.shelfEdgeDragEnabled: false,

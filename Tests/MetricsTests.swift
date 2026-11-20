@@ -268,6 +268,7 @@ struct MetricsTests {
             ("export-tracker", { ExportTrackerTests.run(suite) }),
             ("claude-hooks", { ClaudeHooksTests.run(suite) }),
             ("photo-actions", { PhotoActionsTests.run(suite) }),
+            ("watermark", { WatermarkTests.run(suite) }),
             ("design-overlay", { DesignOverlayTests.run(suite) }),
             ("notices", { ZenithNoticeTests.run(suite) }),
             ("reply", { ReplyTests.run(suite) }),
