@@ -36,7 +36,8 @@ final class VercelService: ObservableObject {
     private var request: Task<Void, Never>?
     private var timer: Timer?
     private var resultTimer: Timer?
-    private var lastFetch: Date?
+    /// When a list last came back, for the day's recap (RecapService).
+    private(set) var lastFetch: Date?
     private var lastFailed = false
     private var result: VercelSupport.Deployment?
     private var resultSince: Date?

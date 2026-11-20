@@ -208,6 +208,7 @@ extension NotchModule {
         case .vercel: return "triangle.fill"
         case .github: return "arrow.triangle.branch"
         case .cardImport: return "sdcard.fill"
+        case .recap: return "sun.horizon.fill"
         }
     }
 }

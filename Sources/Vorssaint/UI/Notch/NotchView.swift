@@ -617,6 +617,7 @@ struct NotchView: View {
             case .vercel: NotchVercelView(size: pageSize)
             case .github: NotchGitHubView(size: pageSize)
             case .cardImport: CardImportPage(size: pageSize) // Zenith fork
+            case .recap: RecapPage(size: pageSize).notchBand(trailing: { RecapPageActions() }) // Zenith fork
             }
         }
     }
@@ -836,6 +837,7 @@ extension NotchModule: PanelOrderItem {
         case .vercel: return "Vercel"
         case .github: return "GitHub"
         case .cardImport: return ZenithStrings.cardImport(language).title // Zenith fork
+        case .recap: return ZenithStrings.recap(language).title // Zenith fork
         }
     }
 }

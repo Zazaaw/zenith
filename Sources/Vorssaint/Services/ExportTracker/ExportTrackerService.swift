@@ -255,6 +255,7 @@ final class ExportTrackerService: ObservableObject {
         let locked = (CGSessionCopyCurrentDictionary() as? [String: Any])?["CGSSessionScreenIsLocked"] as? Bool ?? false
         let unseen = locked || !island.showsSystemFeedback
         for item in finished {
+            RecapService.record(.exported(bytes: item.bytes, at: item.ended)) // Zenith fork: the day's recap
             let url = URL(fileURLWithPath: item.path)
             let title = item.producer?.kind == .recorder ? text.recordingSaved : text.exportFinished
             let name = item.count.map { Support.filling(text.images, count: $0) } ?? item.name

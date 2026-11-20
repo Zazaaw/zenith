@@ -966,6 +966,14 @@ enum DefaultsKey {
     static let notchCardImportSkipImported = "notchCardImportSkipImported"
     static let notchCardImportRename = "notchCardImportRename" // CardRenamePattern.rawValue
     static let notchCardImportEject = "notchCardImportEject"
+    // Zenith fork: the end-of-day recap (RecapService): the notice, its time, weekends and the sources it reads.
+    static let notchRecapEnabled = "notchRecapEnabled"
+    static let notchRecapMinutes = "notchRecapMinutes" // minutes after local midnight, 1020 is 17:00
+    static let notchRecapWeekdaysOnly = "notchRecapWeekdaysOnly"
+    static let notchRecapHiddenSources = "notchRecapHiddenSources" // RecapSource raw values left out, comma-separated
+    // Unregistered, so they stay out of backups: the day the notice last showed, and the day's tally.
+    static let notchRecapLastShown = "notchRecapLastShown" // yyyy-MM-dd, local calendar
+    static let notchRecapTally = "notchRecapTally" // RecapTally as JSON
     static let notchCalendarEnabled = "notchCalendarEnabled"
     static let notchCalendarCountdown = "notchCalendarCountdown"
     static let notchCalendarCountdownLead = "notchCalendarCountdownLead" // minutes before a start, chosen events included
@@ -1668,6 +1676,10 @@ enum Defaults {
         DefaultsKey.notchCardImportSkipImported: true, // Zenith fork
         DefaultsKey.notchCardImportRename: CardRenamePattern.original.rawValue, // Zenith fork
         DefaultsKey.notchCardImportEject: true, // Zenith fork
+        DefaultsKey.notchRecapEnabled: true, // Zenith fork
+        DefaultsKey.notchRecapMinutes: 17 * 60, // Zenith fork
+        DefaultsKey.notchRecapWeekdaysOnly: false, // Zenith fork
+        DefaultsKey.notchRecapHiddenSources: "", // Zenith fork
         DefaultsKey.notchEnabled: false,
         DefaultsKey.notchDisplay: NotchDisplay.automatic.rawValue,
         DefaultsKey.notchSilhouette: NotchSilhouette.capsule.rawValue,

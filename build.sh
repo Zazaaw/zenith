@@ -308,6 +308,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Notch/ZenithHomeShortcutsSupport.swift
         Sources/Vorssaint/Services/CardImport/CardImportSupport.swift
         Sources/Vorssaint/Services/CardImport/CardImportCopier.swift
+        Sources/Vorssaint/Services/Recap/RecapSupport.swift
         Sources/Vorssaint/Services/Notifications/ZenithReplySupport.swift
         Sources/Vorssaint/Services/GitHub/GitHubSupport.swift
         Sources/Vorssaint/Core/ZenithStrings.swift

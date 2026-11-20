@@ -16,6 +16,8 @@ struct ZenithNotice: Equatable {
         case batteryCritical, batteryLow, charging, unplugged, chargeLimit, audio, download, export
         /// A camera card mounted, offering to import it (CardImportService).
         case card
+        /// The day's recap at the chosen time, offering its page (RecapService).
+        case recap
 
         /// Higher shows first and may cut a lower one short.
         var priority: Int {
@@ -24,7 +26,7 @@ struct ZenithNotice: Equatable {
             case .batteryLow: return 4
             case .audio, .card: return 3
             case .charging, .unplugged: return 2
-            case .chargeLimit, .download, .export: return 1
+            case .chargeLimit, .download, .export, .recap: return 1
             }
         }
     }
@@ -59,6 +61,8 @@ struct ZenithNotice: Equatable {
         case reveal(URL)
         /// Opens the card's import page in the island; the card's volume key.
         case importCard(String)
+        /// Opens the island's Today page.
+        case openRecap
     }
 
     let kind: Kind
@@ -110,6 +114,8 @@ struct ZenithNoticeQueue {
         case .batteryCritical, .batteryLow: return 90
         case .audio, .charging, .unplugged: return 12
         case .chargeLimit, .download, .card, .export: return 30
+        // Once a day and in no hurry: it waits out a full screen app or an open island.
+        case .recap: return 10 * 60
         }
     }
 
@@ -188,6 +194,8 @@ enum ZenithNoticeKey {
     static func card(_ volume: String) -> String { "card." + volume }
     /// An export: one file, or a batch of images by its folder.
     static func export(_ id: String) -> String { "export." + id }
+    /// The recap of one day, so the same day never queues twice.
+    static func recap(_ day: String) -> String { "recap." + day }
 }
 
 // MARK: - Battery
@@ -369,6 +377,8 @@ enum ZenithNoticeTiming {
         case .batteryCritical, .batteryLow: return 6
         // A card asks for a decision, so it stays a little longer.
         case .card: return 7
+        // A line of figures to read, with a choice to open it.
+        case .recap: return 8
         default: return 4
         }
     }

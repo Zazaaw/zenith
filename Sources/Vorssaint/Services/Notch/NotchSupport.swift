@@ -9,8 +9,9 @@ import CoreGraphics
 enum NotchModule: String, CaseIterable, Identifiable {
     // Zenith fork: wakatime shows coding time from WakaTime (WakaTimeService),
     // vercel recent deployments (VercelService), github pull requests (GitHubService),
-    // cardImport photos and videos from a camera card (CardImportService).
-    case controls, mixer, music, clipboard, captures, files, system, tools, calendar, notifications, timer, camera, downloads, scratchpad, agents, watch, wakatime, vercel, github, cardImport
+    // cardImport photos and videos from a camera card (CardImportService),
+    // recap the day so far (RecapService).
+    case controls, mixer, music, clipboard, captures, files, system, tools, calendar, notifications, timer, camera, downloads, scratchpad, agents, watch, wakatime, vercel, github, cardImport, recap
     var id: String { rawValue }
 
     var symbol: String {
@@ -38,6 +39,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .vercel: return VercelSupport.symbol
         case .github: return GitHubSupport.symbol
         case .cardImport: return "sdcard" // Zenith fork
+        case .recap: return "sun.horizon" // Zenith fork
         }
     }
 
@@ -64,6 +66,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .vercel: return "e"
         case .github: return "u"
         case .cardImport: return "j" // Zenith fork
+        case .recap: return "y" // Zenith fork: todaY
         }
     }
 
@@ -96,6 +99,8 @@ enum NotchModule: String, CaseIterable, Identifiable {
         // Zenith fork: always listed, so its options stay reachable; it shows
         // in the island while card detection is on.
         case .cardImport: return true
+        // Zenith fork: the day's recap reads only what other sections hold.
+        case .recap: return true
         case .system:
             return [.monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork,
                     .monitorDisk, .monitorPower, .fanControl, .connectedDevices].contains { (feature: AppFeature) in
@@ -2894,7 +2899,7 @@ struct NotchGeometry: Equatable {
                 contentHeight = min(budget, agentsHeight.map { $0 > 0 ? $0 : NotchLayout.emptyHeight } ?? budget)
             // Lists and previews fill the chosen content budget.
             case .mixer, .calendar, .clipboard, .captures, .files, .notifications, .downloads, .camera, .scratchpad, .watch,
-                 .wakatime, .vercel, .github, .cardImport:
+                 .wakatime, .vercel, .github, .cardImport, .recap: // Zenith fork: recap
                 contentHeight = budget
             }
         }

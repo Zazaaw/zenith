@@ -17,7 +17,8 @@ import Foundation
 
 /// A widget the home page's card row can hold.
 enum ZenithHomeWidget: String, CaseIterable, Identifiable {
-    case nowPlaying, timer, clipboard, calendar, weather, system, agents, shelf
+    // Zenith fork: today is the day's recap so far (RecapService).
+    case nowPlaying, timer, clipboard, calendar, weather, system, agents, shelf, today
 
     var id: String { rawValue }
 
@@ -33,6 +34,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .system: return .system
         case .agents: return .agents
         case .shelf: return .files
+        case .today: return .recap
         }
     }
 
@@ -47,6 +49,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .system: return "cpu.fill"
         case .agents: return "sparkles"
         case .shelf: return "tray.full.fill"
+        case .today: return "sun.horizon.fill"
         }
     }
 
@@ -63,6 +66,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .system: return 0x4ADE80
         case .agents: return 0xFB923C
         case .shelf: return 0x2DD4BF
+        case .today: return 0xA5B4FC
         }
     }
 
@@ -79,6 +83,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .system: return 196
         case .agents: return 196
         case .shelf: return 216
+        case .today: return 216
         }
     }
 
