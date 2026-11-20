@@ -578,6 +578,9 @@ struct NotchSettings: View {
         case .sky:
             // Zenith fork: the method, the place, the reminders and the golden hour.
             SkySettingsView()
+        case .prompter:
+            // Zenith fork: the scripts, the reading, mirror, the guide, the voice pace and the shortcut.
+            PrompterSettingsView()
         case .mixer, .system, .tools:
             EmptyView()
         }
@@ -922,7 +925,7 @@ struct NotchSettings: View {
         case .scratchpad: return .scratchpad
         case .agents: return .notchAgents
         case .watch: return .notchWatch
-        case .wakatime, .vercel, .github, .cardImport, .devServers, .recap, .sky: return nil // Zenith fork: cardImport, devServers, recap, sky
+        case .wakatime, .vercel, .github, .cardImport, .devServers, .recap, .sky, .prompter: return nil // Zenith fork: cardImport, devServers, recap, sky, prompter
         }
     }
 

@@ -45,6 +45,7 @@ enum ZenithIslandPalette {
         case .devServers: return 0x86EFAC    // light green, the 300 step: a server up and running
         case .recap: return 0xA5B4FC         // periwinkle, the indigo 300 step: calm, for the end of a day
         case .sky: return 0x93C5FD           // sky blue, the 300 step: prayer times and the golden hour
+        case .prompter: return 0xC4B5FD      // lavender, the violet 300 step: calm, for reading aloud
         }
     }
 
