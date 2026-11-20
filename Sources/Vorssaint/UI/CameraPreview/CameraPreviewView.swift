@@ -12,6 +12,9 @@ struct CameraPreviewView: View {
     /// The picker over the image on hover. The island turns it off: its top
     /// row holds the picker and the stop button, clear of the image.
     var showsCameraMenu = true
+    /// Zenith fork: the island's mirror arrives gently (ZenithCameraReveal):
+    /// no spinner unless the camera is slow, and the image blurs in.
+    var revealsGently = false
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var service = CameraPreviewService.shared
     @State private var hovering = false
@@ -44,12 +47,14 @@ struct CameraPreviewView: View {
         switch service.state {
         case .running:
             if let session = service.session {
-                CameraLayerView(session: session)
+                CameraLayerView(session: session, reveals: revealsGently) // Zenith fork
             }
         case .idle, .waitingPermission, .starting:
-            ProgressView()
-                .controlSize(.small)
-                .tint(.white)
+            if revealsGently { ZenithCameraLoading() } else { // Zenith fork
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(.white)
+            }
         case .denied:
             statusMessage(icon: "video.slash", text: strings.deniedMessage) {
                 Button(l10n.s.permissionOpenSettings) {
@@ -150,6 +155,7 @@ struct CameraPreviewView: View {
 /// (re)applied on every update.
 private struct CameraLayerView: NSViewRepresentable {
     let session: AVCaptureSession
+    var reveals = false // Zenith fork
 
     final class LayerHostView: NSView {
         let previewLayer: AVCaptureVideoPreviewLayer
@@ -182,7 +188,13 @@ private struct CameraLayerView: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> LayerHostView {
-        LayerHostView(session: session)
+        let view = LayerHostView(session: session)
+        // Zenith fork: the island's image fades in from a light blur.
+        if reveals {
+            ZenithCameraReveal.run(on: view.previewLayer,
+                                   reduceMotion: NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
+        }
+        return view
     }
 
     func updateNSView(_ view: LayerHostView, context: Context) {

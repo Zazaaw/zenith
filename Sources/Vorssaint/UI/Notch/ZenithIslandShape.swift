@@ -13,15 +13,17 @@ import SwiftUI
 //   about 34 points (RMS error under a point), with the gentle entry of a
 //   continuous corner rather than a circle's abrupt one.
 //
-// Zenith keeps its shoulders 14 points across, so the island, its window and
-// every page keep their widths (a 27-point flare would need a wider window
-// and wider page insets). The shoulder runs deeper instead, an elliptical
-// arc 14 across and 22 down, which flares further at every row than the old
-// 14-point circle; the bottom corners grow to 34 points and become
-// continuous ("smoothed") corners. The closed island, every
-// compact strip and the camera geometry draw exactly as before: the new
-// profile only arrives as the island grows past a closed strip's height,
-// and eases in with that height, so a resize morphs from one to the other.
+// The open island takes the full flare: its shoulders are circular arcs 27
+// points across and 27 down, where upstream's were 14. The extra 13 points
+// on each side hang outside the body like a skirt: the open island is that
+// much wider and its page that much further in (`NotchLayout.horizontalInset`,
+// `NotchLayout.shoulderFlare`), so the body, the page and everything laid out
+// inside keep their widths. The bottom corners grow to 34 points and become
+// continuous ("smoothed") corners. The closed island, every compact strip
+// and the camera geometry draw exactly as before: the new profile only
+// arrives as the island grows past a closed strip's height, and eases in
+// with that height, so a resize morphs from one to the other and the
+// shoulder widens and deepens as the island opens.
 //
 // Every path has the same elements at every size (three cubics per corner,
 // some of them points while a corner is a plain circle), because Core
@@ -34,14 +36,15 @@ enum ZenithIslandSilhouette {
     /// The open island's bottom corner. Inner surfaces nest inside it
     /// (`ZenithIsland.innerRadius(depth:)`).
     static let openCornerRadius: CGFloat = 34
-    /// How far the open island's shoulder runs down the screen edge. Its
-    /// width stays `NotchLayout.shoulder`.
-    static let openShoulderDepth: CGFloat = 22
+    /// The open island's shoulder, across and down the screen edge: a
+    /// circular arc, as wide as it is deep.
+    static let openShoulderWidth: CGFloat = 27
+    static let openShoulderDepth: CGFloat = 27
     /// Corner smoothing, 0 for a circular arc and 1 for the longest
     /// continuous entry: about the curve Apple's continuous corners draw.
     static let cornerSmoothing: CGFloat = 0.6
     /// The shoulder stays a plain arc: smoothing hugs the screen edge and
-    /// would draw a thinner flare in the same 14 points.
+    /// would draw a thinner flare in the same width.
     static let shoulderSmoothing: CGFloat = 0
     /// Surfaces this tall or shorter are closed strips and draw as they did;
     /// at `openHeight` and taller the open profile is complete.
@@ -56,13 +59,15 @@ enum ZenithIslandSilhouette {
         return t * t * (3 - 2 * t)
     }
 
-    /// The island hanging from the top edge, `shoulder` wide on each side,
-    /// with bottom corners of `radius` (already scaled to the height).
+    /// The island hanging from the top edge, `shoulder` wide on each side
+    /// (`NotchLayout.shoulder(height:)`, flared on an open island), with
+    /// bottom corners of `radius` (already scaled to the height).
     static func hangingPath(in rect: CGRect, shoulder: CGFloat, radius: CGFloat) -> Path {
         let width = max(0, rect.width), height = max(0, rect.height)
         let open = openness(height: height)
         let side = max(0, min(shoulder, width / 2))
-        // A closed strip's shoulder is as deep as it is wide, as before.
+        // A closed strip's shoulder is as deep as it is wide, as before; an
+        // open one reaches `openShoulderDepth` down the screen edge.
         let depth = min(side + max(0, openShoulderDepth - side) * open * (side > 0 ? 1 : 0), height / 2)
         let body = max(0, width - side * 2)
         let bottomBudget = max(0, min(body / 2, height - depth))

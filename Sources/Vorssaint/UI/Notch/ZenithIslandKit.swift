@@ -64,8 +64,9 @@ extension ZenithIsland {
 extension ZenithIsland {
     /// The open island's bottom corner, which everything inside it nests in.
     static var islandRadius: CGFloat { ZenithIslandSilhouette.openCornerRadius }
-    /// From the island's side to its page: the page sits 28 points in from
-    /// the window's edge (`NotchLayout.horizontalInset`), 14 of them the shoulder.
+    /// From the island's side to its page: the page sits 41 points in from
+    /// the window's edge (`NotchLayout.horizontalInset`), 27 of them the
+    /// open island's shoulder.
     static let pageInset: CGFloat = 14
 
     /// The radius of a surface `depth` points inside one of radius `outer`,

@@ -4154,6 +4154,80 @@ extension ZenithStrings {
     }
 }
 
+struct ZenithCameraStrings {
+    let autoStart: String
+    let autoStartCaption: String
+    let starting: String
+}
+
+extension ZenithStrings {
+    /// The island's Camera page starting its mirror by itself (ZenithCameraAutoStart).
+    static func camera(_ language: AppLanguage) -> ZenithCameraStrings {
+        switch language {
+        case .enUS:
+            return .init(autoStart: "Start the mirror automatically",
+                         autoStartCaption: "Once camera access is allowed, the Camera page shows the live mirror as soon as it opens. The camera still stops when you leave the page or close the island.",
+                         starting: "Starting the camera")
+        case .ptBR:
+            return .init(autoStart: "Iniciar o espelho automaticamente",
+                         autoStartCaption: "Com o acesso à câmera permitido, a página Câmera mostra o espelho ao vivo assim que abre. A câmera continua parando quando você sai da página ou fecha a ilha.",
+                         starting: "Iniciando a câmera")
+        case .tr:
+            return .init(autoStart: "Aynayı otomatik başlat",
+                         autoStartCaption: "Kamera erişimine izin verildiğinde Kamera sayfası açılır açılmaz canlı aynayı gösterir. Sayfadan ayrıldığında veya adayı kapattığında kamera yine durur.",
+                         starting: "Kamera başlatılıyor")
+        case .ru:
+            return .init(autoStart: "Запускать зеркало автоматически",
+                         autoStartCaption: "Если доступ к камере разрешён, страница «Камера» показывает живое зеркало сразу при открытии. Камера по-прежнему выключается, когда вы уходите со страницы или закрываете остров.",
+                         starting: "Запуск камеры")
+        case .es:
+            return .init(autoStart: "Iniciar el espejo automáticamente",
+                         autoStartCaption: "Con el acceso a la cámara permitido, la página Cámara muestra el espejo en vivo en cuanto se abre. La cámara se sigue deteniendo al salir de la página o cerrar la isla.",
+                         starting: "Iniciando la cámara")
+        case .sk:
+            return .init(autoStart: "Spúšťať zrkadlo automaticky",
+                         autoStartCaption: "Keď je prístup ku kamere povolený, stránka Kamera ukáže živé zrkadlo hneď po otvorení. Kamera sa stále vypne, keď stránku opustíte alebo zatvoríte ostrov.",
+                         starting: "Spúšťa sa kamera")
+        case .de:
+            return .init(autoStart: "Spiegel automatisch starten",
+                         autoStartCaption: "Ist der Kamerazugriff erlaubt, zeigt die Seite „Kamera“ den Live-Spiegel, sobald sie aufgeht. Die Kamera stoppt weiterhin, wenn du die Seite verlässt oder die Insel schließt.",
+                         starting: "Kamera wird gestartet")
+        case .fr:
+            return .init(autoStart: "Lancer le miroir automatiquement",
+                         autoStartCaption: "Une fois l’accès à la caméra autorisé, la page Caméra affiche le miroir en direct dès son ouverture. La caméra s’arrête toujours quand vous quittez la page ou fermez l’île.",
+                         starting: "Démarrage de la caméra")
+        case .it:
+            return .init(autoStart: "Avvia lo specchio automaticamente",
+                         autoStartCaption: "Con l’accesso alla fotocamera consentito, la pagina Fotocamera mostra lo specchio dal vivo appena si apre. La fotocamera si ferma comunque quando lasci la pagina o chiudi l’isola.",
+                         starting: "Avvio della fotocamera")
+        case .ja:
+            return .init(autoStart: "ミラーを自動で開始",
+                         autoStartCaption: "カメラへのアクセスが許可されていれば、カメラページを開くとすぐにライブミラーを表示します。ページを離れるかアイランドを閉じると、これまでどおりカメラは停止します。",
+                         starting: "カメラを起動中")
+        case .ko:
+            return .init(autoStart: "미러 자동 시작",
+                         autoStartCaption: "카메라 접근이 허용되어 있으면 카메라 페이지를 열자마자 라이브 미러를 보여줍니다. 페이지를 떠나거나 아일랜드를 닫으면 카메라는 계속 꺼집니다.",
+                         starting: "카메라 시작 중")
+        case .uk:
+            return .init(autoStart: "Запускати дзеркало автоматично",
+                         autoStartCaption: "Якщо доступ до камери дозволено, сторінка «Камера» показує живе дзеркало одразу після відкриття. Камера й надалі вимикається, коли ви йдете зі сторінки або закриваєте острів.",
+                         starting: "Запуск камери")
+        case .zhHans:
+            return .init(autoStart: "自动开启镜像",
+                         autoStartCaption: "允许访问摄像头后，“摄像头”页面一打开就显示实时镜像。离开该页面或关闭灵动岛时，摄像头仍会停止。",
+                         starting: "正在启动摄像头")
+        case .zhTW:
+            return .init(autoStart: "自動開啟鏡像",
+                         autoStartCaption: "允許取用相機後，「相機」頁面一打開就會顯示即時鏡像。離開頁面或關閉動態島時，相機仍會停止。",
+                         starting: "正在啟動相機")
+        case .zhHK:
+            return .init(autoStart: "自動開啟鏡像",
+                         autoStartCaption: "允許存取相機後，「相機」頁面一打開便會顯示即時鏡像。離開頁面或關閉動態島時，相機仍會停止。",
+                         starting: "正在啟動相機")
+        }
+    }
+}
+
 struct ZenithReplyStrings {
     let reply: String
     let closeReply: String

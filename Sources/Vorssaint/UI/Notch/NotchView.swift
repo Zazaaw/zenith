@@ -125,7 +125,7 @@ struct NotchView: View {
                                       style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
                         .allowsHitTesting(false)
                 }
-                .padding(.horizontal, 18)
+                .padding(.horizontal, 18 + NotchLayout.shoulderFlare(height: service.surfaceSize.height)) // Zenith fork
                 .padding(.top, service.geometry.safeContentTop)
         } else if let notice = service.stripNotice {
             if service.noticeExpanded, let content = notice.notification {
@@ -172,7 +172,8 @@ struct NotchView: View {
                 Spacer(minLength: 8)
                 NotchIconButton(symbol: "chevron.down", title: text.open) { service.open() }
             }
-            .padding(.horizontal, NotchLayout.horizontalInset).padding(.top, service.geometry.safeContentTop)
+            .padding(.horizontal, NotchLayout.horizontalInset(height: service.surfaceSize.height)) // Zenith fork
+            .padding(.top, service.geometry.safeContentTop)
         } else if let activity = service.compactActivity {
             if service.showsCompactActivityPicker {
                 let layout = service.compactActivityPickerLayout
@@ -192,7 +193,7 @@ struct NotchView: View {
                                         },
                                         columns: layout.columns, language: l10n.language,
                                         select: service.selectCompactActivity, combine: service.selectCompactCombination)
-                        .padding(.horizontal, NotchActivityPickerLayout.horizontalInset)
+                        .padding(.horizontal, layout.horizontalPadding) // Zenith fork: past the shoulders' flare
                         .padding(.vertical, NotchActivityPickerLayout.verticalInset)
                 }
             } else {

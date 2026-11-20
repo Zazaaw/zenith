@@ -14,6 +14,7 @@ enum NotchCompactTests {
         var stops = 0
         /// Whether the island's preview offers its own camera picker over the image.
         var previewMenu: Bool?
+        var previewReveals: Bool? // Zenith fork
         func showEmbedded() { isEmbeddedPresented = true }
         func hideEmbedded() {
             guard isEmbeddedPresented else { return }
@@ -24,9 +25,13 @@ enum NotchCompactTests {
     struct CameraPreviewView: View {
         let size: CGSize
         let showsCameraMenu: Bool
+        var revealsGently = false // Zenith fork: the island's mirror blurs in
         var body: some View {
             Color.black.frame(width: size.width, height: size.height)
-                .onAppear { CameraPreviewService.shared.previewMenu = showsCameraMenu }
+                .onAppear {
+                    CameraPreviewService.shared.previewMenu = showsCameraMenu
+                    CameraPreviewService.shared.previewReveals = revealsGently // Zenith fork
+                }
         }
     }
     final class NotchService: ObservableObject {
@@ -266,6 +271,7 @@ enum NotchCompactTests {
         service.isEmbeddedPresented = false
         service.stops = 0
         service.previewMenu = nil
+        service.previewReveals = nil // Zenith fork
         let host = NSHostingView(rootView: AnyView(VStack {
             NotchCameraView(size: CGSize(width: 424, height: 180))
         }))
@@ -282,6 +288,7 @@ enum NotchCompactTests {
                      "starting the embedded camera does not dismiss it when the start card disappears")
         suite.expect(service.previewMenu == false,
                      "the island's preview leaves its camera picker and stop button to the top row, clear of the image")
+        suite.expect(service.previewReveals == true, "the island's live image arrives gently, without an early spinner") // Zenith fork
         // The top row's stop button, as a pill in a full row and a glyph
         // beside the camera.
         var band = NotchBand()

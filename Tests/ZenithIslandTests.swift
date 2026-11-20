@@ -1,25 +1,31 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Satu Visual
 
+import AVFoundation
 import CoreGraphics
 import SwiftUI
 
-// Zenith fork: the open island's silhouette, its concentric radii, the
-// morph's reach and the modules' colours.
+// Zenith fork: the open island's silhouette and its shoulders' skirt, its
+// concentric radii, the morph's reach, the modules' colours and the Camera
+// page starting its mirror.
 enum ZenithIslandTests {
     static func run(_ suite: TestSuite) {
         closedStripsUnchanged(suite)
         openProfile(suite)
+        openShoulder(suite)
+        shoulderSkirt(suite)
         morphableKeyframes(suite)
         concentricRadii(suite)
         morphReach(suite)
         palette(suite)
+        cameraAutoStart(suite)
     }
 
     /// Upstream's silhouette, as it drew before the fork reshaped the open island.
     private static func upstreamPath(_ size: CGSize) -> Path {
         let rect = CGRect(origin: .zero, size: size)
-        let shoulder = NotchLayout.shoulder(height: rect.height)
+        // Upstream's shoulder: 0.19 of the height, up to 14 points.
+        let shoulder = min(14, rect.height * 0.19)
         // Upstream's corner: 0.34 of the height, up to 28 points.
         let bottom = min(min(28, rect.height * 0.34), rect.height / 2, (rect.width - shoulder * 2) / 2)
         let tangent: CGFloat = 0.55228475
@@ -67,28 +73,182 @@ enum ZenithIslandTests {
     }
 
     private static func openProfile(_ suite: TestSuite) {
-        let size = CGSize(width: 480, height: 260)
-        let open = zenithPath(size), old = upstreamPath(size)
-        let side = NotchLayout.shoulder
-        // The shoulder now flares further down the screen edge.
-        let flare = CGPoint(x: side - 1.5, y: 10)
-        suite.expect(open.contains(flare) && !old.contains(flare),
-                     "the open island's shoulder runs deeper down the screen edge")
+        // Upstream's 480-point island and Zenith's around the same body: the
+        // shoulders' flare hangs outside it on both sides.
+        let flare = NotchLayout.shoulderFlare
+        let body = CGSize(width: 480, height: 260)
+        let size = CGSize(width: body.width + flare * 2, height: body.height)
+        let open = zenithPath(size), upstream = upstreamPath(body)
+        func old(_ point: CGPoint) -> Bool { upstream.contains(CGPoint(x: point.x - flare, y: point.y)) }
+        let side = NotchLayout.shoulder(height: size.height)
+        suite.expect(abs(flare - 13) < 0.001 && side == ZenithIslandSilhouette.openShoulderWidth,
+                     "the open island's shoulder is 27 points across, 13 past upstream's")
+        // The shoulder flares further out along and down the screen edge.
+        let deeper = CGPoint(x: flare + 12.5, y: 10), skirt = CGPoint(x: 8, y: 1)
+        suite.expect(open.contains(deeper) && !old(deeper) && open.contains(skirt) && skirt.x < flare,
+                     "the open island's shoulder flares past upstream's, outside its body")
         suite.expect(abs(open.boundingRect.width - size.width) < 0.01 && abs(open.boundingRect.height - size.height) < 0.01,
-                     "the open island keeps its window's width and height")
-        // The body keeps its sides: content inset from them is not cut.
-        suite.expect(open.contains(CGPoint(x: side + 0.5, y: size.height / 2))
-                     && !open.contains(CGPoint(x: side - 0.5, y: size.height / 2)),
-                     "the open island's body keeps its width")
+                     "the open island fills its window's width and height")
+        // The body keeps upstream's sides: content inset from them is not cut.
+        let middle = size.height / 2
+        suite.expect(open.contains(CGPoint(x: side + 0.5, y: middle)) && !open.contains(CGPoint(x: side - 0.5, y: middle))
+                     && old(CGPoint(x: side + 0.5, y: middle)) && !old(CGPoint(x: side - 0.5, y: middle))
+                     && !open.contains(CGPoint(x: size.width - side + 0.5, y: middle))
+                     && open.contains(CGPoint(x: size.width - side - 0.5, y: middle)),
+                     "the open island's body keeps upstream's width")
         // The bottom corner is the larger, smoothed one.
         let nearCorner = CGPoint(x: side + 8.3, y: size.height - 10)
-        suite.expect(old.contains(nearCorner) && !open.contains(nearCorner),
+        suite.expect(old(nearCorner) && !open.contains(nearCorner),
                      "the open island's bottom corners are larger than upstream's")
         let content = CGPoint(x: NotchLayout.horizontalInset, y: size.height - NotchLayout.bottomInset)
         suite.expect(open.contains(content), "a page's bottom corner stays inside the larger corner")
         suite.expect(ZenithIslandSilhouette.openness(height: 32) == 0 && ZenithIslandSilhouette.openness(height: 400) == 1
                      && ZenithIslandSilhouette.openness(height: .nan) == 0,
                      "the open profile reaches only open islands")
+    }
+
+    /// The open shoulder as the reference draws it, a circle about 27 points
+    /// across and down, which grows from upstream's as the island opens.
+    private static func openShoulder(_ suite: TestSuite) {
+        let size = CGSize(width: 506, height: 260)
+        let open = zenithPath(size)
+        // Where the island starts along a row, from the screen's edge inward.
+        func edge(_ y: CGFloat) -> CGFloat {
+            var low: CGFloat = 0, high: CGFloat = 60
+            for _ in 0..<40 {
+                let middle = (low + high) / 2
+                if open.contains(CGPoint(x: middle, y: y)) { high = middle } else { low = middle }
+            }
+            return high
+        }
+        // The curves themselves, sampled: `contains` flattens them coarsely.
+        let radius = ZenithIslandSilhouette.openShoulderWidth
+        var worst: CGFloat = 0, sides = Set<Bool>(), current = CGPoint.zero
+        open.forEach { element in
+            switch element {
+            case .move(let to), .line(let to): current = to
+            case .curve(let to, let one, let two):
+                let points = [current, one, two, to]
+                let left = points.allSatisfy { $0.x <= radius + 0.001 && $0.y <= radius + 0.001 }
+                let right = points.allSatisfy { $0.x >= size.width - radius - 0.001 && $0.y <= radius + 0.001 }
+                if left || right, points.contains(where: { $0 != current }) {
+                    // Each shoulder bows around a centre on the screen's edge, 27 points down.
+                    let centre = CGPoint(x: left ? 0 : size.width, y: radius)
+                    for step in 0...24 {
+                        let t = CGFloat(step) / 24, s = 1 - t
+                        let x = s * s * s * points[0].x + 3 * s * s * t * points[1].x + 3 * s * t * t * points[2].x + t * t * t * points[3].x
+                        let y = s * s * s * points[0].y + 3 * s * s * t * points[1].y + 3 * s * t * t * points[2].y + t * t * t * points[3].y
+                        worst = max(worst, abs(hypot(x - centre.x, y - centre.y) - radius))
+                    }
+                    sides.insert(left)
+                }
+                current = to
+            default: break
+            }
+        }
+        suite.expect(sides.count == 2 && worst < 0.1,
+                     "both open shoulders are 27-point circles, as wide as they are deep (off by \(worst))")
+        suite.expect(abs(edge(radius + 1) - radius) < 0.05 && abs(edge(radius - 3) - radius) > 0.1,
+                     "the open shoulder reaches 27 points down the screen edge before the body runs straight")
+        suite.expect(ZenithIslandSilhouette.openShoulderDepth == ZenithIslandSilhouette.openShoulderWidth,
+                     "the open shoulder is circular")
+        // Closing, the flare narrows with the height, continuously, to none
+        // on a closed strip, and the outline keeps its body there.
+        var previous = NotchLayout.shoulder(height: 60), smooth = true, monotonic = true, bodies = true
+        for height in stride(from: CGFloat(60.5), through: 140, by: 0.5) {
+            let shoulder = NotchLayout.shoulder(height: height)
+            smooth = smooth && shoulder - previous <= 0.3
+            monotonic = monotonic && shoulder >= previous
+            previous = shoulder
+            if Int(height * 2) % 20 == 0 {
+                let path = zenithPath(CGSize(width: 506, height: height))
+                let y = height * 0.45
+                bodies = bodies && path.contains(CGPoint(x: shoulder + 0.3, y: y))
+                    && !path.contains(CGPoint(x: shoulder - 0.3, y: y))
+            }
+        }
+        suite.expect(smooth && monotonic, "the shoulder widens smoothly as the island opens and narrows as it closes")
+        suite.expect(bodies, "every height of the morph draws its body where its shoulder ends")
+        suite.expect(NotchLayout.shoulder(height: ZenithIslandSilhouette.closedHeight)
+                        == NotchLayout.plainShoulder(height: ZenithIslandSilhouette.closedHeight)
+                     && NotchLayout.shoulderFlare(height: 32) == 0
+                     && NotchLayout.shoulder(height: ZenithIslandSilhouette.openHeight) == ZenithIslandSilhouette.openShoulderWidth,
+                     "closed strips keep upstream's shoulder and open islands take the full one")
+    }
+
+    /// The flare is a skirt: the island grows around its body, and its pages
+    /// keep the widths and places they had.
+    private static func shoulderSkirt(_ suite: TestSuite) {
+        let flare = NotchLayout.shoulderFlare
+        suite.expect(NotchLayout.horizontalInset == 28 + flare
+                     && NotchLayout.horizontalInset - NotchLayout.shoulder(height: 300) == ZenithIsland.pageInset,
+                     "a page sits as far inside the open island's body as it did, past the wider shoulder")
+        let screen = CGRect(x: 0, y: 0, width: 1710, height: 1112)
+        var widths = true, bodies = true
+        for camera: CGFloat in [0, 185, 210] {
+            for layout: NotchSize in [.compact, .spacious, .custom] {
+                for custom: Double in [360, 480, 600] where layout == .custom || custom == 480 {
+                    let geometry = NotchGeometry(screen: screen, safeAreaTop: camera > 0 ? 32 : 0, cameraWidth: camera,
+                                                 layout: layout, customWidth: custom, customHeight: 480,
+                                                 silhouette: camera == 0 ? .capsule : .notch)
+                    let chosen = NotchLayout.preferredWidth(layout, custom: CGFloat(custom))
+                    let size = geometry.expanded
+                    widths = widths && geometry.expandedWidth == chosen + flare * 2
+                        && geometry.contentWidth == chosen - 56
+                        && geometry.contentSize(for: size).width == chosen - 56
+                    bodies = bodies && size.width - NotchLayout.shoulder(height: size.height) * 2 == chosen - 28
+                }
+            }
+        }
+        suite.expect(widths, "the open island grows by the flare while its page keeps upstream's width")
+        suite.expect(bodies, "the open island's body keeps upstream's width on every preset and width")
+        // Shorter surfaces with insets of their own keep their bodies too.
+        let geometry = NotchGeometry(screen: screen, safeAreaTop: 32, cameraWidth: 185)
+        let peek = geometry.peek
+        suite.expect(abs(peek.width - NotchLayout.shoulder(height: peek.height) * 2
+                         - (geometry.peekWidth - NotchLayout.plainShoulder(height: peek.height) * 2)) < 0.001
+                     && abs(NotchLayout.horizontalInset(height: peek.height) - NotchLayout.shoulder(height: peek.height)
+                            - (28 - NotchLayout.plainShoulder(height: peek.height))) < 0.001,
+                     "the peek keeps its body and its row's place inside it")
+        for rows in [1, 2, 3] {
+            let picker = NotchActivityPickerLayout(count: rows * 3, labelWidth: 60,
+                                                   stripSize: CGSize(width: 300, height: 32), screenWidth: 1710)
+            let shoulder = NotchLayout.shoulder(height: picker.size.height)
+            suite.expect(abs(picker.horizontalPadding - shoulder
+                             - (NotchActivityPickerLayout.horizontalInset - NotchLayout.plainShoulder(height: picker.size.height))) < 0.001
+                         && picker.horizontalPadding >= shoulder,
+                         "an activity picker of \(rows) rows keeps its buttons inside its body")
+        }
+        // Closed strips take no flare: they keep upstream's sizes.
+        for size in [geometry.collapsed, geometry.restingSize(showsContent: false), geometry.notice, geometry.musicStrip] {
+            suite.expect(NotchLayout.flared(size) == size && NotchLayout.shoulderFlare(height: size.height) == 0,
+                         "a closed \(Int(size.width))-point strip keeps its size and shoulder")
+        }
+    }
+
+    /// The Camera page starts its mirror itself only with access granted,
+    /// once per visit, and only while its switch is on.
+    private static func cameraAutoStart(_ suite: TestSuite) {
+        suite.expect(ZenithCameraAutoStart.startsOnAppear(status: .authorized, isOn: true, attempted: false),
+                     "with access granted the Camera page starts its mirror as it appears")
+        suite.expect(!ZenithCameraAutoStart.startsOnAppear(status: .notDetermined, isOn: true, attempted: false)
+                     && !ZenithCameraAutoStart.startsOnAppear(status: .denied, isOn: true, attempted: false)
+                     && !ZenithCameraAutoStart.startsOnAppear(status: .restricted, isOn: true, attempted: false),
+                     "without access the page never raises the prompt or starts by itself")
+        suite.expect(!ZenithCameraAutoStart.startsOnAppear(status: .authorized, isOn: false, attempted: false)
+                     && !ZenithCameraAutoStart.startsOnAppear(status: .authorized, isOn: true, attempted: true),
+                     "turned off, or stopped by hand on this visit, the mirror stays off")
+        suite.expect(Defaults.registeredDefaults[DefaultsKey.notchCameraAutoStart] as? Bool == true,
+                     "the switch starts on and travels with settings backups")
+        let domain = "com.vorssaint.tests.camera-auto-start"
+        let defaults = UserDefaults(suiteName: domain)!
+        defaults.removePersistentDomain(forName: domain)
+        defer { defaults.removePersistentDomain(forName: domain) }
+        suite.expect(ZenithCameraAutoStart.isOn(in: defaults), "without a choice the mirror starts by itself")
+        defaults.set(false, forKey: DefaultsKey.notchCameraAutoStart)
+        suite.expect(!ZenithCameraAutoStart.isOn(in: defaults), "turned off, the page waits for Open camera")
+        suite.expect(ZenithCameraAutoStart.blur == 10 && ZenithCameraAutoStart.loadingDelay == 0.15,
+                     "the image blurs in from 10 and a spinner waits 150 ms")
     }
 
     /// Core Animation interpolates the island's keyframed outlines element by

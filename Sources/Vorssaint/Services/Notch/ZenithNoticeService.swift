@@ -363,7 +363,9 @@ final class ZenithNoticeCenter: ObservableObject {
         if geometry.floats {
             return ZenithNoticeOutline(rect: rect, hanging: false, shoulder: 0, radius: frame.height / 2)
         }
-        let shoulder = NotchLayout.shoulder(height: frame.height)
+        // The notice's own capsule keeps upstream's shoulder: only the open
+        // island flares (ZenithIslandSilhouette).
+        let shoulder = NotchLayout.plainShoulder(height: frame.height)
         let radius = closed ? NotchLayout.surfaceRadius(height: frame.height) : ZenithNoticeLayout.rowHeight / 2
         return ZenithNoticeOutline(rect: rect, hanging: true, shoulder: shoulder, radius: radius)
     }

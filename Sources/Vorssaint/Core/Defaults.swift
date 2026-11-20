@@ -917,6 +917,7 @@ enum DefaultsKey {
     static let notchPomodoroLongBreakInterval = "notchPomodoroLongBreakInterval"
     static let notchPomodoroTotalSessions = "notchPomodoroTotalSessions"
     static let notchCameraEnabled = "notchCameraEnabled"
+    static let notchCameraAutoStart = "notchCameraAutoStart" // Zenith fork: the Camera page starts its mirror itself
     static let notchAccessoriesEnabled = "notchAccessoriesEnabled"
     static let notchLyricsEnabled = "notchLyricsEnabled"
     static let notchLyricsOnline = "notchLyricsOnline"
@@ -1600,6 +1601,7 @@ enum Defaults {
         DefaultsKey.notchPomodoroLongBreakInterval: 4,
         DefaultsKey.notchPomodoroTotalSessions: 4,
         DefaultsKey.notchCameraEnabled: true,
+        DefaultsKey.notchCameraAutoStart: true, // Zenith fork
         DefaultsKey.notchAccessoriesEnabled: true,
         DefaultsKey.notchCalendarEnabled: true,
         DefaultsKey.notchCalendarCountdown: false,

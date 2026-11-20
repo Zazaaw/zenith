@@ -1052,7 +1052,7 @@ final class NotchService: ObservableObject {
             return captureControlsLayout.size
         }
         if expanded { return showingCommandBar ? commandBarSurfaceSize : expandedSize }
-        if dragPlaceholder { return CGSize(width: geometry.peek.width, height: geometry.safeContentTop + 66) }
+        if dragPlaceholder { return NotchLayout.flared(CGSize(width: geometry.peekWidth, height: geometry.safeContentTop + 66)) } // Zenith fork
         if let notice {
             guard noticeExpanded else { return geometry.noticeSize(wings: notice.wings(in: geometry)) }
             return geometry.notificationPreviewSize(

@@ -112,7 +112,8 @@ struct NotchLayoutEditor: View {
                         .shadow(color: .black.opacity(0.12), radius: 3, y: 2)
                         .contentShape(Circle())
                         .gesture(DragGesture(minimumDistance: 3, coordinateSpace: .named("island.editor")).onChanged { value in
-                            if resizeStart == nil { resizeStart = CGSize(width: actualWidth, height: actualHeight) }
+                            // Zenith fork: the width chosen by hand leaves out the shoulders' flare.
+                            if resizeStart == nil { resizeStart = CGSize(width: actualWidth - NotchLayout.shoulderFlare * 2, height: actualHeight) }
                             guard let start = resizeStart else { return }
                             size = NotchSize.custom.rawValue
                             width = NotchSize.clamped(Double(start.width + value.translation.width / scale), to: NotchSize.widthRange, fallback: NotchSize.defaultWidth)

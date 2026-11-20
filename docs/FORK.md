@@ -1012,7 +1012,8 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     persis seperti upstream (dicek test titik per titik) dan resize terlihat sebagai morph. Tiap path
     punya elemen yang sama di semua ukuran (3 kurva per sudut) karena Core Animation menginterpolasi
     keyframe path per elemen. Bahu 27 pt penuh seperti referensi butuh island lebih lebar dan inset
-    halaman lebih besar (`horizontalInset`), jadi belum diambil; perlu keputusan Faiz.
+    halaman lebih besar (`horizontalInset`), jadi belum diambil; perlu keputusan Faiz. (Sudah diambil
+    belakangan, lihat "Bahu island penuh + mirror kamera otomatis".)
   - **Radius konsentris** (`ZenithIslandKit.swift`): `ZenithIsland.innerRadius(depth:outer:minimum:)`
     = luar − inset (minimal 4). `islandRadius` 34, `pageInset` 14 (halaman 28 pt dari tepi jendela,
     14 di antaranya bahu), `cardRadius` 20, `nestedRadius(padding:)` untuk isi kartu. Kartu besar
@@ -1420,6 +1421,59 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   - **Belum diverifikasi dengan kartu sungguhan:** app UI tidak dijalankan dan tidak ada volume yang
     di-mount, dibaca, atau di-eject saat pengerjaan. Scan, rencana, ledger, dan salin (termasuk tanggal,
     tabrakan, partial, kartu hilang, disk penuh dari errno) dites di folder sementara.
+- **Bahu island penuh + mirror kamera otomatis (branch `feat/island-shoulders-camera`):** dua permintaan
+  Faiz setelah melihat fondasi island.
+  - **Bahu:** island terbuka sekarang memakai flare penuh dari referensi: bahu cekung lingkaran 27 pt lebar
+    × 27 pt turun (`ZenithIslandSilhouette.openShoulderWidth`/`openShoulderDepth`, dulu elips 14 × 22). Angka
+    dari pengukuran fase 1A (rekaman 2x, ~27 pt, lebar = tinggi); tidak diukur ulang.
+  - **Kontrak lebar (rok di luar body):** `NotchLayout.shoulderFlare` = 27 − 14 = 13 pt. `shoulder(height:)` =
+    bahu upstream (`plainShoulder(height:)`) + `shoulderFlare(height:)`, yang ikut `openness` (smoothstep 72 → 128
+    pt), jadi strip tertutup ≤ 72 pt tetap persis upstream dan bahu melebar/menyempit mulus saat buka/tutup.
+    Island terbuka 26 pt lebih lebar (`expandedWidth` = lebar pilihan + 26; lebar custom 360–600 dan preset
+    480/560 tetap berarti lebar body + bahu lama) dan `horizontalInset` 28 → 41, jadi body dan lebar isi halaman
+    sama persis dengan sebelumnya (isi tetap 14 pt dari sisi body, `ZenithIsland.pageInset`, radius konsentris
+    tidak berubah: kartu 20 = 34 − 14). Yang lebarnya ikut: pratinjau notifikasi (`notificationPreviewWidth` + 26),
+    Command Bar (lewat `horizontalInset`), kontrol tangkapan (lewat `expandedWidth`). Permukaan pendek dengan inset
+    sendiri dilebarkan sesuai flare di tingginya (`NotchLayout.flared`): peek (`peekWidth` + flare, isi
+    `horizontalInset(height:)`), placeholder drag (18 + flare), pemilih activity (`horizontalPadding`), jadi
+    body-nya sama dengan upstream di semua tinggi. Batas layar `expandedWidth` tetap `screen.width − 24 − gutter × 2`
+    (di layar sangat sempit isi bisa 26 pt lebih sempit). Notice Zenith (jendela sendiri) tetap memakai
+    `plainShoulder`. Editor layout di Settings: tarik ukuran mulai dari lebar tanpa flare, jadi tidak melebar 26 pt
+    tiap tarikan (posisi bubble tombol di pratinjau tidak diubah, bisa bergeser ±6 pt di skala 0,5).
+  - **Hit-test, jendela, pil:** klik tetap per path (area transparan di luar bahu tembus), jendela = ukuran island
+    (+ gutter), body untuk pil tab dan tombol mengambang dihitung dari `shoulder(height:)` jadi tetap di tengah dan
+    sejajar body. Hover memakai kotak island, jadi koridor hover di samping body sekarang 27 pt (dulu 14).
+  - **Path:** elemen tetap sama di semua ukuran (lingkaran = kurva tengah, dua kurva titik).
+  - **Kamera:** halaman Camera island langsung membuka mirror saat tampil kalau akses kamera sudah `.authorized`
+    dan saklar "Start the mirror automatically" (`notchCameraAutoStart`, default nyala, ikut backup) nyala; sekali
+    per kunjungan, jadi Stop di baris atas tetap berhenti. Belum ditentukan: tombol "Open camera" tetap (minta izin
+    lalu mulai). Ditolak: pesan upstream tetap. Berhenti tetap saat meninggalkan halaman atau island menutup. Logika
+    di `Services/QuickTools/ZenithCameraAutoStart.swift` (ikut `TEST_SOURCES`), gerak di
+    `UI/Notch/ZenithCameraReveal.swift`: halaman yang akan auto-start langsung jadi halaman gelap mirror (tanpa kedip
+    placeholder), spinner kecil baru muncul kalau sesi > 150 ms, gambar masuk opacity 0 → 1 + blur 10 → 0 (0,32 dtk,
+    kurva `ZenithMotion.reveal`) lewat filter blur Core Animation di layer preview (blur SwiftUI tidak sampai ke layer
+    AVFoundation); Reduce Motion: fade saja. Saklar di Settings → Dynamic Island → Camera (`ZenithSwitchRow`), teks
+    di `ZenithStrings.camera` (15 bahasa).
+  - Edit di file upstream bertanda `// Zenith fork`: `NotchSupport` (`NotchLayout`, `expandedWidth`,
+    `notificationPreviewWidth`, `peek`, `NotchActivityPickerLayout`), `NotchService` (placeholder drag), `NotchView`
+    (padding peek, drag, picker), `NotchLayoutEditor` (awal resize), `CameraPreviewView` (`revealsGently`),
+    `NotchCameraView`, `NotchSettings`, `Defaults`, `build.sh` (`TEST_SOURCES`).
+  - **Test:** `ZenithIslandTests` ditambah `openShoulder` (kurva bahu terbuka lingkaran 27 pt, galat < 0,1 pt, lurus
+    setelah 27 pt, bahu naik mulus dan monoton 60 → 140 pt, body di tempat bahu berakhir di tiap tinggi, strip tertutup
+    tanpa flare), `shoulderSkirt` (inset 41, isi 14 pt dari body, `expandedWidth` = pilihan + 26, lebar isi dan body
+    sama dengan upstream di semua preset/lebar/kamera, peek dan pemilih activity, strip tertutup tidak berubah) dan
+    `cameraAutoStart`. `openProfile` membandingkan dengan island upstream yang digeser 13 pt (body sama), dan
+    `upstreamPath` memakai rumus bahu upstream langsung. Diubah dengan sengaja (tujuan sama, lebar + flare):
+    `NotchTests` "an open island keeps its full corner radius and shoulder" (bahu = 27), "a chosen width narrower
+    than the player…" (360 + 26), "a width set by hand is the island's…" (+ 26, pembanding preset ikut), "custom
+    dimensions fit every module…" (+ 26), `NotchNotificationTests` "the preview card is about a native banner wide…"
+    (400 + 26) dan "a wide camera keeps its clearance…" (+ 26). Double `CameraPreviewView` di `NotchCompactTests`
+    menerima `revealsGently` dan dicek.
+  - **Belum diverifikasi visual:** app UI tidak dijalankan, kamera tidak dinyalakan. Perlu dicek di Mac: bahu 27 pt
+    saat buka/tutup (120 Hz), sambungan bahu dengan tepi layar dan dengan notch fisik, pil tab dan tombol mengambang
+    tetap sejajar, peek/pemilih activity/pratinjau notifikasi/Command Bar, island kapsul, island kaca, dan halaman
+    Camera (auto-start tanpa kedip, spinner hanya saat lambat, blur-in, Stop, ganti halaman, tutup island, izin
+    belum ditentukan/ditolak).
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.

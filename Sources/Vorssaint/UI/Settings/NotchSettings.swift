@@ -18,6 +18,7 @@ struct NotchSettings: View {
     @AppStorage(DefaultsKey.notchTimerSoundEnabled) private var timerSoundEnabled = true
     @AppStorage(DefaultsKey.notchHideTimerCountdown) private var hideTimerCountdown = false
     @AppStorage(DefaultsKey.notchCameraEnabled) private var cameraEnabled = true
+    @AppStorage(DefaultsKey.notchCameraAutoStart) private var cameraAutoStart = true // Zenith fork
     @AppStorage(DefaultsKey.notchAccessoriesEnabled) private var accessoriesEnabled = true
     @AppStorage(DefaultsKey.notchCalendarEnabled) private var calendarEnabled = true
     @AppStorage(DefaultsKey.notchCalendarCountdown) private var calendarCountdown = false
@@ -500,6 +501,15 @@ struct NotchSettings: View {
                 .disabled(!AppFeature.notchTimer.isAvailable)
         case .camera:
             Text(FeatureStrings.notchActivities(l10n.language).cameraHint).font(.callout).foregroundStyle(.secondary)
+            // Zenith fork: the page starts its mirror itself once access is granted.
+            let camera = ZenithStrings.camera(l10n.language)
+            ZenithSwitchRow(camera.autoStart, isOn: $cameraAutoStart) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(camera.autoStart).font(ZenithType.rowTitle)
+                    Text(camera.autoStartCaption).font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
             if permissions.camera == .granted {
                 Label(l10n.s.permissionGranted, systemImage: "checkmark.circle.fill").foregroundStyle(.green)
             } else {
