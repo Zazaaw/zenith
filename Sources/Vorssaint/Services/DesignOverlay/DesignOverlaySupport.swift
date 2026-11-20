@@ -476,7 +476,7 @@ struct DesignOverlayGrid: Hashable {
     }
 
     private static func format(_ value: CGFloat) -> String {
-        value.rounded() == value ? String(Int(value)) : String(format: "%.1f", Double(value))
+        value.rounded() == value ? String(Int(value)) : String(format: "%.1f", locale: Locale.current, Double(value))
     }
 }
 

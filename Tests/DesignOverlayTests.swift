@@ -235,7 +235,8 @@ enum DesignOverlayTests {
                      "a grid without columns, or with a negative gutter, draws nothing")
         let single = DesignOverlayGrid(columns: 1, gutter: 20, margin: 0).columnFrames(in: CGSize(width: 300, height: 10))
         suite.expect(single == [CGRect(x: 0, y: 0, width: 300, height: 10)], "one column without margin fills the frame")
-        suite.expect(desktop.label == "12 · 24 · 80" && DesignOverlayGrid(columns: 6, gutter: 12.5, margin: 0).label == "6 · 12.5 · 0",
+        let half = String(format: "%.1f", locale: Locale.current, 12.5)
+        suite.expect(desktop.label == "12 · 24 · 80" && DesignOverlayGrid(columns: 6, gutter: 12.5, margin: 0).label == "6 · \(half) · 0",
                      "a preset reads as columns, gutter and margin")
         suite.expect(Set(DesignOverlayGridPreset.allCases.map(\.grid)).count == DesignOverlayGridPreset.allCases.count
                         && DesignOverlayGridPreset.stored("tablet") == .tablet && DesignOverlayGridPreset.stored(nil) == .desktop,
