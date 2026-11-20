@@ -74,6 +74,10 @@ final class NotchAccessoryService: NSObject {
     private func handleConnection(_ event: NotchAccessoryConnectionEvent) {
         switch event {
         case let .connected(name, majorClass, minorClass):
+            // Zenith fork: headphones get a capsule with their battery, when its notice is on.
+            if ZenithNoticeCenter.shared.accessoryConnected(name: name, majorClass: majorClass, minorClass: minorClass) {
+                return
+            }
             let text = FeatureStrings.notchActivities(L10n.shared.language)
             // The status stays short beside its icon, so the name gets a
             // whole wing to itself before it has to be shortened.

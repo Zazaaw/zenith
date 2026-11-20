@@ -4381,6 +4381,11 @@ final class NotchService: ObservableObject {
                 self?.refreshPresentation()
             }.store(in: &subscriptions)
             NotchDownloadService.shared.onArrival = { [weak self] item in
+                // Zenith fork: a capsule with the file's thumbnail, when its notice is on.
+                if ZenithNoticeCenter.shared.downloadFinished(item.url, name: item.name) {
+                    self?.reactMascot(.celebrate)
+                    return
+                }
                 self?.show(NotchNotice(event: .download,
                     title: FeatureStrings.notchFiles(L10n.shared.language).completed,
                     detail: item.name, symbol: "arrow.down.circle.fill", mascot: .celebrate))
@@ -4672,6 +4677,7 @@ final class NotchService: ObservableObject {
         let before = power
         let next = sampler.sample()
         power = next
+        let capsule = ZenithNoticeCenter.shared.handlePower(before: before, next: next) // Zenith fork: capsule notices
         let pluggedIn = !before.externalConnected && next.externalConnected
         let low = (next.chargePercent ?? 100) <= 20 && (before.chargePercent ?? 0) > 20
         guard before.externalConnected != next.externalConnected || low
@@ -4682,10 +4688,12 @@ final class NotchService: ObservableObject {
                 ? text.charged : L10n.shared.s.powerPluggedIn) : text.onBattery
         let charged = next.externalConnected && before.isCharging && !next.isCharging && next.chargePercent == 100
         let reaction = NotchMascotSupport.powerReaction(pluggedIn: pluggedIn, charged: charged, low: low)
+        if !capsule { // Zenith fork: the capsule takes the small notice's place
         show(NotchNotice(event: .battery, title: title,
                          detail: next.chargePercent.map { "\($0)%" } ?? "",
                          symbol: next.externalConnected ? "battery.100percent.bolt" : "battery.25percent",
                          mascot: reaction))
+        } // Zenith fork
         if let reaction { reactMascot(reaction) }
     }
 

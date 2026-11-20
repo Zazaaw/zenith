@@ -2792,6 +2792,181 @@ extension ZenithStrings {
     }
 }
 
+/// Zenith fork: capsule notices (ZenithNoticeSupport) and their Settings card.
+struct ZenithNoticeStrings {
+    /// The card in Settings → Dynamic Island → Activity.
+    let section: String
+    let caption: String
+    let lowBattery: String
+    let veryLowBattery: String
+    let chargeReaches: String
+    /// Also the subtitle of the notice when the charge reaches that level.
+    let chargeHint: String
+    let charger: String
+    let audio: String
+    let download: String
+    /// `%d` is the percentage, as in “20% Battery”.
+    let batteryTitle: String
+    let lowPowerAction: String
+    let lowPowerOn: String
+    let charging: String
+    let chargerConnected: String
+    let onBattery: String
+    let chargerRemoved: String
+    let connected: String
+}
+
+extension ZenithStrings {
+    static func notices(_ language: AppLanguage) -> ZenithNoticeStrings {
+        switch language {
+        case .enUS:
+            return .init(section: "Notices",
+                         caption: "Short capsules grow out of the island for the battery, headphones and downloads. Turned off, the island shows its small notice instead.",
+                         lowBattery: "Low battery", veryLowBattery: "Very low battery", chargeReaches: "Charge reaches",
+                         chargeHint: "Unplugging around here is easier on the battery",
+                         charger: "Charger connected or removed", audio: "Headphones connected", download: "Download finished",
+                         batteryTitle: "%d% Battery", lowPowerAction: "Click for Low Power Mode", lowPowerOn: "Low Power Mode is on",
+                         charging: "Charging", chargerConnected: "Power adapter connected",
+                         onBattery: "On Battery", chargerRemoved: "Power adapter disconnected", connected: "Connected")
+        case .ptBR:
+            return .init(section: "Avisos",
+                         caption: "Cápsulas curtas saem da ilha para a bateria, os fones e os downloads. Desativado, a ilha mostra o aviso pequeno no lugar.",
+                         lowBattery: "Bateria fraca", veryLowBattery: "Bateria muito fraca", chargeReaches: "Carga chega a",
+                         chargeHint: "Desconectar por aqui poupa a bateria",
+                         charger: "Carregador conectado ou removido", audio: "Fones conectados", download: "Download concluído",
+                         batteryTitle: "%d% de bateria", lowPowerAction: "Clique para o Modo de Pouca Energia",
+                         lowPowerOn: "Modo de Pouca Energia ativado",
+                         charging: "Carregando", chargerConnected: "Adaptador de energia conectado",
+                         onBattery: "Na bateria", chargerRemoved: "Adaptador de energia desconectado", connected: "Conectado")
+        case .tr:
+            return .init(section: "Uyarılar",
+                         caption: "Pil, kulaklık ve indirmeler için adadan kısa kapsüller çıkar. Kapalıyken ada bunun yerine küçük uyarısını gösterir.",
+                         lowBattery: "Düşük pil", veryLowBattery: "Çok düşük pil", chargeReaches: "Şarj şu seviyede",
+                         chargeHint: "Burada fişten çekmek pili daha az yorar",
+                         charger: "Şarj aleti takıldı veya çıkarıldı", audio: "Kulaklık bağlandı", download: "İndirme bitti",
+                         batteryTitle: "%%d pil", lowPowerAction: "Düşük Güç Modu için tıklayın", lowPowerOn: "Düşük Güç Modu açık",
+                         charging: "Şarj oluyor", chargerConnected: "Güç adaptörü takıldı",
+                         onBattery: "Pil gücünde", chargerRemoved: "Güç adaptörü çıkarıldı", connected: "Bağlandı")
+        case .ru:
+            return .init(section: "Уведомления",
+                         caption: "Короткие капсулы выходят из острова для батареи, наушников и загрузок. Если выключено, остров показывает своё маленькое уведомление.",
+                         lowBattery: "Низкий заряд", veryLowBattery: "Очень низкий заряд", chargeReaches: "Заряд достигает",
+                         chargeHint: "Отключить зарядку здесь бережнее для батареи",
+                         charger: "Зарядка подключена или отключена", audio: "Наушники подключены", download: "Загрузка завершена",
+                         batteryTitle: "Заряд %d%", lowPowerAction: "Нажмите для режима энергосбережения",
+                         lowPowerOn: "Режим энергосбережения включён",
+                         charging: "Зарядка", chargerConnected: "Адаптер питания подключён",
+                         onBattery: "От батареи", chargerRemoved: "Адаптер питания отключён", connected: "Подключено")
+        case .es:
+            return .init(section: "Avisos",
+                         caption: "Cápsulas breves salen de la isla para la batería, los auriculares y las descargas. Si está desactivado, la isla muestra su aviso pequeño.",
+                         lowBattery: "Batería baja", veryLowBattery: "Batería muy baja", chargeReaches: "La carga llega a",
+                         chargeHint: "Desconectar por aquí cuida la batería",
+                         charger: "Cargador conectado o retirado", audio: "Auriculares conectados", download: "Descarga terminada",
+                         batteryTitle: "%d% de batería", lowPowerAction: "Haz clic para el modo de bajo consumo",
+                         lowPowerOn: "Modo de bajo consumo activado",
+                         charging: "Cargando", chargerConnected: "Adaptador de corriente conectado",
+                         onBattery: "Con batería", chargerRemoved: "Adaptador de corriente desconectado", connected: "Conectado")
+        case .sk:
+            return .init(section: "Upozornenia",
+                         caption: "Krátke kapsuly vychádzajú z ostrova pre batériu, slúchadlá a stiahnuté súbory. Keď je to vypnuté, ostrov ukáže svoje malé upozornenie.",
+                         lowBattery: "Slabá batéria", veryLowBattery: "Veľmi slabá batéria", chargeReaches: "Nabitie dosiahne",
+                         chargeHint: "Odpojiť nabíjačku okolo tejto úrovne šetrí batériu",
+                         charger: "Nabíjačka pripojená alebo odpojená", audio: "Slúchadlá pripojené", download: "Sťahovanie dokončené",
+                         batteryTitle: "Batéria %d %", lowPowerAction: "Kliknite pre režim nízkej spotreby",
+                         lowPowerOn: "Režim nízkej spotreby je zapnutý",
+                         charging: "Nabíja sa", chargerConnected: "Napájací adaptér pripojený",
+                         onBattery: "Na batérii", chargerRemoved: "Napájací adaptér odpojený", connected: "Pripojené")
+        case .de:
+            return .init(section: "Hinweise",
+                         caption: "Kurze Kapseln wachsen aus der Insel: für Batterie, Kopfhörer und Downloads. Ausgeschaltet zeigt die Insel stattdessen ihren kleinen Hinweis.",
+                         lowBattery: "Niedriger Batteriestand", veryLowBattery: "Sehr niedriger Batteriestand",
+                         chargeReaches: "Ladestand erreicht",
+                         chargeHint: "Hier abzustecken schont die Batterie",
+                         charger: "Netzteil angeschlossen oder getrennt", audio: "Kopfhörer verbunden", download: "Download abgeschlossen",
+                         batteryTitle: "Batterie %d %", lowPowerAction: "Klicken für den Stromsparmodus",
+                         lowPowerOn: "Stromsparmodus ist an",
+                         charging: "Lädt", chargerConnected: "Netzteil angeschlossen",
+                         onBattery: "Batteriebetrieb", chargerRemoved: "Netzteil getrennt", connected: "Verbunden")
+        case .fr:
+            return .init(section: "Avis",
+                         caption: "De courtes capsules sortent de l’île pour la batterie, les écouteurs et les téléchargements. Désactivé, l’île affiche sa petite notification à la place.",
+                         lowBattery: "Batterie faible", veryLowBattery: "Batterie très faible", chargeReaches: "La charge atteint",
+                         chargeHint: "Débrancher vers ce niveau ménage la batterie",
+                         charger: "Chargeur branché ou débranché", audio: "Écouteurs connectés", download: "Téléchargement terminé",
+                         batteryTitle: "Batterie à %d %", lowPowerAction: "Cliquez pour le mode économie d’énergie",
+                         lowPowerOn: "Mode économie d’énergie activé",
+                         charging: "En charge", chargerConnected: "Adaptateur secteur branché",
+                         onBattery: "Sur batterie", chargerRemoved: "Adaptateur secteur débranché", connected: "Connecté")
+        case .it:
+            return .init(section: "Avvisi",
+                         caption: "Brevi capsule escono dall’isola per batteria, cuffie e download. Se disattivato, l’isola mostra il suo avviso piccolo.",
+                         lowBattery: "Batteria scarica", veryLowBattery: "Batteria quasi scarica", chargeReaches: "La carica arriva al",
+                         chargeHint: "Scollegare a questo livello preserva la batteria",
+                         charger: "Alimentatore collegato o scollegato", audio: "Cuffie collegate", download: "Download completato",
+                         batteryTitle: "Batteria al %d%", lowPowerAction: "Fai clic per il risparmio energetico",
+                         lowPowerOn: "Risparmio energetico attivo",
+                         charging: "In carica", chargerConnected: "Alimentatore collegato",
+                         onBattery: "A batteria", chargerRemoved: "Alimentatore scollegato", connected: "Connesso")
+        case .ja:
+            return .init(section: "通知カプセル",
+                         caption: "バッテリー、ヘッドフォン、ダウンロードの短いカプセルがアイランドから広がります。オフにすると、代わりに小さな通知が表示されます。",
+                         lowBattery: "バッテリー残量低下", veryLowBattery: "バッテリー残量わずか", chargeReaches: "充電の目安",
+                         chargeHint: "このあたりで外すとバッテリーにやさしいです",
+                         charger: "電源アダプタの接続と取り外し", audio: "ヘッドフォンの接続", download: "ダウンロード完了",
+                         batteryTitle: "バッテリー %d%", lowPowerAction: "クリックで低電力モード", lowPowerOn: "低電力モードはオンです",
+                         charging: "充電中", chargerConnected: "電源アダプタを接続しました",
+                         onBattery: "バッテリー駆動", chargerRemoved: "電源アダプタを取り外しました", connected: "接続済み")
+        case .ko:
+            return .init(section: "알림 캡슐",
+                         caption: "배터리, 헤드폰, 다운로드에 대한 짧은 캡슐이 아일랜드에서 펼쳐집니다. 끄면 대신 작은 알림이 표시됩니다.",
+                         lowBattery: "배터리 부족", veryLowBattery: "배터리 매우 부족", chargeReaches: "충전 도달",
+                         chargeHint: "이쯤에서 분리하면 배터리에 무리가 덜 갑니다",
+                         charger: "충전기 연결 또는 분리", audio: "헤드폰 연결", download: "다운로드 완료",
+                         batteryTitle: "배터리 %d%", lowPowerAction: "클릭하여 저전력 모드 사용", lowPowerOn: "저전력 모드 켜짐",
+                         charging: "충전 중", chargerConnected: "전원 어댑터 연결됨",
+                         onBattery: "배터리 사용 중", chargerRemoved: "전원 어댑터 분리됨", connected: "연결됨")
+        case .uk:
+            return .init(section: "Сповіщення",
+                         caption: "Короткі капсули виходять з острова для батареї, навушників і завантажень. Якщо вимкнено, острів показує своє маленьке сповіщення.",
+                         lowBattery: "Низький заряд", veryLowBattery: "Дуже низький заряд", chargeReaches: "Заряд досягає",
+                         chargeHint: "Відключити зарядку тут дбайливіше для батареї",
+                         charger: "Зарядку підключено або від’єднано", audio: "Навушники підключено", download: "Завантаження завершено",
+                         batteryTitle: "Заряд %d%", lowPowerAction: "Натисніть для режиму енергозбереження",
+                         lowPowerOn: "Режим енергозбереження увімкнено",
+                         charging: "Заряджається", chargerConnected: "Адаптер живлення підключено",
+                         onBattery: "Від батареї", chargerRemoved: "Адаптер живлення від’єднано", connected: "Підключено")
+        case .zhHans:
+            return .init(section: "提示胶囊",
+                         caption: "电池、耳机和下载的简短胶囊会从灵动岛中展开。关闭后，灵动岛会改为显示小提示。",
+                         lowBattery: "电量不足", veryLowBattery: "电量严重不足", chargeReaches: "充电达到",
+                         chargeHint: "在这附近拔掉充电器对电池更友好",
+                         charger: "充电器接入或拔出", audio: "耳机已连接", download: "下载完成",
+                         batteryTitle: "电量 %d%", lowPowerAction: "点按以使用低电量模式", lowPowerOn: "低电量模式已开启",
+                         charging: "正在充电", chargerConnected: "已接入电源适配器",
+                         onBattery: "使用电池", chargerRemoved: "已拔出电源适配器", connected: "已连接")
+        case .zhTW:
+            return .init(section: "提示膠囊",
+                         caption: "電池、耳機與下載的簡短膠囊會從動態島展開。關閉後，動態島會改為顯示小提示。",
+                         lowBattery: "電量不足", veryLowBattery: "電量嚴重不足", chargeReaches: "充電達到",
+                         chargeHint: "在這附近拔掉充電器對電池更友善",
+                         charger: "充電器接上或拔除", audio: "耳機已連接", download: "下載完成",
+                         batteryTitle: "電量 %d%", lowPowerAction: "按一下以使用低耗電模式", lowPowerOn: "低耗電模式已開啟",
+                         charging: "充電中", chargerConnected: "已接上電源轉換器",
+                         onBattery: "使用電池", chargerRemoved: "已拔除電源轉換器", connected: "已連接")
+        case .zhHK:
+            return .init(section: "提示膠囊",
+                         caption: "電池、耳機和下載的簡短膠囊會從動態島展開。關閉後，動態島會改為顯示小提示。",
+                         lowBattery: "電量不足", veryLowBattery: "電量嚴重不足", chargeReaches: "充電達到",
+                         chargeHint: "在這附近拔走充電器對電池更好",
+                         charger: "充電器接上或拔走", audio: "耳機已連接", download: "下載完成",
+                         batteryTitle: "電量 %d%", lowPowerAction: "按一下以使用低耗電模式", lowPowerOn: "低耗電模式已開啟",
+                         charging: "充電中", chargerConnected: "已接上電源轉換器",
+                         onBattery: "使用電池", chargerRemoved: "已拔走電源轉換器", connected: "已連接")
+        }
+    }
+}
+
 struct ZenithPhotoActionsStrings {
     let toggle: String
     let caption: String
