@@ -1025,6 +1025,21 @@ enum DefaultsKey {
     static let notchSkyGoldenActivity = "notchSkyGoldenActivity"
     // The island page's tab; unregistered, it is only where the page was left.
     static let notchSkyPage = "notchSkyPage"
+    // Zenith fork: the teleprompter under the camera (PrompterService): the scripts' list (their
+    // texts are files in the container), the reading, the island's size and the start/stop shortcut.
+    static let notchPrompterScripts = "notchPrompterScripts" // PrompterLibrary JSON
+    static let notchPrompterSpeed = "notchPrompterSpeed" // words per minute
+    static let notchPrompterTextSize = "notchPrompterTextSize" // points
+    static let notchPrompterLineSpacing = "notchPrompterLineSpacing" // times the face's own line
+    static let notchPrompterAlignment = "notchPrompterAlignment" // PrompterAlignment.rawValue
+    static let notchPrompterMirror = "notchPrompterMirror"
+    static let notchPrompterGuide = "notchPrompterGuide"
+    static let notchPrompterVoicePaced = "notchPrompterVoicePaced"
+    static let notchPrompterWidth = "notchPrompterWidth"
+    static let notchPrompterHeight = "notchPrompterHeight"
+    static let notchPrompterShortcut = "notchPrompterShortcut" // GlobalShortcut.storageValue, "" for none
+    // The script last chosen; unregistered, so it stays out of backups.
+    static let notchPrompterLastScript = "notchPrompterLastScript"
     static let notchCalendarEnabled = "notchCalendarEnabled"
     static let notchCalendarCountdown = "notchCalendarCountdown"
     static let notchCalendarCountdownLead = "notchCalendarCountdownLead" // minutes before a start, chosen events included
@@ -1760,6 +1775,17 @@ enum Defaults {
         DefaultsKey.notchSkyPrayerLead: PrayerTimesSupport.defaultLead, // Zenith fork
         DefaultsKey.notchSkyPrayerSound: false, // Zenith fork
         DefaultsKey.notchSkyGoldenActivity: true, // Zenith fork
+        DefaultsKey.notchPrompterScripts: "", // Zenith fork
+        DefaultsKey.notchPrompterSpeed: PrompterSettings.defaultSpeed, // Zenith fork
+        DefaultsKey.notchPrompterTextSize: PrompterSettings.defaultTextSize, // Zenith fork
+        DefaultsKey.notchPrompterLineSpacing: PrompterSettings.defaultLineSpacing, // Zenith fork
+        DefaultsKey.notchPrompterAlignment: PrompterAlignment.center.rawValue, // Zenith fork
+        DefaultsKey.notchPrompterMirror: false, // Zenith fork
+        DefaultsKey.notchPrompterGuide: true, // Zenith fork
+        DefaultsKey.notchPrompterVoicePaced: false, // Zenith fork
+        DefaultsKey.notchPrompterWidth: PrompterSettings.defaultWidth, // Zenith fork
+        DefaultsKey.notchPrompterHeight: PrompterSettings.defaultHeight, // Zenith fork
+        DefaultsKey.notchPrompterShortcut: "", // Zenith fork
         DefaultsKey.notchEnabled: false,
         DefaultsKey.notchDisplay: NotchDisplay.automatic.rawValue,
         DefaultsKey.notchSilhouette: NotchSilhouette.capsule.rawValue,
