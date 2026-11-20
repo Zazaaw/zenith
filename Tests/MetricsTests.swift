@@ -267,6 +267,7 @@ struct MetricsTests {
             ("command-activity", { CommandActivityTests.run(suite) }),
             ("claude-hooks", { ClaudeHooksTests.run(suite) }),
             ("photo-actions", { PhotoActionsTests.run(suite) }),
+            ("design-overlay", { DesignOverlayTests.run(suite) }),
             ("notices", { ZenithNoticeTests.run(suite) }),
             ("reply", { ReplyTests.run(suite) }),
         ]
