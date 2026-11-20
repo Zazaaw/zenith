@@ -228,9 +228,9 @@ private final class ZenithWhatsAppAutomation {
         }
         guard let app = running else { return false }
         pid = app.processIdentifier
-        let element = AXUIElementCreateApplication(pid)
-        AXUIElementSetMessagingTimeout(element, 0.5)
-        application = element
+        let whatsApp = AXUIElementCreateApplication(pid)
+        AXUIElementSetMessagingTimeout(whatsApp, 0.5)
+        application = whatsApp
         onMain { _ = app.activate() }
         return waitForFront(timeout: 3) && wait(timeout: 4, { self.focusedWindow() }) != nil
     }
