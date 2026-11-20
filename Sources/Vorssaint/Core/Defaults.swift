@@ -763,6 +763,10 @@ enum DefaultsKey {
     static let screenshotBackdropPresets = "screenshotBackdropPresets"
     static let screenshotWatermarkStyle = "screenshotWatermarkStyle"
     static let screenshotWatermarkPresets = "screenshotWatermarkPresets"
+    // Zenith fork: Beautify (ScreenshotBeautifySupport): the last style, named presets, and framing every capture.
+    static let screenshotBeautifyStyle = "screenshotBeautifyStyle"
+    static let screenshotBeautifyPresets = "screenshotBeautifyPresets"
+    static let screenshotBeautifyAfterCapture = "screenshotBeautifyAfterCapture"
     static let screenshotOpenEditorDirectly = "screenshotOpenEditorDirectly"
     static let screenshotCopyToClipboard = "screenshotCopyToClipboard"
     static let screenshotCopyImageOnly = "screenshotCopyImageOnly"
@@ -2189,6 +2193,9 @@ enum Defaults {
         DefaultsKey.screenshotBackdropPresets: "[]",
         DefaultsKey.screenshotWatermarkStyle: "",
         DefaultsKey.screenshotWatermarkPresets: "[]",
+        DefaultsKey.screenshotBeautifyStyle: "", // Zenith fork
+        DefaultsKey.screenshotBeautifyPresets: "[]", // Zenith fork
+        DefaultsKey.screenshotBeautifyAfterCapture: false, // Zenith fork
         DefaultsKey.screenshotOpenEditorDirectly: false,
         DefaultsKey.screenshotCopyToClipboard: false,
         DefaultsKey.screenshotCopyImageOnly: false,
