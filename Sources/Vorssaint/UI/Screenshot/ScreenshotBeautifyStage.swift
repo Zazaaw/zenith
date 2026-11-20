@@ -259,8 +259,9 @@ struct ScreenshotBeautifyStage: View {
                         .lineLimit(1)
                 }
                 .menuStyle(.borderlessButton)
+                .fixedSize()
                 .disabled(session.presets.isEmpty)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                Spacer(minLength: 6)
                 Button {
                     presetName = session.matchingPresetName ?? ""
                     savingPreset = true
