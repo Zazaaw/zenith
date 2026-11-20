@@ -1,5 +1,5 @@
 /* macOS Automation permission prompt. */
-"NSAppleEventsUsageDescription" = "Zenith používa Automatizáciu na presúvanie súborov, presun položiek do Koša, otváranie vyžiadaných príkazov a na ovládanie prehrávania vo vašich mediálnych aplikáciách.";
+"NSAppleEventsUsageDescription" = "Zenith používa Automatizáciu na presúvanie súborov, presun položiek do Koša, otváranie vyžiadaných príkazov, odosielanie odpovedí napísaných v Dynamic Island do Správ a na ovládanie prehrávania vo vašich mediálnych aplikáciách.";
 
 /* macOS Screen & System Audio Recording permission prompt. */
 "NSAudioCaptureUsageDescription" = "Zenith používa zvuk každej aplikácie na nastavenie jej hlasitosti v mixéri, na rozpohybovanie hudobných stĺpcov Dynamic Island a na pridanie zvuku Macu do nahrávok obrazovky, ktoré spustíte. Nič neopustí váš Mac.";

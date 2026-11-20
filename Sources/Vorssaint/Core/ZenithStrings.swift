@@ -3456,3 +3456,229 @@ extension ZenithStrings {
         }
     }
 }
+
+struct ZenithReplyStrings {
+    let reply: String
+    let closeReply: String
+    let send: String
+    let emoji: String
+    /// "You: %@", the reply just sent.
+    let you: String
+    let sending: String
+    /// Automatic sending stopped; %@ is the app.
+    let openedPrefilled: String
+    let openedCopied: String
+    /// The setting asked for the app to open instead; %@ is the app.
+    let handOffPrefilled: String
+    let handOffCopied: String
+    let needsAutomation: String
+    let needsAccessibility: String
+    let grantAccess: String
+    let failed: String
+    let autoWhatsApp: String
+    let autoWhatsAppCaption: String
+}
+
+extension ZenithStrings {
+    /// Replying to Messages and WhatsApp notifications from the island
+    /// (ZenithReplySupport), and its WhatsApp switch in the Notifications settings.
+    static func reply(_ language: AppLanguage) -> ZenithReplyStrings {
+        switch language {
+        case .enUS:
+            return .init(reply: "Reply", closeReply: "Close reply", send: "Send", emoji: "Emoji & Symbols",
+                         you: "You: %@", sending: "Sending…",
+                         openedPrefilled: "Couldn’t send automatically. %@ is open with your reply ready.",
+                         openedCopied: "Couldn’t send automatically. %@ is open and your reply is copied.",
+                         handOffPrefilled: "%@ is open with your reply ready to send.",
+                         handOffCopied: "%@ is open and your reply is copied.",
+                         needsAutomation: "Allow Zenith to control Messages to send replies.",
+                         needsAccessibility: "Allow Accessibility to send WhatsApp replies.",
+                         grantAccess: "Grant access",
+                         failed: "Couldn’t send this reply.",
+                         autoWhatsApp: "Send WhatsApp replies automatically",
+                         autoWhatsAppCaption: "A reply from the Dynamic Island opens the chat in WhatsApp, types your message and presses Return, then goes back to the app you were using. This works through WhatsApp’s window and may stop working after a WhatsApp update; WhatsApp then opens with your reply ready instead. When off, WhatsApp opens and you send the reply yourself.")
+        case .ptBR:
+            return .init(reply: "Responder", closeReply: "Fechar resposta", send: "Enviar", emoji: "Emoji e Símbolos",
+                         you: "Você: %@", sending: "Enviando…",
+                         openedPrefilled: "Não foi possível enviar automaticamente. O %@ está aberto com sua resposta pronta.",
+                         openedCopied: "Não foi possível enviar automaticamente. O %@ está aberto e sua resposta foi copiada.",
+                         handOffPrefilled: "O %@ está aberto com sua resposta pronta para enviar.",
+                         handOffCopied: "O %@ está aberto e sua resposta foi copiada.",
+                         needsAutomation: "Permita que o Zenith controle o Mensagens para enviar respostas.",
+                         needsAccessibility: "Permita a Acessibilidade para enviar respostas no WhatsApp.",
+                         grantAccess: "Permitir acesso",
+                         failed: "Não foi possível enviar esta resposta.",
+                         autoWhatsApp: "Enviar respostas do WhatsApp automaticamente",
+                         autoWhatsAppCaption: "Uma resposta da Dynamic Island abre a conversa no WhatsApp, digita sua mensagem e pressiona Return, depois volta ao app que você estava usando. Isso funciona pela janela do WhatsApp e pode parar de funcionar após uma atualização do WhatsApp; nesse caso, o WhatsApp abre com sua resposta pronta. Desativado, o WhatsApp abre e você mesmo envia a resposta.")
+        case .tr:
+            return .init(reply: "Yanıtla", closeReply: "Yanıtı kapat", send: "Gönder", emoji: "Emoji ve Simgeler",
+                         you: "Sen: %@", sending: "Gönderiliyor…",
+                         openedPrefilled: "Otomatik gönderilemedi. %@ yanıtın hazır şekilde açıldı.",
+                         openedCopied: "Otomatik gönderilemedi. %@ açıldı ve yanıtın kopyalandı.",
+                         handOffPrefilled: "%@ yanıtın gönderilmeye hazır şekilde açıldı.",
+                         handOffCopied: "%@ açıldı ve yanıtın kopyalandı.",
+                         needsAutomation: "Yanıt göndermek için Zenith’in Mesajlar’ı denetlemesine izin ver.",
+                         needsAccessibility: "WhatsApp yanıtları göndermek için Erişilebilirlik izni ver.",
+                         grantAccess: "Erişim ver",
+                         failed: "Bu yanıt gönderilemedi.",
+                         autoWhatsApp: "WhatsApp yanıtlarını otomatik gönder",
+                         autoWhatsAppCaption: "Dynamic Island’dan verilen yanıt WhatsApp’ta sohbeti açar, mesajını yazar ve Return’e basar, ardından kullandığın uygulamaya döner. Bu, WhatsApp penceresi üzerinden çalışır ve bir WhatsApp güncellemesinden sonra çalışmayı bırakabilir; o zaman WhatsApp yanıtın hazır şekilde açılır. Kapalıyken WhatsApp açılır ve yanıtı sen gönderirsin.")
+        case .ru:
+            return .init(reply: "Ответить", closeReply: "Закрыть ответ", send: "Отправить", emoji: "Эмодзи и символы",
+                         you: "Вы: %@", sending: "Отправка…",
+                         openedPrefilled: "Не удалось отправить автоматически. %@ открыт, ответ уже введён.",
+                         openedCopied: "Не удалось отправить автоматически. %@ открыт, ответ скопирован.",
+                         handOffPrefilled: "%@ открыт, ответ готов к отправке.",
+                         handOffCopied: "%@ открыт, ответ скопирован.",
+                         needsAutomation: "Разрешите Zenith управлять Сообщениями, чтобы отправлять ответы.",
+                         needsAccessibility: "Разрешите Универсальный доступ, чтобы отправлять ответы в WhatsApp.",
+                         grantAccess: "Дать доступ",
+                         failed: "Не удалось отправить ответ.",
+                         autoWhatsApp: "Отправлять ответы WhatsApp автоматически",
+                         autoWhatsAppCaption: "Ответ из Dynamic Island открывает чат в WhatsApp, вводит сообщение и нажимает Return, а затем возвращает вас в прежнее приложение. Это работает через окно WhatsApp и может перестать работать после обновления WhatsApp; тогда WhatsApp откроется с готовым ответом. Если выключено, WhatsApp откроется, и вы отправите ответ сами.")
+        case .es:
+            return .init(reply: "Responder", closeReply: "Cerrar respuesta", send: "Enviar", emoji: "Emojis y símbolos",
+                         you: "Tú: %@", sending: "Enviando…",
+                         openedPrefilled: "No se pudo enviar automáticamente. %@ está abierto con tu respuesta lista.",
+                         openedCopied: "No se pudo enviar automáticamente. %@ está abierto y tu respuesta se copió.",
+                         handOffPrefilled: "%@ está abierto con tu respuesta lista para enviar.",
+                         handOffCopied: "%@ está abierto y tu respuesta se copió.",
+                         needsAutomation: "Permite que Zenith controle Mensajes para enviar respuestas.",
+                         needsAccessibility: "Permite Accesibilidad para enviar respuestas de WhatsApp.",
+                         grantAccess: "Dar acceso",
+                         failed: "No se pudo enviar esta respuesta.",
+                         autoWhatsApp: "Enviar respuestas de WhatsApp automáticamente",
+                         autoWhatsAppCaption: "Una respuesta desde la Dynamic Island abre el chat en WhatsApp, escribe tu mensaje y pulsa Return, y luego vuelve a la app que estabas usando. Funciona a través de la ventana de WhatsApp y puede dejar de funcionar tras una actualización de WhatsApp; entonces WhatsApp se abre con tu respuesta lista. Desactivado, WhatsApp se abre y la envías tú.")
+        case .sk:
+            return .init(reply: "Odpovedať", closeReply: "Zavrieť odpoveď", send: "Odoslať", emoji: "Emoji a symboly",
+                         you: "Vy: %@", sending: "Odosiela sa…",
+                         openedPrefilled: "Nepodarilo sa odoslať automaticky. Aplikácia %@ je otvorená s pripravenou odpoveďou.",
+                         openedCopied: "Nepodarilo sa odoslať automaticky. Aplikácia %@ je otvorená a odpoveď je skopírovaná.",
+                         handOffPrefilled: "Aplikácia %@ je otvorená s odpoveďou pripravenou na odoslanie.",
+                         handOffCopied: "Aplikácia %@ je otvorená a odpoveď je skopírovaná.",
+                         needsAutomation: "Povoľte Zenithu ovládať Správy, aby mohol odosielať odpovede.",
+                         needsAccessibility: "Povoľte Prístupnosť na odosielanie odpovedí vo WhatsAppe.",
+                         grantAccess: "Povoliť prístup",
+                         failed: "Túto odpoveď sa nepodarilo odoslať.",
+                         autoWhatsApp: "Odosielať odpovede vo WhatsAppe automaticky",
+                         autoWhatsAppCaption: "Odpoveď z Dynamic Island otvorí konverzáciu vo WhatsAppe, napíše správu a stlačí Return, potom sa vráti do aplikácie, ktorú ste používali. Funguje cez okno WhatsAppu a po aktualizácii WhatsAppu môže prestať fungovať; vtedy sa WhatsApp otvorí s pripravenou odpoveďou. Keď je vypnuté, WhatsApp sa otvorí a odpoveď odošlete sami.")
+        case .de:
+            return .init(reply: "Antworten", closeReply: "Antwort schließen", send: "Senden", emoji: "Emoji & Symbole",
+                         you: "Du: %@", sending: "Wird gesendet…",
+                         openedPrefilled: "Automatisches Senden hat nicht geklappt. %@ ist geöffnet, deine Antwort steht bereit.",
+                         openedCopied: "Automatisches Senden hat nicht geklappt. %@ ist geöffnet, deine Antwort ist kopiert.",
+                         handOffPrefilled: "%@ ist geöffnet, deine Antwort ist bereit zum Senden.",
+                         handOffCopied: "%@ ist geöffnet, deine Antwort ist kopiert.",
+                         needsAutomation: "Erlaube Zenith, Nachrichten zu steuern, um Antworten zu senden.",
+                         needsAccessibility: "Erlaube Bedienungshilfen, um WhatsApp-Antworten zu senden.",
+                         grantAccess: "Zugriff erlauben",
+                         failed: "Diese Antwort konnte nicht gesendet werden.",
+                         autoWhatsApp: "WhatsApp-Antworten automatisch senden",
+                         autoWhatsAppCaption: "Eine Antwort aus der Dynamic Island öffnet den Chat in WhatsApp, tippt deine Nachricht und drückt den Zeilenschalter, danach geht es zurück zur App, die du benutzt hast. Das läuft über das WhatsApp-Fenster und kann nach einem WhatsApp-Update nicht mehr funktionieren; dann öffnet sich WhatsApp mit deiner Antwort. Ist die Option aus, öffnet sich WhatsApp und du sendest selbst.")
+        case .fr:
+            return .init(reply: "Répondre", closeReply: "Fermer la réponse", send: "Envoyer", emoji: "Emoji et symboles",
+                         you: "Vous : %@", sending: "Envoi…",
+                         openedPrefilled: "Envoi automatique impossible. %@ est ouvert avec votre réponse prête.",
+                         openedCopied: "Envoi automatique impossible. %@ est ouvert et votre réponse est copiée.",
+                         handOffPrefilled: "%@ est ouvert avec votre réponse prête à envoyer.",
+                         handOffCopied: "%@ est ouvert et votre réponse est copiée.",
+                         needsAutomation: "Autorisez Zenith à contrôler Messages pour envoyer des réponses.",
+                         needsAccessibility: "Autorisez l’Accessibilité pour envoyer des réponses WhatsApp.",
+                         grantAccess: "Autoriser l’accès",
+                         failed: "Impossible d’envoyer cette réponse.",
+                         autoWhatsApp: "Envoyer automatiquement les réponses WhatsApp",
+                         autoWhatsAppCaption: "Une réponse depuis la Dynamic Island ouvre la discussion dans WhatsApp, saisit votre message et appuie sur Retour, puis revient à l’app que vous utilisiez. Cela passe par la fenêtre de WhatsApp et peut cesser de fonctionner après une mise à jour de WhatsApp ; WhatsApp s’ouvre alors avec votre réponse prête. Désactivé, WhatsApp s’ouvre et vous l’envoyez vous-même.")
+        case .it:
+            return .init(reply: "Rispondi", closeReply: "Chiudi risposta", send: "Invia", emoji: "Emoji e simboli",
+                         you: "Tu: %@", sending: "Invio…",
+                         openedPrefilled: "Invio automatico non riuscito. L’app %@ è aperta con la risposta pronta.",
+                         openedCopied: "Invio automatico non riuscito. L’app %@ è aperta e la risposta è stata copiata.",
+                         handOffPrefilled: "L’app %@ è aperta con la risposta pronta da inviare.",
+                         handOffCopied: "L’app %@ è aperta e la risposta è stata copiata.",
+                         needsAutomation: "Consenti a Zenith di controllare Messaggi per inviare risposte.",
+                         needsAccessibility: "Consenti l’Accessibilità per inviare risposte su WhatsApp.",
+                         grantAccess: "Consenti accesso",
+                         failed: "Impossibile inviare questa risposta.",
+                         autoWhatsApp: "Invia automaticamente le risposte WhatsApp",
+                         autoWhatsAppCaption: "Una risposta dalla Dynamic Island apre la chat in WhatsApp, scrive il messaggio e preme Invio, poi torna all’app che stavi usando. Funziona tramite la finestra di WhatsApp e potrebbe smettere di funzionare dopo un aggiornamento di WhatsApp; in quel caso WhatsApp si apre con la risposta pronta. Se disattivato, WhatsApp si apre e la invii tu.")
+        case .ja:
+            return .init(reply: "返信", closeReply: "返信を閉じる", send: "送信", emoji: "絵文字と記号",
+                         you: "あなた: %@", sending: "送信中…",
+                         openedPrefilled: "自動で送信できませんでした。返信を入力した状態で%@を開きました。",
+                         openedCopied: "自動で送信できませんでした。%@を開き、返信をコピーしました。",
+                         handOffPrefilled: "返信を入力した状態で%@を開きました。",
+                         handOffCopied: "%@を開き、返信をコピーしました。",
+                         needsAutomation: "返信を送信するには、Zenithに「メッセージ」の制御を許可してください。",
+                         needsAccessibility: "WhatsAppの返信を送信するには、アクセシビリティを許可してください。",
+                         grantAccess: "アクセスを許可",
+                         failed: "この返信を送信できませんでした。",
+                         autoWhatsApp: "WhatsAppの返信を自動で送信",
+                         autoWhatsAppCaption: "Dynamic Islandからの返信は、WhatsAppでチャットを開いてメッセージを入力し、Returnキーを押してから、使っていたアプリに戻ります。WhatsAppのウインドウを操作するため、WhatsAppのアップデート後に動作しなくなることがあります。その場合は返信を入力した状態でWhatsAppが開きます。オフにすると、WhatsAppが開き、ご自身で送信します。")
+        case .ko:
+            return .init(reply: "답장", closeReply: "답장 닫기", send: "보내기", emoji: "이모티콘 및 기호",
+                         you: "나: %@", sending: "보내는 중…",
+                         openedPrefilled: "자동으로 보내지 못했습니다. 답장이 입력된 상태로 %@을(를) 열었습니다.",
+                         openedCopied: "자동으로 보내지 못했습니다. %@을(를) 열고 답장을 복사했습니다.",
+                         handOffPrefilled: "답장이 입력된 상태로 %@을(를) 열었습니다.",
+                         handOffCopied: "%@을(를) 열고 답장을 복사했습니다.",
+                         needsAutomation: "답장을 보내려면 Zenith가 메시지를 제어하도록 허용하세요.",
+                         needsAccessibility: "WhatsApp 답장을 보내려면 손쉬운 사용을 허용하세요.",
+                         grantAccess: "접근 허용",
+                         failed: "이 답장을 보내지 못했습니다.",
+                         autoWhatsApp: "WhatsApp 답장 자동으로 보내기",
+                         autoWhatsAppCaption: "Dynamic Island에서 보낸 답장은 WhatsApp에서 대화를 열고 메시지를 입력한 뒤 Return 키를 누르고, 사용하던 앱으로 돌아갑니다. WhatsApp 윈도우를 통해 작동하므로 WhatsApp 업데이트 후에는 작동하지 않을 수 있으며, 그때는 답장이 입력된 상태로 WhatsApp이 열립니다. 끄면 WhatsApp이 열리고 직접 보냅니다.")
+        case .uk:
+            return .init(reply: "Відповісти", closeReply: "Закрити відповідь", send: "Надіслати", emoji: "Емодзі та символи",
+                         you: "Ви: %@", sending: "Надсилання…",
+                         openedPrefilled: "Не вдалося надіслати автоматично. %@ відкрито, відповідь уже введено.",
+                         openedCopied: "Не вдалося надіслати автоматично. %@ відкрито, відповідь скопійовано.",
+                         handOffPrefilled: "%@ відкрито, відповідь готова до надсилання.",
+                         handOffCopied: "%@ відкрито, відповідь скопійовано.",
+                         needsAutomation: "Дозвольте Zenith керувати Повідомленнями, щоб надсилати відповіді.",
+                         needsAccessibility: "Дозвольте Універсальний доступ, щоб надсилати відповіді у WhatsApp.",
+                         grantAccess: "Надати доступ",
+                         failed: "Не вдалося надіслати цю відповідь.",
+                         autoWhatsApp: "Надсилати відповіді WhatsApp автоматично",
+                         autoWhatsAppCaption: "Відповідь із Dynamic Island відкриває чат у WhatsApp, вводить повідомлення й натискає Return, а потім повертає вас до попередньої програми. Це працює через вікно WhatsApp і може перестати працювати після оновлення WhatsApp; тоді WhatsApp відкриється з готовою відповіддю. Якщо вимкнено, WhatsApp відкриється, і ви надішлете відповідь самі.")
+        case .zhHans:
+            return .init(reply: "回复", closeReply: "关闭回复", send: "发送", emoji: "表情与符号",
+                         you: "你：%@", sending: "正在发送…",
+                         openedPrefilled: "无法自动发送。已打开%@，回复已填好。",
+                         openedCopied: "无法自动发送。已打开%@，回复已拷贝。",
+                         handOffPrefilled: "已打开%@，回复已填好，可以发送。",
+                         handOffCopied: "已打开%@，回复已拷贝。",
+                         needsAutomation: "允许 Zenith 控制“信息”以发送回复。",
+                         needsAccessibility: "允许辅助功能以发送 WhatsApp 回复。",
+                         grantAccess: "授予访问权限",
+                         failed: "无法发送此回复。",
+                         autoWhatsApp: "自动发送 WhatsApp 回复",
+                         autoWhatsAppCaption: "从灵动岛回复时，会在 WhatsApp 中打开聊天、输入信息并按下 Return 键，然后返回你正在使用的 App。此功能通过 WhatsApp 窗口操作，WhatsApp 更新后可能失效；届时 WhatsApp 会打开并填好你的回复。关闭后，WhatsApp 会打开，由你自行发送。")
+        case .zhTW:
+            return .init(reply: "回覆", closeReply: "關閉回覆", send: "傳送", emoji: "表情符號與符號",
+                         you: "你：%@", sending: "正在傳送…",
+                         openedPrefilled: "無法自動傳送。已打開%@，並已填入回覆。",
+                         openedCopied: "無法自動傳送。已打開%@，並已拷貝回覆。",
+                         handOffPrefilled: "已打開%@，回覆已填入，可直接傳送。",
+                         handOffCopied: "已打開%@，並已拷貝回覆。",
+                         needsAutomation: "允許 Zenith 控制「訊息」以傳送回覆。",
+                         needsAccessibility: "允許輔助使用以傳送 WhatsApp 回覆。",
+                         grantAccess: "授予取用權限",
+                         failed: "無法傳送此回覆。",
+                         autoWhatsApp: "自動傳送 WhatsApp 回覆",
+                         autoWhatsAppCaption: "從動態島回覆時，會在 WhatsApp 中打開聊天、輸入訊息並按下 Return 鍵，然後回到你正在使用的 App。此功能透過 WhatsApp 視窗運作，WhatsApp 更新後可能失效；屆時 WhatsApp 會打開並已填入你的回覆。關閉時，WhatsApp 會打開，由你自行傳送。")
+        case .zhHK:
+            return .init(reply: "回覆", closeReply: "關閉回覆", send: "傳送", emoji: "表情符號與符號",
+                         you: "你：%@", sending: "正在傳送…",
+                         openedPrefilled: "無法自動傳送。已開啟%@，並已填入回覆。",
+                         openedCopied: "無法自動傳送。已開啟%@，並已拷貝回覆。",
+                         handOffPrefilled: "已開啟%@，回覆已填入，可直接傳送。",
+                         handOffCopied: "已開啟%@，並已拷貝回覆。",
+                         needsAutomation: "允許 Zenith 控制「訊息」以傳送回覆。",
+                         needsAccessibility: "允許輔助使用以傳送 WhatsApp 回覆。",
+                         grantAccess: "授予取用權限",
+                         failed: "無法傳送此回覆。",
+                         autoWhatsApp: "自動傳送 WhatsApp 回覆",
+                         autoWhatsAppCaption: "從動態島回覆時，會在 WhatsApp 中開啟聊天、輸入訊息並按下 Return 鍵，然後返回你正在使用的 App。此功能透過 WhatsApp 視窗運作，WhatsApp 更新後可能失效；屆時 WhatsApp 會開啟並已填入你的回覆。關閉時，WhatsApp 會開啟，由你自行傳送。")
+        }
+    }
+}

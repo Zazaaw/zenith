@@ -892,6 +892,8 @@ enum DefaultsKey {
     static let notchKeyboardLight = "notchKeyboardLight"
     static let notchNotificationsEnabled = "notchNotificationsEnabled"
     static let notchDismissNativeNotifications = "notchDismissNativeNotifications"
+    // Zenith fork: type WhatsApp replies from the island into WhatsApp (ZenithReplyChannels).
+    static let notchWhatsAppAutoReply = "notchWhatsAppAutoReply"
     static let notchTimerEnabled = "notchTimerEnabled"
     static let notchTimerMode = "notchTimerMode"
     static let notchTimerMinutes = "notchTimerMinutes"
@@ -1554,6 +1556,7 @@ enum Defaults {
         DefaultsKey.notchKeyboardLight: true,
         DefaultsKey.notchNotificationsEnabled: true,
         DefaultsKey.notchDismissNativeNotifications: false,
+        DefaultsKey.notchWhatsAppAutoReply: true, // Zenith fork
         DefaultsKey.notchTimerEnabled: true,
         DefaultsKey.notchTimerMode: NotchTimerMode.timer.rawValue,
         DefaultsKey.notchTimerMinutes: 15,

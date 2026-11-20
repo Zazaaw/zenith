@@ -91,8 +91,11 @@ private struct NotchNotificationRow: View {
                 Text(item.content.app.isEmpty ? text.title : item.content.app)
                     .lineLimit(1)
                 Spacer(minLength: 4)
-                Text(item.received, format: .dateTime.hour().minute()).zenithIslandMeta(10) // Zenith fork
+                ZenithReplyTime(item: item) { // Zenith fork: how long ago a reply went
+                    Text(item.received, format: .dateTime.hour().minute())
+                }.zenithIslandMeta(10) // Zenith fork
                     .foregroundStyle(ZenithIsland.meta).textCase(nil) // Zenith fork
+                ZenithReplyButton(item: item, surface: .page) // Zenith fork
                 if service.openingID == item.id {
                     ProgressView().controlSize(.mini)
                 } else if service.canOpen(item) {
@@ -111,14 +114,17 @@ private struct NotchNotificationRow: View {
             .frame(height: 22)
             Text(item.content.title).font(.system(size: 13, weight: .semibold)).lineLimit(2)
             if !item.content.subtitle.isEmpty { Text(item.content.subtitle).font(.system(size: 12)).lineLimit(1) }
+            ZenithReplyMessageSlot(item: item) { // Zenith fork: "You: …" after a reply
             if !item.content.body.isEmpty {
                 Text(item.content.body).font(.system(size: 12)).foregroundStyle(.white.opacity(0.8))
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
+            }
             if let message = feedback ?? (service.unavailableID == item.id ? text.unavailable : nil) {
                 Text(message).font(.caption).foregroundStyle(ZenithStatus.warning).lineLimit(1)
             }
+            ZenithReplyRowSlot(item: item, surface: .page) // Zenith fork
         }
         .padding(.horizontal, 10) // Zenith fork: a bento cell, no card
         .padding(.vertical, 8) // Zenith fork
@@ -151,7 +157,9 @@ struct NotchNotificationPreviewView: View {
                     .lineLimit(1)
                 Spacer(minLength: 8)
                 if let item {
+                    ZenithReplyTime(item: item) { // Zenith fork: how long ago a reply went
                     Text(item.received, format: .dateTime.hour().minute())
+                    }
                         .font(.system(size: 11)).monospacedDigit()
                         .foregroundStyle(.white.opacity(0.45))
                 }
@@ -169,12 +177,16 @@ struct NotchNotificationPreviewView: View {
                     .foregroundStyle(.white.opacity(0.9))
                     .lineLimit(NotchNotificationPreviewLayout.subtitleLines)
             }
+            ZenithReplyMessageSlot(item: item, surface: .preview, // Zenith fork: "You: …" after a reply
+                                   font: Font(NotchNotificationPreviewLayout.bodyFont as CTFont),
+                                   lineLimit: NotchNotificationPreviewLayout.bodyLines) {
             if !content.body.isEmpty {
                 Text(content.body)
                     .font(Font(NotchNotificationPreviewLayout.bodyFont as CTFont))
                     .foregroundStyle(.white.opacity(0.82))
                     .lineLimit(NotchNotificationPreviewLayout.bodyLines)
                     .textSelection(.enabled)
+            }
             }
             HStack(spacing: 8) {
                 if let item, notifications.canOpen(item) {
@@ -183,6 +195,7 @@ struct NotchNotificationPreviewView: View {
                         .disabled(notifications.openingID != nil)
                 }
                 if notifications.openingID == notice.notificationID { ProgressView().controlSize(.small) }
+                if let item { ZenithReplyButton(item: item, surface: .preview) } // Zenith fork
                 Spacer(minLength: 8)
                 if notifications.items.count > 1 {
                     Button { service.open(.notifications) } label: {
@@ -204,6 +217,7 @@ struct NotchNotificationPreviewView: View {
                 }
             }
             .frame(height: NotchNotificationPreviewLayout.actionHeight)
+            if let item { ZenithReplyRowSlot(item: item, surface: .preview) } // Zenith fork
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
