@@ -1227,7 +1227,8 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   gerak dari rekaman referensi `reference/home-shelf-*.mp4` dan `buy-shelf-*.mp4` (dianalisis per frame;
   artwork ikon tidak diambil, semua ikon digambar Zenith sendiri). Faiz memilih ikon berwarna (bosan
   serba monokrom).
-  - **`ZenithAppIcon`** (`UI/Notch/ZenithAppIcon.swift`, hanya app): squircle sudut kontinu 22,5% sisi,
+  - **`ZenithAppIcon`** (`UI/Notch/ZenithAppIcon.swift`, hanya app; sekarang di balik `ZenithIconStyle.glossy = false`,
+    lihat "Galeri tenang, ikon tenang, editor shortcut Home"): squircle sudut kontinu 22,5% sisi,
     gradasi vertikal dari warna modul (`zenithTint`/hex): atas lebih terang dan sedikit kurang jenuh, bawah
     lebih gelap dan lebih kaya (kuning/lime turun lebih dalam supaya glyph putih tetap terbaca); bloom radial
     lembut, kilau elips di setengah atas, inner shadow terang di tepi atas dan gelap di tepi bawah, hairline
@@ -1244,7 +1245,8 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     Status aktif tetap: titik status menyala di pojok + simbol berubah; rekam dan mic mati mengubah ikon jadi
     merah. Tools di island (`QuickLauncherView`, cabang `notchSize`) memakai ikon 32 pt; panel cepat terpisah
     tidak berubah. Preview island di Settings (`NotchLayoutEditor`) ikut.
-  - **Galeri jadi Widgets** (`UI/Notch/ZenithWidgetsGallery.swift`, kait satu baris di `NotchSectionsView`):
+  - **Galeri jadi Widgets** (dibatalkan: galeri kembali ke command palette, lihat "Galeri tenang, ikon tenang, editor
+    shortcut Home") (`UI/Notch/ZenithWidgetsGallery.swift`, kait satu baris di `NotchSectionsView`):
     grid ikon 60 pt dengan nama di bawahnya, halaman bergeser ke samping (spring `ZenithMorph`; Reduce Motion:
     crossfade), page control (titik, yang aktif kapsul 14 pt) di baris atas island di samping kolom cari.
     Yang dipertahankan: cari, navigasi keyboard (grid service sama; ikon yang disorot membawa halamannya),
@@ -1474,6 +1476,76 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     tetap sejajar, peek/pemilih activity/pratinjau notifikasi/Command Bar, island kapsul, island kaca, dan halaman
     Camera (auto-start tanpa kedip, spinner hanya saat lambat, blur-in, Stop, ganti halaman, tutup island, izin
     belum ditentukan/ditolak).
+- **Galeri tenang, ikon tenang, editor shortcut Home (branch `feat/calm-gallery-home-shortcuts`):** feedback Faiz
+  setelah "Ikon berwarna, galeri Widgets dan Customize Home": galeri versi sebelumnya terasa lebih segar dan
+  tenang, squircle glossy terlalu ramai. Bahu 27 pt tetap (siluet tidak disentuh).
+  - **Galeri kembali jadi command palette** (island v2): `ZenithCommandRow` (glyph, nama, shortcut mono redup, dua
+    kolom, satu kolom di lebar tersempit, garis aksen 2 pt untuk modul aktif, kursor keyboard, cari, titik baris di
+    kanan). Bedanya: glyph duduk di tile lembut warna modul (`ZenithIslandGlyphTile` 22 pt, radius 6,5,
+    `ZenithCommandRow(tint:)`; tanpa `tint` tetap glyph monokrom). Konstanta `NotchLayout` kembali ke angka list
+    (baris 32,5, jarak 2, kolom min. 170, jarak kolom 8, maks. 2 kolom, indikator 12), `sectionListHeight(budget:)`
+    tidak berubah, jadi tinggi galeri tetap (preset 8 baris = 274 pt). `sectionRow` kembali ke semantik upstream
+    (baris pertama yang tampil, kursor keyboard digeser seperlunya, satu langkah = satu baris); yang dipertahankan
+    dari galeri Widgets: swipe samping di trackpad tetap menggeser galeri (sumbu dominan), sekarang per baris.
+    `ZenithWidgetsGallery.swift` dan `ZenithWidgetsPaging` dihapus (ada di riwayat, commit `032871e5`).
+  - **Ikon tenang:** `ZenithIslandIcon` (di `ZenithAppIcon.swift`) menggambar tile shortcut Home, Tools di island,
+    heading widget, strip mode edit, ikon terbang, dan preview Settings sebagai glyph warna di tile lembut
+    (`ZenithIslandGlyphTile`, warna dari `zenithIconHex`/`hex` lewat `ZenithIslandPalette.color(hex:)`). Titik status
+    aktif tetap, rekam dan mic mati tetap membuat tile merah. `ZenithAppIcon` tetap ada di balik satu saklar:
+    `ZenithIconStyle.glossy = false` (ubah ke `true` untuk kembali ke squircle glossy).
+  - **Editor shortcut Home:** Customize Home sekarang juga mengedit baris shortcut di bawah widget.
+    - Strip mode edit punya baris atas: segmented `Widgets | Shortcuts` (`ZenithSegmented`) di kiri, ✕/✓ di kanan
+      (26 pt), lalu baris ikon di bawahnya (`ZenithHomeIsland.stripHeight` 58 → 84). Sisi Shortcuts menampilkan semua
+      `NotchControlItem` yang bukan level dan bukan player, yang tersedia di Mac ini (`isAvailable` upstream: fitur
+      terpasang dan nyala, halaman tujuan tampil), centang aksen untuk yang sudah di baris; klik = tambah/hapus.
+    - Di baris shortcut, tiap tile bergoyang ±1° dengan badge hapus merah di sudut ikon, klik tile dimatikan, dan tile
+      bisa diseret: tile mengikuti pointer (skala 1,08), tetangga bergeser memberi ruang dengan spring, dilepas = tile
+      spring ke tempat barunya lalu urutan disimpan di draft tanpa gerak kedua. Drag memakai `DragGesture` SwiftUI di
+      dalam island (bukan drag session, jadi shelf/drop tidak ikut). VoiceOver: aksi Move left/Move right/Remove.
+    - ✕ membatalkan widget dan shortcut sekaligus; ✓ (Return) menyimpan keduanya. Mode edit batal sendiri kalau
+      halaman Home hilang, seperti sebelumnya.
+  - **Persistensi:** tidak ada kunci baru. Baris memakai kunci upstream yang juga diedit kartu Home di Settings:
+    `notchControlOrder` (urutan, ditulis seperti Settings: semua shortcut dipisah koma) dan `notchHiddenControls`
+    (yang dimatikan, tetap daftar terurut; entri level, `music` milik widget, dan nama asing dipertahankan). Keduanya
+    sudah terdaftar di `registeredDefaults`, jadi ikut backup. Yang tidak berubah tidak ditulis. Island dan Settings
+    selalu membaca kebenaran yang sama (`NotchSupport.controls`).
+  - **Batas:** `ZenithHomeShortcuts.capacity` = jumlah shortcut terbanyak yang muat tanpa rail menggulir, dengan
+    layout halaman Home sendiri (`NotchLayout.controls`: baris yang diizinkan tinggi halaman, kolom sampai jaraknya
+    menutup) di lebar island saat ini (lebar pilihan, dilebarkan widget). Compact ±5, Spacious sampai 2 baris. Kalau
+    penuh, ikon di strip diredupkan dengan tooltip "No room in the row"; shortcut lama yang melebihi batas (diatur dari
+    Settings) diredupkan di baris dengan tooltip sama dan tetap disimpan (rail menggulir seperti upstream).
+  - **Gerak (120 Hz):** menambah = ikon terbang dari strip ke baris (`matchedGeometryEffect`), lalu blur-fade jadi
+    tile; menghapus = menyusut, blur, fade (`zenithHomeDeparture`); geser urutan dan reflow baris = spring
+    `ZenithMorph`. Island membesar/mengecil lewat geometri sendiri: selama edit, `ZenithHomeIsland.controls` memberi
+    draft shortcut ke `pageSize` dan `naturalContentWidth`. Reduce Motion: fade, tanpa terbang, drop langsung.
+  - **Kode:** model murni `Services/Notch/ZenithHomeShortcutsSupport.swift` (ikut `TEST_SOURCES`):
+    `ZenithHomeShortcuts` (urutan + yang dimatikan, tambah di akhir, hapus menyimpan tempat, pindah dalam baris tanpa
+    menggeser yang di luar baris, decode/encode, save, `capacity`), `NotchGeometry.zenithHomeShortcutCapacity`,
+    `ZenithHomeIsland.shortcutDraft`/`controls(_:)`. Tampilan `UI/Notch/ZenithHomeShortcutsView.swift`
+    (`ZenithHomeShortcutEditing`, `ZenithHomeShortcutCandidate`); state di `ZenithHomeEditor`. Teks di
+    `ZenithStrings.homeShortcuts` (15 bahasa: Widgets, Shortcuts, No room in the row, Drag to reorder, Move left,
+    Move right).
+  - Edit di file upstream bertanda `// Zenith fork`: `NotchSupport` (konstanta galeri kembali), `NotchService`
+    (paging galeri kembali ke upstream, `pageSize` dan `expandedGeometry` membaca draft, `zenithReloadHomeControls`),
+    `NotchSectionsView` (galeri list + tint), `NotchControlsView` (draft shortcut, modifier edit), `build.sh`
+    (`TEST_SOURCES`).
+  - **Test:** `HomeLayoutTests` (suite `home-layout`) ditambah `shortcutEditing` (tambah di akhir, tidak dobel, level
+    dan player ditolak, hapus menyimpan tempat, pindah/clamp/geser, yang di luar baris tidak bergeser),
+    `shortcutAvailability` (yang tidak tersedia menunggu, tidak ditawarkan, tidak bisa ditambah; ikut `isAvailable`
+    upstream), `shortcutFitting` (muat tanpa gulir dan satu lagi akan menggulir di compact/spacious, lebar sempit lebih
+    sedikit, minimal satu, baris penuh menolak), `shortcutPersistence` (kunci upstream terdaftar dan ikut backup,
+    decode/encode, default upstream, daftar hidden mempertahankan level/`music`/nama asing, save tanpa perubahan tidak
+    menulis, hasil save terbaca sama oleh `NotchSupport.controls`), `shortcutEditMode` (draft dipakai island saat edit,
+    batal tidak menulis, selesai menyimpan), dan teks. Dihapus: `galleryPages` (model paging galeri sudah tidak ada).
+    Diubah kembali ke angka list (tujuan sama: tinggi galeri = tiga baris tile upstream): `NotchTests` blok galeri (8
+    baris, 2/2/1 kolom, ≤ 3 posisi baris) + cek tile tint muat di baris, `NotchSectionPagingTests` (swipe samping
+    menggeser satu baris).
+  - **Belum diverifikasi visual:** app UI tidak dijalankan. Galeri dan mode edit shortcut dirender statis sebagai mock
+    dari komponen Kit asli (`ImageRenderer`). Perlu dicek di Mac (120 Hz): galeri (tile tint di island hitam dan kaca,
+    kursor keyboard, modul aktif, swipe samping), tile Home/Tools tenang (titik aktif, merah saat rekam/mic mati), strip
+    (segmented, ✕/✓, ganti sisi), drag shortcut (tetangga bergeser, drop, drag sampai keluar island, rail dua baris
+    di Spacious), ikon terbang dari strip, hapus, island melebar/meninggi saat shortcut bertambah, tooltip redup,
+    Reduce Motion, VoiceOver.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.

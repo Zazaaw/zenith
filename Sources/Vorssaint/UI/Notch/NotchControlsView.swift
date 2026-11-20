@@ -15,9 +15,9 @@ struct NotchControlsView: View {
     @Namespace private var homeWidgets // Zenith fork: icons flying from the edit strip
 
     var body: some View {
-        let items = NotchSupport.controls()
         // Zenith fork: the card row holds the chosen widgets, and edit mode adds its strip below.
         let homeEditing = homeEditor.editing && !preview
+        let items = homeEditor.controls(NotchSupport.controls(), editing: homeEditing) // Zenith fork: the edit mode's shortcuts
         let homeCards = !homeEditor.shown(modules: service.modules).isEmpty || homeEditing
         let stripRoom = homeEditing ? ZenithHomeIsland.stripHeight + ZenithHomeIsland.stripSpacing : 0
         let levels = items.filter(\.isLevel)
@@ -28,6 +28,7 @@ struct NotchControlsView: View {
         let bandLevels = Array(levels.prefix(inBand))
         let belowLevels = Array(levels.dropFirst(inBand))
         let shortcuts = items.filter { !$0.isLevel && $0 != .music }
+        let shortcutCapacity = homeEditing ? homeEditor.shortcutCapacity(service: service) : .max // Zenith fork
         let layout = NotchLayout.controls(hasCards: homeCards, levelRow: !belowLevels.isEmpty, // Zenith fork
                                           shortcutCount: shortcuts.count, width: size.width,
                                           height: size.height - stripRoom) // Zenith fork
@@ -49,6 +50,9 @@ struct NotchControlsView: View {
                               leastSpacing: NotchLayout.shortcutLeastSpacing, rowSpacing: layout.shortcutRowSpacing,
                               dividers: true) { item in // Zenith fork: glyph buttons parted by hairlines
                         shortcut(item)
+                            .modifier(ZenithHomeShortcutEditing(item: item, index: shortcuts.firstIndex(of: item) ?? 0,
+                                                                capacity: shortcutCapacity, service: service,
+                                                                namespace: homeWidgets)) // Zenith fork: edit mode
                     }
                 }
                 if homeEditing { // Zenith fork: the widgets to add, Cancel and Done
@@ -437,14 +441,14 @@ struct NotchActionTile: View {
     var compactTitle: String?
     var active = false
     var accent: NotchTileAccent = .selection
-    /// Zenith fork: the colour of its app icon (`NotchControlItem.zenithIconHex`); nil keeps the plain glyph.
+    /// Zenith fork: the colour of its icon (`NotchControlItem.zenithIconHex`); nil keeps the plain glyph.
     var iconHex: UInt32? = nil
     let action: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         Button(action: action) {
             VStack(spacing: 6) {
-                glyph // Zenith fork: a colourful icon where the tile has a colour
+                glyph // Zenith fork: a tinted icon where the tile has a colour
                 label
                     .frame(maxWidth: .infinity)
                     .frame(height: 28, alignment: .top)
@@ -462,13 +466,14 @@ struct NotchActionTile: View {
         .help(title)
     }
 
-    // Zenith fork: with `iconHex` the glyph is a small colourful app icon; an
-    // active state adds its glowing dot (and a recording or a muted microphone
-    // turns the icon red), its symbol changing too. Without one, the plain glyph.
+    // Zenith fork: with `iconHex` the glyph sits on a soft tile of its colour
+    // (`ZenithIslandIcon`); an active state adds its glowing dot (and a
+    // recording or a muted microphone turns the tile red), its symbol changing
+    // too. Without one, the plain glyph.
     @ViewBuilder private var glyph: some View {
         let tint = accent == .selection ? ZenithIsland.accent : accent.fill
         if let iconHex {
-            ZenithAppIcon(symbol: symbol, hex: active && accent == .alert ? 0xEF4444 : iconHex, size: 34)
+            ZenithIslandIcon(symbol: symbol, hex: active && accent == .alert ? 0xEF4444 : iconHex, size: 34)
                 .contentTransition(.symbolEffect(.replace))
                 .overlay(alignment: .topTrailing) {
                     if active { ZenithStatusDot(color: tint, live: true, size: 6).offset(x: 5, y: -5) }

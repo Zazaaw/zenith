@@ -2753,26 +2753,28 @@ enum NotchTests {
             suite.expect(geometry.sectionPickerSize(count: 1).height < geometry.sectionPickerSize(count: allModules.count).height,
                    "a short search result shrinks the gallery instead of reserving empty rows")
         }
-        // Zenith fork: the gallery is a grid of app icons in sideways pages,
-        // in the room upstream's three rows of tiles took on a preset's page.
-        suite.expect(compact.sectionRows(count: allModules.count) == 3 && spacious.sectionRows(count: allModules.count) == 3
+        // Zenith fork: the gallery is a command palette of rows, in the room
+        // upstream's three rows of tiles took on a preset's page.
+        suite.expect(compact.sectionRows(count: allModules.count) == 8 && spacious.sectionRows(count: allModules.count) == 8
                && compact.contentSize(for: compact.sectionPickerSize(count: allModules.count)).height <= compact.pageBudget
                && tall.sectionRows(count: allModules.count) > spacious.sectionRows(count: allModules.count)
                && tall.sectionRows(count: allModules.count)
                    <= NotchSectionPaging.rows(count: allModules.count, columns: tall.sectionColumns),
-               "the gallery is a page: presets show three whole rows of icons and a tall island shows more")
+               "the gallery is a page: presets show eight whole rows and a tall island shows more")
         let narrow = NotchGeometry(screen: frames[0], safeAreaTop: 32, cameraWidth: 210, layout: .custom,
                                    customWidth: NotchSize.widthRange.lowerBound)
-        suite.expect(compact.sectionColumns == 4 && spacious.sectionColumns == 5 && narrow.sectionColumns == 3
+        suite.expect(compact.sectionColumns == 2 && spacious.sectionColumns == 2 && narrow.sectionColumns == 1
                && compact.sectionColumns * compact.sectionRows(count: allModules.count) < allModules.count
-               && ZenithWidgetsPaging.pages(rows: NotchSectionPaging.rows(count: allModules.count,
-                                                                         columns: spacious.sectionColumns),
-                                            visible: spacious.sectionRows(count: allModules.count)) == 2,
-               "a preset lays the sections out four or five icons across, the narrowest island three, and pages sideways to the last ones")
-        suite.expect(NotchLayout.railHeight(rows: 3, rowHeight: NotchLayout.sectionTileHeight, spacing: NotchLayout.sectionSpacing)
+               && NotchSectionPaging.positions(rows: NotchSectionPaging.rows(count: allModules.count,
+                                                                            columns: spacious.sectionColumns),
+                                               visible: spacious.sectionRows(count: allModules.count)) <= 3,
+               "a preset lists the sections in two columns, the narrowest island in one, and steps rows to reach the last ones")
+        suite.expect(NotchLayout.railHeight(rows: 8, rowHeight: NotchLayout.sectionTileHeight, spacing: NotchLayout.sectionSpacing)
                    == NotchLayout.sectionListHeight(budget: NotchLayout.pageContentHeight)
                && NotchLayout.sectionListHeight(budget: NotchLayout.pageContentHeight) <= NotchLayout.pageContentHeight,
-               "three rows of icons fill the room three rows of upstream's tiles took on the gallery's page, and no more")
+               "eight rows fill the room three rows of upstream's tiles took on the gallery's page, and no more")
+        suite.expect(ZenithCommandRow.tileSize + 8 <= NotchLayout.sectionTileHeight,
+               "a row's tinted glyph tile sits inside the row with room above and below it")
         for geometry in [compact, spacious, tall, narrow] {
             let columns = geometry.sectionColumns
             let tileWidth = (geometry.contentWidth - NotchLayout.sectionIndicatorWidth

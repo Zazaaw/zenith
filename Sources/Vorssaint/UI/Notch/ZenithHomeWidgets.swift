@@ -61,7 +61,7 @@ private struct ZenithHomeWidgetHeader<Trailing: View>: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            ZenithAppIcon(symbol: widget.symbol, hex: widget.hex, size: 16, lifted: false)
+            ZenithIslandIcon(symbol: widget.symbol, hex: widget.hex, size: 16, lifted: false)
             Text(title.uppercased())
                 .font(ZenithType.mono(9.5, weight: .medium))
                 .tracking(0.4)

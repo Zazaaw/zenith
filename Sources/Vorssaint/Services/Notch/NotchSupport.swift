@@ -327,14 +327,14 @@ enum NotchLayout {
     /// to none, before their rail scrolls, so the narrowest island holds
     /// four across, as the home page's shortcuts do.
     static let toolLeastSpacing: CGFloat = 0
-    // Zenith fork: the gallery is a grid of colourful app icons over their
-    // names, paged sideways (ZenithWidgetsGallery), in the room upstream's
-    // three rows of 86-point tiles took (see `sectionListHeight`).
-    static let sectionTileHeight: CGFloat = 86 // Zenith fork: an icon and its name
-    static let sectionTileWidth: CGFloat = 84 // Zenith fork: a column's least width
-    static let sectionSpacing: CGFloat = 8 // Zenith fork: between rows
-    static let sectionColumnSpacing: CGFloat = 4 // Zenith fork
-    static let sectionMaximumColumns = 8 // Zenith fork
+    // Zenith fork: the gallery is a command palette, rows of a glyph, a name
+    // and a shortcut in up to two columns, in the room upstream's three rows
+    // of 86-point tiles took (see `sectionListHeight`).
+    static let sectionTileHeight: CGFloat = 32.5 // Zenith fork: a row
+    static let sectionTileWidth: CGFloat = 170 // Zenith fork: a column's least width
+    static let sectionSpacing: CGFloat = 2 // Zenith fork: between rows
+    static let sectionColumnSpacing: CGFloat = 8 // Zenith fork
+    static let sectionMaximumColumns = 2 // Zenith fork
     /// Zenith fork: the height upstream's tiles (86 points, 8 apart) filled
     /// in `budget`, which the palette's rows keep.
     static func sectionListHeight(budget: CGFloat) -> CGFloat {
@@ -342,8 +342,7 @@ enum NotchLayout {
         return railHeight(rows: max(1, Int(((budget + 8) / 94).rounded(.down))), rowHeight: 86, spacing: 8)
     }
     /// The gallery's row indicator beside the tiles, with its gap.
-    // Zenith fork: the page dots sit in the island's top row, not beside the icons.
-    static let sectionIndicatorWidth: CGFloat = 0
+    static let sectionIndicatorWidth: CGFloat = 12
     /// The search field the clipboard page shows once it is wanted.
     static let clipboardSearchHeight: CGFloat = 36
     static let clipboardCardHeight: CGFloat = 104

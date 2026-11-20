@@ -23,7 +23,7 @@ struct NotchSectionsView: View {
             if sections.isEmpty {
                 NotchEmptyView(symbol: "magnifyingglass", message: FeatureStrings.clipboard(l10n.language).noResults)
             } else {
-                ZenithWidgetsGallery(service: service) // Zenith fork: colourful icons in sideways pages
+                gallery
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -101,10 +101,11 @@ struct NotchSectionsView: View {
         let highlighted = service.highlightedSection == module
         let current = service.selected == module
         return Button { service.select(module) } label: {
-            // Zenith fork: a command palette row: glyph, name and shortcut.
+            // Zenith fork: a command palette row: glyph on its soft tinted tile, name and shortcut.
             ZenithCommandRow(symbol: module.symbol, title: module.title(l10n.language),
                              shortcut: "⌥⌘" + module.shortcutKey.uppercased(),
-                             highlighted: highlighted, current: current, height: NotchLayout.sectionTileHeight)
+                             highlighted: highlighted, current: current, height: NotchLayout.sectionTileHeight,
+                             tint: module.zenithTint)
         }
         .buttonStyle(NotchButtonStyle(cornerRadius: ZenithRadius.large, lifts: false, highlights: false)) // Zenith fork
         .accessibilityLabel(module.title(l10n.language))

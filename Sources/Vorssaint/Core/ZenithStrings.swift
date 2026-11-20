@@ -5294,6 +5294,72 @@ extension ZenithStrings {
     }
 }
 
+/// Zenith fork: the home page's shortcut row in "Customize Home" (ZenithHomeShortcutsView).
+struct ZenithHomeShortcutStrings {
+    /// The edit strip's switch between what it offers.
+    let widgets: String
+    let shortcuts: String
+    /// A shortcut the row has no room for at the island's width.
+    let noRoom: String
+    /// A shortcut's tooltip in edit mode.
+    let dragHint: String
+    /// VoiceOver's actions on a shortcut in edit mode.
+    let moveLeft: String
+    let moveRight: String
+}
+
+extension ZenithStrings {
+    static func homeShortcuts(_ language: AppLanguage) -> ZenithHomeShortcutStrings {
+        switch language {
+        case .enUS:
+            return .init(widgets: "Widgets", shortcuts: "Shortcuts", noRoom: "No room in the row", dragHint: "Drag to reorder",
+                         moveLeft: "Move left", moveRight: "Move right")
+        case .ptBR:
+            return .init(widgets: "Widgets", shortcuts: "Atalhos", noRoom: "Não há espaço na fileira", dragHint: "Arraste para reordenar",
+                         moveLeft: "Mover para a esquerda", moveRight: "Mover para a direita")
+        case .tr:
+            return .init(widgets: "Widget’lar", shortcuts: "Kısayollar", noRoom: "Satırda yer yok", dragHint: "Sıralamak için sürükle",
+                         moveLeft: "Sola taşı", moveRight: "Sağa taşı")
+        case .ru:
+            return .init(widgets: "Виджеты", shortcuts: "Быстрые действия", noRoom: "В ряду нет места", dragHint: "Перетащите, чтобы изменить порядок",
+                         moveLeft: "Переместить влево", moveRight: "Переместить вправо")
+        case .es:
+            return .init(widgets: "Widgets", shortcuts: "Atajos", noRoom: "No hay espacio en la fila", dragHint: "Arrastra para reordenar",
+                         moveLeft: "Mover a la izquierda", moveRight: "Mover a la derecha")
+        case .sk:
+            return .init(widgets: "Widgety", shortcuts: "Skratky", noRoom: "V riadku nie je miesto", dragHint: "Potiahnutím zmeníte poradie",
+                         moveLeft: "Posunúť doľava", moveRight: "Posunúť doprava")
+        case .de:
+            return .init(widgets: "Widgets", shortcuts: "Kurzbefehle", noRoom: "Kein Platz in der Reihe", dragHint: "Zum Umordnen ziehen",
+                         moveLeft: "Nach links bewegen", moveRight: "Nach rechts bewegen")
+        case .fr:
+            return .init(widgets: "Widgets", shortcuts: "Raccourcis", noRoom: "Plus de place dans la rangée", dragHint: "Faites glisser pour réorganiser",
+                         moveLeft: "Déplacer vers la gauche", moveRight: "Déplacer vers la droite")
+        case .it:
+            return .init(widgets: "Widget", shortcuts: "Scorciatoie", noRoom: "Non c’è spazio nella riga", dragHint: "Trascina per riordinare",
+                         moveLeft: "Sposta a sinistra", moveRight: "Sposta a destra")
+        case .ja:
+            return .init(widgets: "ウィジェット", shortcuts: "ショートカット", noRoom: "この列に空きがありません", dragHint: "ドラッグして並べ替え",
+                         moveLeft: "左へ移動", moveRight: "右へ移動")
+        case .ko:
+            return .init(widgets: "위젯", shortcuts: "단축키", noRoom: "줄에 공간이 없습니다", dragHint: "드래그하여 순서 변경",
+                         moveLeft: "왼쪽으로 이동", moveRight: "오른쪽으로 이동")
+        case .uk:
+            return .init(widgets: "Віджети", shortcuts: "Скорочення", noRoom: "У ряду немає місця", dragHint: "Перетягніть, щоб змінити порядок",
+                         moveLeft: "Перемістити ліворуч", moveRight: "Перемістити праворуч")
+        case .zhHans:
+            return .init(widgets: "小组件", shortcuts: "快捷操作", noRoom: "这一行没有空间了", dragHint: "拖移以重新排序",
+                         moveLeft: "左移", moveRight: "右移")
+        case .zhTW:
+            return .init(widgets: "小工具", shortcuts: "快捷操作", noRoom: "這一列沒有空間了", dragHint: "拖移以重新排序",
+                         moveLeft: "左移", moveRight: "右移")
+        case .zhHK:
+            return .init(widgets: "小工具", shortcuts: "快捷操作", noRoom: "這一列沒有空間了", dragHint: "拖移以重新排序",
+                         moveLeft: "左移", moveRight: "右移")
+        }
+    }
+}
+
 // MARK: - Card import
 
 /// Zenith fork: importing camera cards (CardImportService), in the island and in Settings.

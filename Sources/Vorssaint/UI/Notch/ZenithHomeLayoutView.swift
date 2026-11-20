@@ -11,7 +11,9 @@ import SwiftUI
 // rises in at the bottom with Cancel and Done. Adding one flies its icon
 // from the strip into its place (`matchedGeometryEffect`) while the island
 // springs wider; removing one shrinks, fades and blurs it out while the
-// island narrows. Cancel puts the layout back; Done saves it.
+// island narrows. The strip's switch turns to the shortcut row under the
+// widgets, edited the same way (ZenithHomeShortcutsView). Cancel puts the
+// widgets and the shortcuts back; Done saves both.
 //
 // The island's size follows the layout through its own geometry
 // (`ZenithHomeIsland.geometry`, read by `NotchService.expandedGeometry`):
@@ -23,14 +25,38 @@ import SwiftUI
 final class ZenithHomeEditor: ObservableObject {
     static let shared = ZenithHomeEditor()
 
+    /// What the edit strip offers.
+    enum StripSide: Hashable { case widgets, shortcuts }
+
+    /// A shortcut being dragged along the row: how far the pointer has
+    /// moved it, and the place it would take if dropped now.
+    struct ShortcutDrag: Equatable {
+        var item: NotchControlItem
+        var translation: CGSize
+        var target: Int
+        /// Dropped: it springs into `target` before the row takes the new order.
+        var settling = false
+    }
+
     @Published private(set) var editing = false
     @Published private(set) var draft = ZenithHomeLayout()
     /// Widgets whose icons are flying into their place.
     @Published private(set) var landing: Set<ZenithHomeWidget> = []
     /// Bumps when a saved layout changes, so the row redraws.
     @Published private(set) var revision = 0
+    /// The shortcut row being edited, beside the widgets' draft.
+    @Published private(set) var shortcuts = ZenithHomeShortcuts()
+    /// Shortcuts whose icons are flying into the row.
+    @Published private(set) var landingShortcuts: Set<NotchControlItem> = []
+    @Published private(set) var shortcutDrag: ShortcutDrag?
+    @Published var stripSide = StripSide.widgets
 
     private var landingWork: [ZenithHomeWidget: DispatchWorkItem] = [:]
+    private var shortcutLandingWork: [NotchControlItem: DispatchWorkItem] = [:]
+    /// The shortcuts this Mac can show, read when the edit mode opens.
+    private(set) var availableShortcuts = Set<NotchControlItem>()
+    /// Where each shortcut sits in the row, for dragging.
+    var shortcutFrames: [NotchControlItem: CGRect] = [:]
 
     private init() {}
 
@@ -49,6 +75,32 @@ final class ZenithHomeEditor: ObservableObject {
         draft.canAdd(widget, maximumWidth: service.geometry.zenithHomeMaximumContentWidth)
     }
 
+    /// The home page's controls on screen: while editing, the draft's
+    /// shortcuts in place of the stored ones.
+    func controls(_ stored: [NotchControlItem], editing: Bool) -> [NotchControlItem] {
+        editing && self.editing ? shortcuts.controls(replacing: stored, available: availableShortcuts) : stored
+    }
+
+    /// The shortcuts in the row while editing.
+    var shownShortcuts: [NotchControlItem] { shortcuts.shown(available: availableShortcuts) }
+
+    /// Shortcuts the strip offers: every one this Mac can show.
+    var offeredShortcuts: [NotchControlItem] { shortcuts.offered(available: availableShortcuts) }
+
+    /// How many shortcuts the row holds without scrolling, at the island's
+    /// width (widened by the widgets, never narrowed to the row) and its
+    /// page's whole height.
+    func shortcutCapacity(service: NotchService) -> Int {
+        var geometry = service.expandedGeometry
+        geometry.pageContentWidth = nil
+        return geometry.zenithHomeShortcutCapacity(levels: NotchSupport.controls().filter(\.isLevel).count,
+                                                   hasCards: geometry.zenithHome?.hasCards ?? true)
+    }
+
+    func canAddShortcut(_ item: NotchControlItem, service: NotchService) -> Bool {
+        shortcuts.canAdd(item, available: availableShortcuts, capacity: shortcutCapacity(service: service))
+    }
+
     // MARK: Edit mode
 
     /// Opens the edit mode on the home page, bringing the home page first.
@@ -59,7 +111,11 @@ final class ZenithHomeEditor: ObservableObject {
             service.select(.controls)
         }
         draft = ZenithHomeIsland.stored()
+        shortcuts = ZenithHomeShortcuts.stored()
+        availableShortcuts = ZenithHomeShortcuts.available()
+        shortcutDrag = nil
         ZenithHomeIsland.draft = draft
+        ZenithHomeIsland.shortcutDraft = shortcuts
         ZenithHomeIsland.editing = true
         withAnimation(ZenithMorph.animation(reduceMotion: reduceMotion)) { editing = true }
         service.refreshPresentation()
@@ -101,10 +157,131 @@ final class ZenithHomeEditor: ObservableObject {
         service.refreshPresentation()
     }
 
-    /// Done: keeps the layout.
+    // MARK: Shortcuts
+
+    func toggleShortcut(_ item: NotchControlItem, service: NotchService) {
+        shortcuts.contains(item) ? removeShortcut(item, service: service) : addShortcut(item, service: service)
+    }
+
+    /// Adds `item` at the end of the row: its icon flies from the strip into
+    /// its place, then the tile takes over.
+    func addShortcut(_ item: NotchControlItem, service: NotchService) {
+        guard editing, shortcutDrag == nil, canAddShortcut(item, service: service) else { return }
+        withAnimation(ZenithMorph.animation(reduceMotion: reduceMotion)) {
+            shortcuts = shortcuts.adding(item, available: availableShortcuts)
+            if !reduceMotion { landingShortcuts.insert(item) }
+        }
+        ZenithHomeIsland.shortcutDraft = shortcuts
+        service.refreshPresentation()
+        guard !reduceMotion else { return }
+        shortcutLandingWork[item]?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            withAnimation(.easeOut(duration: 0.22)) { _ = self.landingShortcuts.remove(item) }
+            self.shortcutLandingWork[item] = nil
+        }
+        shortcutLandingWork[item] = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + ZenithMorph.response + 0.06, execute: work)
+    }
+
+    /// Removes `item` from the row: it shrinks, blurs and fades out.
+    func removeShortcut(_ item: NotchControlItem, service: NotchService) {
+        guard editing, shortcutDrag == nil, shortcuts.contains(item) else { return }
+        shortcutLandingWork[item]?.cancel()
+        shortcutLandingWork[item] = nil
+        withAnimation(ZenithMorph.animation(reduceMotion: reduceMotion)) {
+            shortcuts = shortcuts.removing(item)
+            landingShortcuts.remove(item)
+        }
+        ZenithHomeIsland.shortcutDraft = shortcuts
+        service.refreshPresentation()
+    }
+
+    /// Moves `item` along the row on a spring (VoiceOver's actions use it).
+    func moveShortcut(_ item: NotchControlItem, by offset: Int, service: NotchService) {
+        guard editing, shortcutDrag == nil else { return }
+        withAnimation(ZenithMorph.animation(reduceMotion: reduceMotion)) {
+            shortcuts = shortcuts.moving(item, by: offset, available: availableShortcuts)
+        }
+        ZenithHomeIsland.shortcutDraft = shortcuts
+        service.refreshPresentation()
+    }
+
+    /// The pointer drags `item` by `translation`: the tile follows it and the
+    /// others make room where it would land.
+    func dragShortcut(_ item: NotchControlItem, translation: CGSize) {
+        guard editing, shortcutDrag?.settling != true else { return }
+        let row = shownShortcuts
+        guard let from = row.firstIndex(of: item), let frame = shortcutFrames[item] else { return }
+        let point = CGPoint(x: frame.midX + translation.width, y: frame.midY + translation.height)
+        let target = Self.dropIndex(for: point, row: row, frames: shortcutFrames) ?? from
+        if shortcutDrag?.item != item || shortcutDrag?.target != target {
+            withAnimation(ZenithMorph.animation(reduceMotion: reduceMotion)) {
+                shortcutDrag = ShortcutDrag(item: item, translation: translation, target: target)
+            }
+        } else {
+            shortcutDrag?.translation = translation
+        }
+    }
+
+    /// Dropped: the tile springs into the place it was over, then the row
+    /// takes the new order without moving again.
+    func dropShortcut(_ item: NotchControlItem, service: NotchService) {
+        guard editing, var drag = shortcutDrag, drag.item == item, !drag.settling else { return }
+        let commit = { [weak self] in
+            guard let self, self.editing else { return }
+            var instant = Transaction()
+            instant.disablesAnimations = true
+            withTransaction(instant) {
+                self.shortcuts = self.shortcuts.moving(item, to: drag.target, available: self.availableShortcuts)
+                self.shortcutDrag = nil
+            }
+            ZenithHomeIsland.shortcutDraft = self.shortcuts
+            service.refreshPresentation()
+        }
+        guard !reduceMotion else { commit(); return }
+        drag.settling = true
+        withAnimation(ZenithMorph.animation) { shortcutDrag = drag } completion: { commit() }
+    }
+
+    /// Where a tile dropped at `point` lands: the place of the tile it is
+    /// over, or of the nearest one along its line.
+    static func dropIndex(for point: CGPoint, row: [NotchControlItem],
+                          frames: [NotchControlItem: CGRect]) -> Int? {
+        let slots = row.enumerated().compactMap { index, item in frames[item].map { (index, $0) } }
+        guard !slots.isEmpty else { return nil }
+        if let hit = slots.first(where: { $0.1.contains(point) }) { return hit.0 }
+        return slots.min { lhs, rhs in
+            let left = hypot(lhs.1.midX - point.x, (lhs.1.midY - point.y) * 2)
+            let right = hypot(rhs.1.midX - point.x, (rhs.1.midY - point.y) * 2)
+            return left < right
+        }?.0
+    }
+
+    /// How far a tile at `index` moves while another is dragged: into the
+    /// place it shifts to as the dragged one passes it.
+    func shortcutOffset(_ item: NotchControlItem) -> CGSize {
+        guard let drag = shortcutDrag else { return .zero }
+        let row = shownShortcuts
+        guard let index = row.firstIndex(of: item), let from = row.firstIndex(of: drag.item) else { return .zero }
+        func slot(_ position: Int) -> CGRect? { shortcutFrames[row[min(max(0, position), row.count - 1)]] }
+        if item == drag.item {
+            guard drag.settling, let origin = slot(from), let target = slot(drag.target) else { return drag.translation }
+            return CGSize(width: target.minX - origin.minX, height: target.minY - origin.minY)
+        }
+        var next = index
+        if from < drag.target, index > from, index <= drag.target { next = index - 1 }
+        if from > drag.target, index < from, index >= drag.target { next = index + 1 }
+        guard next != index, let origin = slot(index), let target = slot(next) else { return .zero }
+        return CGSize(width: target.minX - origin.minX, height: target.minY - origin.minY)
+    }
+
+    // MARK: Ending
+
+    /// Done: keeps the widgets and the shortcuts.
     func done(service: NotchService) { end(saving: true, service: service) }
 
-    /// Cancel: puts the layout back as it was.
+    /// Cancel: puts both back as they were.
     func cancel(service: NotchService) { end(saving: false, service: service) }
 
     /// Leaves the edit mode without saving when the home page goes away.
@@ -117,15 +294,29 @@ final class ZenithHomeEditor: ObservableObject {
         guard editing else { return }
         landingWork.values.forEach { $0.cancel() }
         landingWork = [:]
+        shortcutLandingWork.values.forEach { $0.cancel() }
+        shortcutLandingWork = [:]
+        var settledShortcuts = shortcuts
+        if let drag = shortcutDrag {
+            settledShortcuts = shortcuts.moving(drag.item, to: drag.target, available: availableShortcuts)
+        }
         if saving, draft != ZenithHomeIsland.stored() {
             ZenithHomeIsland.save(draft)
             revision += 1
         }
+        if saving, settledShortcuts != ZenithHomeShortcuts.stored() {
+            settledShortcuts.save()
+            service.zenithReloadHomeControls()
+            revision += 1
+        }
         ZenithHomeIsland.editing = false
         ZenithHomeIsland.draft = nil
+        ZenithHomeIsland.shortcutDraft = nil
         withAnimation(ZenithMorph.animation(reduceMotion: reduceMotion)) {
             editing = false
             landing = []
+            landingShortcuts = []
+            shortcutDrag = nil
         }
         service.refreshPresentation()
     }
@@ -191,7 +382,7 @@ struct ZenithHomeCardRow: View {
             .allowsHitTesting(!editing)
             .overlay {
                 if landing {
-                    ZenithAppIcon(symbol: widget.symbol, hex: widget.hex, size: 40)
+                    ZenithIslandIcon(symbol: widget.symbol, hex: widget.hex, size: 40)
                         .matchedGeometryEffect(id: widget, in: namespace)
                         .transition(.asymmetric(insertion: .identity,
                                                 removal: .opacity.combined(with: .scale(scale: 1.15))))
@@ -249,9 +440,9 @@ extension AnyTransition {
     }
 }
 
-/// In edit mode a widget rocks a degree either way, each a little out of
-/// step with its neighbour; outside it, it settles back.
-private struct ZenithHomeWiggle: ViewModifier {
+/// In edit mode a widget or a shortcut rocks a degree either way, each a
+/// little out of step with its neighbour; outside it, it settles back.
+struct ZenithHomeWiggle: ViewModifier {
     let active: Bool
     let index: Int
     @State private var tilted = false
@@ -278,9 +469,10 @@ private struct ZenithHomeWiggle: ViewModifier {
 
 // MARK: - The edit strip
 
-/// The bottom of the home page in edit mode: the widgets that can be added,
-/// as colourful icons over their names (a check on those already in the
-/// row), scrolling sideways, then Cancel and Done.
+/// The bottom of the home page in edit mode: a switch between the widgets
+/// and the shortcuts with Cancel and Done beside it, then what that side
+/// can add, as tinted icons over their names (a check on those already in
+/// the page), scrolling sideways.
 struct ZenithHomeEditStrip: View {
     @ObservedObject var service: NotchService
     let namespace: Namespace.ID
@@ -289,22 +481,20 @@ struct ZenithHomeEditStrip: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var shown = false
 
+    /// The switch's row, above the icons.
+    static let headerHeight: CGFloat = 26
+    static let headerSpacing: CGFloat = 6
+
     var body: some View {
         let text = ZenithStrings.home(l10n.language)
-        HStack(spacing: 10) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(Array(editor.candidates(modules: service.modules).enumerated()), id: \.element) { index, widget in
-                        candidate(widget, text: text)
-                            .modifier(ZenithStripEntrance(shown: shown))
-                            .animation(ZenithMorph.animation(reduceMotion: reduceMotion)
-                                        .delay(ZenithMotion.layerDelay(index + 1)), value: shown)
-                    }
-                }
-                .padding(.horizontal, 4)
-            }
-            .notchScrollEdgeFade(.horizontal)
+        let words = ZenithStrings.homeShortcuts(l10n.language)
+        VStack(spacing: Self.headerSpacing) {
             HStack(spacing: 8) {
+                ZenithSegmented(selection: $editor.stripSide,
+                                options: [(value: .widgets, title: words.widgets), (value: .shortcuts, title: words.shortcuts)],
+                                height: Self.headerHeight, fontSize: 11, fills: false)
+                    .fixedSize()
+                Spacer(minLength: 8)
                 roundButton(symbol: "xmark", title: text.cancel, fill: Color.white.opacity(0.14)) {
                     editor.cancel(service: service)
                 }
@@ -313,11 +503,45 @@ struct ZenithHomeEditStrip: View {
                 }
                 .keyboardShortcut(.defaultAction)
             }
+            .frame(height: Self.headerHeight)
             .modifier(ZenithStripEntrance(shown: shown))
-            .animation(ZenithMorph.animation(reduceMotion: reduceMotion).delay(ZenithMotion.layerDelay(2)), value: shown)
+            .animation(ZenithMorph.animation(reduceMotion: reduceMotion).delay(ZenithMotion.layerDelay(1)), value: shown)
+            ZStack {
+                if editor.stripSide == .widgets {
+                    icons(editor.candidates(modules: service.modules)) { index, widget in
+                        candidate(widget, text: text)
+                            .modifier(ZenithStripEntrance(shown: shown))
+                            .animation(ZenithMorph.animation(reduceMotion: reduceMotion)
+                                        .delay(ZenithMotion.layerDelay(index + 2)), value: shown)
+                    }
+                    .transition(.zenithMorph(reduceMotion: reduceMotion))
+                } else {
+                    let capacity = editor.shortcutCapacity(service: service)
+                    icons(editor.offeredShortcuts) { _, item in
+                        ZenithHomeShortcutCandidate(item: item, service: service, namespace: namespace,
+                                                    capacity: capacity)
+                    }
+                    .transition(.zenithMorph(reduceMotion: reduceMotion))
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .animation(ZenithMorph.animation(reduceMotion: reduceMotion), value: editor.stripSide)
         }
         .frame(height: ZenithHomeIsland.stripHeight)
         .onAppear { shown = true }
+    }
+
+    /// A side's icons in a row that scrolls sideways.
+    private func icons<Item: Hashable, Cell: View>(_ items: [Item],
+                                                   @ViewBuilder cell: @escaping (Int, Item) -> Cell) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(Array(items.enumerated()), id: \.element) { index, item in cell(index, item) }
+            }
+            .padding(.horizontal, 4)
+            .frame(maxHeight: .infinity)
+        }
+        .notchScrollEdgeFade(.horizontal)
     }
 
     private func candidate(_ widget: ZenithHomeWidget, text: ZenithHomeStrings) -> some View {
@@ -325,31 +549,15 @@ struct ZenithHomeEditStrip: View {
         let addable = added || editor.canAdd(widget, service: service)
         let name = widget.title(l10n.language)
         return Button { editor.toggle(widget, service: service) } label: {
-            VStack(spacing: 4) {
-                ZStack {
-                    if added {
-                        ZenithAppIcon(symbol: widget.symbol, hex: widget.hex, size: 34, lifted: false)
-                    } else {
-                        // The icon that flies into the row when the widget joins it.
-                        ZenithAppIcon(symbol: widget.symbol, hex: widget.hex, size: 34, lifted: false)
-                            .matchedGeometryEffect(id: widget, in: namespace)
-                    }
+            ZenithHomeStripIcon(name: name, added: added, addable: addable) {
+                if added {
+                    ZenithIslandIcon(symbol: widget.symbol, hex: widget.hex, size: 34, lifted: false)
+                } else {
+                    // The icon that flies into the row when the widget joins it.
+                    ZenithIslandIcon(symbol: widget.symbol, hex: widget.hex, size: 34, lifted: false)
+                        .matchedGeometryEffect(id: widget, in: namespace)
                 }
-                .overlay(alignment: .bottomTrailing) {
-                    if added {
-                        ZenithAppIconCheck(size: 14).offset(x: 4, y: 4)
-                            .transition(.scale(scale: 0.4).combined(with: .opacity))
-                    }
-                }
-                Text(name)
-                    .font(.system(size: 9.5, weight: .medium))
-                    .foregroundStyle(added ? ZenithIsland.primary : ZenithIsland.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(width: 50)
             }
-            .opacity(addable ? 1 : 0.35)
-            .contentShape(Rectangle())
         }
         .buttonStyle(ZenithAppIconButtonStyle())
         .disabled(!addable)
@@ -361,9 +569,9 @@ struct ZenithHomeEditStrip: View {
     private func roundButton(symbol: String, title: String, fill: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 13, weight: .bold))
+                .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(.white)
-                .frame(width: 30, height: 30)
+                .frame(width: Self.headerHeight, height: Self.headerHeight)
                 .background(fill, in: Circle())
                 .overlay { Circle().strokeBorder(Color.white.opacity(0.14), lineWidth: 0.75) }
                 .contentShape(Circle())
@@ -374,8 +582,37 @@ struct ZenithHomeEditStrip: View {
     }
 }
 
+/// An icon in the edit strip over its name, with a check once it is in the
+/// page, dimmed when there is no room for it.
+struct ZenithHomeStripIcon<Icon: View>: View {
+    let name: String
+    let added: Bool
+    let addable: Bool
+    @ViewBuilder var icon: () -> Icon
+
+    var body: some View {
+        VStack(spacing: 4) {
+            ZStack { icon() }
+                .overlay(alignment: .bottomTrailing) {
+                    if added {
+                        ZenithAppIconCheck(size: 14).offset(x: 4, y: 4)
+                            .transition(.scale(scale: 0.4).combined(with: .opacity))
+                    }
+                }
+            Text(name)
+                .font(.system(size: 9.5, weight: .medium))
+                .foregroundStyle(added ? ZenithIsland.primary : ZenithIsland.secondary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(width: 50)
+        }
+        .opacity(addable ? 1 : 0.35)
+        .contentShape(Rectangle())
+    }
+}
+
 /// The strip's pieces rising in: up from below out of a blur.
-private struct ZenithStripEntrance: ViewModifier {
+struct ZenithStripEntrance: ViewModifier {
     let shown: Bool
 
     func body(content: Content) -> some View {

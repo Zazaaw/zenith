@@ -45,10 +45,12 @@ enum ZenithIslandPalette {
         }
     }
 
-    static func color(_ module: NotchModule) -> Color {
-        let value = hex(module)
-        return Color(.sRGB, red: Double((value >> 16) & 0xFF) / 255, green: Double((value >> 8) & 0xFF) / 255,
-                     blue: Double(value & 0xFF) / 255, opacity: 1)
+    static func color(_ module: NotchModule) -> Color { color(hex: hex(module)) }
+
+    /// An sRGB 0xRRGGBB colour, such as a home shortcut's or a tool's.
+    static func color(hex value: UInt32) -> Color {
+        Color(.sRGB, red: Double((value >> 16) & 0xFF) / 255, green: Double((value >> 8) & 0xFF) / 255,
+              blue: Double(value & 0xFF) / 255, opacity: 1)
     }
 }
 
