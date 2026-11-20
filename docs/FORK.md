@@ -1546,6 +1546,98 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     (segmented, ✕/✓, ganti sisi), drag shortcut (tetangga bergeser, drop, drag sampai keluar island, rail dua baris
     di Spacious), ikon terbang dari strip, hapus, island melebar/meninggi saat shortcut bertambah, tooltip redup,
     Reduce Motion, VoiceOver.
+- **Rekap akhir hari "Today" (branch `feat/daily-recap`):** ringkasan hari ini dari data yang sudah dipegang
+  Zenith, sebagai halaman island, widget Home, dan notice kapsul sekali sehari di jam pilihan. Tidak ada sumber
+  jaringan atau token baru. Kode di `Services/Recap/RecapSupport.swift` (murni, ikut `TEST_SOURCES`: sumber,
+  setelan, jadwal, tally harian, agregasi, format kartu/headline/teks, query pencarian commit),
+  `Services/Recap/RecapService.swift` (baca service lain, tally, timer, notice, salin teks),
+  `UI/Notch/RecapPage.swift` (halaman, bento, count-up, aksi band, simpan gambar, widget Home) dan
+  `UI/Notch/RecapSettings.swift`. Teks di `ZenithStrings.recap` (15 bahasa, bentuk one/few/many). Test di
+  `Tests/RecapTests.swift` (suite `recap`).
+  - **Sumber** (masing-masing opsional; kartu hanya tampil kalau ada data hari ini):
+    - *Coding* (WakaTime): `WakaTimeService.today` (total, project dan bahasa teratas). Total di bawah 1 menit
+      atau bertanggal kemarin dilewati. Dibaca ulang lewat `refreshIfStale()` kalau `~/.wakatime.cfg`/token ada.
+    - *Deploys* (Vercel): deployment di `VercelService.deployments` yang `created` hari ini (ready/failed/building).
+      Kalau belum ada baca hari ini (`lastFetch`, sekarang `private(set)`), rekap boleh memanggil `refresh()` sekali
+      lewat service yang sama, hanya kalau token ada. Batas: list Vercel maks. 12 terbaru, jadi hari dengan lebih
+      dari 12 deploy terhitung kurang.
+    - *GitHub*: satu-satunya `gh` tambahan adalah pencarian commit (`RecapCommits`):
+      `gh api -X GET search/commits -H "Accept: application/vnd.github+json" -f q="author:<login> committer-date:>=2026-11-20T00:00:00+07:00" -f per_page=1`,
+      membaca `total_count` saja. Login dari inbox GitHub kalau sudah ada, selain itu `@me`; tengah malam lokal
+      ditulis dengan offset zona waktu supaya "hari ini" mengikuti hari Faiz, bukan UTC. Lewat
+      `BoundedProcessRunner` di luar main thread, timeout 20 dtk, paling sering tiap 10 menit, tidak jalan kalau
+      `gh` tidak ada. Inbox (`GitHubService`) hanya dibaca ulang kalau bagian GitHub memang nyala. Fragment
+      GraphQL inbox ditambah `createdAt` (`PullRequest.created`) untuk "PR opened today"; review yang menunggu dan
+      check gagal ikut jadi catatan kartu. **PR merged/reviewed hari ini tidak dihitung**: butuh query kedua
+      (mis. `contributionsCollection` atau search `merged:>=`), di luar batas satu query tambahan.
+    - *Long commands*: `CommandActivityService` tidak menyimpan riwayat, jadi ditambah hook kecil: perintah yang
+      selesai dan melewati threshold island dicatat ke tally (`RecapEvent.command`).
+    - *Photos* (Card Import): ledger hanya menyimpan key tanpa tanggal, jadi `CardImportService.record` ikut
+      mencatat jumlah foto/video dan byte per batch yang selesai tersalin (`RecapEvent.imported`).
+    - *Exports*: `ExportTrackerService.announce` mencatat tiap export selesai dan ukurannya (`RecapEvent.exported`).
+    - *Agent turns* (Claude Code): `ClaudeHooksService.scan` mencatat tiap event `prompt` sebagai satu turn, sesi
+      dihitung dari id unik (maks. 64 diingat) (`RecapEvent.agent`).
+  - **Tally harian** (`RecapTally`): hanya angka, tanpa nama/path, disimpan sebagai JSON di
+    `notchRecapTally` (tidak terdaftar, jadi tidak ikut backup). Event dari hari yang lebih baru memulai tally baru;
+    event telat dari hari sebelumnya diabaikan. Hari = tanggal kalender lokal saat event terjadi.
+  - **Agregasi** (`RecapSupport.aggregate`): urutan coding, deploys, github, terminal, photos, exports, agents;
+    sumber yang dimatikan di Settings tidak pernah tampil. Kartu (`RecapFormat.cards`): label, angka (durasi atau
+    hitungan), catatan per bagian (`RecapCard.Note`, hanya bagian gagal yang merah).
+  - **Jadwal** (`RecapSchedule`): default 17:00, setiap hari; "Weekdays only" melewati Sabtu/Minggu. Due kalau
+    nyala, bukan hari libur, belum tampil hari itu, dan jam sudah lewat (sampai tengah malam). `notchRecapLastShown`
+    (`yyyy-MM-dd` lokal, tidak ikut backup) dibandingkan sebagai string: tanggal sama **atau lebih baru** (jam
+    mundur) = sudah tampil. Pindah zona ke barat ke tanggal yang sama tidak menampilkan ulang; ke timur ke tanggal
+    berikutnya menunggu jam di hari itu. Jam yang dilompati DST pindah ke momen valid berikutnya. Satu `Timer` ke
+    momen berikutnya (`nextCheck`), dicek ulang saat wake, ganti zona, jam sistem berubah, dan ganti hari; hanya
+    selama island jalan (`NotchService.syncWithPreferences`/`stop`). Saat due: hari ditandai dulu, sumber
+    diperbarui, tunggu ±6 dtk (plus pencarian commit sampai 15 dtk), lalu notice dikirim kalau hari tidak kosong.
+    Island dibuka setelah jam 17:00 = notice langsung (sekali). Snooze tidak dibuat.
+  - **Notice**: `ZenithNotice.Kind.recap` (prioritas 1, tampil 8 dtk, menunggu island sampai 10 menit), key
+    `recap.<hari>` (tidak pernah antre dua kali), judul "Your day", subjudul headline tiga teratas
+    (`6h 11m coding · 4 deploys · 1,248 photos`; urutan coding, deploys, photos, commits, exports, agents,
+    commands), glyph `sun.horizon.fill` warna modul, aksesori `.action("Open")`, aksi `.openRecap` = island
+    terbuka di halaman Today (setelah kapsul pergi, seperti Import kartu).
+  - **Modul `NotchModule.recap`** ("Today", ⌥⌘Y, glyph `sun.horizon`, warna periwinkle `#A5B4FC` = indigo 300)
+    selalu tersedia. Halaman: bento kartu `zenithIslandSoftCard` (radius 20, konsentris; tile glyph 18 pt radius
+    `nestedRadius(padding: 10)`), wash warna sumber 10% → 2% dari atas, label mono kapital 9,5, angka
+    `ZenithFigure` 22 pt, satu baris catatan 11 pt. Kolom: ≤ 3 kartu sebaris, 4 = 2×2, ≥ 5 = 3 kolom (2 kalau
+    lebar < 400); baris terakhir yang pendek melebar penuh. Tinggi kartu 82–104 pt; kalau tidak muat (mis. 7
+    kartu di island compact 180 pt) halaman menggulir. Kosong: tile + teks. Band atas: "Copy as text" dan
+    "Save image" (`NotchIconButton`, ikon berganti ✓ sebentar). Ganti kosong ↔ isi lewat `.zenithMorph`.
+  - **Gerak (120 Hz):** kartu naik 10 pt dari blur 8 + opacity, kurva reveal 0,45 dtk, jeda 40 ms per kartu
+    (`ZenithMotion.layerDelay`); angka menghitung naik 0,8 dtk di kurva reveal lewat view `Animatable`
+    (`RecapCountUp`), juga saat data baru datang. Reduce Motion: kartu hanya fade 0,2 dtk, angka langsung.
+  - **Copy as text** (`RecapFormat.summary`): judul `My day · Fri, Nov 20` lalu satu baris per sumber
+    (`Coding 6h 11m · Swift`, `Deploys 4 · 1 failed`, `Commits 12 · 1 PR opened`, ...). Nama project, review
+    menunggu dan check gagal tidak ikut dibagikan. Lewat `GeneralPasteboardAccess`.
+  - **Save image**: `ImageRenderer` (skala 2) merender `RecapShareCard` (kartu hitam radius 34, judul, tanggal,
+    bento yang sama tanpa animasi, "ZENITH" kecil) ke PNG di Downloads: `Zenith Today 2026-11-20.png`, lalu
+    ` 2`, ` 3` kalau sudah ada (tidak pernah menimpa). macOS bisa meminta izin folder Downloads sekali.
+  - **Widget Home** `ZenithHomeWidget.today` (lebar 216, warna modul): angka terbesar hari ini + label, lalu dua
+    headline berikutnya; klik membuka halaman Today.
+  - **Settings**: opsi section Today di Dynamic Island → Content: saklar "Daily recap" (`notchRecapEnabled`, default
+    nyala), "Show at" (`DatePicker` jam:menit, `notchRecapMinutes`, default 1020), "Weekdays only"
+    (`notchRecapWeekdaysOnly`, default mati), lalu "Include" per sumber (`notchRecapHiddenSources`, daftar yang
+    dimatikan). Semua `ZenithSwitchRow`, tanpa `SettingsRow`; keempat kunci terdaftar (ikut backup).
+  - Edit di file upstream bertanda `// Zenith fork`: `NotchSupport` (case modul, simbol, shortcut, ketersediaan,
+    tinggi konten), `NotchService` (sync/stop), `NotchView` (halaman + band, judul), `NotchContentEditor`,
+    `NotchEditorStrings`, `NotchSettings` (opsi), `Defaults`, `build.sh` (`TEST_SOURCES`),
+    `Tests/MetricsTests.swift` (suite). File fork yang ikut berubah: `ZenithNoticeSupport`/`Service` (kind, aksi),
+    `ZenithIslandPalette`, `ZenithAppIcon` (glyph), `ZenithHomeLayoutSupport`/`ZenithHomeWidgets` (widget),
+    `GitHubSupport` (`createdAt`), `VercelService` (`lastFetch` terbaca), `CommandActivityService`,
+    `CardImportService`, `ExportTrackerService`, `ClaudeHooksService` (catat ke tally).
+  - **Test:** baru `RecapTests` (suite `recap`): agregasi penuh dan dengan sumber hilang/kemarin, tally lintas
+    tengah malam/event telat/batas sesi/round trip/tidak ikut backup, format kartu dan catatan, plural
+    en/ru/sk/uk/ja, headline, teks bagikan (semua bahasa tanpa em dash/apostrof lurus), jadwal (jam, mati, akhir
+    pekan, lintas tengah malam, zona waktu barat/timur, DST), setelan dan registrasi, argumen pencarian commit dan
+    parse `total_count`, kind notice, palet, teks 15 bahasa. Diubah dengan sengaja: `NotchTests` urutan modul
+    (+ `.recap`) dan galeri "≤ 3 posisi baris" jadi "> 1" (tiap modul fork menambah baris; tujuannya tetap:
+    baris perlu digeser).
+  - **Belum diverifikasi visual:** app UI tidak dijalankan. Bento dan kartu simpan gambar dirender statis
+    (`ImageRenderer`, ukuran compact 424×180 dan spacious 504×264). Perlu dicek di Mac (120 Hz): notice jam 17:00
+    (dan saat island dibuka setelahnya), Open, kartu naik + blur + count-up, gulir 7 kartu di compact, ganti
+    kosong ↔ isi, Copy/Save (izin Downloads), widget Home, preview di Settings, Reduce Motion, Increase Contrast,
+    island kaca. Pencarian commit dengan `gh` asli (apakah `author:@me` diterima endpoint commit) belum dicoba.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
