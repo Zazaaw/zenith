@@ -157,6 +157,8 @@ private struct ZenithNoticeContent: View {
                     .font(.system(size: Layout.subtitleSize))
                     .foregroundStyle(.white.opacity(0.55))
                     .lineLimit(1)
+                    // An export's subtitle starts with the file's name.
+                    .truncationMode(notice.kind == .export ? .middle : .tail)
                     .minimumScaleFactor(0.85)
                     .zenithNoticeReveal(shown, index: pieces - 2, count: pieces, reduceMotion: reduceMotion)
             }

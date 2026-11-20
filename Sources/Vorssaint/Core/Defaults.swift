@@ -928,6 +928,13 @@ enum DefaultsKey {
     static let notchCommandIgnored = "notchCommandIgnored" // extra programs left out, by name
     // When the shell hook last wrote; unregistered, so it stays out of backups.
     static let notchCommandLastEvent = "notchCommandLastEvent"
+    // Zenith fork: renders, recordings and photo exports in the closed island (ExportTrackerService).
+    static let notchExportTracker = "notchExportTracker"
+    static let notchExportFolders = "notchExportFolders" // watched folders, `~/Movies` under the home folder
+    static let notchExportFoldersOff = "notchExportFoldersOff" // the listed folders switched off
+    static let notchExportMinimum = "notchExportMinimum" // megabytes before a file shows: 1, 10, 50 or 200
+    static let notchExportSound = "notchExportSound"
+    static let notchExportNotify = "notchExportNotify" // a notification when locked or the island is hidden
     // Zenith fork: capsule notices (ZenithNoticeSupport): one switch each, and the battery thresholds.
     static let notchNoticeBatteryLow = "notchNoticeBatteryLow"
     static let notchNoticeBatteryLowLevel = "notchNoticeBatteryLowLevel" // percent: 15, 20, 25 or 30
@@ -1616,6 +1623,12 @@ enum Defaults {
         DefaultsKey.notchCommandThreshold: CommandActivitySupport.defaultThreshold, // Zenith fork
         DefaultsKey.notchCommandShowsFolder: false, // Zenith fork
         DefaultsKey.notchCommandIgnored: "", // Zenith fork
+        DefaultsKey.notchExportTracker: false, // Zenith fork
+        DefaultsKey.notchExportFolders: ExportTrackerSupport.defaultFolders, // Zenith fork
+        DefaultsKey.notchExportFoldersOff: ExportTrackerSupport.defaultFoldersOff, // Zenith fork
+        DefaultsKey.notchExportMinimum: ExportTrackerSupport.defaultMinimum, // Zenith fork
+        DefaultsKey.notchExportSound: true, // Zenith fork
+        DefaultsKey.notchExportNotify: true, // Zenith fork
         DefaultsKey.notchNoticeBatteryLow: true, // Zenith fork
         DefaultsKey.notchNoticeBatteryLowLevel: 20, // Zenith fork
         DefaultsKey.notchNoticeBatteryCritical: true, // Zenith fork

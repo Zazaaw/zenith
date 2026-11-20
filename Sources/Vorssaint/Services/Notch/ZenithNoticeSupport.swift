@@ -13,7 +13,7 @@ import Foundation
 /// One capsule notice: a leading glyph, a title, a subtitle and a trailing accessory.
 struct ZenithNotice: Equatable {
     enum Kind: String, CaseIterable {
-        case batteryCritical, batteryLow, charging, unplugged, chargeLimit, audio, download
+        case batteryCritical, batteryLow, charging, unplugged, chargeLimit, audio, download, export
 
         /// Higher shows first and may cut a lower one short.
         var priority: Int {
@@ -22,7 +22,7 @@ struct ZenithNotice: Equatable {
             case .batteryLow: return 4
             case .audio: return 3
             case .charging, .unplugged: return 2
-            case .chargeLimit, .download: return 1
+            case .chargeLimit, .download, .export: return 1
             }
         }
     }
@@ -102,7 +102,7 @@ struct ZenithNoticeQueue {
         switch kind {
         case .batteryCritical, .batteryLow: return 90
         case .audio, .charging, .unplugged: return 12
-        case .chargeLimit, .download: return 30
+        case .chargeLimit, .download, .export: return 30
         }
     }
 
@@ -178,6 +178,8 @@ enum ZenithNoticeKey {
     static let chargeLimit = "battery.limit"
     static func audio(_ name: String) -> String { "audio." + name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
     static func download(_ url: URL) -> String { "download." + url.standardizedFileURL.path }
+    /// An export: one file, or a batch of images by its folder.
+    static func export(_ id: String) -> String { "export." + id }
 }
 
 // MARK: - Battery

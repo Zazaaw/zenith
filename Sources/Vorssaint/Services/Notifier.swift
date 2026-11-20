@@ -40,6 +40,21 @@ enum Notifier {
         post(title: title, body: body, categoryIdentifier: nil, userInfo: link.map { [zenithOpenURLKey: $0] } ?? [:])
     }
 
+    // Zenith fork: a notification that reveals a file in Finder when clicked (a finished export).
+    private static let zenithRevealKey = "id.satuvisual.zenith.notification.reveal-file" // Zenith fork
+
+    static func post(title: String, body: String, revealing file: URL) { // Zenith fork
+        guard file.isFileURL else { return post(title: title, body: body) }
+        post(title: title, body: body, categoryIdentifier: nil, userInfo: [zenithRevealKey: file.path])
+    }
+
+    static func zenithRevealURL(from response: UNNotificationResponse) -> URL? { // Zenith fork
+        guard response.actionIdentifier == UNNotificationDefaultActionIdentifier,
+              let path = response.notification.request.content.userInfo[zenithRevealKey] as? String,
+              path.hasPrefix("/") else { return nil }
+        return URL(fileURLWithPath: path)
+    }
+
     static func zenithOpenURL(from response: UNNotificationResponse) -> URL? { // Zenith fork
         guard response.actionIdentifier == UNNotificationDefaultActionIdentifier,
               let raw = response.notification.request.content.userInfo[zenithOpenURLKey] as? String,

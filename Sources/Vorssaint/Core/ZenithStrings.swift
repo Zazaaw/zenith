@@ -2792,6 +2792,229 @@ extension ZenithStrings {
     }
 }
 
+/// Zenith fork: the export tracker (ExportTrackerSupport), its live activity,
+/// notice and Settings card.
+struct ZenithExportTrackerStrings {
+    /// The activity’s name in the island’s activity picker.
+    let activityTitle: String
+    /// The card in Settings → Dynamic Island → Activity.
+    let section: String
+    let toggle: String
+    let toggleCaption: String
+    let folders: String
+    let foldersCaption: String
+    let addFolder: String
+    let removeFolder: String
+    /// A watched folder that is not there (an unplugged drive).
+    let missing: String
+    /// The open panel’s button.
+    let choose: String
+    let minimumSize: String
+    /// A size choice; `%d` is the number of megabytes.
+    let megabytes: String
+    let sound: String
+    let notify: String
+    let notifyCaption: String
+    /// Beside the file name while it grows.
+    let exporting: String
+    let recording: String
+    /// The notice and the notification once it is done.
+    let exportFinished: String
+    let recordingSaved: String
+    /// A batch of images landing one after another; `%d` is how many.
+    let images: String
+    /// Read aloud for the strip once it is done.
+    let finished: String
+}
+
+extension ZenithStrings {
+    /// Renders, recordings and photo exports in the closed island.
+    static func exportTracker(_ language: AppLanguage) -> ZenithExportTrackerStrings {
+        switch language {
+        case .enUS:
+            return .init(activityTitle: "Exports", section: "Exports", toggle: "Export tracker",
+                         toggleCaption: "Shows a render, recording or photo export in the closed island while its file grows, then ✓ with the size and time when it’s done. It reads the watched folders only, so it works with DaVinci Resolve, OBS and other apps without plug-ins.",
+                         folders: "Watched folders",
+                         foldersCaption: "Subfolders are included. Hidden and temporary files, caches, proxies and app libraries are skipped. macOS may ask once before Zenith can read Desktop or Downloads.",
+                         addFolder: "Add Folder…", removeFolder: "Remove", missing: "Not found", choose: "Watch",
+                         minimumSize: "Minimum size", megabytes: "%d MB",
+                         sound: "Play a sound when done", notify: "Notify when done",
+                         notifyCaption: "Sends a notification when the Mac is locked or the island is hidden.",
+                         exporting: "Exporting", recording: "Recording",
+                         exportFinished: "Export finished", recordingSaved: "Recording saved",
+                         images: "%d images", finished: "Finished")
+        case .ptBR:
+            return .init(activityTitle: "Exportações", section: "Exportações", toggle: "Monitor de exportações",
+                         toggleCaption: "Mostra na ilha fechada uma renderização, gravação ou exportação de fotos enquanto o arquivo cresce e, ao terminar, ✓ com o tamanho e o tempo. Só lê as pastas monitoradas, então funciona com DaVinci Resolve, OBS e outros apps sem plug-ins.",
+                         folders: "Pastas monitoradas",
+                         foldersCaption: "Inclui subpastas. Arquivos ocultos e temporários, caches, proxies e bibliotecas de apps ficam de fora. O macOS pode pedir permissão uma vez para o Zenith ler a Mesa ou Downloads.",
+                         addFolder: "Adicionar pasta…", removeFolder: "Remover", missing: "Não encontrada", choose: "Monitorar",
+                         minimumSize: "Tamanho mínimo", megabytes: "%d MB",
+                         sound: "Tocar um som ao terminar", notify: "Notificar ao terminar",
+                         notifyCaption: "Envia uma notificação quando o Mac está bloqueado ou a ilha está oculta.",
+                         exporting: "Exportando", recording: "Gravando",
+                         exportFinished: "Exportação concluída", recordingSaved: "Gravação salva",
+                         images: "%d imagens", finished: "Concluído")
+        case .tr:
+            return .init(activityTitle: "Dışa aktarmalar", section: "Dışa aktarmalar", toggle: "Dışa aktarma izleyici",
+                         toggleCaption: "Bir işleme, kayıt ya da fotoğraf dışa aktarması, dosyası büyüdükçe kapalı adada görünür; bitince boyutu ve süresiyle ✓ gösterir. Yalnızca izlenen klasörleri okur, bu yüzden DaVinci Resolve, OBS ve diğer uygulamalarla eklentisiz çalışır.",
+                         folders: "İzlenen klasörler",
+                         foldersCaption: "Alt klasörler dahildir. Gizli ve geçici dosyalar, önbellekler, proxy’ler ve uygulama arşivleri atlanır. macOS, Zenith’in Masaüstü’nü ya da İndirilenler’i okuması için bir kez izin isteyebilir.",
+                         addFolder: "Klasör ekle…", removeFolder: "Kaldır", missing: "Bulunamadı", choose: "İzle",
+                         minimumSize: "En küçük boyut", megabytes: "%d MB",
+                         sound: "Bitince ses çal", notify: "Bitince bildir",
+                         notifyCaption: "Mac kilitliyken ya da ada gizliyken bildirim gönderir.",
+                         exporting: "Dışa aktarılıyor", recording: "Kaydediliyor",
+                         exportFinished: "Dışa aktarma bitti", recordingSaved: "Kayıt kaydedildi",
+                         images: "%d görsel", finished: "Bitti")
+        case .ru:
+            return .init(activityTitle: "Экспорт", section: "Экспорт", toggle: "Отслеживание экспорта",
+                         toggleCaption: "Пока файл растёт, рендер, запись или экспорт фото видны на закрытом острове, а по завершении появляется ✓ с размером и временем. Читаются только отслеживаемые папки, поэтому всё работает с DaVinci Resolve, OBS и другими приложениями без плагинов.",
+                         folders: "Отслеживаемые папки",
+                         foldersCaption: "Вложенные папки учитываются. Скрытые и временные файлы, кэши, прокси и медиатеки приложений пропускаются. macOS может один раз запросить доступ к папкам «Рабочий стол» и «Загрузки».",
+                         addFolder: "Добавить папку…", removeFolder: "Удалить", missing: "Не найдена", choose: "Отслеживать",
+                         minimumSize: "Минимальный размер", megabytes: "%d МБ",
+                         sound: "Звук по завершении", notify: "Уведомлять по завершении",
+                         notifyCaption: "Отправляет уведомление, когда Mac заблокирован или остров скрыт.",
+                         exporting: "Экспорт", recording: "Запись",
+                         exportFinished: "Экспорт завершён", recordingSaved: "Запись сохранена",
+                         images: "Изображения: %d", finished: "Готово")
+        case .es:
+            return .init(activityTitle: "Exportaciones", section: "Exportaciones", toggle: "Seguimiento de exportaciones",
+                         toggleCaption: "Muestra en la isla cerrada un render, una grabación o una exportación de fotos mientras su archivo crece y, al terminar, ✓ con el tamaño y el tiempo. Solo lee las carpetas vigiladas, así que funciona con DaVinci Resolve, OBS y otras apps sin plug-ins.",
+                         folders: "Carpetas vigiladas",
+                         foldersCaption: "Incluye subcarpetas. Se omiten archivos ocultos y temporales, cachés, proxies y bibliotecas de apps. macOS puede pedir permiso una vez para que Zenith lea el Escritorio o Descargas.",
+                         addFolder: "Añadir carpeta…", removeFolder: "Quitar", missing: "No encontrada", choose: "Vigilar",
+                         minimumSize: "Tamaño mínimo", megabytes: "%d MB",
+                         sound: "Reproducir un sonido al terminar", notify: "Avisar al terminar",
+                         notifyCaption: "Envía una notificación cuando el Mac está bloqueado o la isla está oculta.",
+                         exporting: "Exportando", recording: "Grabando",
+                         exportFinished: "Exportación terminada", recordingSaved: "Grabación guardada",
+                         images: "%d imágenes", finished: "Terminado")
+        case .sk:
+            return .init(activityTitle: "Exporty", section: "Exporty", toggle: "Sledovanie exportov",
+                         toggleCaption: "Kým súbor rastie, render, nahrávanie alebo export fotiek sa zobrazí v zatvorenom ostrove a po dokončení ✓ s veľkosťou a časom. Číta len sledované priečinky, takže funguje s DaVinci Resolve, OBS a ďalšími aplikáciami bez doplnkov.",
+                         folders: "Sledované priečinky",
+                         foldersCaption: "Zahŕňa podpriečinky. Skryté a dočasné súbory, vyrovnávacie pamäte, proxy a knižnice aplikácií sa vynechajú. macOS môže raz požiadať o prístup k Ploche alebo Stiahnutým súborom.",
+                         addFolder: "Pridať priečinok…", removeFolder: "Odstrániť", missing: "Nenájdený", choose: "Sledovať",
+                         minimumSize: "Minimálna veľkosť", megabytes: "%d MB",
+                         sound: "Po dokončení prehrať zvuk", notify: "Upozorniť po dokončení",
+                         notifyCaption: "Pošle upozornenie, keď je Mac zamknutý alebo je ostrov skrytý.",
+                         exporting: "Exportuje sa", recording: "Nahráva sa",
+                         exportFinished: "Export dokončený", recordingSaved: "Nahrávka uložená",
+                         images: "Obrázky: %d", finished: "Hotovo")
+        case .de:
+            return .init(activityTitle: "Exporte", section: "Exporte", toggle: "Export-Tracker",
+                         toggleCaption: "Zeigt einen Render, eine Aufnahme oder einen Fotoexport in der geschlossenen Insel, solange die Datei wächst, und danach ✓ mit Größe und Dauer. Es liest nur die beobachteten Ordner und funktioniert so mit DaVinci Resolve, OBS und anderen Apps ohne Plug-ins.",
+                         folders: "Beobachtete Ordner",
+                         foldersCaption: "Unterordner sind eingeschlossen. Versteckte und temporäre Dateien, Caches, Proxys und App-Mediatheken werden übersprungen. macOS fragt eventuell einmal, bevor Zenith Schreibtisch oder Downloads lesen darf.",
+                         addFolder: "Ordner hinzufügen…", removeFolder: "Entfernen", missing: "Nicht gefunden", choose: "Beobachten",
+                         minimumSize: "Mindestgröße", megabytes: "%d MB",
+                         sound: "Ton abspielen, wenn fertig", notify: "Mitteilen, wenn fertig",
+                         notifyCaption: "Sendet eine Mitteilung, wenn der Mac gesperrt oder die Insel ausgeblendet ist.",
+                         exporting: "Exportiert", recording: "Nimmt auf",
+                         exportFinished: "Export abgeschlossen", recordingSaved: "Aufnahme gesichert",
+                         images: "%d Bilder", finished: "Fertig")
+        case .fr:
+            return .init(activityTitle: "Exports", section: "Exports", toggle: "Suivi des exports",
+                         toggleCaption: "Affiche dans l’île fermée un rendu, un enregistrement ou un export de photos tant que son fichier grossit, puis ✓ avec la taille et la durée une fois terminé. Seuls les dossiers surveillés sont lus : cela fonctionne avec DaVinci Resolve, OBS et d’autres apps sans plug-in.",
+                         folders: "Dossiers surveillés",
+                         foldersCaption: "Les sous-dossiers sont inclus. Les fichiers masqués et temporaires, les caches, les proxys et les bibliothèques d’apps sont ignorés. macOS peut demander une fois l’accès au Bureau ou aux Téléchargements.",
+                         addFolder: "Ajouter un dossier…", removeFolder: "Retirer", missing: "Introuvable", choose: "Surveiller",
+                         minimumSize: "Taille minimale", megabytes: "%d Mo",
+                         sound: "Jouer un son à la fin", notify: "Notifier à la fin",
+                         notifyCaption: "Envoie une notification quand le Mac est verrouillé ou que l’île est masquée.",
+                         exporting: "Export en cours", recording: "Enregistrement",
+                         exportFinished: "Export terminé", recordingSaved: "Enregistrement sauvegardé",
+                         images: "%d images", finished: "Terminé")
+        case .it:
+            return .init(activityTitle: "Esportazioni", section: "Esportazioni", toggle: "Monitor esportazioni",
+                         toggleCaption: "Mostra nell’isola chiusa un render, una registrazione o un’esportazione di foto mentre il file cresce, poi ✓ con dimensione e durata quando ha finito. Legge solo le cartelle monitorate, quindi funziona con DaVinci Resolve, OBS e altre app senza plug-in.",
+                         folders: "Cartelle monitorate",
+                         foldersCaption: "Le sottocartelle sono incluse. File nascosti e temporanei, cache, proxy e librerie delle app vengono saltati. macOS potrebbe chiedere una volta l’accesso a Scrivania o Download.",
+                         addFolder: "Aggiungi cartella…", removeFolder: "Rimuovi", missing: "Non trovata", choose: "Monitora",
+                         minimumSize: "Dimensione minima", megabytes: "%d MB",
+                         sound: "Riproduci un suono alla fine", notify: "Notifica alla fine",
+                         notifyCaption: "Invia una notifica quando il Mac è bloccato o l’isola è nascosta.",
+                         exporting: "Esportazione", recording: "Registrazione",
+                         exportFinished: "Esportazione completata", recordingSaved: "Registrazione salvata",
+                         images: "%d immagini", finished: "Completato")
+        case .ja:
+            return .init(activityTitle: "書き出し", section: "書き出し", toggle: "書き出しトラッカー",
+                         toggleCaption: "レンダリング、録画、写真の書き出しを、ファイルが大きくなっている間は閉じたアイランドに表示し、終わるとサイズと時間とともに ✓ を表示します。監視中のフォルダだけを読むので、DaVinci Resolve や OBS などのアプリでもプラグインなしで動作します。",
+                         folders: "監視するフォルダ",
+                         foldersCaption: "サブフォルダも含まれます。隠しファイル、一時ファイル、キャッシュ、プロキシ、アプリのライブラリはスキップします。Zenith がデスクトップやダウンロードを読む前に、macOS が一度だけ許可を求めることがあります。",
+                         addFolder: "フォルダを追加…", removeFolder: "削除", missing: "見つかりません", choose: "監視",
+                         minimumSize: "最小サイズ", megabytes: "%d MB",
+                         sound: "完了時にサウンドを再生", notify: "完了時に通知",
+                         notifyCaption: "Mac がロックされているときやアイランドが非表示のときに通知を送ります。",
+                         exporting: "書き出し中", recording: "録画中",
+                         exportFinished: "書き出し完了", recordingSaved: "録画を保存しました",
+                         images: "%d 枚の画像", finished: "完了")
+        case .ko:
+            return .init(activityTitle: "내보내기", section: "내보내기", toggle: "내보내기 추적",
+                         toggleCaption: "렌더링, 녹화, 사진 내보내기를 파일이 커지는 동안 닫힌 아일랜드에 표시하고, 끝나면 크기와 시간과 함께 ✓를 표시합니다. 감시 중인 폴더만 읽으므로 DaVinci Resolve, OBS 등 다른 앱에서도 플러그인 없이 작동합니다.",
+                         folders: "감시 폴더",
+                         foldersCaption: "하위 폴더도 포함됩니다. 숨김 파일과 임시 파일, 캐시, 프록시, 앱 보관함은 건너뜁니다. Zenith가 데스크탑이나 다운로드를 읽기 전에 macOS가 한 번 권한을 요청할 수 있습니다.",
+                         addFolder: "폴더 추가…", removeFolder: "제거", missing: "찾을 수 없음", choose: "감시",
+                         minimumSize: "최소 크기", megabytes: "%d MB",
+                         sound: "완료 시 사운드 재생", notify: "완료 시 알림",
+                         notifyCaption: "Mac이 잠겨 있거나 아일랜드가 숨겨져 있을 때 알림을 보냅니다.",
+                         exporting: "내보내는 중", recording: "녹화 중",
+                         exportFinished: "내보내기 완료", recordingSaved: "녹화 저장됨",
+                         images: "이미지 %d개", finished: "완료")
+        case .uk:
+            return .init(activityTitle: "Експорт", section: "Експорт", toggle: "Відстеження експорту",
+                         toggleCaption: "Поки файл росте, рендер, запис або експорт фото видно на закритому острівці, а після завершення з’являється ✓ з розміром і часом. Читаються лише відстежувані папки, тож усе працює з DaVinci Resolve, OBS та іншими програмами без плагінів.",
+                         folders: "Відстежувані папки",
+                         foldersCaption: "Вкладені папки враховуються. Приховані й тимчасові файли, кеші, проксі та медіатеки програм пропускаються. macOS може один раз попросити доступ до Робочого столу або Завантажень.",
+                         addFolder: "Додати папку…", removeFolder: "Вилучити", missing: "Не знайдено", choose: "Відстежувати",
+                         minimumSize: "Мінімальний розмір", megabytes: "%d МБ",
+                         sound: "Звук після завершення", notify: "Сповіщати після завершення",
+                         notifyCaption: "Надсилає сповіщення, коли Mac заблоковано або острівець приховано.",
+                         exporting: "Експорт", recording: "Запис",
+                         exportFinished: "Експорт завершено", recordingSaved: "Запис збережено",
+                         images: "Зображення: %d", finished: "Готово")
+        case .zhHans:
+            return .init(activityTitle: "导出", section: "导出", toggle: "导出追踪",
+                         toggleCaption: "渲染、录制或照片导出在文件增长期间显示在收起的岛上，完成后显示 ✓ 以及大小和用时。只读取监视的文件夹，因此无需插件即可配合 DaVinci Resolve、OBS 等 App 使用。",
+                         folders: "监视的文件夹",
+                         foldersCaption: "包括子文件夹。会跳过隐藏文件和临时文件、缓存、代理文件和 App 资源库。在 Zenith 读取桌面或下载之前，macOS 可能会询问一次。",
+                         addFolder: "添加文件夹…", removeFolder: "移除", missing: "未找到", choose: "监视",
+                         minimumSize: "最小大小", megabytes: "%d MB",
+                         sound: "完成时播放声音", notify: "完成时通知",
+                         notifyCaption: "Mac 锁定或岛隐藏时发送通知。",
+                         exporting: "正在导出", recording: "正在录制",
+                         exportFinished: "导出完成", recordingSaved: "录制已存储",
+                         images: "%d 张图片", finished: "已完成")
+        case .zhTW:
+            return .init(activityTitle: "輸出", section: "輸出", toggle: "輸出追蹤",
+                         toggleCaption: "算繪、錄影或照片輸出在檔案增長期間會顯示在收合的島上，完成後顯示 ✓ 及大小與耗時。只讀取監看的資料夾，因此不需外掛即可配合 DaVinci Resolve、OBS 等 App 使用。",
+                         folders: "監看的資料夾",
+                         foldersCaption: "包含子資料夾。會略過隱藏檔與暫存檔、快取、代理檔與 App 資料庫。Zenith 讀取桌面或下載項目前，macOS 可能會詢問一次。",
+                         addFolder: "加入資料夾…", removeFolder: "移除", missing: "找不到", choose: "監看",
+                         minimumSize: "最小大小", megabytes: "%d MB",
+                         sound: "完成時播放聲音", notify: "完成時通知",
+                         notifyCaption: "Mac 鎖定或島已隱藏時傳送通知。",
+                         exporting: "正在輸出", recording: "正在錄影",
+                         exportFinished: "輸出完成", recordingSaved: "錄影已儲存",
+                         images: "%d 張圖片", finished: "已完成")
+        case .zhHK:
+            return .init(activityTitle: "輸出", section: "輸出", toggle: "輸出追蹤",
+                         toggleCaption: "渲染、錄影或相片輸出在檔案增長期間會顯示在收合的島上，完成後顯示 ✓ 及大小與所需時間。只讀取監察的資料夾，因此毋須插件即可配合 DaVinci Resolve、OBS 等 App 使用。",
+                         folders: "監察的資料夾",
+                         foldersCaption: "包括子資料夾。會略過隱藏及暫存檔案、快取、代理檔案及 App 資料庫。Zenith 讀取桌面或下載項目前，macOS 可能會詢問一次。",
+                         addFolder: "加入資料夾…", removeFolder: "移除", missing: "找不到", choose: "監察",
+                         minimumSize: "最小大小", megabytes: "%d MB",
+                         sound: "完成時播放聲音", notify: "完成時通知",
+                         notifyCaption: "Mac 鎖定或島已隱藏時傳送通知。",
+                         exporting: "正在輸出", recording: "正在錄影",
+                         exportFinished: "輸出完成", recordingSaved: "錄影已儲存",
+                         images: "%d 張圖片", finished: "已完成")
+        }
+    }
+}
+
 /// Zenith fork: capsule notices (ZenithNoticeSupport) and their Settings card.
 struct ZenithNoticeStrings {
     /// The card in Settings → Dynamic Island → Activity.
