@@ -442,6 +442,16 @@ enum DefaultsKey {
     static let menuBarUsageBarHighThreshold = "menuBarUsageBarHighThreshold" // percent
     static let menuBarHideIconWithMetrics = "menuBarHideIconWithMetrics" // glyph hides while metrics render in the main item
     static let menuBarIconSymbol = "menuBarIconSymbol" // system symbol name drawn instead of the glyph; empty keeps the glyph
+    // Zenith fork: the menu bar hider (MenuBarHiderService). The dividers' places are
+    // macOS's own `NSStatusItem Preferred Position` keys, this Mac's state, never backed up.
+    static let menuBarHiderEnabled = "menuBarHiderEnabled"
+    static let menuBarHiderAlwaysHidden = "menuBarHiderAlwaysHidden"
+    static let menuBarHiderDelay = "menuBarHiderDelay" // seconds: 5, 10 or 30; 0 never
+    static let menuBarHiderCollapseOnClick = "menuBarHiderCollapseOnClick"
+    static let menuBarHiderShowOnHover = "menuBarHiderShowOnHover"
+    static let menuBarHiderNotchGuard = "menuBarHiderNotchGuard"
+    static let menuBarHiderShortcutEnabled = "menuBarHiderShortcutEnabled"
+    static let menuBarHiderShortcut = "menuBarHiderShortcut"
     static let menuBarMetricOrder = "menuBarMetricOrder" // comma-separated MenuBarMetric raw values
     static let menuBarCombineTemperatures = "menuBarCombineTemperatures" // usage/charge + temperature in one block when possible
     static let menuBarSeparateMetrics = "menuBarSeparateMetrics" // one status item per active metric
@@ -1911,6 +1921,14 @@ enum Defaults {
         DefaultsKey.menuBarUsageBarHighThreshold: 90,
         DefaultsKey.menuBarHideIconWithMetrics: false,
         DefaultsKey.menuBarIconSymbol: "",
+        DefaultsKey.menuBarHiderEnabled: false, // Zenith fork
+        DefaultsKey.menuBarHiderAlwaysHidden: false, // Zenith fork
+        DefaultsKey.menuBarHiderDelay: MenuBarHiderDelay.standard.rawValue, // Zenith fork
+        DefaultsKey.menuBarHiderCollapseOnClick: true, // Zenith fork
+        DefaultsKey.menuBarHiderShowOnHover: false, // Zenith fork
+        DefaultsKey.menuBarHiderNotchGuard: true, // Zenith fork
+        DefaultsKey.menuBarHiderShortcutEnabled: false, // Zenith fork
+        DefaultsKey.menuBarHiderShortcut: GlobalShortcut.menuBarHiderDefault.storageValue, // Zenith fork
         DefaultsKey.windowLayoutHiddenActions: "",
         DefaultsKey.windowLayoutWindowGap: 0,
         DefaultsKey.windowLayoutScreenGap: 0,

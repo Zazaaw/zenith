@@ -269,6 +269,7 @@ struct MetricsTests {
             ("claude-hooks", { ClaudeHooksTests.run(suite) }),
             ("photo-actions", { PhotoActionsTests.run(suite) }),
             ("design-overlay", { DesignOverlayTests.run(suite) }),
+            ("menubar-hider", { MenuBarHiderTests.run(suite) }),
             ("notices", { ZenithNoticeTests.run(suite) }),
             ("reply", { ReplyTests.run(suite) }),
             ("home-layout", { HomeLayoutTests.run(suite) }),

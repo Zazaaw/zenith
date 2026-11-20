@@ -293,6 +293,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Notch/NotchPhotoActionsSupport.swift
         Sources/Vorssaint/Services/Notch/NotchPhotoActionsEncoder.swift
         Sources/Vorssaint/Services/DesignOverlay/DesignOverlaySupport.swift
+        Sources/Vorssaint/Services/MenuBarHider/MenuBarHiderSupport.swift
         Sources/Vorssaint/Services/WakaTime/WakaTimeSupport.swift
         Sources/Vorssaint/Services/WakaTime/WakaTimeStats.swift
         Sources/Vorssaint/Services/ZenithSecretStore.swift
