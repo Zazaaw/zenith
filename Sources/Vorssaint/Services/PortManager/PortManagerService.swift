@@ -45,6 +45,10 @@ final class PortManagerService: ObservableObject {
         }
     }
 
+    /// Zenith fork: the same listing for the island's dev servers
+    /// (DevServersService), read on the caller's queue; nil when lsof timed out.
+    static func zenithListeners() -> [PortManagerEntry]? { snapshot() }
+
     private static func startTimes() -> [pid_t: UInt64] {
         let estimatedCount = max(1, Int(proc_listallpids(nil, 0)))
         var pids = [pid_t](repeating: 0, count: estimatedCount + 32)

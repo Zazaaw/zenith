@@ -966,6 +966,13 @@ enum DefaultsKey {
     static let notchCardImportSkipImported = "notchCardImportSkipImported"
     static let notchCardImportRename = "notchCardImportRename" // CardRenamePattern.rawValue
     static let notchCardImportEject = "notchCardImportEject"
+    // Zenith fork: dev servers in the island (DevServersService): detection, the notice, the closed
+    // island's count, and ports or process names that also count (comma-separated).
+    static let notchDevServersEnabled = "notchDevServersEnabled"
+    static let notchDevServersAnnounce = "notchDevServersAnnounce"
+    static let notchDevServersIndicator = "notchDevServersIndicator"
+    static let notchDevServersExtraPorts = "notchDevServersExtraPorts"
+    static let notchDevServersExtraNames = "notchDevServersExtraNames"
     static let notchCalendarEnabled = "notchCalendarEnabled"
     static let notchCalendarCountdown = "notchCalendarCountdown"
     static let notchCalendarCountdownLead = "notchCalendarCountdownLead" // minutes before a start, chosen events included
@@ -1668,6 +1675,11 @@ enum Defaults {
         DefaultsKey.notchCardImportSkipImported: true, // Zenith fork
         DefaultsKey.notchCardImportRename: CardRenamePattern.original.rawValue, // Zenith fork
         DefaultsKey.notchCardImportEject: true, // Zenith fork
+        DefaultsKey.notchDevServersEnabled: true, // Zenith fork
+        DefaultsKey.notchDevServersAnnounce: true, // Zenith fork
+        DefaultsKey.notchDevServersIndicator: false, // Zenith fork
+        DefaultsKey.notchDevServersExtraPorts: "", // Zenith fork
+        DefaultsKey.notchDevServersExtraNames: "", // Zenith fork
         DefaultsKey.notchEnabled: false,
         DefaultsKey.notchDisplay: NotchDisplay.automatic.rawValue,
         DefaultsKey.notchSilhouette: NotchSilhouette.capsule.rawValue,
