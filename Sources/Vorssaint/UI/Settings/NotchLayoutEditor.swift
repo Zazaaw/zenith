@@ -15,6 +15,7 @@ struct NotchLayoutEditor: View {
     /// dims the button or brings it back.
     @ObservedObject private var features = FeatureRuntime.shared
     @AppStorage(DefaultsKey.notchOutlineEnabled) private var outlineEnabled = false
+    @AppStorage(DefaultsKey.zenithTabBarEnabled) private var tabBarEnabled = true // Zenith fork: redraws the row's gallery button
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var addingSide: NotchQuickAccessSide?
     @State private var editingID: UUID?
@@ -151,8 +152,8 @@ struct NotchLayoutEditor: View {
                                      cameraWidth: floats ? 0 : 210, layout: layout,
                                      menuBarHeight: floats ? notch.geometry.menuBarHeight : 24,
                                      customWidth: width, customHeight: height, silhouette: floats ? .capsule : .notch)
-        return geometry.page(.controls, controls: NotchSupport.controls(),
-                             sectionsButton: false) // Zenith fork: the tab pill holds the sections
+        return geometry.page(.controls, controls: NotchSupport.controls(), // Zenith fork: the tab pill holds the sections
+                             sectionsButton: ZenithTabBar.sectionsButtonInRow(floatingExplore: configuration.actions.contains(.explore)))
     }
     private var actualHeight: CGFloat {
         if layout == .custom { return previewGeometry.customHeight }

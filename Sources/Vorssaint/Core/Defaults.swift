@@ -881,6 +881,12 @@ enum DefaultsKey {
     static let notchControlOrder = "notchControlOrder"
     // Zenith fork: the home page's widgets, in order (ZenithHomeLayout.encoded; "auto" follows the Music switch).
     static let zenithHomeLayout = "zenithHomeLayout"
+    // Zenith fork: the open island's tab pill (ZenithTabBar): whether it shows, the pinned
+    // sections in order (comma-separated raw values), the open page's own tab and the counts.
+    static let zenithTabBarEnabled = "zenithTabBarEnabled"
+    static let zenithTabBarModules = "zenithTabBarModules"
+    static let zenithTabBarCurrentPage = "zenithTabBarCurrentPage"
+    static let zenithTabBarBadges = "zenithTabBarBadges"
     static let notchSize = "notchSize"
     static let notchOutlineEnabled = "notchOutlineEnabled"
     static let notchHideMenuBarGap = "notchHideMenuBarGap"
@@ -1567,6 +1573,10 @@ enum Defaults {
         DefaultsKey.notchKeyboardLightControlHidden: false,
         DefaultsKey.notchControlOrder: "",
         DefaultsKey.zenithHomeLayout: ZenithHomeLayout.automatic, // Zenith fork
+        DefaultsKey.zenithTabBarEnabled: true, // Zenith fork
+        DefaultsKey.zenithTabBarModules: ZenithTabBar.defaultEncoded, // Zenith fork
+        DefaultsKey.zenithTabBarCurrentPage: true, // Zenith fork
+        DefaultsKey.zenithTabBarBadges: true, // Zenith fork
         DefaultsKey.notchSize: NotchSize.spacious.rawValue,
         DefaultsKey.notchOutlineEnabled: false,
         DefaultsKey.notchHideMenuBarGap: false,

@@ -931,8 +931,9 @@ final class NotchService: ObservableObject {
     /// Settings previews the island while it is off too, when the floating
     /// buttons are not read for it, so a preview reads them as it draws.
     func previewGeometry(for module: NotchModule) -> NotchGeometry {
-        var result = geometry.page(module, controls: NotchSupport.controls(),
-                                   sectionsButton: false) // Zenith fork: the tab pill holds the sections
+        var result = geometry.page(module, controls: NotchSupport.controls(), // Zenith fork: the tab pill holds the sections
+                                   sectionsButton: ZenithTabBar.sectionsButtonInRow(
+                                       floatingExplore: NotchQuickAccessConfiguration.current().actions.contains(.explore)))
         if result.pageTop == .wrapsCamera { result.pageTrailingControls = playerToggleCount }
         return result
     }
@@ -2959,7 +2960,8 @@ final class NotchService: ObservableObject {
                             usesGlass: !fullscreenCompact && usesGlassSurface,
                             steady: fitsInPlace,
                             // Zenith fork: the tab pill below the open island.
-                            dock: expanded && captureControls == nil && !showingCommandBar && !modules.isEmpty)
+                            dock: expanded && captureControls == nil && !showingCommandBar && !modules.isEmpty
+                                && ZenithTabBar.isEnabled())
         // The selector lives in a separate full-screen panel. A floating
         // capsule may sit below the display edge, so publish the island's
         // actual bottom inset as the controls collapse or reopen.
@@ -3848,13 +3850,15 @@ final class NotchService: ObservableObject {
         if sameMenuBar { next.compactSideRoom = geometry.compactSideRoom }
         let access = NotchQuickAccessConfiguration.current()
         next.quickAccessBottomInset = access.hasBottom ? NotchQuickAccessLayout.gutter : 0
-        // Zenith fork: the tab pill keeps its room below the tallest island,
-        // and holds the way to the sections the row used to.
-        next.quickAccessBottomInset = max(next.quickAccessBottomInset,
-                                          ZenithIslandDockLayout.reservation(belowQuickAccess: access.hasBottom))
+        // Zenith fork: the tab pill, while it shows, keeps its room below the
+        // tallest island and holds the way to the sections the row used to.
+        if ZenithTabBar.isEnabled() {
+            next.quickAccessBottomInset = max(next.quickAccessBottomInset,
+                                              ZenithIslandDockLayout.reservation(belowQuickAccess: access.hasBottom))
+        }
         // Read with the floating buttons rather than on every layout pass,
         // which would decode them each time.
-        next.sectionsButtonInRow = false // Zenith fork: upstream's `!access.actions.contains(.explore)`
+        next.sectionsButtonInRow = ZenithTabBar.sectionsButtonInRow(floatingExplore: access.actions.contains(.explore)) // Zenith fork
         if next != geometry { menuSpaceGeneration += 1; geometry = next }
         // A new camera or bar, such as a notch fit being adjusted, measures the
         // menus again at once rather than leaving the wings off until the timer.
