@@ -1064,6 +1064,80 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     file, angka count-up), bar di 120 Hz, blur crossfade antartab/sesi, ring Usage, Stats (tinggi dan menu
     periode), strip "needs you"/"done" di island bernotch (lebar wing, denyut amber, suara), alert Connect,
     dan sesi Claude Code sungguhan (permission prompt, idle 60 dtk, beberapa sesi sekaligus).
+- **Design overlay untuk QA (branch `feat/design-overlay`):** gambar referensi (PNG/JPG dari Figma)
+  melayang di atas browser dalam ukuran point aslinya, supaya hasil build bisa dicocokkan dengan desain
+  piksel per piksel. Kode di `Services/DesignOverlay/DesignOverlaySupport.swift` (murni, ikut
+  `TEST_SOURCES`: skala, ukuran point, koordinat, nudge/lock, memori per display, grid, crop difference,
+  pilihan jendela Fit, target drop), `DesignOverlayImageStore.swift` (salinan gambar di container),
+  `DesignOverlayDifference.swift` (difference lewat ScreenCaptureKit + Core Image, invert, pencari
+  jendela/halaman untuk Fit), `DesignOverlayService.swift` (state, shortcut, jendela, keyboard, memori),
+  `UI/DesignOverlay/DesignOverlayWindow.swift` (panel + kanvas layer), `DesignOverlayHUD.swift` (kapsul
+  kontrol) dan `DesignOverlaySettings.swift`. Teks di `ZenithStrings.designOverlay` (15 bahasa). Test di
+  `Tests/DesignOverlayTests.swift` (suite `design-overlay`).
+  - **Jendela:** `NSPanel` borderless non-activating, bening, tanpa shadow, level `.statusBar` (HUD satu
+    di atasnya), `.canJoinAllSpaces` + `.fullScreenAuxiliary` + `.stationary` + `.ignoresCycle`, tidak
+    pernah jadi key. Click-through default (`ignoresMouseEvents`); kalau dimatikan, gambar bisa di-drag
+    (kecuali terkunci) dan klik di gambar memberi keyboard ke HUD. Jendela hanya menutupi bagian gambar
+    yang ada di display-nya (gambar halaman panjang tidak kena batas ukuran jendela); layer gambar diletakkan
+    dengan offset di dalamnya dan dipotong jadi tile 4096 px (batas tekstur Core Animation 16384). Semua
+    perubahan layer tanpa animasi implisit, jadi slider dan nudge langsung tampil di frame berikutnya.
+    Muncul/hilang dengan fade alpha 0,2 dtk (Reduce Motion pun tetap fade).
+  - **Skala:** DPI dari file menang dulu (144 → 2x, 216 → 3x; 72 dianggap tidak bilang apa-apa). Figma
+    tidak menulis DPI, jadi lebar menentukan: lebar frame umum = 1x, dua/tiga kalinya = 2x/3x (2880 → 1440,
+    1170 → 390, 1080 → 360). Kalau tidak cocok dan lebih lebar dari layar, faktor terkecil yang muat; selain
+    itu 1x. Override manual Auto/1x/2x/3x di HUD. Kalau skala gambar = skala display, tile memakai filter
+    `nearest` (1 piksel gambar = 1 piksel device); posisi di-snap ke grid piksel display.
+  - **Blend:** Normal; **Difference**: window server menggabungkan jendela dengan source-over biasa, dan
+    `compositingFilter` CALayer hanya memadukan isi jendela itu sendiri, jadi difference lintas jendela
+    tidak mungkin langsung. Zenith menangkap area di bawah gambar dengan ScreenCaptureKit (semua jendela
+    Zenith dikecualikan, `sourceRect` hanya bagian yang terlihat, piksel display), lalu
+    `CIDifferenceBlendMode` dengan potongan referensi yang sama, dan hasilnya ditampilkan (hitam = cocok).
+    Refresh 2x per detik selama mode ini aktif dan langsung setelah gambar bergeser. Butuh izin Screen
+    Recording (diminta sekali saat dipilih); tanpa izin tampil **Invert** dengan catatan di HUD.
+    **Invert**: referensi dibalik warnanya (`CIColorInvert`, alpha tetap); di 50% di atas build yang cocok
+    hasilnya abu-abu rata, tanpa izin apa pun (pengganti onion skin).
+  - **Grid:** mode kedua (tombol di HUD), kolom Figma (kolom sama lebar, gutter, margin kiri/kanan) di atas
+    frame gambar, warna rose transparan, tidak ikut opacity gambar. Preset: desktop 12 · 24 · 80, laptop
+    12 · 20 · 32, tablet 8 · 16 · 24, mobile 4 · 16 · 16.
+  - **HUD:** kapsul hitam 44 pt (seperti pil island) di luar gambar: di bawahnya, lalu di atasnya, lalu di
+    pojok kanan bawah area bebas kalau gambar setinggi layar. Panel non-activating yang bisa jadi key (browser
+    tetap app terdepan). Isi: grip + ukuran gambar (atau catatan singkat, berganti lewat `.zenithMorph`),
+    slider opacity (cyan, langsung tanpa animasi, angka %), tiga blend (violet), menu skala (sky), grid (amber),
+    click-through (teal), lock (rose), Fit (emerald), paste (indigo), close. Tile 32 pt, radius 16 konsentris
+    dengan kapsul (`ZenithIsland.innerRadius(depth: 6, outer: 22)`); tile aktif = isi 18% + garis 24% warna
+    palet island. Grip/readout men-drag jendela (`performDrag`). Masuk dengan spring morph (naik 8 pt, blur
+    10 → 0, skala 0,97 → 1), keluar easeIn 0,16 dtk; Reduce Motion: fade. Tombol tekan 0,94.
+  - **Keyboard (saat HUD key):** panah 1 pt, Shift + panah 10 pt (diabaikan saat lock), angka 1–9 = 10–90%,
+    0 = 100%, F = Fit ke jendela di bawah pointer, ⌘V = paste gambar, Esc = tutup.
+  - **Fit:** jendela dari `CGWindowListCopyWindowInfo` (layer 0, bukan milik Zenith): yang paling atas di
+    bawah pointer, lalu jendela app terdepan. Dengan izin Accessibility, `AXWebArea` terbesar di jendela itu
+    (halaman browser, di bawah toolbar) dipakai; `AXManualAccessibility` diset supaya Chromium membangun
+    pohonnya. Tanpa izin: frame jendela (termasuk toolbar). Kalau halaman di display lain, overlay pindah.
+  - **Cara buka:** zona drop **Overlay** di island (satu gambar saja, setelah Transform/Remove Background;
+    target `NotchDropTarget.overlay`, saklar sendiri `designOverlayDropEnabled`, tetap muncul walau aksi
+    foto mati), shortcut global ⌥⌘O (`GlobalShortcutRole.designOverlay`, QuickToolHotkey id 82, bisa
+    diganti di Settings dan halaman Shortcuts), dan paste dari clipboard (PNG dulu, lalu TIFF → PNG, lalu
+    file gambar yang di-copy; dibaca lewat `GeneralPasteboardAccess`). Shortcut: kalau overlay tampil →
+    tutup; kalau tidak → gambar terakhir, lalu gambar di clipboard, lalu panel pilih file.
+  - **Memori:** gambar disalin apa adanya (DPI ikut) ke `<Application Support>/<bundle id>/DesignOverlay/
+    reference.<ext>` lewat `PrivateFileStore` (owner-only, satu file saja); defaults hanya menyimpan namanya
+    (`designOverlayLastImage`, nama polos, path ditolak). Per display (UUID display): offset, opacity, skala,
+    lock (`designOverlayDisplays`, maksimal 12, yang terlama dibuang). Keduanya tidak didaftarkan, jadi tidak
+    ikut backup. Preferensi yang ikut backup: saklar + kombinasi shortcut, opacity default (50%), blend
+    default, preset grid, saklar zona island. Gambar dilepas dari memori saat overlay ditutup.
+  - **Settings:** Section "Design overlay" di halaman Screen capture (di bawah opsi tool yang dipilih),
+    memakai `ZenithSwitchRow`, `ShortcutPreferenceRow`, slider, picker; heading dari `Section` (bukan
+    `SettingsRow`/`SettingsCard` ber-title), jadi tidak masuk test search coverage. Tombol Choose image… dan
+    Paste image from clipboard. Fitur ini mengikuti ketersediaan tool Screenshot di Features hub.
+  - Edit di file upstream bertanda `// Zenith fork`: `NotchService` (`acceptsPhotoDrop`, `updateFileDrop`,
+    `accept`), `NotchFilesView` (zona Overlay), `GlobalShortcut` (role, default, urutan grup capture),
+    `Defaults`, `FeatureRuntime` (sync di binding `.screenshot`), `ScreenCaptureSettings`. File fork lain:
+    `NotchAirDropSupport` (case `.overlay`), `NotchPhotoActionsSupport`/`Service` (target drop), test double
+    `ShelfDropRoutingContract.DesignOverlayService`.
+  - **Belum diverifikasi visual:** app UI tidak dijalankan. Perlu dicek di Mac: lihat daftar "cek manual"
+    di laporan branch (export Figma 2x di atas browser, Difference dengan izin Screen Recording, Fit di
+    Safari/Chrome, HUD di 120 Hz, full screen, beberapa display). ⌥⌘O bentrok dengan Outline Stroke di Figma
+    dan menutupi shortcut lokal ⌥⌘O (Watch) di island; ganti kalau mengganggu.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
