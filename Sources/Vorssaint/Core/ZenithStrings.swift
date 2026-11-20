@@ -3981,6 +3981,291 @@ extension ZenithStrings {
     }
 }
 
+// MARK: Watermark (Zenith fork)
+
+struct ZenithWatermarkStrings {
+    let title: String
+    let scale: String
+    let opacity: String
+    let margin: String
+    let position: String
+    let content: String
+    let logo: String
+    let text: String
+    let logoAndText: String
+    let color: String
+    let autoColor: String
+    let white: String
+    let black: String
+    let customColor: String
+    let originalColors: String
+    let shadow: String
+    let tile: String
+    let presets: String
+    let unsaved: String
+    let savePreset: String
+    let presetName: String
+    let save: String
+    let deletePreset: String
+    let editText: String
+    let chooseLogo: String
+    let star: String
+    let weight: String
+    let regular: String
+    let medium: String
+    let semibold: String
+    let bold: String
+    let caption: String
+    let defaultPreset: String
+    let none: String
+    let logoMissing: String
+    let clientProof: String
+    let instagram: String
+    /// The 3×3 grid, left to right, top to bottom, for VoiceOver and tooltips.
+    let positions: [String]
+}
+
+extension ZenithStrings {
+    /// The photo actions' Watermark step (NotchWatermarkSupport) and its card in Shelf settings.
+    static func watermark(_ language: AppLanguage) -> ZenithWatermarkStrings {
+        switch language {
+        case .enUS:
+            return .init(title: "Watermark", scale: "Scale", opacity: "Opacity", margin: "Margin", position: "Position",
+                         content: "Show", logo: "Logo", text: "Text", logoAndText: "Logo and text", color: "Color",
+                         autoColor: "Auto contrast", white: "White", black: "Black", customColor: "Custom",
+                         originalColors: "Logo’s own colors", shadow: "Soft shadow", tile: "Tile pattern",
+                         presets: "Presets", unsaved: "Unsaved", savePreset: "Save as preset…",
+                         presetName: "Preset name", save: "Save", deletePreset: "Delete preset",
+                         editText: "Edit text…", chooseLogo: "Choose logo…", star: "Satu Visual star",
+                         weight: "Weight", regular: "Regular", medium: "Medium", semibold: "Semibold", bold: "Bold",
+                         caption: "The Watermark step in Transform marks photos with a logo, text or both before you send them, on its own or together with Convert, Resize or Compress. Each result is a new file ending in -wm. The default preset is applied to every new drop.",
+                         defaultPreset: "Default preset", none: "None",
+                         logoMissing: "This logo isn’t on this Mac, so the star is used instead.",
+                         clientProof: "Client proof", instagram: "Instagram",
+                         positions: ["Top left", "Top", "Top right", "Left", "Center", "Right",
+                                     "Bottom left", "Bottom", "Bottom right"])
+        case .ptBR:
+            return .init(title: "Marca d’água", scale: "Escala", opacity: "Opacidade", margin: "Margem",
+                         position: "Posição", content: "Mostrar", logo: "Logo", text: "Texto",
+                         logoAndText: "Logo e texto", color: "Cor", autoColor: "Contraste automático",
+                         white: "Branco", black: "Preto", customColor: "Personalizada",
+                         originalColors: "Cores do próprio logo", shadow: "Sombra suave", tile: "Padrão repetido",
+                         presets: "Predefinições", unsaved: "Não salva", savePreset: "Salvar como predefinição…",
+                         presetName: "Nome da predefinição", save: "Salvar", deletePreset: "Apagar predefinição",
+                         editText: "Editar texto…", chooseLogo: "Escolher logo…", star: "Estrela Satu Visual",
+                         weight: "Peso", regular: "Regular", medium: "Médio", semibold: "Seminegrito", bold: "Negrito",
+                         caption: "A etapa Marca d’água em Transformar marca as fotos com um logo, um texto ou ambos antes de você enviá-las, sozinha ou junto com Converter, Redimensionar ou Comprimir. Cada resultado é um novo arquivo terminado em -wm. A predefinição padrão é aplicada a cada nova imagem solta.",
+                         defaultPreset: "Predefinição padrão", none: "Nenhuma",
+                         logoMissing: "Este logo não está neste Mac, então a estrela é usada.",
+                         clientProof: "Prova para cliente", instagram: "Instagram",
+                         positions: ["Superior esquerdo", "Superior", "Superior direito", "Esquerda", "Centro",
+                                     "Direita", "Inferior esquerdo", "Inferior", "Inferior direito"])
+        case .tr:
+            return .init(title: "Filigran", scale: "Ölçek", opacity: "Opaklık", margin: "Kenar boşluğu",
+                         position: "Konum", content: "Göster", logo: "Logo", text: "Metin",
+                         logoAndText: "Logo ve metin", color: "Renk", autoColor: "Otomatik kontrast",
+                         white: "Beyaz", black: "Siyah", customColor: "Özel",
+                         originalColors: "Logonun kendi renkleri", shadow: "Yumuşak gölge", tile: "Döşeme deseni",
+                         presets: "Hazır ayarlar", unsaved: "Kaydedilmedi", savePreset: "Hazır ayar olarak kaydet…",
+                         presetName: "Hazır ayar adı", save: "Kaydet", deletePreset: "Hazır ayarı sil",
+                         editText: "Metni düzenle…", chooseLogo: "Logo seç…", star: "Satu Visual yıldızı",
+                         weight: "Kalınlık", regular: "Normal", medium: "Orta", semibold: "Yarı kalın", bold: "Kalın",
+                         caption: "Dönüştür’deki Filigran adımı, fotoğrafları göndermeden önce logo, metin veya ikisiyle işaretler; tek başına ya da Biçim değiştir, Boyutlandır veya Sıkıştır ile birlikte. Her sonuç -wm ile biten yeni bir dosyadır. Varsayılan hazır ayar her yeni bırakmada uygulanır.",
+                         defaultPreset: "Varsayılan hazır ayar", none: "Yok",
+                         logoMissing: "Bu logo bu Mac’te yok, bu yüzden yıldız kullanılıyor.",
+                         clientProof: "Müşteri provası", instagram: "Instagram",
+                         positions: ["Sol üst", "Üst", "Sağ üst", "Sol", "Orta", "Sağ", "Sol alt", "Alt", "Sağ alt"])
+        case .ru:
+            return .init(title: "Водяной знак", scale: "Масштаб", opacity: "Непрозрачность", margin: "Отступ",
+                         position: "Положение", content: "Показывать", logo: "Логотип", text: "Текст",
+                         logoAndText: "Логотип и текст", color: "Цвет", autoColor: "Автоконтраст",
+                         white: "Белый", black: "Чёрный", customColor: "Свой",
+                         originalColors: "Цвета логотипа", shadow: "Мягкая тень", tile: "Узор плиткой",
+                         presets: "Пресеты", unsaved: "Не сохранён", savePreset: "Сохранить как пресет…",
+                         presetName: "Название пресета", save: "Сохранить", deletePreset: "Удалить пресет",
+                         editText: "Изменить текст…", chooseLogo: "Выбрать логотип…", star: "Звезда Satu Visual",
+                         weight: "Начертание", regular: "Обычный", medium: "Средний", semibold: "Полужирный",
+                         bold: "Жирный",
+                         caption: "Шаг «Водяной знак» в «Преобразовать» помечает фото логотипом, текстом или обоими перед отправкой, отдельно или вместе с «Формат», «Размер» или «Сжать». Каждый результат сохраняется новым файлом с окончанием -wm. Пресет по умолчанию применяется к каждому новому перетаскиванию.",
+                         defaultPreset: "Пресет по умолчанию", none: "Нет",
+                         logoMissing: "Этого логотипа нет на этом Mac, поэтому используется звезда.",
+                         clientProof: "Превью для клиента", instagram: "Instagram",
+                         positions: ["Слева вверху", "Вверху", "Справа вверху", "Слева", "По центру", "Справа",
+                                     "Слева внизу", "Внизу", "Справа внизу"])
+        case .es:
+            return .init(title: "Marca de agua", scale: "Escala", opacity: "Opacidad", margin: "Margen",
+                         position: "Posición", content: "Mostrar", logo: "Logo", text: "Texto",
+                         logoAndText: "Logo y texto", color: "Color", autoColor: "Contraste automático",
+                         white: "Blanco", black: "Negro", customColor: "Personalizado",
+                         originalColors: "Colores del propio logo", shadow: "Sombra suave",
+                         tile: "Patrón en mosaico", presets: "Preajustes", unsaved: "Sin guardar",
+                         savePreset: "Guardar como preajuste…", presetName: "Nombre del preajuste", save: "Guardar",
+                         deletePreset: "Eliminar preajuste", editText: "Editar texto…", chooseLogo: "Elegir logo…",
+                         star: "Estrella de Satu Visual", weight: "Grosor", regular: "Normal", medium: "Media",
+                         semibold: "Seminegrita", bold: "Negrita",
+                         caption: "El paso Marca de agua de Transformar marca las fotos con un logo, un texto o ambos antes de enviarlas, solo o junto con Convertir, Redimensionar o Comprimir. Cada resultado es un archivo nuevo que termina en -wm. El preajuste predeterminado se aplica a cada imagen nueva que sueltes.",
+                         defaultPreset: "Preajuste predeterminado", none: "Ninguno",
+                         logoMissing: "Este logo no está en este Mac, así que se usa la estrella.",
+                         clientProof: "Prueba para cliente", instagram: "Instagram",
+                         positions: ["Arriba a la izquierda", "Arriba", "Arriba a la derecha", "Izquierda", "Centro",
+                                     "Derecha", "Abajo a la izquierda", "Abajo", "Abajo a la derecha"])
+        case .sk:
+            return .init(title: "Vodoznak", scale: "Mierka", opacity: "Krytie", margin: "Okraj", position: "Poloha",
+                         content: "Zobraziť", logo: "Logo", text: "Text", logoAndText: "Logo a text", color: "Farba",
+                         autoColor: "Automatický kontrast", white: "Biela", black: "Čierna", customColor: "Vlastná",
+                         originalColors: "Vlastné farby loga", shadow: "Jemný tieň", tile: "Dlaždicový vzor",
+                         presets: "Predvoľby", unsaved: "Neuložené", savePreset: "Uložiť ako predvoľbu…",
+                         presetName: "Názov predvoľby", save: "Uložiť", deletePreset: "Vymazať predvoľbu",
+                         editText: "Upraviť text…", chooseLogo: "Vybrať logo…", star: "Hviezda Satu Visual",
+                         weight: "Hrúbka", regular: "Normálne", medium: "Stredné", semibold: "Polotučné",
+                         bold: "Tučné",
+                         caption: "Krok Vodoznak v Transformovať označí fotky logom, textom alebo oboma ešte pred odoslaním, samostatne alebo spolu s Previesť, Zmeniť veľkosť či Komprimovať. Každý výsledok je nový súbor s koncovkou -wm. Východisková predvoľba sa použije pri každom novom pustení.",
+                         defaultPreset: "Východisková predvoľba", none: "Žiadna",
+                         logoMissing: "Toto logo na tomto Macu nie je, preto sa použije hviezda.",
+                         clientProof: "Náhľad pre klienta", instagram: "Instagram",
+                         positions: ["Vľavo hore", "Hore", "Vpravo hore", "Vľavo", "Stred", "Vpravo", "Vľavo dole",
+                                     "Dole", "Vpravo dole"])
+        case .de:
+            return .init(title: "Wasserzeichen", scale: "Größe", opacity: "Deckkraft", margin: "Rand",
+                         position: "Position", content: "Anzeigen", logo: "Logo", text: "Text",
+                         logoAndText: "Logo und Text", color: "Farbe", autoColor: "Automatischer Kontrast",
+                         white: "Weiß", black: "Schwarz", customColor: "Eigene",
+                         originalColors: "Eigene Farben des Logos", shadow: "Weicher Schatten", tile: "Kachelmuster",
+                         presets: "Vorlagen", unsaved: "Nicht gesichert", savePreset: "Als Vorlage sichern…",
+                         presetName: "Name der Vorlage", save: "Sichern", deletePreset: "Vorlage löschen",
+                         editText: "Text bearbeiten…", chooseLogo: "Logo auswählen…", star: "Satu Visual Stern",
+                         weight: "Stärke", regular: "Normal", medium: "Mittel", semibold: "Halbfett", bold: "Fett",
+                         caption: "Der Schritt Wasserzeichen in Umwandeln versieht Fotos vor dem Versenden mit einem Logo, einem Text oder beidem, allein oder zusammen mit Konvertieren, Skalieren oder Komprimieren. Jedes Ergebnis ist eine neue Datei, die auf -wm endet. Die Standardvorlage gilt für jedes neue Ablegen.",
+                         defaultPreset: "Standardvorlage", none: "Keine",
+                         logoMissing: "Dieses Logo ist nicht auf diesem Mac, daher wird der Stern verwendet.",
+                         clientProof: "Kundenvorschau", instagram: "Instagram",
+                         positions: ["Oben links", "Oben", "Oben rechts", "Links", "Mitte", "Rechts", "Unten links",
+                                     "Unten", "Unten rechts"])
+        case .fr:
+            return .init(title: "Filigrane", scale: "Taille", opacity: "Opacité", margin: "Marge", position: "Position",
+                         content: "Afficher", logo: "Logo", text: "Texte", logoAndText: "Logo et texte",
+                         color: "Couleur", autoColor: "Contraste auto", white: "Blanc", black: "Noir",
+                         customColor: "Personnalisée", originalColors: "Couleurs du logo", shadow: "Ombre douce",
+                         tile: "Motif en mosaïque", presets: "Préréglages", unsaved: "Non enregistré",
+                         savePreset: "Enregistrer comme préréglage…", presetName: "Nom du préréglage",
+                         save: "Enregistrer", deletePreset: "Supprimer le préréglage", editText: "Modifier le texte…",
+                         chooseLogo: "Choisir un logo…", star: "Étoile Satu Visual", weight: "Graisse",
+                         regular: "Normal", medium: "Moyen", semibold: "Demi-gras", bold: "Gras",
+                         caption: "L’étape Filigrane de Transformer marque les photos d’un logo, d’un texte ou des deux avant leur envoi, seule ou avec Convertir, Redimensionner ou Compresser. Chaque résultat est un nouveau fichier qui se termine par -wm. Le préréglage par défaut s’applique à chaque nouveau dépôt.",
+                         defaultPreset: "Préréglage par défaut", none: "Aucun",
+                         logoMissing: "Ce logo n’est pas sur ce Mac, l’étoile est donc utilisée.",
+                         clientProof: "Épreuve client", instagram: "Instagram",
+                         positions: ["En haut à gauche", "En haut", "En haut à droite", "À gauche", "Centre",
+                                     "À droite", "En bas à gauche", "En bas", "En bas à droite"])
+        case .it:
+            return .init(title: "Filigrana", scale: "Scala", opacity: "Opacità", margin: "Margine", position: "Posizione",
+                         content: "Mostra", logo: "Logo", text: "Testo", logoAndText: "Logo e testo", color: "Colore",
+                         autoColor: "Contrasto automatico", white: "Bianco", black: "Nero",
+                         customColor: "Personalizzato", originalColors: "Colori del logo", shadow: "Ombra morbida",
+                         tile: "Motivo ripetuto", presets: "Preimpostazioni", unsaved: "Non salvata",
+                         savePreset: "Salva come preimpostazione…", presetName: "Nome della preimpostazione",
+                         save: "Salva", deletePreset: "Elimina preimpostazione", editText: "Modifica testo…",
+                         chooseLogo: "Scegli logo…", star: "Stella Satu Visual", weight: "Spessore",
+                         regular: "Normale", medium: "Medio", semibold: "Semigrassetto", bold: "Grassetto",
+                         caption: "Il passaggio Filigrana di Trasforma marca le foto con un logo, un testo o entrambi prima di inviarle, da solo o insieme a Converti, Ridimensiona o Comprimi. Ogni risultato è un nuovo file che termina con -wm. La preimpostazione predefinita si applica a ogni nuovo rilascio.",
+                         defaultPreset: "Preimpostazione predefinita", none: "Nessuna",
+                         logoMissing: "Questo logo non è su questo Mac, quindi viene usata la stella.",
+                         clientProof: "Bozza per il cliente", instagram: "Instagram",
+                         positions: ["In alto a sinistra", "In alto", "In alto a destra", "A sinistra", "Centro",
+                                     "A destra", "In basso a sinistra", "In basso", "In basso a destra"])
+        case .ja:
+            return .init(title: "透かし", scale: "大きさ", opacity: "不透明度", margin: "余白", position: "位置",
+                         content: "表示", logo: "ロゴ", text: "テキスト", logoAndText: "ロゴとテキスト", color: "カラー",
+                         autoColor: "自動コントラスト", white: "白", black: "黒", customColor: "カスタム",
+                         originalColors: "ロゴ本来の色", shadow: "やわらかい影", tile: "タイル模様",
+                         presets: "プリセット", unsaved: "未保存", savePreset: "プリセットとして保存…",
+                         presetName: "プリセット名", save: "保存", deletePreset: "プリセットを削除",
+                         editText: "テキストを編集…", chooseLogo: "ロゴを選択…", star: "Satu Visual の星",
+                         weight: "太さ", regular: "レギュラー", medium: "ミディアム", semibold: "セミボールド",
+                         bold: "ボールド",
+                         caption: "「変換」の「透かし」ステップは、送る前の写真にロゴ、テキスト、またはその両方を入れます。単独でも、「形式」「サイズ」「圧縮」と一緒にも使えます。結果は末尾が -wm の新しいファイルになります。デフォルトのプリセットは新しくドロップするたびに適用されます。",
+                         defaultPreset: "デフォルトのプリセット", none: "なし",
+                         logoMissing: "このロゴはこの Mac にないため、代わりに星が使われます。",
+                         clientProof: "クライアント確認用", instagram: "Instagram",
+                         positions: ["左上", "上", "右上", "左", "中央", "右", "左下", "下", "右下"])
+        case .ko:
+            return .init(title: "워터마크", scale: "크기", opacity: "불투명도", margin: "여백", position: "위치",
+                         content: "표시", logo: "로고", text: "텍스트", logoAndText: "로고와 텍스트", color: "색상",
+                         autoColor: "자동 대비", white: "흰색", black: "검은색", customColor: "사용자 지정",
+                         originalColors: "로고 원래 색상", shadow: "부드러운 그림자", tile: "타일 패턴",
+                         presets: "프리셋", unsaved: "저장 안 됨", savePreset: "프리셋으로 저장…",
+                         presetName: "프리셋 이름", save: "저장", deletePreset: "프리셋 삭제",
+                         editText: "텍스트 편집…", chooseLogo: "로고 선택…", star: "Satu Visual 별",
+                         weight: "굵기", regular: "보통", medium: "중간", semibold: "세미볼드", bold: "볼드",
+                         caption: "변환의 워터마크 단계는 사진을 보내기 전에 로고, 텍스트 또는 둘 다를 넣습니다. 단독으로 쓰거나 형식 변환, 크기 조절, 압축과 함께 쓸 수 있습니다. 결과는 이름이 -wm으로 끝나는 새 파일입니다. 기본 프리셋은 새로 놓을 때마다 적용됩니다.",
+                         defaultPreset: "기본 프리셋", none: "없음",
+                         logoMissing: "이 로고가 이 Mac에 없어서 별이 대신 사용됩니다.",
+                         clientProof: "클라이언트 시안", instagram: "Instagram",
+                         positions: ["왼쪽 위", "위", "오른쪽 위", "왼쪽", "가운데", "오른쪽", "왼쪽 아래", "아래",
+                                     "오른쪽 아래"])
+        case .uk:
+            return .init(title: "Водяний знак", scale: "Масштаб", opacity: "Непрозорість", margin: "Відступ",
+                         position: "Положення", content: "Показувати", logo: "Логотип", text: "Текст",
+                         logoAndText: "Логотип і текст", color: "Колір", autoColor: "Автоконтраст",
+                         white: "Білий", black: "Чорний", customColor: "Власний",
+                         originalColors: "Кольори логотипа", shadow: "М’яка тінь", tile: "Візерунок плиткою",
+                         presets: "Пресети", unsaved: "Не збережено", savePreset: "Зберегти як пресет…",
+                         presetName: "Назва пресета", save: "Зберегти", deletePreset: "Видалити пресет",
+                         editText: "Змінити текст…", chooseLogo: "Вибрати логотип…", star: "Зірка Satu Visual",
+                         weight: "Накреслення", regular: "Звичайний", medium: "Середній", semibold: "Напівжирний",
+                         bold: "Жирний",
+                         caption: "Крок «Водяний знак» у «Перетворити» позначає фото логотипом, текстом або обома перед надсиланням, окремо або разом із «Формат», «Розмір» чи «Стиснути». Кожен результат зберігається новим файлом із закінченням -wm. Пресет за замовчуванням застосовується до кожного нового перетягування.",
+                         defaultPreset: "Пресет за замовчуванням", none: "Немає",
+                         logoMissing: "Цього логотипа немає на цьому Mac, тому використовується зірка.",
+                         clientProof: "Перегляд для клієнта", instagram: "Instagram",
+                         positions: ["Ліворуч угорі", "Угорі", "Праворуч угорі", "Ліворуч", "По центру", "Праворуч",
+                                     "Ліворуч унизу", "Унизу", "Праворуч унизу"])
+        case .zhHans:
+            return .init(title: "水印", scale: "尺寸", opacity: "不透明度", margin: "边距", position: "位置",
+                         content: "显示", logo: "标志", text: "文字", logoAndText: "标志和文字", color: "颜色",
+                         autoColor: "自动对比", white: "白色", black: "黑色", customColor: "自定",
+                         originalColors: "标志原色", shadow: "柔和阴影", tile: "平铺图案",
+                         presets: "预设", unsaved: "未存储", savePreset: "存储为预设…", presetName: "预设名称",
+                         save: "存储", deletePreset: "删除预设", editText: "编辑文字…", chooseLogo: "选择标志…",
+                         star: "Satu Visual 星标", weight: "字重", regular: "常规", medium: "中等", semibold: "中粗",
+                         bold: "粗体",
+                         caption: "“转换”中的“水印”步骤会在发送前为照片加上标志、文字或两者，可以单独使用，也可以和“格式”“大小”“压缩”一起使用。每个结果都是以 -wm 结尾的新文件。每次新的拖放都会应用默认预设。",
+                         defaultPreset: "默认预设", none: "无",
+                         logoMissing: "这台 Mac 上没有这个标志，所以改用星标。",
+                         clientProof: "客户校样", instagram: "Instagram",
+                         positions: ["左上", "上", "右上", "左", "居中", "右", "左下", "下", "右下"])
+        case .zhTW:
+            return .init(title: "浮水印", scale: "尺寸", opacity: "不透明度", margin: "邊界", position: "位置",
+                         content: "顯示", logo: "標誌", text: "文字", logoAndText: "標誌和文字", color: "顏色",
+                         autoColor: "自動對比", white: "白色", black: "黑色", customColor: "自訂",
+                         originalColors: "標誌原色", shadow: "柔和陰影", tile: "拼貼圖樣",
+                         presets: "樣式", unsaved: "未儲存", savePreset: "儲存為樣式…", presetName: "樣式名稱",
+                         save: "儲存", deletePreset: "刪除樣式", editText: "編輯文字…", chooseLogo: "選擇標誌…",
+                         star: "Satu Visual 星標", weight: "字重", regular: "標準", medium: "中等", semibold: "中粗",
+                         bold: "粗體",
+                         caption: "「轉換」中的「浮水印」步驟會在傳送前為照片加上標誌、文字或兩者，可以單獨使用，也可以和「格式」「大小」「壓縮」一起使用。每個結果都是以 -wm 結尾的新檔案。每次新的拖放都會套用預設樣式。",
+                         defaultPreset: "預設樣式", none: "無",
+                         logoMissing: "這部 Mac 上沒有這個標誌，因此改用星標。",
+                         clientProof: "客戶校樣", instagram: "Instagram",
+                         positions: ["左上", "上", "右上", "左", "置中", "右", "左下", "下", "右下"])
+        case .zhHK:
+            return .init(title: "水印", scale: "尺寸", opacity: "不透明度", margin: "邊界", position: "位置",
+                         content: "顯示", logo: "標誌", text: "文字", logoAndText: "標誌及文字", color: "顏色",
+                         autoColor: "自動對比", white: "白色", black: "黑色", customColor: "自訂",
+                         originalColors: "標誌原色", shadow: "柔和陰影", tile: "平鋪圖案",
+                         presets: "樣式", unsaved: "未儲存", savePreset: "儲存為樣式…", presetName: "樣式名稱",
+                         save: "儲存", deletePreset: "刪除樣式", editText: "編輯文字…", chooseLogo: "選擇標誌…",
+                         star: "Satu Visual 星標", weight: "字重", regular: "標準", medium: "中等", semibold: "中粗",
+                         bold: "粗體",
+                         caption: "「轉換」中的「水印」步驟會在傳送前為相片加上標誌、文字或兩者，可以單獨使用，亦可以與「格式」「大小」「壓縮」一同使用。每個結果都是以 -wm 結尾的新檔案。每次新的拖放都會套用預設樣式。",
+                         defaultPreset: "預設樣式", none: "無",
+                         logoMissing: "這部 Mac 上沒有這個標誌，因此改用星標。",
+                         clientProof: "客戶校樣", instagram: "Instagram",
+                         positions: ["左上", "上", "右上", "左", "置中", "右", "左下", "下", "右下"])
+        }
+    }
+}
+
 struct ZenithDesignOverlayStrings {
     let title: String
     let dropZone: String

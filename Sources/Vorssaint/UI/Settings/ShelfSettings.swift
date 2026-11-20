@@ -70,6 +70,7 @@ struct ShelfSettings: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
+            if photoActions { NotchWatermarkSettingsSection() } // Zenith fork: the photo actions' watermark
 
             if enabled {
                 // Mirrors the island page's Files choice, which only matters while the island shows Files.

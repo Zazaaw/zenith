@@ -62,10 +62,14 @@ enum NotchPhotoEncoder {
 
     // MARK: Transform
 
-    /// Converts, resizes, compresses or strips one picture into `directory`.
+    /// Converts, resizes, compresses, strips or watermarks one picture into
+    /// `directory`, in one pass: decode at the output's size, draw the
+    /// watermark at that full resolution, encode. `logo` is the watermark's
+    /// logo already read (a batch reads it once); nil reads the style's own.
     /// `stage` reports this file's own progress, 0 to 1.
     static func transform(_ input: URL, recipe: NotchPhotoRecipe, directory: URL,
                           reserved: inout Set<String>, writable: [String] = writableTypes,
+                          logo: NotchWatermarkLogo? = nil,
                           cancellation: NotchPhotoCancellation? = nil,
                           fileManager: FileManager = .default,
                           stage: (Double) -> Void = { _ in }) throws -> NotchPhotoOutput {
@@ -91,7 +95,8 @@ enum NotchPhotoEncoder {
 
         // A strip that keeps format and size copies the encoded image as it is
         // and only leaves the metadata behind: no generation loss.
-        let lossless = recipe.kind == .strip && format == sourceFormat && CGImageSourceGetCount(source) == 1
+        let lossless = recipe.kind == .strip && recipe.watermark == nil && format == sourceFormat
+            && CGImageSourceGetCount(source) == 1
             && copyWithoutMetadata(source, properties: properties, format: format, to: staged)
         var pixelSize = sourceSize
         if !lossless {
@@ -104,7 +109,16 @@ enum NotchPhotoEncoder {
             else { throw NotchPhotoError.unreadable }
             try cancellation?.check()
             stage(0.5)
-            let image = prepared(decoded, for: format)
+            var image = prepared(decoded, for: format)
+            // The watermark, after the resize and before the encode.
+            if let style = recipe.watermark {
+                guard let marked = NotchWatermarkRenderer.watermarked(
+                    image, style: style, logo: logo ?? NotchWatermarkLogo.load(style.logoFile))
+                else { throw NotchPhotoError.writeFailed }
+                image = marked
+                try cancellation?.check()
+                stage(0.7)
+            }
             pixelSize = CGSize(width: image.width, height: image.height)
             let metadata = recipe.stripsMetadata ? [:] : carriedProperties(properties)
             try write(image, format: format, quality: recipe.lossyQuality, properties: metadata, to: staged)

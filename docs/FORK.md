@@ -771,6 +771,96 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     cutout dites di suite `photo-actions`; Vision dicoba manual di gambar contoh sistem (bukan di test).
     Perlu dicek di Mac: lima zona drop di lebar compact (teks dua baris), drop sungguhan dari Finder,
     animasi di 120 Hz, panel opsi di bahasa panjang, drag hasil keluar, Copy ke Figma/Slack.
+- **Watermark di aksi foto (branch `feat/watermark`):** Faiz fotografer event; foto klien perlu diberi
+  watermark sekaligus banyak sebelum dikirim. Watermark jadi langkah kelima Transform dan bisa ikut langkah
+  lain dalam satu pass. Kode di `Services/Notch/NotchWatermarkSupport.swift` (murni: style, preset, store
+  logo, geometri, pola tile, pilihan putih/hitam), `Services/Notch/NotchWatermarkRenderer.swift` (Core
+  Graphics + Core Text), `UI/Notch/NotchWatermarkView.swift` (kontrol island) dan
+  `UI/Settings/NotchWatermarkSettings.swift` (kartu Settings). Teks di `ZenithStrings.watermark` (15 bahasa,
+  disisipkan setelah blok photo actions). Test di `Tests/WatermarkTests.swift` (suite `watermark`).
+  - **Isi:** logo, teks, atau logo + teks. Logo default bintang Satu Visual sebagai path vektor (path
+    maskot `NotchMascotGeometry.star`, dinormalisasi ke kotak 1×1), jadi tajam di resolusi berapa pun. Logo
+    sendiri: PNG/JPEG/HEIC/TIFF/WebP (dibaca di ukuran tujuan lewat thumbnail Image I/O), PDF (halaman 1
+    digambar sebagai vektor) atau SVG (`NSImage`, juga vektor). Teks satu baris SF Pro (`NSFont.systemFont`,
+    bobot Regular/Medium/Semibold/Bold), default `© Satu Visual`, maks. 80 karakter.
+  - **Ukuran relatif:** semua persen dari sisi pendek gambar. `scale` = tinggi mark (2–30%, default 8);
+    teks sendiri 0,62 × tinggi itu, teks di samping logo 0,4 × dengan jarak 0,3 ×; `margin` 0–15% (default 3).
+    Posisi grid 3×3: margin hanya di sisi yang disentuh; kalau ruang kurang dari 2 × margin, margin menyusut
+    supaya mark tetap di dalam gambar. Opacity 10–100% (default 80).
+  - **Warna:** Auto memilih putih atau hitam dari luminans relatif (WCAG) area di bawah mark (seluruh
+    gambar untuk tile), dibaca dari salinan sRGB 8×8; ambang 0,179 (titik kontras putih = hitam). Atau putih,
+    hitam, warna sendiri (`#RRGGBB`, dari Settings), atau warna asli logo (hanya logo sendiri). Logo selain
+    "warna asli" di-tint lewat transparency layer + blend `sourceIn`, jadi bentuk logo tetap. Bayangan lembut
+    opsional: gelap di bawah mark terang, glow terang tipis di bawah mark gelap.
+  - **Pola tile** (untuk proof): kisi melalui titik tengah gambar, baris naik ke kanan 30°, baris
+    selang-seling bergeser setengah langkah, jarak `max(2 × unit, 0,6 × lebar)` / `max(2,2 × unit,
+    1,4 × tinggi)`; hanya salinan yang bisa menyentuh gambar yang digambar. Opacity diterapkan sekali ke seluruh
+    pola (satu transparency layer), jadi tumpang tindih tidak menebal.
+  - **Render** (`NotchPhotoEncoder.transform`, kait di file fork sendiri): decode sekali di ukuran output →
+    `prepared` (ruang warna yang bisa dibawa format, latar putih untuk JPEG) → watermark di resolusi penuh dalam
+    bitmap yang sama ruang warnanya (P3 tetap P3, 16-bit tetap 16-bit, alpha hanya kalau ada) → encode. EXIF,
+    GPS, TIFF, IPTC ikut kecuali Strip/chip Strip EXIF dipilih; orientasi sudah diterapkan ke piksel (output
+    selalu orientasi 1). Kalau watermark gagal digambar, file **tidak** ditulis (error), jadi tidak ada foto klien
+    yang lolos tanpa watermark. Logo dibaca sekali per batch. Strip + watermark selalu encode ulang (jalur
+    salin lossless hanya untuk Strip tanpa watermark). Semua di antrean kerja foto yang sudah ada (di luar main
+    thread).
+  - **Nama:** akhiran `-wm` setelah akhiran langkah: `photo-wm.jpg`, `photo-2048-wm.jpg`, `photo-q80-wm.jpg`,
+    `photo-clean-wm.png`; tidak pernah menimpa (`photo-wm-1.jpg`), lewat `uniqueOutputURL` yang sudah ada.
+  - **UI island:** di samping segmented Convert/Resize/Compress/Strip ada tile lembut 30×26 (glyph
+    `signature`) untuk langkah Watermark; saat dipilih tile itu beraksen 18/24/100 dan segmented tidak punya
+    blok aktif. Area opsi berganti lewat `.zenithMorph`. Opsi: pemilih posisi 3×3 (titik 3,5 pt di tile lembut
+    40×40, posisi terpilih titik aksen 7,5 pt yang meluncur dengan `matchedGeometryEffect` + spring; redup saat
+    tile), dua slider tipis gaya `ZenithDataBar` (track 3 pt, knob 10 pt yang membesar 1,3× saat ditahan, angka
+    mono di kanan; glyph scale/opacity, bukan label, supaya muat di lebar compact ±205 pt), lalu baris 24 pt:
+    menu preset (lebar tetap 112 pt + `.fixedSize()`, aturan menu borderless issue #569; nama preset atau
+    "Unsaved", isinya preset dengan centang, Save as preset…, Delete preset, Show
+    logo/teks/keduanya, Edit text…, Weight, Margin 0/1/2/3/5/8%, Choose logo…, kembali ke bintang), tile warna
+    (swatch; menu Auto/White/Black/Custom/warna logo), tile pola tile, tile bayangan. Save as preset dan Edit
+    text mengganti baris itu dengan field teks inline (✓/✕, Return/Esc) lewat `.zenithMorph`. Di langkah lain
+    ada chip "Watermark" di samping "Strip EXIF" (di lebar sempit keduanya jadi glyph saja lewat
+    `ViewThatFits`). Tinggi pane watermark ±162 pt, muat di konten compact 180 pt.
+  - **Pratinjau langsung:** di gambar pertama, selama sesi Transform membawa watermark (sebelum hasil ada).
+    Mark digambar dengan renderer yang sama ke overlay transparan seukuran thumbnail (≤ 480 px) di antrean
+    preview sendiri (`userInteractive`, hanya permintaan terbaru yang digambar, logo di-cache per file), lalu
+    ditumpuk di atas thumbnail dengan frame yang sama. Muncul/hilang dengan fade 0,2 dtk; ganti isi tanpa animasi.
+  - **Preset:** `notchWatermarkPresets` (JSON `[NotchWatermarkPreset]`; `""` = dua preset awal "Client proof"
+    (logo + teks, tile, opacity 32%, tanpa bayangan) dan "Instagram" (logo + teks, kanan bawah, 5%, 85%) dalam
+    bahasa app; `"[]"` = memang kosong), `notchWatermarkStyle` (JSON style yang sedang diedit, disimpan 0,35 dtk
+    setelah berhenti berubah), `notchWatermarkDefaultPreset` (id preset yang diterapkan ke setiap drop
+    Transform baru, `""` = tidak ada). Ketiganya String di `registeredDefaults`, jadi ikut backup dan divalidasi
+    `valueLooksRight`. Nama sama (tanpa peduli huruf besar) menimpa preset itu di tempat; maks. 24 preset, nama
+    maks. 40 karakter. Decode toleran: field yang hilang pakai default, nilai di luar rentang di-clamp.
+  - **Logo di container:** "Choose logo…" (NSOpenPanel) menyalin file ke
+    `<Application Support>/<bundle id>/Watermarks/logo-<uuid>.<ext>` lewat `PrivateFileStore` (folder 0700, file
+    0600), maks. 40 MB; preferensi hanya menyimpan nama file. Logo yang tidak dipakai style atau preset mana pun
+    dihapus. Backup tidak membawa file logo: di Mac lain preset jatuh ke bintang, dan Settings menampilkan
+    peringatan amber "This logo isn’t on this Mac".
+  - **Settings:** Section "Watermark" di Settings → Shelf, tepat di bawah saklar photo actions (hanya kalau
+    saklar itu nyala): Default preset, logo (thumbnail, Choose logo…, kembali ke bintang), teks, Show, Weight,
+    Color (+ `ColorPicker` untuk Custom), saklar Soft shadow (`ZenithSwitchRow`), keterangan. Mengedit watermark
+    yang sama dengan island (`NotchPhotoActionsService.watermark`).
+  - Edit di file upstream bertanda `// Zenith fork`: `Defaults` (3 kunci + registrasi), `ShelfSettings` (satu
+    baris section), `build.sh` (`TEST_SOURCES`), `Tests/MetricsTests.swift` (suite). File fork yang ikut berubah:
+    `NotchPhotoActionsSupport` (kind `.watermark`, `recipe.watermark`, akhiran), `NotchPhotoActionsEncoder`
+    (langkah watermark, parameter `logo`), `NotchPhotoActionsService` (state, preset, logo, preview),
+    `NotchPhotoActionsView` (tile langkah, chip, overlay preview; `NotchPhotoPressStyle` jadi internal).
+  - **Test:** `WatermarkTests` (suite `watermark`): teks 15 bahasa (apostrof melengkung, tanpa em dash, 9 nama
+    posisi), akhiran nama per langkah, matematika penempatan (unit, margin, blok logo/teks, sembilan posisi,
+    margin menyusut, mark lebih lebar dari gambar), geometri tile (salinan di tengah, sudut 30° naik ke kanan,
+    semua bisa menyentuh gambar, menutup sudut, tanpa duplikat), auto-contrast (luminans, ambang, area atas/
+    bawah gambar terbagi), encode/decode style dan preset (round trip, parsial, clamp, nama logo berbahaya,
+    preset awal, ganti nama sama, batas), registrasi backup, store logo (nama aman, 0600, prune, PDF), render
+    (P3, ukuran, tanpa alpha baru, hitam di putih/putih di hitam, opacity, warna tetap, teks, overlay, tile di
+    keempat kuadran, alpha tetap), dan end to end di folder sementara (JPEG P3 miring → tegak ukuran penuh,
+    profil P3, EXIF/GPS tetap, mark di pojok yang benar, `photo-wm-1.jpg`, resize + watermark + strip
+    `wide-1080-wm.jpg`, PNG strip + watermark `flat-clean-wm.png`). UserDefaults test memakai
+    `com.vorssaint.tests.watermark`.
+  - **Belum diverifikasi visual:** app UI tidak dijalankan. Perlu dicek di Mac (120 Hz): tile langkah di
+    samping segmented (lebar compact, bahasa panjang), pemilih titik dan slider (drag, VoiceOver adjustable),
+    menu preset dan menu warna di island, field inline (apakah island menerima ketikan dan Esc), NSOpenPanel
+    dari island (island mungkin menutup; sesi tetap), pratinjau yang ikut slider, chip di lebar sempit, kartu
+    Settings terang/gelap, hasil di foto RAW/HEIC sungguhan dari kamera, batch 100 foto (memori, waktu), logo
+    SVG/PDF sungguhan dan logo berwarna dengan "warna asli".
 - **Notice kapsul ala Droppy (branch `feat/island-notices`):** event sistem yang singkat tumbuh dari
   island tertutup jadi pil lebar, tampil beberapa detik, lalu menyusut balik. Yang diambil dari
   referensi (`reference/live-activities-*.mp4`) hanya pola dan geraknya, tanpa ikon atau nama Droppy.

@@ -55,11 +55,30 @@ final class NotchPhotoActionsService: ObservableObject {
     @Published private(set) var session: NotchPhotoSession?
     /// False while a running job's surface stepped aside for another drop.
     @Published private(set) var presented = false
-    @Published var kind: NotchPhotoTransformKind = .convert
+    @Published var kind: NotchPhotoTransformKind = .convert {
+        didSet { if kind != oldValue { refreshWatermarkPreview() } }
+    }
     @Published var format: NotchPhotoFormat = .jpeg
     @Published var longEdge: NotchPhotoLongEdge = .large
     @Published var quality: NotchPhotoQuality = .balanced
     @Published var alsoStrips = false
+    /// The watermark chip beside Convert, Resize, Compress and Strip.
+    @Published var alsoWatermarks = false {
+        didSet { if alsoWatermarks != oldValue { refreshWatermarkPreview() } }
+    }
+    /// The watermark being edited, saved as it changes (a moment later, so a
+    /// slider's drag writes once) and shared with Shelf settings.
+    @Published var watermark = NotchWatermarkSupport.style() {
+        didSet {
+            guard watermark != oldValue else { return }
+            refreshWatermarkPreview()
+            scheduleWatermarkSave()
+        }
+    }
+    @Published private(set) var watermarkPresets: [NotchWatermarkPreset] = []
+    /// The watermark alone, drawn over transparency at the thumbnail's size,
+    /// for the surface to lay over the first picture.
+    @Published private(set) var watermarkPreview: CGImage?
     /// Bumped by Copy, so the button can say it worked.
     @Published private(set) var copySerial = 0
     /// A result is being dragged out of the island, which must not take it back.
@@ -70,8 +89,16 @@ final class NotchPhotoActionsService: ObservableObject {
 
     private let queue = DispatchQueue(label: "id.satuvisual.zenith.notch.photo", qos: .userInitiated)
     private var cancellation: NotchPhotoCancellation?
+    /// The live preview's own queue, so dragging a slider never waits behind
+    /// a batch; only the newest request draws.
+    private let previewQueue = DispatchQueue(label: "id.satuvisual.zenith.notch.watermark", qos: .userInteractive)
+    private let previewState = NotchWatermarkPreviewState()
+    private var previewGeneration = 0
+    private var pendingWatermarkSave: DispatchWorkItem?
 
-    private init() {}
+    private init() {
+        watermarkPresets = NotchWatermarkSupport.presets(language: L10n.shared.language)
+    }
 
     var isRunning: Bool { session?.phase.isWorking == true }
     var canAcceptDrop: Bool { !isRunning }
@@ -117,6 +144,8 @@ final class NotchPhotoActionsService: ObservableObject {
         guard NotchPhotoActionsSupport.isEnabled, canAcceptDrop, !inputs.isEmpty else { return false }
         let bytes = inputs.reduce(Int64(0)) { $0 + NotchPhotoEncoder.fileSize($1) }
         let opened = NotchPhotoSession(action: action, inputs: inputs, inputBytes: bytes)
+        if action == .transform { prepareWatermark() }
+        watermarkPreview = nil
         session = opened
         presented = true
         loadThumbnail(for: opened)
@@ -133,6 +162,7 @@ final class NotchPhotoActionsService: ObservableObject {
             DispatchQueue.main.async { [weak self] in
                 guard let self, self.session?.id == id else { return }
                 self.session?.thumbnail = box.image
+                self.refreshWatermarkPreview()
             }
         }
     }
@@ -141,8 +171,12 @@ final class NotchPhotoActionsService: ObservableObject {
 
     var recipe: NotchPhotoRecipe {
         NotchPhotoRecipe(kind: kind, format: offeredFormats.contains(format) ? format : .jpeg,
-                         longEdge: longEdge, quality: quality, alsoStrips: alsoStrips)
+                         longEdge: longEdge, quality: quality, alsoStrips: alsoStrips,
+                         watermark: appliesWatermark ? watermark.sanitized() : nil)
     }
+
+    /// The Watermark step, or another step with the watermark chip on.
+    var appliesWatermark: Bool { kind == .watermark || alsoWatermarks }
 
     func apply() {
         guard var current = session, !current.phase.isWorking else { return }
@@ -161,6 +195,8 @@ final class NotchPhotoActionsService: ObservableObject {
         queue.async { [weak self] in
             var reserved = Set<String>()
             var outputs: [NotchPhotoOutput] = []
+            // A batch reads its watermark's logo once.
+            let logo = recipe.watermark.map { NotchWatermarkLogo.load($0.logoFile) }
             var failure: NotchPhotoFailure?
             files: for (index, input) in inputs.enumerated() {
                 if token.isCancelled { break }
@@ -175,8 +211,8 @@ final class NotchPhotoActionsService: ObservableObject {
                     switch action {
                     case .transform:
                         outputs.append(try NotchPhotoEncoder.transform(input, recipe: recipe, directory: directory,
-                                                                       reserved: &reserved, cancellation: token,
-                                                                       stage: stage))
+                                                                       reserved: &reserved, logo: logo,
+                                                                       cancellation: token, stage: stage))
                     case .removeBackground:
                         outputs.append(try NotchPhotoSubject.cutout(input, directory: directory, reserved: &reserved,
                                                                     cancellation: token, stage: stage))
@@ -244,6 +280,9 @@ final class NotchPhotoActionsService: ObservableObject {
         cancellation = nil
         session = nil
         presented = false
+        previewGeneration += 1
+        watermarkPreview = nil
+        flushWatermarkSave()
     }
 
     /// Another drop takes the page: an idle session ends, a running one keeps
@@ -257,6 +296,123 @@ final class NotchPhotoActionsService: ObservableObject {
 
     func syncWithPreferences() {
         if !NotchPhotoActionsSupport.isEnabled { close() }
+    }
+
+    // MARK: Watermark
+
+    /// A new drop starts from the saved presets as they are now (a restored
+    /// backup included) and from the default preset, if one is chosen.
+    private func prepareWatermark() {
+        flushWatermarkSave()
+        watermarkPresets = NotchWatermarkSupport.presets(language: L10n.shared.language)
+        if let id = NotchWatermarkSupport.defaultPresetID(),
+           let preset = watermarkPresets.first(where: { $0.id == id }) {
+            watermark = preset.style
+        }
+    }
+
+    /// The preset the watermark is, unchanged; nil once it is edited.
+    var currentWatermarkPreset: NotchWatermarkPreset? {
+        NotchWatermarkSupport.matchingPreset(watermark, in: watermarkPresets)
+    }
+
+    func applyWatermarkPreset(_ id: String) {
+        guard let preset = watermarkPresets.first(where: { $0.id == id }) else { return }
+        watermark = preset.style
+    }
+
+    /// Saves the watermark under `name`; true when it was saved.
+    @discardableResult
+    func saveWatermarkPreset(named name: String) -> Bool {
+        let saved = NotchWatermarkSupport.saving(watermark, named: name, to: watermarkPresets)
+        guard saved.id != nil else { return false }
+        watermarkPresets = saved.presets
+        NotchWatermarkSupport.savePresets(saved.presets)
+        return true
+    }
+
+    func deleteWatermarkPreset(_ id: String) {
+        watermarkPresets.removeAll { $0.id == id }
+        NotchWatermarkSupport.savePresets(watermarkPresets)
+        if NotchWatermarkSupport.defaultPresetID() == id {
+            UserDefaults.standard.set("", forKey: DefaultsKey.notchWatermarkDefaultPreset)
+        }
+        pruneWatermarkLogos()
+    }
+
+    /// Picks a PNG, SVG or PDF (or another picture) for the logo and copies
+    /// it into the app's container, where presets find it later.
+    func chooseWatermarkLogo() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.allowedContentTypes = NotchWatermarkLogoStore.extensions.compactMap { UTType(filenameExtension: $0) }
+        panel.message = ZenithStrings.watermark(L10n.shared.language).chooseLogo
+        NSApp.activate(ignoringOtherApps: true)
+        guard panel.runModal() == .OK, let url = panel.url,
+              NotchWatermarkLogo.load(url: url) != nil,
+              let name = NotchWatermarkLogoStore.importLogo(from: url) else { return }
+        var style = watermark
+        style.logoFile = name
+        if style.content == .text { style.content = .both }
+        watermark = style
+        pruneWatermarkLogos()
+    }
+
+    /// Back to the bundled star.
+    func useWatermarkStar() {
+        guard watermark.logoFile != nil else { return }
+        watermark.logoFile = nil
+        if watermark.color == .original { watermark.color = .auto }
+        pruneWatermarkLogos()
+    }
+
+    /// Logos that neither the watermark nor any preset uses are removed.
+    private func pruneWatermarkLogos() {
+        var names = Set(watermarkPresets.compactMap(\.style.logoFile))
+        if let file = watermark.logoFile { names.insert(file) }
+        previewQueue.async { NotchWatermarkLogoStore.prune(keeping: names) }
+    }
+
+    private func scheduleWatermarkSave() {
+        pendingWatermarkSave?.cancel()
+        let style = watermark
+        let work = DispatchWorkItem { NotchWatermarkSupport.saveStyle(style) }
+        pendingWatermarkSave = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: work)
+    }
+
+    private func flushWatermarkSave() {
+        guard let pending = pendingWatermarkSave, !pending.isCancelled else { return }
+        pending.cancel()
+        pendingWatermarkSave = nil
+        NotchWatermarkSupport.saveStyle(watermark)
+    }
+
+    /// Redraws the live preview for the first picture: on the preview queue,
+    /// the newest request only, the logo read once per file.
+    func refreshWatermarkPreview() {
+        previewGeneration += 1
+        guard let session, session.action == .transform, appliesWatermark, let thumbnail = session.thumbnail else {
+            if watermarkPreview != nil { watermarkPreview = nil }
+            return
+        }
+        let generation = previewGeneration
+        let style = watermark.sanitized()
+        let backdrop = NotchPhotoImageBox(thumbnail)
+        let state = previewState
+        state.request(generation)
+        previewQueue.async { [weak self] in
+            guard state.isNewest(generation) else { return }
+            let logo = state.logo(for: style.logoFile)
+            let overlay = backdrop.image.flatMap { NotchWatermarkRenderer.overlay(for: $0, style: style, logo: logo) }
+            let box = NotchPhotoImageBox(overlay)
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.previewGeneration == generation else { return }
+                self.watermarkPreview = box.image
+            }
+        }
     }
 
     // MARK: Results
@@ -294,6 +450,26 @@ final class NotchPhotoActionsService: ObservableObject {
 private final class NotchPhotoImageBox: @unchecked Sendable {
     let image: CGImage?
     init(_ image: CGImage?) { self.image = image }
+}
+
+/// The live preview's bookkeeping, shared by the main thread (which asks)
+/// and the preview queue (which draws): the newest request, and the logo it
+/// last read so a slider's drag does not read the file again.
+private final class NotchWatermarkPreviewState: @unchecked Sendable {
+    private let lock = NSLock()
+    private var newest = 0
+    private var cached: NotchWatermarkLogo?
+
+    func request(_ generation: Int) { lock.withLock { newest = max(newest, generation) } }
+    func isNewest(_ generation: Int) -> Bool { lock.withLock { generation >= newest } }
+
+    /// Called on the preview queue only.
+    func logo(for file: String?) -> NotchWatermarkLogo {
+        if let cached = lock.withLock({ cached }), cached.file == file { return cached }
+        let logo = NotchWatermarkLogo.load(file)
+        lock.withLock { cached = logo }
+        return logo
+    }
 }
 
 private final class NotchPhotoResultBox: @unchecked Sendable {

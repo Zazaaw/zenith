@@ -32,9 +32,10 @@ enum NotchPhotoAction: String, Equatable {
     }
 }
 
-/// Transform's four steps; one is chosen at a time.
+/// Transform's steps; one is chosen at a time. Watermark can also ride along
+/// with the others (`NotchPhotoRecipe.watermark`).
 enum NotchPhotoTransformKind: String, CaseIterable, Identifiable {
-    case convert, resize, compress, strip
+    case convert, resize, compress, strip, watermark
     var id: String { rawValue }
 }
 
@@ -120,6 +121,9 @@ struct NotchPhotoRecipe: Equatable {
     var quality: NotchPhotoQuality = .balanced
     /// The "strip EXIF" chip beside Convert, Resize and Compress.
     var alsoStrips = false
+    /// The watermark drawn after any resize and before encoding: always for
+    /// the Watermark step, and for the others when its chip is on.
+    var watermark: NotchWatermarkStyle?
 
     /// Convert writes the chosen format; Compress always writes JPEG, since its
     /// presets are JPEG qualities; Resize and Strip keep the source's format
@@ -130,7 +134,7 @@ struct NotchPhotoRecipe: Equatable {
             return format
         case .compress:
             return .jpeg
-        case .resize, .strip:
+        case .resize, .strip, .watermark:
             if let source, writable.contains(source.typeIdentifier) { return source }
             return .jpeg
         }
@@ -149,20 +153,22 @@ struct NotchPhotoRecipe: Equatable {
         switch kind {
         case .compress: return quality.value
         case .convert, .resize: return 0.9
-        case .strip: return 0.92
+        case .strip, .watermark: return 0.92
         }
     }
 
     /// What the output's name says about it: nothing for a conversion (its
     /// extension says it), the long edge for a resize, the quality for a
-    /// compression, `clean` for a strip.
+    /// compression, `clean` for a strip; then `-wm` for a watermark.
     var nameSuffix: String {
+        let step: String
         switch kind {
-        case .convert: return ""
-        case .resize: return longEdge.pixels.map { "-\($0)" } ?? ""
-        case .compress: return "-q\(quality.rawValue)"
-        case .strip: return "-clean"
+        case .convert, .watermark: step = ""
+        case .resize: step = longEdge.pixels.map { "-\($0)" } ?? ""
+        case .compress: step = "-q\(quality.rawValue)"
+        case .strip: step = "-clean"
         }
+        return watermark == nil ? step : step + NotchWatermarkSupport.nameSuffix
     }
 }
 
