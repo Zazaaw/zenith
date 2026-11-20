@@ -482,7 +482,8 @@ enum NotchTests {
                                    layout: .custom, customWidth: 360)
         custom.pageTop = .wrapsCamera
         custom.pageContentWidth = NotchLayout.musicContentWidth
-        suite.expect(custom.expandedWidth == 360 && custom.headerCameraGap == 0,
+        // Zenith fork: the open island adds its shoulders' flare outside the chosen width.
+        suite.expect(custom.expandedWidth == 360 + NotchLayout.shoulderFlare * 2 && custom.headerCameraGap == 0,
                      "a chosen width narrower than the player still limits it, and its row then sits below the camera")
         var handSet = true, wraps = true
         for (camera, top) in screens {
@@ -496,12 +497,12 @@ enum NotchTests {
                 for module: NotchModule in [.music, .timer, .controls] {
                     for sectionsButton in [false, true] {
                         let page = base.page(module, controls: shortcuts, sectionsButton: sectionsButton)
-                        handSet = handSet && page.expandedWidth == CGFloat(width)
+                        handSet = handSet && page.expandedWidth == CGFloat(width) + NotchLayout.shoulderFlare * 2 // Zenith fork
                     }
                 }
                 // As wide as the preset's player or wider, it still wraps the camera.
                 let player = base.page(.music, controls: [], sectionsButton: false)
-                if CGFloat(width) >= preset.expandedWidth {
+                if CGFloat(width) + NotchLayout.shoulderFlare * 2 >= preset.expandedWidth { // Zenith fork
                     wraps = wraps && player.headerCameraGap == preset.headerCameraGap
                 }
             }
@@ -1364,7 +1365,7 @@ enum NotchTests {
         suite.expect(closed >= 8 && closed <= 12 && NotchLayout.shoulder(height: 32) >= 5 && NotchLayout.shoulder(height: 32) <= 8,
                "a closed island keeps corners like the cutout's, so a collapse settles inside the notch")
         suite.expect(NotchLayout.surfaceRadius(height: 286) == ZenithIslandSilhouette.openCornerRadius
-                     && NotchLayout.shoulder(height: 286) == NotchLayout.shoulder,
+                     && NotchLayout.shoulder(height: 286) == ZenithIslandSilhouette.openShoulderWidth, // Zenith fork: the full flare
                "an open island keeps its full corner radius and shoulder")
     }
 
@@ -2886,7 +2887,8 @@ enum NotchTests {
                     suite.expect(custom.contentBudget == available, "a custom island's budget is what its height leaves below the chrome")
                     for module in NotchModule.allCases {
                         let size = custom.expandedSize(module: module)
-                        suite.expect(size.width == min(width, frame.width - 24 - NotchQuickAccessLayout.gutter * 2) && size.height <= height
+                        suite.expect(size.width == min(CGFloat(width) + NotchLayout.shoulderFlare * 2, // Zenith fork: the shoulders' flare
+                                                       frame.width - 24 - NotchQuickAccessLayout.gutter * 2) && size.height <= height
                                && frame.contains(custom.frame(for: size)),
                                "custom dimensions fit every module and respect the display and height limit")
                         suite.expect(custom.contentSize(for: size).height <= available && custom.contentSize(for: size).height > 0,

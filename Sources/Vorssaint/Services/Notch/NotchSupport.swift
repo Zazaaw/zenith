@@ -275,7 +275,9 @@ struct NotchBand: Equatable {
 /// layout in agreement, including small screens and custom sizes.
 enum NotchLayout {
     static let shoulder: CGFloat = 14
-    static let horizontalInset: CGFloat = 28
+    // Zenith fork: 28 points as upstream, plus the open island's shoulder
+    // flare, which widens the island by as much (see `shoulderFlare`).
+    static let horizontalInset: CGFloat = 28 + shoulderFlare
     static let headerHeight: CGFloat = 36
     static let navigationHeight: CGFloat = 36
     static let spacing: CGFloat = 12
@@ -404,7 +406,28 @@ enum NotchLayout {
     // Zenith fork: the open island's corner is larger (ZenithIslandSilhouette);
     // strips below 82 points keep upstream's 0.34 of their height.
     static func surfaceRadius(height: CGFloat) -> CGFloat { min(ZenithIslandSilhouette.openCornerRadius, height * 0.34) }
-    static func shoulder(height: CGFloat) -> CGFloat { min(shoulder, height * 0.19) }
+    // Zenith fork: the open island's shoulder flares past upstream's
+    // (ZenithIslandSilhouette), easing in with its height.
+    static func shoulder(height: CGFloat) -> CGFloat { plainShoulder(height: height) + shoulderFlare(height: height) }
+    /// Zenith fork: upstream's shoulder, without the open island's flare.
+    static func plainShoulder(height: CGFloat) -> CGFloat { min(shoulder, height * 0.19) }
+    /// Zenith fork: how much wider the open island's shoulders are than
+    /// upstream's 14 points. The extra width hangs outside the body like a
+    /// skirt: an open surface is twice this much wider, and its page this
+    /// much further in, so the body and the page keep upstream's widths.
+    static let shoulderFlare: CGFloat = ZenithIslandSilhouette.openShoulderWidth - shoulder
+    /// Zenith fork: the flare at a surface of `height`, none on a closed strip.
+    static func shoulderFlare(height: CGFloat) -> CGFloat { shoulderFlare * ZenithIslandSilhouette.openness(height: height) }
+    /// Zenith fork: a surface `size` with its own insets, widened by the
+    /// flare its height draws, so its body stays as wide as `size` drew it.
+    static func flared(_ size: CGSize) -> CGSize {
+        CGSize(width: size.width + shoulderFlare(height: size.height) * 2, height: size.height)
+    }
+    /// Zenith fork: a page's inset on a surface of `height`: upstream's 28
+    /// points and the flare there. Open pages use `horizontalInset`.
+    static func horizontalInset(height: CGFloat) -> CGFloat {
+        horizontalInset - shoulderFlare + shoulderFlare(height: height)
+    }
     /// The optional outline's stroke. Only its inner half, inside the island, shows.
     static let outlineWidth: CGFloat = 2
 
@@ -1257,11 +1280,16 @@ struct NotchActivityPickerLayout {
             + CGFloat(columns - 1) * Self.spacing + Self.horizontalInset * 2
         // The taller picker has deeper shoulders than a compact strip. Keep
         // the entire original strip inside those shoulders, not at its edge.
-        size = CGSize(width: min(max(stripSize.width + Self.horizontalInset * 2, width), max(1, screenWidth - 24)),
+        // Zenith fork: widened by the shoulders' flare at its height (`horizontalPadding`).
+        size = NotchLayout.flared(CGSize(width: min(max(stripSize.width + Self.horizontalInset * 2, width), max(1, screenWidth - 24)),
                       height: headerHeight + CGFloat(rows) * Self.rowHeight
                         + CGFloat(rows - 1) * Self.spacing + Self.verticalInset * 2
-                        + (hasCombinations ? Self.combinationHeight + Self.spacing : 0))
+                        + (hasCombinations ? Self.combinationHeight + Self.spacing : 0)))
     }
+
+    /// Zenith fork: the buttons' inset from the picker's sides, past the
+    /// shoulders' flare at its height.
+    var horizontalPadding: CGFloat { Self.horizontalInset + NotchLayout.shoulderFlare(height: size.height) }
 }
 
 /// Screen capture controls keep their title and buttons where the open
@@ -2699,7 +2727,7 @@ struct NotchGeometry: Equatable {
     }
     /// A held notification opens as a card about as wide as a native banner,
     /// never wider than the island itself.
-    var notificationPreviewWidth: CGFloat { min(max(400, cameraWidth + 200), expandedWidth) }
+    var notificationPreviewWidth: CGFloat { min(max(400, cameraWidth + 200) + NotchLayout.shoulderFlare * 2, expandedWidth) } // Zenith fork
     var notificationPreviewContentWidth: CGFloat {
         max(0, notificationPreviewWidth - NotchLayout.horizontalInset * 2)
     }
@@ -2708,8 +2736,10 @@ struct NotchGeometry: Equatable {
         return CGSize(width: notificationPreviewWidth, height: min(height, screen.height - 48))
     }
     var peek: CGSize {
-        CGSize(width: min(screen.width - 24, max(cameraWidth + 110, 340)), height: safeContentTop + 52)
+        NotchLayout.flared(CGSize(width: peekWidth, height: safeContentTop + 52)) // Zenith fork
     }
+    /// Zenith fork: upstream's peek width, before the shoulders flare.
+    var peekWidth: CGFloat { min(screen.width - 24, max(cameraWidth + 110, 340)) }
     var expanded: CGSize { expandedSize(module: .controls) }
     var expandedWidth: CGFloat {
         let chosen = NotchLayout.preferredWidth(layout, custom: customWidth)
@@ -2723,11 +2753,15 @@ struct NotchGeometry: Equatable {
         // wider makes the player and the home page wider too.
         var wing = pageBandSide + (rowShowsSectionsButton ? NotchBand.sectionsButtonRoom : 0)
         let ending = max(wing, trailingSectionsRoom + NotchBand.cameraClearance)
-        if sectionsButtonEndsRow, cameraWidth + ending * 2 + NotchLayout.horizontalInset * 2 <= chosen { wing = ending }
+        // Zenith fork: the chosen width is the island's without its shoulder
+        // flare, which is added outside it, so the page keeps its width.
+        let inset = NotchLayout.horizontalInset - NotchLayout.shoulderFlare
+        if sectionsButtonEndsRow, cameraWidth + ending * 2 + inset * 2 <= chosen { wing = ending }
         let preferred = layout == .custom ? chosen : pageContentWidth.map { natural in
-            min(chosen, max(natural, isNotched ? cameraWidth + wing * 2 : 0) + NotchLayout.horizontalInset * 2)
+            min(chosen, max(natural, isNotched ? cameraWidth + wing * 2 : 0) + inset * 2)
         } ?? chosen
-        return min(max(preferred, cameraWidth + 36), screen.width - 24 - NotchQuickAccessLayout.gutter * 2)
+        return min(max(preferred, cameraWidth + 36) + NotchLayout.shoulderFlare * 2, // Zenith fork
+                   screen.width - 24 - NotchQuickAccessLayout.gutter * 2)
     }
     var contentWidth: CGFloat { max(0, expandedWidth - NotchLayout.horizontalInset * 2) }
     /// Content height available before a page needs to scroll.
