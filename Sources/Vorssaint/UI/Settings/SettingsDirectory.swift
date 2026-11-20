@@ -570,6 +570,10 @@ enum SettingsDirectory {
                                                  FeatureStrings.commandBar(language).searchPlaceholder,
                                                  FeatureStrings.commandBar(language).appCenterTitle,
                                                  FeatureStrings.commandBar(language).appAliasLabel]),
+                // Zenith fork: workspaces, a page of the app's own (no hub feature).
+                SettingsDirectoryItem(page: .workspaces, title: ZenithStrings.workspaces(language).title,
+                                      icon: "square.grid.2x2",
+                                      keywords: ZenithWorkspacesSearch.keywords(language)),
                 SettingsDirectoryItem(page: .quickTools, title: s.quickToolsTab, icon: "wand.and.rays",
                                        featureKeywords: [
                                         (.quickLauncher, [s.launcherName]),
