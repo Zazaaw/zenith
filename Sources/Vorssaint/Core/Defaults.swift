@@ -938,6 +938,14 @@ enum DefaultsKey {
     static let notchNoticeCharger = "notchNoticeCharger"
     static let notchNoticeAudio = "notchNoticeAudio"
     static let notchNoticeDownload = "notchNoticeDownload"
+    // Zenith fork: importing camera cards (CardImportService): detection, the base folder and the import defaults.
+    static let notchCardImportEnabled = "notchCardImportEnabled"
+    static let notchCardImportFolder = "notchCardImportFolder" // "" is ~/Pictures/Imports; a home path keeps its ~
+    static let notchCardImportSplitRaw = "notchCardImportSplitRaw"
+    static let notchCardImportVideoFolder = "notchCardImportVideoFolder"
+    static let notchCardImportSkipImported = "notchCardImportSkipImported"
+    static let notchCardImportRename = "notchCardImportRename" // CardRenamePattern.rawValue
+    static let notchCardImportEject = "notchCardImportEject"
     static let notchCalendarEnabled = "notchCalendarEnabled"
     static let notchCalendarCountdown = "notchCalendarCountdown"
     static let notchCalendarCountdownLead = "notchCalendarCountdownLead" // minutes before a start, chosen events included
@@ -1625,6 +1633,13 @@ enum Defaults {
         DefaultsKey.notchNoticeCharger: true, // Zenith fork
         DefaultsKey.notchNoticeAudio: true, // Zenith fork
         DefaultsKey.notchNoticeDownload: true, // Zenith fork
+        DefaultsKey.notchCardImportEnabled: true, // Zenith fork
+        DefaultsKey.notchCardImportFolder: "", // Zenith fork
+        DefaultsKey.notchCardImportSplitRaw: true, // Zenith fork
+        DefaultsKey.notchCardImportVideoFolder: true, // Zenith fork
+        DefaultsKey.notchCardImportSkipImported: true, // Zenith fork
+        DefaultsKey.notchCardImportRename: CardRenamePattern.original.rawValue, // Zenith fork
+        DefaultsKey.notchCardImportEject: true, // Zenith fork
         DefaultsKey.notchEnabled: false,
         DefaultsKey.notchDisplay: NotchDisplay.automatic.rawValue,
         DefaultsKey.notchSilhouette: NotchSilhouette.capsule.rawValue,
