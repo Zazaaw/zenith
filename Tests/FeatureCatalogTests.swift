@@ -2299,7 +2299,7 @@ enum FeatureCatalogTests {
         suite.expect(Set(AppFeature.allCases.compactMap(\.settingsDestination.sectionAnchor))
                 == Set(SettingsSectionAnchor.allCases).subtracting([
                     .panelConfiguration, .keyboardBrightnessShortcuts, .monitorAlerts, .screenshotScrolling,
-                ])
+                ]).filter { !$0.rawValue.hasPrefix("zenith") } // Zenith fork: search-only sections
                 && SettingsSectionAnchor.panelConfiguration.page == .general
                 && SettingsSectionAnchor.keyboardBrightnessShortcuts.page == .shortcuts
                 && SettingsSectionAnchor.screenshotScrolling.page == .screenshot

@@ -925,7 +925,7 @@ enum CommandBarCatalog {
             .general: "action.openSettings", .cleaner: "action.cleaner", .uninstaller: "action.uninstaller",
         ]
         return rows.compactMap { item in
-            let keywords = SettingsSearchSupport.commandKeywords([item.title] + (labels[item.id] ?? []))
+            let keywords = SettingsSearchSupport.commandKeywords([item.title] + (labels[item.id] ?? []) + item.aliases) // Zenith fork
             let id: String
             switch item.id {
             case .page(let page):

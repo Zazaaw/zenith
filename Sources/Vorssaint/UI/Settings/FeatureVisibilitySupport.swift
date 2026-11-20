@@ -62,6 +62,12 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
     case fanControl
     case monitorAlerts
     case windowMaximizer
+    // Zenith fork: the fork's own sections, which Settings search lands on
+    // (ZenithSettingsSearch). Their raw values all start with "zenith".
+    case zenithWakaTime, zenithVercel, zenithGitHub, zenithCardImport, zenithDevServers, zenithGit, zenithSky, zenithRecap, zenithPrompter
+    case zenithClaudeHooks, zenithCardBackup, zenithPrayerTimes, zenithGoldenHour, zenithCameraAutoStart, zenithReply
+    case zenithLockScreen, zenithCommandActivity, zenithExportTracker, zenithNotices, zenithTabBar
+    case zenithDropZones, zenithWatermark, zenithDesignOverlay, zenithBeautify, zenithQR, zenithMenuBarHider
 
     var page: SettingsPage {
         switch self {
@@ -84,6 +90,16 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
         case .keyboardBrightnessShortcuts: return .shortcuts
         case .fanControl, .monitorAlerts: return .monitor
         case .windowMaximizer: return .windowLayout
+        // Zenith fork
+        case .zenithWakaTime, .zenithVercel, .zenithGitHub, .zenithCardImport, .zenithDevServers, .zenithGit, .zenithSky,
+             .zenithRecap, .zenithPrompter,
+             .zenithClaudeHooks, .zenithCardBackup, .zenithPrayerTimes, .zenithGoldenHour, .zenithCameraAutoStart,
+             .zenithReply, .zenithLockScreen, .zenithCommandActivity, .zenithExportTracker, .zenithNotices, .zenithTabBar:
+            return .notch
+        case .zenithDropZones, .zenithWatermark: return .shelf
+        case .zenithDesignOverlay, .zenithBeautify: return .screenshot
+        case .zenithQR: return .clipboard
+        case .zenithMenuBarHider: return .general
         }
     }
 }
@@ -137,6 +153,13 @@ struct FeatureSettingsDestination: Hashable {
     init(notch location: NotchSettingsLocation) {
         page = .notch
         sectionAnchor = nil
+        notchLocation = location
+    }
+
+    /// Zenith fork: a section inside one of the island's tabs or module options.
+    init(notch location: NotchSettingsLocation, sectionAnchor: SettingsSectionAnchor) {
+        page = .notch
+        self.sectionAnchor = sectionAnchor
         notchLocation = location
     }
 
