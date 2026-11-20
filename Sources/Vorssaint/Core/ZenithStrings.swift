@@ -8835,6 +8835,501 @@ extension ZenithStrings {
     }
 }
 
+// MARK: - Card backup (Zenith fork)
+
+/// Zenith fork: verified backups of card imports (CardBackupService), on the
+/// Card Import page, in its notices and in Settings.
+struct ZenithCardBackupStrings {
+    /// The list of events and their safety, and the live activity.
+    let title: String
+    let backUpNow: String
+    let backUp: String
+    let backUpAll: String
+    let backingUp: String
+    let verifying: String
+    let verify: String
+    let verifyCard: String
+    let verifyCardShort: String
+    let notBackedUpYet: String
+    let noDestination: String
+    /// `%@` is a drive's name.
+    let connectDrive: String
+    /// `%@` is a drive's name.
+    let backedUpTo: String
+    let notVerifiedYet: String
+    /// `%@` is the files and size, as in “1,248 files · 52 GB”.
+    let verifiedSummary: String
+    let cardMatches: String
+    let safeToFormat: String
+    let backUpFirst: String
+    /// `%@` is a count of events, as in “2 events”.
+    let notBackedUp: String
+    /// `%@` is a count of events.
+    let notVerified: String
+    let stateImported: String
+    let stateBackedUp: String
+    let stateVerified: String
+    let driveRemoved: String
+    let driveFull: String
+    let sourceMissing: String
+    let stopped: String
+    let noEvents: String
+    let allSafe: String
+    /// `%@` is a drive's name.
+    let driveConnected: String
+    let connected: String
+    let notConnected: String
+    let settingsTitle: String
+    let settingsCaption: String
+    let addDestination: String
+    let remove: String
+    let automatic: String
+    let automaticCaption: String
+    let verifyAfter: String
+    let verifyCaption: String
+    let reminder: String
+    let reminderCaption: String
+    let reminderOff: String
+    /// `%@` is a number of hours.
+    let hours: String
+    let sameDrive: String
+    let cardChosen: String
+    let noDestinations: String
+    let close: String
+    /// One, few and many: `%@` is the grouped count.
+    let files: [String]
+    /// One, few and many: `%@` is the grouped count.
+    let events: [String]
+    /// One, few and many: `%@` is the grouped count.
+    let mismatches: [String]
+}
+
+extension ZenithStrings {
+    static func cardBackup(_ language: AppLanguage) -> ZenithCardBackupStrings {
+        switch language {
+        case .enUS:
+            return .init(title: "Backups", backUpNow: "Back up now", backUp: "Back up", backUpAll: "Back up all",
+                         backingUp: "Backing up", verifying: "Verifying", verify: "Verify",
+                         verifyCard: "Verify card vs import", verifyCardShort: "Verify card",
+                         notBackedUpYet: "Not backed up yet",
+                         noDestination: "Add a backup drive in Settings to keep a second copy.",
+                         connectDrive: "Connect %@ to back up.", backedUpTo: "Backed up to %@",
+                         notVerifiedYet: "Not verified yet", verifiedSummary: "Verified %@",
+                         cardMatches: "Card matches the import", safeToFormat: "Safe to format the card",
+                         backUpFirst: "Back up before you format the card", notBackedUp: "%@ not backed up",
+                         notVerified: "%@ not verified", stateImported: "Imported only", stateBackedUp: "Backed up",
+                         stateVerified: "Verified", driveRemoved: "Backup drive removed", driveFull: "Backup drive is full",
+                         sourceMissing: "Import folder not found", stopped: "Backup stopped", noEvents: "No imports yet.",
+                         allSafe: "Every event has a verified backup.", driveConnected: "%@ connected",
+                         connected: "Connected", notConnected: "Not connected", settingsTitle: "Backup",
+                         settingsCaption: "Keep a second copy of every import on another drive before you format the card. Files are only ever added, never replaced.",
+                         addDestination: "Add backup folder…", remove: "Remove", automatic: "Back up automatically",
+                         automaticCaption: "When an import ends and a backup drive is connected.",
+                         verifyAfter: "Verify after backup",
+                         verifyCaption: "Compares every file by its SHA-256 and writes a manifest into the backup folder.",
+                         reminder: "Remind me", reminderCaption: "When an import has no verified backup after this long.",
+                         reminderOff: "Off", hours: "%@ h",
+                         sameDrive: "That folder is on the same drive as your imports. Choose another drive.",
+                         cardChosen: "That’s a camera card. Choose a backup drive.",
+                         noDestinations: "No backup folder yet.", close: "Close",
+                         files: ["%@ file", "%@ files", "%@ files"], events: ["%@ event", "%@ events", "%@ events"],
+                         mismatches: ["%@ file doesn’t match", "%@ files don’t match", "%@ files don’t match"])
+        case .ptBR:
+            return .init(title: "Backups", backUpNow: "Fazer backup agora", backUp: "Fazer backup", backUpAll: "Fazer backup de tudo",
+                         backingUp: "Fazendo backup", verifying: "Verificando", verify: "Verificar",
+                         verifyCard: "Verificar cartão e importação", verifyCardShort: "Verificar cartão",
+                         notBackedUpYet: "Ainda sem backup",
+                         noDestination: "Adicione um disco de backup nos Ajustes para manter uma segunda cópia.",
+                         connectDrive: "Conecte %@ para fazer o backup.", backedUpTo: "Backup em %@",
+                         notVerifiedYet: "Ainda não verificado", verifiedSummary: "Verificado: %@",
+                         cardMatches: "O cartão confere com a importação", safeToFormat: "Pode formatar o cartão",
+                         backUpFirst: "Faça o backup antes de formatar o cartão", notBackedUp: "%@ sem backup",
+                         notVerified: "%@ não verificados", stateImported: "Só importado", stateBackedUp: "Com backup",
+                         stateVerified: "Verificado", driveRemoved: "Disco de backup removido", driveFull: "Disco de backup cheio",
+                         sourceMissing: "Pasta da importação não encontrada", stopped: "Backup interrompido",
+                         noEvents: "Nenhuma importação ainda.", allSafe: "Todos os eventos têm backup verificado.",
+                         driveConnected: "%@ conectado", connected: "Conectado", notConnected: "Desconectado",
+                         settingsTitle: "Backup",
+                         settingsCaption: "Mantenha uma segunda cópia de cada importação em outro disco antes de formatar o cartão. Arquivos só são adicionados, nunca substituídos.",
+                         addDestination: "Adicionar pasta de backup…", remove: "Remover", automatic: "Backup automático",
+                         automaticCaption: "Quando uma importação termina e um disco de backup está conectado.",
+                         verifyAfter: "Verificar após o backup",
+                         verifyCaption: "Compara cada arquivo pelo SHA-256 e grava um manifesto na pasta de backup.",
+                         reminder: "Lembrar", reminderCaption: "Quando uma importação fica sem backup verificado por esse tempo.",
+                         reminderOff: "Desativado", hours: "%@ h",
+                         sameDrive: "Essa pasta está no mesmo disco das importações. Escolha outro disco.",
+                         cardChosen: "Isso é um cartão de câmera. Escolha um disco de backup.",
+                         noDestinations: "Nenhuma pasta de backup ainda.", close: "Fechar",
+                         files: ["%@ arquivo", "%@ arquivos", "%@ arquivos"], events: ["%@ evento", "%@ eventos", "%@ eventos"],
+                         mismatches: ["%@ arquivo não confere", "%@ arquivos não conferem", "%@ arquivos não conferem"])
+        case .tr:
+            return .init(title: "Yedekler", backUpNow: "Şimdi yedekle", backUp: "Yedekle", backUpAll: "Tümünü yedekle",
+                         backingUp: "Yedekleniyor", verifying: "Doğrulanıyor", verify: "Doğrula",
+                         verifyCard: "Kartı içe aktarmayla doğrula", verifyCardShort: "Kartı doğrula",
+                         notBackedUpYet: "Henüz yedeklenmedi",
+                         noDestination: "İkinci bir kopya için Ayarlar’da bir yedek diski ekleyin.",
+                         connectDrive: "Yedeklemek için %@ diskini bağlayın.", backedUpTo: "%@ diskine yedeklendi",
+                         notVerifiedYet: "Henüz doğrulanmadı", verifiedSummary: "Doğrulandı: %@",
+                         cardMatches: "Kart içe aktarmayla eşleşiyor", safeToFormat: "Kartı biçimlendirmek güvenli",
+                         backUpFirst: "Kartı biçimlendirmeden önce yedekleyin", notBackedUp: "%@ yedeklenmedi",
+                         notVerified: "%@ doğrulanmadı", stateImported: "Yalnızca içe aktarıldı", stateBackedUp: "Yedeklendi",
+                         stateVerified: "Doğrulandı", driveRemoved: "Yedek diski çıkarıldı", driveFull: "Yedek diski dolu",
+                         sourceMissing: "İçe aktarma klasörü bulunamadı", stopped: "Yedekleme durdu",
+                         noEvents: "Henüz içe aktarma yok.", allSafe: "Her etkinliğin doğrulanmış bir yedeği var.",
+                         driveConnected: "%@ bağlandı", connected: "Bağlı", notConnected: "Bağlı değil",
+                         settingsTitle: "Yedekleme",
+                         settingsCaption: "Kartı biçimlendirmeden önce her içe aktarmanın ikinci bir kopyasını başka bir diskte tutun. Dosyalar yalnızca eklenir, asla değiştirilmez.",
+                         addDestination: "Yedek klasörü ekle…", remove: "Kaldır", automatic: "Otomatik yedekle",
+                         automaticCaption: "Bir içe aktarma bittiğinde ve bir yedek diski bağlıyken.",
+                         verifyAfter: "Yedeklemeden sonra doğrula",
+                         verifyCaption: "Her dosyayı SHA-256 ile karşılaştırır ve yedek klasörüne bir manifest yazar.",
+                         reminder: "Hatırlat", reminderCaption: "Bir içe aktarma bu süre boyunca doğrulanmış yedeksiz kalırsa.",
+                         reminderOff: "Kapalı", hours: "%@ sa",
+                         sameDrive: "Bu klasör içe aktarmalarla aynı diskte. Başka bir disk seçin.",
+                         cardChosen: "Bu bir fotoğraf makinesi kartı. Bir yedek diski seçin.",
+                         noDestinations: "Henüz yedek klasörü yok.", close: "Kapat",
+                         files: ["%@ dosya", "%@ dosya", "%@ dosya"], events: ["%@ etkinlik", "%@ etkinlik", "%@ etkinlik"],
+                         mismatches: ["%@ dosya eşleşmiyor", "%@ dosya eşleşmiyor", "%@ dosya eşleşmiyor"])
+        case .ru:
+            return .init(title: "Резервные копии", backUpNow: "Скопировать сейчас", backUp: "Скопировать", backUpAll: "Скопировать все",
+                         backingUp: "Копирование", verifying: "Проверка", verify: "Проверить",
+                         verifyCard: "Сверить карту с импортом", verifyCardShort: "Сверить карту",
+                         notBackedUpYet: "Резервной копии ещё нет",
+                         noDestination: "Добавьте диск для резервных копий в Настройках, чтобы хранить вторую копию.",
+                         connectDrive: "Подключите %@ для резервной копии.", backedUpTo: "Скопировано на %@",
+                         notVerifiedYet: "Ещё не проверено", verifiedSummary: "Проверено: %@",
+                         cardMatches: "Карта совпадает с импортом", safeToFormat: "Карту можно форматировать",
+                         backUpFirst: "Сделайте копию перед форматированием карты", notBackedUp: "Без копии: %@",
+                         notVerified: "Не проверено: %@", stateImported: "Только импорт", stateBackedUp: "Есть копия",
+                         stateVerified: "Проверено", driveRemoved: "Диск для копий отключён", driveFull: "Диск для копий заполнен",
+                         sourceMissing: "Папка импорта не найдена", stopped: "Копирование остановлено",
+                         noEvents: "Импортов пока нет.", allSafe: "У каждого события есть проверенная копия.",
+                         driveConnected: "%@ подключён", connected: "Подключён", notConnected: "Не подключён",
+                         settingsTitle: "Резервная копия",
+                         settingsCaption: "Храните вторую копию каждого импорта на другом диске, прежде чем форматировать карту. Файлы только добавляются и никогда не заменяются.",
+                         addDestination: "Добавить папку для копий…", remove: "Удалить", automatic: "Копировать автоматически",
+                         automaticCaption: "Когда импорт закончен и диск для копий подключён.",
+                         verifyAfter: "Проверять после копирования",
+                         verifyCaption: "Сравнивает каждый файл по SHA-256 и записывает манифест в папку копии.",
+                         reminder: "Напомнить", reminderCaption: "Если у импорта столько времени нет проверенной копии.",
+                         reminderOff: "Выкл.", hours: "%@ ч",
+                         sameDrive: "Эта папка на том же диске, что и импорт. Выберите другой диск.",
+                         cardChosen: "Это карта камеры. Выберите диск для копий.",
+                         noDestinations: "Папки для копий пока нет.", close: "Закрыть",
+                         files: ["%@ файл", "%@ файла", "%@ файлов"], events: ["%@ событие", "%@ события", "%@ событий"],
+                         mismatches: ["%@ файл не совпадает", "%@ файла не совпадают", "%@ файлов не совпадают"])
+        case .es:
+            return .init(title: "Copias", backUpNow: "Copiar ahora", backUp: "Copiar", backUpAll: "Copiar todo",
+                         backingUp: "Copiando", verifying: "Verificando", verify: "Verificar",
+                         verifyCard: "Verificar tarjeta e importación", verifyCardShort: "Verificar tarjeta",
+                         notBackedUpYet: "Aún sin copia",
+                         noDestination: "Añade un disco de copia en Ajustes para guardar una segunda copia.",
+                         connectDrive: "Conecta %@ para hacer la copia.", backedUpTo: "Copiado en %@",
+                         notVerifiedYet: "Aún sin verificar", verifiedSummary: "Verificado: %@",
+                         cardMatches: "La tarjeta coincide con la importación", safeToFormat: "Puedes formatear la tarjeta",
+                         backUpFirst: "Haz la copia antes de formatear la tarjeta", notBackedUp: "%@ sin copia",
+                         notVerified: "%@ sin verificar", stateImported: "Solo importado", stateBackedUp: "Con copia",
+                         stateVerified: "Verificado", driveRemoved: "Disco de copia desconectado", driveFull: "Disco de copia lleno",
+                         sourceMissing: "No se encontró la carpeta importada", stopped: "Copia detenida",
+                         noEvents: "Aún no hay importaciones.", allSafe: "Todos los eventos tienen una copia verificada.",
+                         driveConnected: "%@ conectado", connected: "Conectado", notConnected: "Sin conectar",
+                         settingsTitle: "Copia de seguridad",
+                         settingsCaption: "Guarda una segunda copia de cada importación en otro disco antes de formatear la tarjeta. Los archivos solo se añaden, nunca se reemplazan.",
+                         addDestination: "Añadir carpeta de copia…", remove: "Quitar", automatic: "Copiar automáticamente",
+                         automaticCaption: "Cuando termina una importación y hay un disco de copia conectado.",
+                         verifyAfter: "Verificar tras copiar",
+                         verifyCaption: "Compara cada archivo por su SHA-256 y escribe un manifiesto en la carpeta de copia.",
+                         reminder: "Recordar", reminderCaption: "Cuando una importación lleva este tiempo sin copia verificada.",
+                         reminderOff: "No", hours: "%@ h",
+                         sameDrive: "Esa carpeta está en el mismo disco que las importaciones. Elige otro disco.",
+                         cardChosen: "Eso es una tarjeta de cámara. Elige un disco de copia.",
+                         noDestinations: "Aún no hay carpeta de copia.", close: "Cerrar",
+                         files: ["%@ archivo", "%@ archivos", "%@ archivos"], events: ["%@ evento", "%@ eventos", "%@ eventos"],
+                         mismatches: ["%@ archivo no coincide", "%@ archivos no coinciden", "%@ archivos no coinciden"])
+        case .sk:
+            return .init(title: "Zálohy", backUpNow: "Zálohovať teraz", backUp: "Zálohovať", backUpAll: "Zálohovať všetko",
+                         backingUp: "Zálohuje sa", verifying: "Overuje sa", verify: "Overiť",
+                         verifyCard: "Overiť kartu voči importu", verifyCardShort: "Overiť kartu",
+                         notBackedUpYet: "Zatiaľ bez zálohy",
+                         noDestination: "Pridajte v Nastaveniach disk na zálohy, aby ste mali druhú kópiu.",
+                         connectDrive: "Na zálohu pripojte %@.", backedUpTo: "Zálohované na %@",
+                         notVerifiedYet: "Zatiaľ neoverené", verifiedSummary: "Overené: %@",
+                         cardMatches: "Karta sa zhoduje s importom", safeToFormat: "Kartu môžete naformátovať",
+                         backUpFirst: "Pred formátovaním karty zálohujte", notBackedUp: "Bez zálohy: %@",
+                         notVerified: "Neoverené: %@", stateImported: "Iba importované", stateBackedUp: "Zálohované",
+                         stateVerified: "Overené", driveRemoved: "Disk so zálohou bol odpojený", driveFull: "Disk so zálohou je plný",
+                         sourceMissing: "Priečinok importu sa nenašiel", stopped: "Zálohovanie sa zastavilo",
+                         noEvents: "Zatiaľ žiadne importy.", allSafe: "Každá udalosť má overenú zálohu.",
+                         driveConnected: "%@ je pripojený", connected: "Pripojený", notConnected: "Nepripojený",
+                         settingsTitle: "Záloha",
+                         settingsCaption: "Pred formátovaním karty majte druhú kópiu každého importu na inom disku. Súbory sa len pridávajú, nikdy sa nenahrádzajú.",
+                         addDestination: "Pridať priečinok zálohy…", remove: "Odstrániť", automatic: "Zálohovať automaticky",
+                         automaticCaption: "Keď sa import skončí a disk na zálohy je pripojený.",
+                         verifyAfter: "Overiť po zálohovaní",
+                         verifyCaption: "Porovná každý súbor podľa SHA-256 a zapíše manifest do priečinka zálohy.",
+                         reminder: "Pripomenúť", reminderCaption: "Keď import po takom čase nemá overenú zálohu.",
+                         reminderOff: "Vypnuté", hours: "%@ h",
+                         sameDrive: "Tento priečinok je na rovnakom disku ako importy. Vyberte iný disk.",
+                         cardChosen: "To je karta z fotoaparátu. Vyberte disk na zálohy.",
+                         noDestinations: "Zatiaľ žiadny priečinok zálohy.", close: "Zavrieť",
+                         files: ["%@ súbor", "%@ súbory", "%@ súborov"], events: ["%@ udalosť", "%@ udalosti", "%@ udalostí"],
+                         mismatches: ["%@ súbor sa nezhoduje", "%@ súbory sa nezhodujú", "%@ súborov sa nezhoduje"])
+        case .de:
+            return .init(title: "Backups", backUpNow: "Jetzt sichern", backUp: "Sichern", backUpAll: "Alle sichern",
+                         backingUp: "Wird gesichert", verifying: "Wird geprüft", verify: "Prüfen",
+                         verifyCard: "Karte mit Import vergleichen", verifyCardShort: "Karte prüfen",
+                         notBackedUpYet: "Noch nicht gesichert",
+                         noDestination: "Füge in den Einstellungen ein Backup-Laufwerk hinzu, um eine zweite Kopie zu behalten.",
+                         connectDrive: "Schließe %@ zum Sichern an.", backedUpTo: "Gesichert auf %@",
+                         notVerifiedYet: "Noch nicht geprüft", verifiedSummary: "Geprüft: %@",
+                         cardMatches: "Karte stimmt mit dem Import überein", safeToFormat: "Karte kann formatiert werden",
+                         backUpFirst: "Vor dem Formatieren der Karte sichern", notBackedUp: "%@ nicht gesichert",
+                         notVerified: "%@ nicht geprüft", stateImported: "Nur importiert", stateBackedUp: "Gesichert",
+                         stateVerified: "Geprüft", driveRemoved: "Backup-Laufwerk getrennt", driveFull: "Backup-Laufwerk ist voll",
+                         sourceMissing: "Importordner nicht gefunden", stopped: "Sicherung angehalten",
+                         noEvents: "Noch keine Importe.", allSafe: "Jedes Event hat ein geprüftes Backup.",
+                         driveConnected: "%@ verbunden", connected: "Verbunden", notConnected: "Nicht verbunden",
+                         settingsTitle: "Backup",
+                         settingsCaption: "Behalte vor dem Formatieren der Karte eine zweite Kopie jedes Imports auf einem anderen Laufwerk. Dateien werden nur hinzugefügt, nie ersetzt.",
+                         addDestination: "Backup-Ordner hinzufügen…", remove: "Entfernen", automatic: "Automatisch sichern",
+                         automaticCaption: "Wenn ein Import endet und ein Backup-Laufwerk verbunden ist.",
+                         verifyAfter: "Nach dem Sichern prüfen",
+                         verifyCaption: "Vergleicht jede Datei per SHA-256 und schreibt ein Manifest in den Backup-Ordner.",
+                         reminder: "Erinnern", reminderCaption: "Wenn ein Import so lange kein geprüftes Backup hat.",
+                         reminderOff: "Aus", hours: "%@ h",
+                         sameDrive: "Dieser Ordner liegt auf demselben Laufwerk wie die Importe. Wähle ein anderes Laufwerk.",
+                         cardChosen: "Das ist eine Kamerakarte. Wähle ein Backup-Laufwerk.",
+                         noDestinations: "Noch kein Backup-Ordner.", close: "Schließen",
+                         files: ["%@ Datei", "%@ Dateien", "%@ Dateien"], events: ["%@ Event", "%@ Events", "%@ Events"],
+                         mismatches: ["%@ Datei stimmt nicht überein", "%@ Dateien stimmen nicht überein", "%@ Dateien stimmen nicht überein"])
+        case .fr:
+            return .init(title: "Sauvegardes", backUpNow: "Sauvegarder", backUp: "Sauvegarder", backUpAll: "Tout sauvegarder",
+                         backingUp: "Sauvegarde", verifying: "Vérification", verify: "Vérifier",
+                         verifyCard: "Comparer la carte à l’import", verifyCardShort: "Vérifier la carte",
+                         notBackedUpYet: "Pas encore sauvegardé",
+                         noDestination: "Ajoutez un disque de sauvegarde dans les Réglages pour garder une seconde copie.",
+                         connectDrive: "Branchez %@ pour sauvegarder.", backedUpTo: "Sauvegardé sur %@",
+                         notVerifiedYet: "Pas encore vérifié", verifiedSummary: "Vérifié : %@",
+                         cardMatches: "La carte correspond à l’import", safeToFormat: "Vous pouvez formater la carte",
+                         backUpFirst: "Sauvegardez avant de formater la carte", notBackedUp: "%@ non sauvegardés",
+                         notVerified: "%@ non vérifiés", stateImported: "Importé seulement", stateBackedUp: "Sauvegardé",
+                         stateVerified: "Vérifié", driveRemoved: "Disque de sauvegarde retiré", driveFull: "Disque de sauvegarde plein",
+                         sourceMissing: "Dossier d’import introuvable", stopped: "Sauvegarde arrêtée",
+                         noEvents: "Aucun import pour l’instant.", allSafe: "Chaque événement a une sauvegarde vérifiée.",
+                         driveConnected: "%@ branché", connected: "Branché", notConnected: "Non branché",
+                         settingsTitle: "Sauvegarde",
+                         settingsCaption: "Gardez une seconde copie de chaque import sur un autre disque avant de formater la carte. Les fichiers sont seulement ajoutés, jamais remplacés.",
+                         addDestination: "Ajouter un dossier de sauvegarde…", remove: "Retirer", automatic: "Sauvegarder automatiquement",
+                         automaticCaption: "Quand un import se termine et qu’un disque de sauvegarde est branché.",
+                         verifyAfter: "Vérifier après la sauvegarde",
+                         verifyCaption: "Compare chaque fichier par son SHA-256 et écrit un manifeste dans le dossier de sauvegarde.",
+                         reminder: "Rappeler", reminderCaption: "Quand un import reste aussi longtemps sans sauvegarde vérifiée.",
+                         reminderOff: "Non", hours: "%@ h",
+                         sameDrive: "Ce dossier est sur le même disque que les imports. Choisissez un autre disque.",
+                         cardChosen: "C’est une carte d’appareil photo. Choisissez un disque de sauvegarde.",
+                         noDestinations: "Aucun dossier de sauvegarde.", close: "Fermer",
+                         files: ["%@ fichier", "%@ fichiers", "%@ fichiers"], events: ["%@ événement", "%@ événements", "%@ événements"],
+                         mismatches: ["%@ fichier ne correspond pas", "%@ fichiers ne correspondent pas", "%@ fichiers ne correspondent pas"])
+        case .it:
+            return .init(title: "Backup", backUpNow: "Esegui backup ora", backUp: "Backup", backUpAll: "Backup di tutto",
+                         backingUp: "Backup in corso", verifying: "Verifica", verify: "Verifica",
+                         verifyCard: "Confronta scheda e importazione", verifyCardShort: "Verifica scheda",
+                         notBackedUpYet: "Ancora senza backup",
+                         noDestination: "Aggiungi un disco di backup in Impostazioni per tenere una seconda copia.",
+                         connectDrive: "Collega %@ per il backup.", backedUpTo: "Backup su %@",
+                         notVerifiedYet: "Non ancora verificato", verifiedSummary: "Verificati %@",
+                         cardMatches: "La scheda corrisponde all’importazione", safeToFormat: "Puoi formattare la scheda",
+                         backUpFirst: "Fai il backup prima di formattare la scheda", notBackedUp: "%@ senza backup",
+                         notVerified: "%@ non verificati", stateImported: "Solo importato", stateBackedUp: "Con backup",
+                         stateVerified: "Verificato", driveRemoved: "Disco di backup scollegato", driveFull: "Disco di backup pieno",
+                         sourceMissing: "Cartella importata non trovata", stopped: "Backup interrotto",
+                         noEvents: "Ancora nessuna importazione.", allSafe: "Ogni evento ha un backup verificato.",
+                         driveConnected: "%@ collegato", connected: "Collegato", notConnected: "Non collegato",
+                         settingsTitle: "Backup",
+                         settingsCaption: "Tieni una seconda copia di ogni importazione su un altro disco prima di formattare la scheda. I file vengono solo aggiunti, mai sostituiti.",
+                         addDestination: "Aggiungi cartella di backup…", remove: "Rimuovi", automatic: "Backup automatico",
+                         automaticCaption: "Quando un’importazione finisce e un disco di backup è collegato.",
+                         verifyAfter: "Verifica dopo il backup",
+                         verifyCaption: "Confronta ogni file con il suo SHA-256 e scrive un manifesto nella cartella di backup.",
+                         reminder: "Ricorda", reminderCaption: "Quando un’importazione resta così a lungo senza backup verificato.",
+                         reminderOff: "No", hours: "%@ h",
+                         sameDrive: "Questa cartella è sullo stesso disco delle importazioni. Scegli un altro disco.",
+                         cardChosen: "Questa è una scheda della fotocamera. Scegli un disco di backup.",
+                         noDestinations: "Ancora nessuna cartella di backup.", close: "Chiudi",
+                         files: ["%@ file", "%@ file", "%@ file"], events: ["%@ evento", "%@ eventi", "%@ eventi"],
+                         mismatches: ["%@ file non corrisponde", "%@ file non corrispondono", "%@ file non corrispondono"])
+        case .ja:
+            return .init(title: "バックアップ", backUpNow: "今すぐバックアップ", backUp: "バックアップ", backUpAll: "すべてバックアップ",
+                         backingUp: "バックアップ中", verifying: "検証中", verify: "検証",
+                         verifyCard: "カードと読み込みを照合", verifyCardShort: "カードを照合",
+                         notBackedUpYet: "まだバックアップされていません",
+                         noDestination: "2つ目のコピーを残すには、設定でバックアップ用ドライブを追加してください。",
+                         connectDrive: "バックアップするには %@ を接続してください。", backedUpTo: "%@ にバックアップ済み",
+                         notVerifiedYet: "未検証", verifiedSummary: "検証済み %@",
+                         cardMatches: "カードは読み込んだ内容と一致しています", safeToFormat: "カードをフォーマットしても安全です",
+                         backUpFirst: "カードをフォーマットする前にバックアップしてください", notBackedUp: "未バックアップ: %@",
+                         notVerified: "未検証: %@", stateImported: "読み込みのみ", stateBackedUp: "バックアップ済み",
+                         stateVerified: "検証済み", driveRemoved: "バックアップ用ドライブが取り外されました", driveFull: "バックアップ用ドライブがいっぱいです",
+                         sourceMissing: "読み込みフォルダが見つかりません", stopped: "バックアップを停止しました",
+                         noEvents: "まだ読み込みはありません。", allSafe: "すべてのイベントに検証済みのバックアップがあります。",
+                         driveConnected: "%@ を接続しました", connected: "接続中", notConnected: "未接続",
+                         settingsTitle: "バックアップ",
+                         settingsCaption: "カードをフォーマットする前に、読み込んだ内容のコピーを別のドライブにも残します。ファイルは追加されるだけで、置き換えられることはありません。",
+                         addDestination: "バックアップフォルダを追加…", remove: "削除", automatic: "自動でバックアップ",
+                         automaticCaption: "読み込みが終わり、バックアップ用ドライブが接続されているとき。",
+                         verifyAfter: "バックアップ後に検証",
+                         verifyCaption: "すべてのファイルを SHA-256 で比較し、バックアップフォルダにマニフェストを書き込みます。",
+                         reminder: "通知", reminderCaption: "読み込みからこの時間が過ぎても検証済みのバックアップがないとき。",
+                         reminderOff: "オフ", hours: "%@ 時間",
+                         sameDrive: "そのフォルダは読み込み先と同じドライブにあります。別のドライブを選んでください。",
+                         cardChosen: "それはカメラのカードです。バックアップ用ドライブを選んでください。",
+                         noDestinations: "バックアップフォルダはまだありません。", close: "閉じる",
+                         files: ["%@ ファイル", "%@ ファイル", "%@ ファイル"], events: ["%@ 件のイベント", "%@ 件のイベント", "%@ 件のイベント"],
+                         mismatches: ["%@ ファイルが一致しません", "%@ ファイルが一致しません", "%@ ファイルが一致しません"])
+        case .ko:
+            return .init(title: "백업", backUpNow: "지금 백업", backUp: "백업", backUpAll: "모두 백업",
+                         backingUp: "백업 중", verifying: "확인 중", verify: "확인",
+                         verifyCard: "카드와 가져온 파일 비교", verifyCardShort: "카드 확인",
+                         notBackedUpYet: "아직 백업되지 않음",
+                         noDestination: "두 번째 사본을 보관하려면 설정에서 백업 드라이브를 추가하세요.",
+                         connectDrive: "백업하려면 %@ 드라이브를 연결하세요.", backedUpTo: "%@에 백업됨",
+                         notVerifiedYet: "아직 확인되지 않음", verifiedSummary: "확인됨 %@",
+                         cardMatches: "카드가 가져온 파일과 일치합니다", safeToFormat: "카드를 포맷해도 안전합니다",
+                         backUpFirst: "카드를 포맷하기 전에 백업하세요", notBackedUp: "백업 안 됨: %@",
+                         notVerified: "확인 안 됨: %@", stateImported: "가져오기만 함", stateBackedUp: "백업됨",
+                         stateVerified: "확인됨", driveRemoved: "백업 드라이브가 분리됨", driveFull: "백업 드라이브가 가득 참",
+                         sourceMissing: "가져온 폴더를 찾을 수 없음", stopped: "백업이 중단됨",
+                         noEvents: "아직 가져온 항목이 없습니다.", allSafe: "모든 이벤트에 확인된 백업이 있습니다.",
+                         driveConnected: "%@ 연결됨", connected: "연결됨", notConnected: "연결 안 됨",
+                         settingsTitle: "백업",
+                         settingsCaption: "카드를 포맷하기 전에 가져온 파일의 두 번째 사본을 다른 드라이브에 보관합니다. 파일은 추가만 되고 절대 바뀌지 않습니다.",
+                         addDestination: "백업 폴더 추가…", remove: "제거", automatic: "자동으로 백업",
+                         automaticCaption: "가져오기가 끝나고 백업 드라이브가 연결되어 있을 때.",
+                         verifyAfter: "백업 후 확인",
+                         verifyCaption: "모든 파일을 SHA-256으로 비교하고 백업 폴더에 매니페스트를 기록합니다.",
+                         reminder: "알림", reminderCaption: "가져온 후 이 시간이 지나도 확인된 백업이 없을 때.",
+                         reminderOff: "끔", hours: "%@시간",
+                         sameDrive: "이 폴더는 가져온 파일과 같은 드라이브에 있습니다. 다른 드라이브를 선택하세요.",
+                         cardChosen: "카메라 카드입니다. 백업 드라이브를 선택하세요.",
+                         noDestinations: "아직 백업 폴더가 없습니다.", close: "닫기",
+                         files: ["파일 %@개", "파일 %@개", "파일 %@개"], events: ["이벤트 %@개", "이벤트 %@개", "이벤트 %@개"],
+                         mismatches: ["파일 %@개가 일치하지 않음", "파일 %@개가 일치하지 않음", "파일 %@개가 일치하지 않음"])
+        case .uk:
+            return .init(title: "Резервні копії", backUpNow: "Скопіювати зараз", backUp: "Скопіювати", backUpAll: "Скопіювати все",
+                         backingUp: "Копіювання", verifying: "Перевірка", verify: "Перевірити",
+                         verifyCard: "Звірити картку з імпортом", verifyCardShort: "Звірити картку",
+                         notBackedUpYet: "Резервної копії ще немає",
+                         noDestination: "Додайте диск для резервних копій у Параметрах, щоб мати другу копію.",
+                         connectDrive: "Підключіть %@ для резервної копії.", backedUpTo: "Скопійовано на %@",
+                         notVerifiedYet: "Ще не перевірено", verifiedSummary: "Перевірено: %@",
+                         cardMatches: "Картка збігається з імпортом", safeToFormat: "Картку можна форматувати",
+                         backUpFirst: "Зробіть копію перед форматуванням картки", notBackedUp: "Без копії: %@",
+                         notVerified: "Не перевірено: %@", stateImported: "Лише імпорт", stateBackedUp: "Є копія",
+                         stateVerified: "Перевірено", driveRemoved: "Диск для копій від’єднано", driveFull: "Диск для копій заповнено",
+                         sourceMissing: "Папку імпорту не знайдено", stopped: "Копіювання зупинено",
+                         noEvents: "Імпортів поки немає.", allSafe: "Кожна подія має перевірену копію.",
+                         driveConnected: "%@ підключено", connected: "Підключено", notConnected: "Не підключено",
+                         settingsTitle: "Резервна копія",
+                         settingsCaption: "Зберігайте другу копію кожного імпорту на іншому диску, перш ніж форматувати картку. Файли лише додаються й ніколи не замінюються.",
+                         addDestination: "Додати папку для копій…", remove: "Вилучити", automatic: "Копіювати автоматично",
+                         automaticCaption: "Коли імпорт завершено й диск для копій підключено.",
+                         verifyAfter: "Перевіряти після копіювання",
+                         verifyCaption: "Порівнює кожен файл за SHA-256 і записує маніфест у папку копії.",
+                         reminder: "Нагадати", reminderCaption: "Якщо імпорт стільки часу не має перевіреної копії.",
+                         reminderOff: "Вимк.", hours: "%@ год",
+                         sameDrive: "Ця папка на тому ж диску, що й імпорт. Виберіть інший диск.",
+                         cardChosen: "Це картка камери. Виберіть диск для копій.",
+                         noDestinations: "Папки для копій поки немає.", close: "Закрити",
+                         files: ["%@ файл", "%@ файли", "%@ файлів"], events: ["%@ подія", "%@ події", "%@ подій"],
+                         mismatches: ["%@ файл не збігається", "%@ файли не збігаються", "%@ файлів не збігаються"])
+        case .zhHans:
+            return .init(title: "备份", backUpNow: "立即备份", backUp: "备份", backUpAll: "全部备份",
+                         backingUp: "正在备份", verifying: "正在验证", verify: "验证",
+                         verifyCard: "核对存储卡与导入", verifyCardShort: "核对存储卡",
+                         notBackedUpYet: "尚未备份",
+                         noDestination: "在设置中添加备份磁盘，即可保留第二份副本。",
+                         connectDrive: "连接“%@”即可备份。", backedUpTo: "已备份到“%@”",
+                         notVerifiedYet: "尚未验证", verifiedSummary: "已验证 %@",
+                         cardMatches: "存储卡与导入内容一致", safeToFormat: "可以安全格式化存储卡",
+                         backUpFirst: "格式化存储卡前请先备份", notBackedUp: "%@未备份",
+                         notVerified: "%@未验证", stateImported: "仅已导入", stateBackedUp: "已备份",
+                         stateVerified: "已验证", driveRemoved: "备份磁盘已移除", driveFull: "备份磁盘已满",
+                         sourceMissing: "找不到导入文件夹", stopped: "备份已停止",
+                         noEvents: "还没有导入。", allSafe: "每个活动都有已验证的备份。",
+                         driveConnected: "“%@”已连接", connected: "已连接", notConnected: "未连接",
+                         settingsTitle: "备份",
+                         settingsCaption: "格式化存储卡前，在另一个磁盘上保留每次导入的第二份副本。文件只会添加，绝不会被替换。",
+                         addDestination: "添加备份文件夹…", remove: "移除", automatic: "自动备份",
+                         automaticCaption: "导入结束且备份磁盘已连接时。",
+                         verifyAfter: "备份后验证",
+                         verifyCaption: "按 SHA-256 比较每个文件，并在备份文件夹中写入清单。",
+                         reminder: "提醒", reminderCaption: "导入超过这段时间仍没有已验证的备份时。",
+                         reminderOff: "关闭", hours: "%@ 小时",
+                         sameDrive: "该文件夹与导入位于同一磁盘。请选择其他磁盘。",
+                         cardChosen: "这是相机存储卡。请选择备份磁盘。",
+                         noDestinations: "还没有备份文件夹。", close: "关闭",
+                         files: ["%@ 个文件", "%@ 个文件", "%@ 个文件"], events: ["%@ 个活动", "%@ 个活动", "%@ 个活动"],
+                         mismatches: ["%@ 个文件不一致", "%@ 个文件不一致", "%@ 个文件不一致"])
+        case .zhTW:
+            return .init(title: "備份", backUpNow: "立即備份", backUp: "備份", backUpAll: "全部備份",
+                         backingUp: "正在備份", verifying: "正在驗證", verify: "驗證",
+                         verifyCard: "核對記憶卡與匯入", verifyCardShort: "核對記憶卡",
+                         notBackedUpYet: "尚未備份",
+                         noDestination: "在設定中加入備份磁碟，即可保留第二份副本。",
+                         connectDrive: "連接「%@」即可備份。", backedUpTo: "已備份到「%@」",
+                         notVerifiedYet: "尚未驗證", verifiedSummary: "已驗證 %@",
+                         cardMatches: "記憶卡與匯入內容相符", safeToFormat: "可以安全格式化記憶卡",
+                         backUpFirst: "格式化記憶卡前請先備份", notBackedUp: "%@未備份",
+                         notVerified: "%@未驗證", stateImported: "僅已匯入", stateBackedUp: "已備份",
+                         stateVerified: "已驗證", driveRemoved: "備份磁碟已移除", driveFull: "備份磁碟已滿",
+                         sourceMissing: "找不到匯入檔案夾", stopped: "備份已停止",
+                         noEvents: "還沒有匯入。", allSafe: "每個活動都有已驗證的備份。",
+                         driveConnected: "「%@」已連接", connected: "已連接", notConnected: "未連接",
+                         settingsTitle: "備份",
+                         settingsCaption: "格式化記憶卡前，在另一個磁碟上保留每次匯入的第二份副本。檔案只會新增，絕不會被取代。",
+                         addDestination: "加入備份檔案夾…", remove: "移除", automatic: "自動備份",
+                         automaticCaption: "匯入結束且備份磁碟已連接時。",
+                         verifyAfter: "備份後驗證",
+                         verifyCaption: "依 SHA-256 比對每個檔案，並在備份檔案夾中寫入清單。",
+                         reminder: "提醒", reminderCaption: "匯入超過這段時間仍沒有已驗證的備份時。",
+                         reminderOff: "關閉", hours: "%@ 小時",
+                         sameDrive: "這個檔案夾與匯入位於同一個磁碟。請選擇其他磁碟。",
+                         cardChosen: "這是相機記憶卡。請選擇備份磁碟。",
+                         noDestinations: "還沒有備份檔案夾。", close: "關閉",
+                         files: ["%@ 個檔案", "%@ 個檔案", "%@ 個檔案"], events: ["%@ 個活動", "%@ 個活動", "%@ 個活動"],
+                         mismatches: ["%@ 個檔案不相符", "%@ 個檔案不相符", "%@ 個檔案不相符"])
+        case .zhHK:
+            return .init(title: "備份", backUpNow: "立即備份", backUp: "備份", backUpAll: "全部備份",
+                         backingUp: "正在備份", verifying: "正在驗證", verify: "驗證",
+                         verifyCard: "核對記憶卡與匯入", verifyCardShort: "核對記憶卡",
+                         notBackedUpYet: "尚未備份",
+                         noDestination: "在設定中加入備份磁碟，即可保留第二份副本。",
+                         connectDrive: "連接「%@」即可備份。", backedUpTo: "已備份到「%@」",
+                         notVerifiedYet: "尚未驗證", verifiedSummary: "已驗證 %@",
+                         cardMatches: "記憶卡與匯入內容相符", safeToFormat: "可以安全格式化記憶卡",
+                         backUpFirst: "格式化記憶卡前請先備份", notBackedUp: "%@未備份",
+                         notVerified: "%@未驗證", stateImported: "僅已匯入", stateBackedUp: "已備份",
+                         stateVerified: "已驗證", driveRemoved: "備份磁碟已移除", driveFull: "備份磁碟已滿",
+                         sourceMissing: "找不到匯入資料夾", stopped: "備份已停止",
+                         noEvents: "還沒有匯入。", allSafe: "每個活動都有已驗證的備份。",
+                         driveConnected: "「%@」已連接", connected: "已連接", notConnected: "未連接",
+                         settingsTitle: "備份",
+                         settingsCaption: "格式化記憶卡前，在另一個磁碟上保留每次匯入的第二份副本。檔案只會新增，絕不會被取代。",
+                         addDestination: "加入備份資料夾…", remove: "移除", automatic: "自動備份",
+                         automaticCaption: "匯入結束且備份磁碟已連接時。",
+                         verifyAfter: "備份後驗證",
+                         verifyCaption: "按 SHA-256 比對每個檔案，並在備份資料夾中寫入清單。",
+                         reminder: "提醒", reminderCaption: "匯入超過這段時間仍沒有已驗證的備份時。",
+                         reminderOff: "關閉", hours: "%@ 小時",
+                         sameDrive: "這個資料夾與匯入位於同一個磁碟。請選擇其他磁碟。",
+                         cardChosen: "這是相機記憶卡。請選擇備份磁碟。",
+                         noDestinations: "還沒有備份資料夾。", close: "關閉",
+                         files: ["%@ 個檔案", "%@ 個檔案", "%@ 個檔案"], events: ["%@ 個活動", "%@ 個活動", "%@ 個活動"],
+                         mismatches: ["%@ 個檔案不相符", "%@ 個檔案不相符", "%@ 個檔案不相符"])
+        }
+    }
+}
+
 // MARK: - Daily recap (Zenith fork)
 
 struct ZenithRecapStrings {

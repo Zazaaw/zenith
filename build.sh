@@ -314,6 +314,8 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Notch/ZenithTabBarSupport.swift
         Sources/Vorssaint/Services/CardImport/CardImportSupport.swift
         Sources/Vorssaint/Services/CardImport/CardImportCopier.swift
+        Sources/Vorssaint/Services/CardImport/BackupSupport.swift
+        Sources/Vorssaint/Services/CardImport/BackupJob.swift
         Sources/Vorssaint/Services/DevServers/DevServersSupport.swift
         Sources/Vorssaint/Services/DevServers/DevServersProbe.swift
         Sources/Vorssaint/Services/Recap/RecapSupport.swift
