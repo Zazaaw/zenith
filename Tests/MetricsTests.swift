@@ -270,6 +270,7 @@ struct MetricsTests {
             ("photo-actions", { PhotoActionsTests.run(suite) }),
             ("watermark", { WatermarkTests.run(suite) }),
             ("design-overlay", { DesignOverlayTests.run(suite) }),
+            ("screenshot-beautify", { ScreenshotBeautifyTests.run(suite) }),
             ("notices", { ZenithNoticeTests.run(suite) }),
             ("reply", { ReplyTests.run(suite) }),
             ("home-layout", { HomeLayoutTests.run(suite) }),

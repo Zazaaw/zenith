@@ -1367,6 +1367,17 @@ final class ScreenshotEditorModel: ObservableObject, BackdropEditing {
             spotlightDimStrength: spotlightDimStrength)
     }
 
+    // Zenith fork: what Beautify frames, the capture with its marks and watermark,
+    // full size, without the backdrop and its rounding.
+    func beautifySource() -> ScreenshotRenderer.Export? {
+        ensureBlurSamplesForAnnotations()
+        return ScreenshotRenderer.renderExport(
+            baseImage: baseImage, annotations: annotations, blurSources: blurSources, scale: scale,
+            annotationShadowsEnabled: annotationShadowsEnabled, watermark: watermarkStyle,
+            watermarkImage: watermarkImage, style: ScreenshotSupport.BackdropStyle(kind: .none, cornerRadius: 0),
+            fill: .none, downscaleTo1x: false, spotlightDimStrength: spotlightDimStrength)
+    }
+
     /// Makes the sample a blur area of this style and level paints from, and
     /// says whether it is there. Erasing reads the capture and needs none.
     @discardableResult
@@ -1405,6 +1416,8 @@ final class ScreenshotEditorModel: ObservableObject, BackdropEditing {
 final class ScreenshotEditorController: NSObject, NSWindowDelegate {
     let model: ScreenshotEditorModel
     let sourceFormat: MediaImageFormat
+    let beautify: ScreenshotBeautifySession // Zenith fork
+    private let startsInBeautify: Bool // Zenith fork
     private var window: NSWindow?
     private var keyMonitor: Any?
     private var scrollMonitor: Any?
@@ -1419,8 +1432,13 @@ final class ScreenshotEditorController: NSObject, NSWindowDelegate {
     }
 
     init(capture: ScreenshotSelectionController.Capture) {
-        model = ScreenshotEditorModel(image: capture.image, scale: capture.scale)
-        sourceFormat = capture.sourceFormat
+        // Zenith fork: a capture framed after capture opens as its original, in Beautify,
+        // as does one whose preview asked for Beautify.
+        let opened = ScreenshotBeautifyAuto.editorCapture(for: capture, beautify: ScreenshotBeautifyHandoff.consume())
+        model = ScreenshotEditorModel(image: opened.capture.image, scale: opened.capture.scale)
+        sourceFormat = opened.capture.sourceFormat
+        beautify = ScreenshotBeautifySession(model: model, sourceURL: opened.capture.sourceURL) // Zenith fork
+        startsInBeautify = opened.beautify // Zenith fork
         super.init()
     }
 
@@ -1431,7 +1449,8 @@ final class ScreenshotEditorController: NSObject, NSWindowDelegate {
         // layout pass, so a contentMinSize set on the window is silently
         // lost. Declare the minimum on the hosted view and track just that:
         // the hosting controller then maintains contentMinSize itself.
-        let content = ScreenshotEditorView(model: model, controller: self)
+        let content = ScreenshotBeautifyContainer( // Zenith fork: Beautify covers the editor while it is on.
+            session: beautify, editor: ScreenshotEditorView(model: model, controller: self))
             .frame(minWidth: minimumSize.width, minHeight: minimumSize.height)
         let host = NSHostingController(rootView: content)
         host.sizingOptions = [.minSize]
@@ -1469,6 +1488,7 @@ final class ScreenshotEditorController: NSObject, NSWindowDelegate {
             self.model.recognizeText()
             self.model.recognizeQRCodes()
         }
+        if startsInBeautify { beautify.enter() } // Zenith fork
     }
 
     func close() {
@@ -1545,6 +1565,7 @@ final class ScreenshotEditorController: NSObject, NSWindowDelegate {
     }
 
     private func handleKey(_ event: NSEvent) -> Bool {
+        if beautify.isActive { return beautify.handleKey(event) } // Zenith fork
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         let key = Int(event.keyCode)
         if ScreenshotSupport.editorIgnoresRepeatedOutputKey(

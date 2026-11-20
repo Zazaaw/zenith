@@ -574,6 +574,8 @@ if (( TEST )); then
         Sources/Vorssaint/UI/Settings/MonitorToken.swift
         Sources/Vorssaint/Services/QuickTools/ScreenshotRenderer.swift
         Sources/Vorssaint/Services/QuickTools/ScreenshotImageLayerRendering.swift
+        Sources/Vorssaint/Services/QuickTools/ScreenshotBeautifySupport.swift
+        Sources/Vorssaint/Services/QuickTools/ScreenshotBeautifyRenderer.swift
         Sources/Vorssaint/Services/QuickTools/RecentCaptureStore.swift
         Sources/Vorssaint/Services/QuickTools/ScreenshotSharingSupport.swift
         Sources/Vorssaint/Services/QuickTools/WindowActivationPolicy.swift
