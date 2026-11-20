@@ -31,6 +31,7 @@ enum NotchLockScreenTerminal {
         case .vercel, .ci, .sys: return true
         case .dl: return NotchSupport.routes(.download)
         case .timer: return NotchTimerSupport.isEnabled(in: defaults)
+        case .prayer, .golden: return true // worked out offline; empty without a place
         }
     }
 

@@ -80,6 +80,14 @@ struct NotchLockScreenTerminalView: View {
             case .timer:
                 readings.timer = timer.session
                 readings.timerNow = timer.now
+            case .prayer: // Zenith fork
+                let indonesian = NotchLockScreenTerminalSupport.prayerNamesIndonesian()
+                readings.prayer = SkyService.shared.currentDay(now: date)
+                    .flatMap { PrayerTimesSupport.next(after: date.addingTimeInterval(-PrayerTimesSupport.arrivalDuration), in: $0.moments) }
+                    .map { PrayerTimesSupport.terminalValue($0, now: date, indonesian: indonesian) }
+            case .golden: // Zenith fork
+                readings.golden = SkyService.shared.currentDay(now: date)
+                    .flatMap { SkyGoldenSupport.terminalValue($0.upcomingWindows(after: date), now: date) }
             }
         }
         return readings

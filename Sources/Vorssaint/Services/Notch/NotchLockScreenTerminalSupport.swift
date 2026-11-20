@@ -11,15 +11,20 @@ import Foundation
 /// every language, as a command line's output would.
 enum NotchLockScreenTerminalSource: String, CaseIterable, Identifiable {
     case agents, waka, vercel, ci, sys, dl, timer
+    // Zenith fork: the next prayer, and the golden hour (SkyService).
+    case prayer, golden
 
     var id: String { rawValue }
 
-    /// The readout's own label.
-    var label: String { rawValue }
+    /// The readout's own label; the prayer's is `sholat` with Indonesian names.
+    var label: String { self == .prayer ? prayerLabel(indonesian: NotchLockScreenTerminalSupport.prayerNamesIndonesian()) : rawValue }
+
+    func prayerLabel(indonesian: Bool) -> String { indonesian ? "sholat" : "prayer" }
 
     /// Lines that reach a network service or run a command line start off;
-    /// the person turns them on knowing what they ask for.
-    var isOnByDefault: Bool { self != .vercel && self != .ci }
+    /// the person turns them on knowing what they ask for. The Sky lines
+    /// start off too, so the readout stays as it was.
+    var isOnByDefault: Bool { self != .vercel && self != .ci && self != .prayer && self != .golden }
 
     /// `sys` shows whenever it is chosen; every other line only with something to say.
     var alwaysShows: Bool { self == .sys }
@@ -133,6 +138,9 @@ struct NotchLockScreenTerminalReadings {
     var downloads: [NotchDownloadItem]?
     var timer: NotchTimerSession?
     var timerNow: TimeInterval = 0
+    // Zenith fork: already worded (PrayerTimesSupport.terminalValue, SkyGoldenSupport.terminalValue).
+    var prayer: String?
+    var golden: String?
     var now = Date()
 }
 
@@ -153,6 +161,12 @@ enum NotchLockScreenTerminalSupport {
 
     static func showsProjects(in defaults: UserDefaults = .standard) -> Bool {
         defaults.bool(forKey: DefaultsKey.notchLockScreenTerminalProjects)
+    }
+
+    /// Zenith fork: whether the prayer's label and names are Indonesian.
+    static func prayerNamesIndonesian(in defaults: UserDefaults = .standard) -> Bool {
+        PrayerTimesSupport.usesIndonesian(
+            PrayerTimesSupport.NameStyle(rawValue: defaults.string(forKey: DefaultsKey.notchSkyNames) ?? "") ?? .automatic)
     }
 
     static func paddedLabel(_ source: NotchLockScreenTerminalSource) -> String {
@@ -233,6 +247,10 @@ enum NotchLockScreenTerminalSupport {
                 return readings.downloads.flatMap { downloads($0, showsProjects: showsProjects) }
             case .timer:
                 return readings.timer.flatMap { timer($0, at: readings.timerNow) }
+            case .prayer: // Zenith fork
+                return readings.prayer.map { NotchLockScreenTerminalLine(source: .prayer, value: $0) }
+            case .golden: // Zenith fork
+                return readings.golden.map { NotchLockScreenTerminalLine(source: .golden, value: $0) }
             }
         }
     }

@@ -12,6 +12,8 @@ enum NotchLockScreenActivity: String, CaseIterable, Identifiable {
     case wakatime
     // Zenith fork: the weather, and reminders due today or overdue.
     case weather, reminders
+    // Zenith fork: the next prayer and the golden hour.
+    case prayer, golden
 
     var id: String { rawValue }
 }
@@ -51,7 +53,8 @@ enum NotchLockScreenSupport {
 
     static func activities(timer: Bool, calendar: Bool, agents: Bool, downloads: Bool,
                            wakatime: Bool = false, weather: Bool = false,
-                           reminders: Bool = false) -> [NotchLockScreenActivity] {
+                           reminders: Bool = false, prayer: Bool = false,
+                           golden: Bool = false) -> [NotchLockScreenActivity] { // Zenith fork
         NotchLockScreenActivity.allCases.filter {
             switch $0 {
             case .timer: return timer
@@ -61,6 +64,8 @@ enum NotchLockScreenSupport {
             case .wakatime: return wakatime
             case .weather: return weather
             case .reminders: return reminders
+            case .prayer: return prayer
+            case .golden: return golden
             }
         }
     }

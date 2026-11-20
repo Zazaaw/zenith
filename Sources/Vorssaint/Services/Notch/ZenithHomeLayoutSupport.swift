@@ -18,6 +18,8 @@ import Foundation
 /// A widget the home page's card row can hold.
 enum ZenithHomeWidget: String, CaseIterable, Identifiable {
     case nowPlaying, timer, clipboard, calendar, weather, system, agents, shelf
+    /// The next prayer and the golden hour (SkyService).
+    case prayer, golden
 
     var id: String { rawValue }
 
@@ -33,6 +35,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .system: return .system
         case .agents: return .agents
         case .shelf: return .files
+        case .prayer, .golden: return .sky
         }
     }
 
@@ -47,6 +50,8 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .system: return "cpu.fill"
         case .agents: return "sparkles"
         case .shelf: return "tray.full.fill"
+        case .prayer: return "moon.stars.fill"
+        case .golden: return "sun.horizon.fill"
         }
     }
 
@@ -63,6 +68,8 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .system: return 0x4ADE80
         case .agents: return 0xFB923C
         case .shelf: return 0x2DD4BF
+        case .prayer: return 0xA5B4FC
+        case .golden: return 0xFCD34D
         }
     }
 
@@ -79,6 +86,8 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .system: return 196
         case .agents: return 196
         case .shelf: return 216
+        case .prayer: return 196
+        case .golden: return 216
         }
     }
 
