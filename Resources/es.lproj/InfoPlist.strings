@@ -1,5 +1,5 @@
 /* macOS Automation permission prompt. */
-"NSAppleEventsUsageDescription" = "Zenith usa Automatización para mover archivos, enviar elementos a la Papelera, abrir los comandos solicitados y controlar la reproducción en tus apps multimedia.";
+"NSAppleEventsUsageDescription" = "Zenith usa Automatización para mover archivos, enviar elementos a la Papelera, abrir los comandos solicitados, enviar a Mensajes las respuestas que escribes en la Dynamic Island y controlar la reproducción en tus apps multimedia.";
 
 /* macOS Screen & System Audio Recording permission prompt. */
 "NSAudioCaptureUsageDescription" = "Zenith usa el audio de cada app para ajustar su volumen en el mezclador, para mover las barras de música de Dynamic Island y para incluir el sonido del Mac en las grabaciones de pantalla que inicies. Nada sale de tu Mac.";

@@ -296,6 +296,9 @@ final class NotchNotificationService: ObservableObject {
         }
     }
 
+    // Zenith fork: the reply row picks its channel by the source app.
+    func sourceBundleIdentifier(for id: UUID) -> String? { sourceApplications[id] }
+
     func canOpen(_ item: NotchSystemNotification) -> Bool {
         item.canOpen || sourceApplications[item.id] != nil
     }
