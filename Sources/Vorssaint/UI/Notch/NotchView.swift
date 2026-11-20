@@ -631,6 +631,7 @@ struct NotchView: View {
             case .recap: RecapPage(size: pageSize).notchBand(trailing: { RecapPageActions() }) // Zenith fork
             case .sky: SkyPage(size: pageSize) // Zenith fork
             case .git: GitPage(size: pageSize) // Zenith fork
+            case .prompter: PrompterPage(size: pageSize) // Zenith fork
             }
         }
     }
@@ -854,6 +855,7 @@ extension NotchModule: PanelOrderItem {
         case .recap: return ZenithStrings.recap(language).title // Zenith fork
         case .sky: return ZenithStrings.sky(language).title // Zenith fork
         case .git: return ZenithStrings.git(language).title // Zenith fork
+        case .prompter: return ZenithStrings.prompter(language).title // Zenith fork
         }
     }
 }

@@ -186,6 +186,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         // feature switched off in the hub never even instantiates here.
         FeatureRuntime.shared.syncAtLaunch()
         WorkspaceService.shared.start() // Zenith fork: workspace shortcuts
+        PrompterService.shared.start() // Zenith fork: the teleprompter's start/stop shortcut
         if AppFeature.monitorPower.isAvailable, PowerSampler.hasInternalBattery {
             MaxCapacityProbe.shared.refreshIfStale()
         }

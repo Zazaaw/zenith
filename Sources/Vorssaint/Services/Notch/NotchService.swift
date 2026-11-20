@@ -270,6 +270,7 @@ final class NotchService: ObservableObject {
             || (expanded && !showingSections && selected == .files && fileInteractionActive)
             || CameraPreviewService.shared.keepsNotchPermissionPrompt
             || (expanded && !showingSections && selected == .tools && (QuickLauncherService.shared.activeUtility != nil || QuickLauncherService.shared.isEditing))
+            || ZenithPrompterIsland.holdsIsland // Zenith fork: prompting, or its import dialog is up
     }
     private var showsCapturePreview: Bool {
         expanded && !showingSections && selected == .captures && captureContent != nil
@@ -1057,6 +1058,12 @@ final class NotchService: ObservableObject {
                                                                       controls: ZenithHomeIsland.controls(homeControls), // Zenith fork
                                                                       within: geometry.contentWidth)
             if selected == .controls { result.zenithHome = ZenithHomeIsland.geometry(modules: modules) } // Zenith fork
+            // Zenith fork: prompting, the page is a tall, narrow reading panel right under the camera.
+            if selected == .prompter, let prompter = ZenithPrompterIsland.geometry {
+                result.zenithPrompter = prompter
+                result.pageTop = .none
+                result.sectionsButtonInRow = false
+            }
         } else {
             result.sectionsButtonInRow = false
         }
@@ -3015,6 +3022,7 @@ final class NotchService: ObservableObject {
         windowHost?.present(size: size, geometry: presented, animated: animated,
                             transitionContent: contentTransition,
                             quickAccess: expanded && captureControls == nil && !showingCommandBar && !access.buttons.isEmpty
+                                && !ZenithPrompterIsland.prompting // Zenith fork: nothing beside the reading panel
                                 ? access : nil,
                             revealFromHidden: !hiddenInFullscreen && captureControls == nil
                                 && (revealingFromAppFullscreen
@@ -3024,7 +3032,7 @@ final class NotchService: ObservableObject {
                             steady: fitsInPlace,
                             // Zenith fork: the tab pill below the open island.
                             dock: expanded && captureControls == nil && !showingCommandBar && !modules.isEmpty
-                                && ZenithTabBar.isEnabled())
+                                && ZenithTabBar.isEnabled() && !ZenithPrompterIsland.prompting) // Zenith fork: nor under it
         // The selector lives in a separate full-screen panel. A floating
         // capsule may sit below the display edge, so publish the island's
         // actual bottom inset as the controls collapse or reopen.
@@ -4245,6 +4253,12 @@ final class NotchService: ObservableObject {
                (self.panel?.firstResponder as? NSTextView)?.hasMarkedText() == true { return event }
             // The Command Bar inside the island reads its own keys, Escape included.
             if event.type == .keyDown, event.window === self.panel, self.showingCommandBar { return event }
+            // Zenith fork: the teleprompter reads Space, the arrows, + and − and Escape while it prompts.
+            if event.type == .keyDown, event.window === self.panel,
+               ZenithPrompterIsland.handleKey(keyCode: event.keyCode, characters: event.charactersIgnoringModifiers,
+                                              command: event.modifierFlags.contains(.command),
+                                              control: event.modifierFlags.contains(.control),
+                                              option: event.modifierFlags.contains(.option)) { return nil }
             if event.type == .keyDown, event.window === self.panel, self.captureControls == nil {
                 let modifiers = event.modifierFlags.intersection([.command, .control, .option, .shift])
                 if modifiers == .command, event.charactersIgnoringModifiers?.lowercased() == "k" {

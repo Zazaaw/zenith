@@ -284,6 +284,7 @@ struct MetricsTests {
             ("qr", { QRTests.run(suite) }),
             ("workspaces", { WorkspacesTests.run(suite) }),
             ("repo-status", { GitTests.run(suite) }), // the Git page
+            ("prompter", { PrompterTests.run(suite) }),
         ]
         var selected = Set<String>()
         var listOnly = false

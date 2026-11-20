@@ -19,6 +19,8 @@ enum NotchModule: String, CaseIterable, Identifiable {
     case sky
     /// Zenith fork: the local Git status of the project being worked on (GitService).
     case git
+    /// Zenith fork: a teleprompter under the camera (PrompterService).
+    case prompter
     var id: String { rawValue }
 
     var symbol: String {
@@ -50,6 +52,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .recap: return "sun.horizon" // Zenith fork
         case .sky: return "moon.stars" // Zenith fork: Today keeps sun.horizon
         case .git: return GitSupportSymbols.module // Zenith fork
+        case .prompter: return "scroll" // Zenith fork
         }
     }
 
@@ -80,6 +83,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .recap: return "y" // Zenith fork: todaY
         case .sky: return "q" // Zenith fork: qibla times
         case .git: return "h" // Zenith fork: HEAD
+        case .prompter: return "x" // Zenith fork: teXt
         }
     }
 
@@ -120,6 +124,8 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .sky: return true
         // Zenith fork: needs a git that runs without offering to install the developer tools.
         case .git: return GitCLI.isInstalled()
+        // Zenith fork: scripts live in the container; nothing to install.
+        case .prompter: return true
         case .system:
             return [.monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork,
                     .monitorDisk, .monitorPower, .fanControl, .connectedDevices].contains { (feature: AppFeature) in
@@ -2424,6 +2430,8 @@ struct NotchGeometry: Equatable {
     var pageTrailingControls = 0
     /// Zenith fork: the home page's widgets (ZenithHomeIsland), set while it shows.
     var zenithHome: ZenithHomeIslandGeometry? = nil
+    /// Zenith fork: the teleprompter's reading panel, set while it prompts.
+    var zenithPrompter: ZenithPrompterIslandGeometry? = nil
     private var allowsActivityFooter = true
     private var minimumCompactWidth: CGFloat = 0
     /// Narrower wings than this are dropped rather than drawn cramped.
@@ -2837,6 +2845,8 @@ struct NotchGeometry: Equatable {
         } ?? chosen
         // Zenith fork: widgets side by side widen the home page past the chosen width.
         if let home = zenithHome?.contentWidth { preferred = max(preferred, home + inset * 2) }
+        // Zenith fork: a prompting panel takes its own width on every layout, narrow under the camera.
+        if let prompter = zenithPrompter { preferred = prompter.width }
         return min(max(preferred, cameraWidth + 36) + NotchLayout.shoulderFlare * 2, // Zenith fork
                    screen.width - 24 - NotchQuickAccessLayout.gutter * 2)
     }
@@ -2952,10 +2962,12 @@ struct NotchGeometry: Equatable {
             case .mixer, .calendar, .clipboard, .captures, .files, .notifications, .downloads, .camera, .scratchpad, .watch,
                  .wakatime, .vercel, .github, .cardImport, .devServers, .recap, .sky, .git: // Zenith fork: devServers, recap, sky, git
                 contentHeight = budget
+            case .prompter: // Zenith fork: the reading panel's own height while it prompts
+                contentHeight = zenithPrompter?.contentHeight ?? budget
             }
         }
         var preferredHeight = headerTopInset + headerChromeHeight + contentHeight
-        if layout == .custom { preferredHeight = min(preferredHeight, customHeight) }
+        if layout == .custom, zenithPrompter == nil { preferredHeight = min(preferredHeight, customHeight) } // Zenith fork
         return CGSize(width: expandedWidth,
                       height: min(preferredHeight, screen.height - 48 - quickAccessBottomInset))
     }

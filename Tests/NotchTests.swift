@@ -2537,13 +2537,14 @@ enum NotchTests {
         // detection is on, as it is by default too. Today (the day's recap)
         // is always there, and so is Sky (prayer times and the golden hour).
         // Git (the local repository's status) shows on a Mac with a git that
-        // needs no install prompt.
+        // needs no install prompt, and the Prompter (a teleprompter under
+        // the camera) is always there.
         let wakaTime: [NotchModule] = WakaTimeSupport.hasConfiguration() ? [.wakatime] : []
         let gitHub: [NotchModule] = GitHubCLI.isInstalled() ? [.github] : []
         let upstreamModules: [NotchModule] = [.system, .music, .controls, .mixer, .captures, .files, .tools, .calendar,
                                               .notifications, .timer, .camera, .downloads, .scratchpad, .agents, .watch]
         let zenithModules: [NotchModule] = [.cardImport, .devServers, .recap, .sky]
-            + (GitCLI.isInstalled() ? [.git] : []) // Zenith fork
+            + (GitCLI.isInstalled() ? [.git] : []) + [.prompter] // Zenith fork
         let withoutVercel: [NotchModule] = upstreamModules + wakaTime + gitHub + zenithModules
         suite.expect(NotchSupport.modules(in: defaults) == withoutVercel,
                "module order ignores unknown ids and duplicates, preserving newly added modules")

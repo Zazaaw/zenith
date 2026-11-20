@@ -322,6 +322,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Git/GitRunner.swift
         Sources/Vorssaint/Services/QR/QRSupport.swift
         Sources/Vorssaint/Services/Recap/RecapSupport.swift
+        Sources/Vorssaint/Services/Prompter/PrompterSupport.swift
         Sources/Vorssaint/Services/Workspaces/WorkspaceSupport.swift
         Sources/Vorssaint/Services/Notifications/ZenithReplySupport.swift
         Sources/Vorssaint/Services/GitHub/GitHubSupport.swift
