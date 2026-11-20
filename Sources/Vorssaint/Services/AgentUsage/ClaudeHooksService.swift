@@ -156,7 +156,13 @@ final class ClaudeHooksService: ObservableObject {
             try? manager.removeItem(at: url)
             if let event = data.flatMap(ClaudeHooksSupport.parse) { read.append((event, written)) }
         }
-        for event in ClaudeHooksSupport.ordered(read) { tracker.apply(event, now: now) }
+        for event in ClaudeHooksSupport.ordered(read) {
+            tracker.apply(event, now: now)
+            // The day's recap counts turns (prompts) and the sessions they were in.
+            if event.kind == .prompt {
+                RecapService.record(.agent(session: event.session, prompt: true, at: event.time))
+            }
+        }
         if !read.isEmpty {
             DispatchQueue.main.async { [weak self] in self?.noteEvent(now) }
         }

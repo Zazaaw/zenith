@@ -149,6 +149,16 @@ final class ZenithNoticeCenter: ObservableObject {
         if notice?.key == key { dismiss(quickly: true) }
     }
 
+    /// Zenith fork: the day's recap at its time (RecapService): its title,
+    /// the day's biggest figures below, and Open for the Today page.
+    func recapReady(day: String, title: String, subtitle: String) {
+        guard RecapSettings.current().enabled else { return }
+        enqueue(ZenithNotice(kind: .recap, key: ZenithNoticeKey.recap(day), title: title, subtitle: subtitle,
+                             glyph: .symbol(NotchModule.recap.zenithIconSymbol, .tint(NotchModule.recap)),
+                             accessory: .action(ZenithStrings.recap(L10n.shared.language).open),
+                             action: .openRecap))
+    }
+
     /// An export finished (ExportTrackerService): its title, the file and its
     /// size below, the file's thumbnail, and a click reveals it.
     func exportFinished(_ url: URL, key: String, title: String, subtitle: String) {
@@ -523,6 +533,11 @@ final class ZenithNoticeCenter: ObservableObject {
             return
         case .openURL(let url):
             if !NSWorkspace.shared.open(url) { NSSound.beep() }
+        case .openRecap:
+            // Zenith fork: as a card's Import, after the capsule has gone.
+            dismiss(quickly: true)
+            DispatchQueue.main.async { NotchService.shared.open(.recap) }
+            return
         }
         dismiss(quickly: true)
     }
@@ -603,6 +618,7 @@ final class ZenithNoticeCenter: ObservableObject {
             case .devServer:
                 let options = DevServersOptions.current(in: defaults)
                 return !options.enabled || !options.announces
+            case .recap: return !RecapSettings.current(in: defaults).enabled
             }
         }
     }

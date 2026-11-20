@@ -13,6 +13,8 @@ enum NotchModule: String, CaseIterable, Identifiable {
     case controls, mixer, music, clipboard, captures, files, system, tools, calendar, notifications, timer, camera, downloads, scratchpad, agents, watch, wakatime, vercel, github, cardImport
     /// Zenith fork: the dev servers running on this Mac (DevServersService).
     case devServers
+    /// Zenith fork: the day's recap so far (RecapService).
+    case recap
     var id: String { rawValue }
 
     var symbol: String {
@@ -41,6 +43,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .github: return GitHubSupport.symbol
         case .cardImport: return "sdcard" // Zenith fork
         case .devServers: return "server.rack" // Zenith fork
+        case .recap: return "sun.horizon" // Zenith fork
         }
     }
 
@@ -68,6 +71,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .github: return "u"
         case .cardImport: return "j" // Zenith fork
         case .devServers: return "l" // Zenith fork: localhost
+        case .recap: return "y" // Zenith fork: todaY
         }
     }
 
@@ -102,6 +106,8 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .cardImport: return true
         // Zenith fork: always listed too; it shows while detection is on.
         case .devServers: return true
+        // Zenith fork: the day's recap reads only what other sections hold.
+        case .recap: return true
         case .system:
             return [.monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork,
                     .monitorDisk, .monitorPower, .fanControl, .connectedDevices].contains { (feature: AppFeature) in
@@ -2912,7 +2918,7 @@ struct NotchGeometry: Equatable {
                 contentHeight = min(budget, agentsHeight.map { $0 > 0 ? $0 : NotchLayout.emptyHeight } ?? budget)
             // Lists and previews fill the chosen content budget.
             case .mixer, .calendar, .clipboard, .captures, .files, .notifications, .downloads, .camera, .scratchpad, .watch,
-                 .wakatime, .vercel, .github, .cardImport, .devServers: // Zenith fork: devServers
+                 .wakatime, .vercel, .github, .cardImport, .devServers, .recap: // Zenith fork: devServers, recap
                 contentHeight = budget
             }
         }

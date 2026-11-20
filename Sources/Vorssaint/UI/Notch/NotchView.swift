@@ -620,6 +620,7 @@ struct NotchView: View {
             case .github: NotchGitHubView(size: pageSize)
             case .cardImport: CardImportPage(size: pageSize) // Zenith fork
             case .devServers: DevServersPage(size: pageSize) // Zenith fork
+            case .recap: RecapPage(size: pageSize).notchBand(trailing: { RecapPageActions() }) // Zenith fork
             }
         }
     }
@@ -840,6 +841,7 @@ extension NotchModule: PanelOrderItem {
         case .github: return "GitHub"
         case .cardImport: return ZenithStrings.cardImport(language).title // Zenith fork
         case .devServers: return ZenithStrings.devServers(language).title // Zenith fork
+        case .recap: return ZenithStrings.recap(language).title // Zenith fork
         }
     }
 }

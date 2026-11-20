@@ -31,7 +31,7 @@ enum GitHubSupport {
           mine: search(query: $mine, type: ISSUE, first: $first) { issueCount nodes { ...pr } }
         }
         fragment pr on PullRequest {
-          number title url isDraft updatedAt
+          number title url isDraft updatedAt createdAt
           repository { nameWithOwner }
           author { login }
           commits(last: 1) { nodes { commit { statusCheckRollup { state } } } }
@@ -83,6 +83,8 @@ enum GitHubSupport {
         let isDraft: Bool
         let updated: Date
         let checks: Checks
+        /// When it was opened, for the day's recap (RecapSupport); nil when unknown.
+        var created: Date? = nil
 
         var id: String { url.absoluteString }
     }
@@ -136,7 +138,8 @@ enum GitHubSupport {
                            author: (node["author"] as? [String: Any])?["login"] as? String,
                            isDraft: node["isDraft"] as? Bool ?? false,
                            updated: (node["updatedAt"] as? String).flatMap(date(from:)) ?? .distantPast,
-                           checks: Checks(rollup: rollup))
+                           checks: Checks(rollup: rollup),
+                           created: (node["createdAt"] as? String).flatMap(date(from:)))
     }
 
     static func date(from text: String) -> Date? {

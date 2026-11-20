@@ -20,6 +20,8 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
     case nowPlaying, timer, clipboard, calendar, weather, system, agents, shelf
     /// Up to three running dev servers (DevServersService).
     case devServers
+    // Zenith fork: today is the day's recap so far (RecapService).
+    case today
 
     var id: String { rawValue }
 
@@ -36,6 +38,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .agents: return .agents
         case .shelf: return .files
         case .devServers: return .devServers
+        case .today: return .recap
         }
     }
 
@@ -51,6 +54,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .agents: return "sparkles"
         case .shelf: return "tray.full.fill"
         case .devServers: return "server.rack"
+        case .today: return "sun.horizon.fill"
         }
     }
 
@@ -68,6 +72,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .agents: return 0xFB923C
         case .shelf: return 0x2DD4BF
         case .devServers: return 0x86EFAC
+        case .today: return 0xA5B4FC
         }
     }
 
@@ -85,6 +90,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .agents: return 196
         case .shelf: return 216
         case .devServers: return 216
+        case .today: return 216
         }
     }
 

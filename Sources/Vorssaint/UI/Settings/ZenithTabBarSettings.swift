@@ -244,7 +244,8 @@ struct ZenithTabBarSettings: View {
         case .scratchpad: return .scratchpad
         case .agents: return .notchAgents
         case .watch: return .notchWatch
-        case .controls, .music, .captures, .system, .wakatime, .vercel, .github, .cardImport: return nil
+        case .controls, .music, .captures, .system, .wakatime, .vercel, .github, .cardImport, .devServers, .recap:
+            return nil
         }
     }
 

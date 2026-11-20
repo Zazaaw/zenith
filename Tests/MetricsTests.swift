@@ -275,6 +275,7 @@ struct MetricsTests {
             ("tab-bar", { TabBarTests.run(suite) }),
             ("card-import", { CardImportTests.run(suite) }),
             ("dev-servers", { DevServersTests.run(suite) }),
+            ("recap", { RecapTests.run(suite) }),
         ]
         var selected = Set<String>()
         var listOnly = false

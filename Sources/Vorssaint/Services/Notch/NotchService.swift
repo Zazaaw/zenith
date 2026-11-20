@@ -1306,6 +1306,7 @@ final class NotchService: ObservableObject {
         CardImportService.shared.syncWithPreferences() // Zenith fork: watches volumes while detection is on.
         ExportTrackerService.shared.syncWithPreferences() // Zenith fork: watches only while its switch is on.
         DevServersService.shared.syncWithPreferences() // Zenith fork: checks in the background only for its notice or count.
+        RecapService.shared.syncWithPreferences() // Zenith fork: one timer for the day's recap notice.
         ClaudeHooksService.shared.syncWithPreferences() // Zenith fork: Claude Code's hooks, while Claude shows.
         followsPointer = displayPreference == .pointer || displayPreference == .all
         showsOnAllDisplays = displayPreference == .all
@@ -1410,6 +1411,7 @@ final class NotchService: ObservableObject {
         CardImportService.shared.stop() // Zenith fork: an import under way finishes on its own
         ExportTrackerService.shared.stop() // Zenith fork
         DevServersService.shared.stop() // Zenith fork
+        RecapService.shared.stop() // Zenith fork
         let cancelCapture = captureControlsCancel
         endCaptureControls()
         cancelCapture?()

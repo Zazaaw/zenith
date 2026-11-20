@@ -18,6 +18,8 @@ struct ZenithNotice: Equatable {
         case card
         /// A dev server started, offering to open it (DevServersService).
         case devServer
+        /// The day's recap at the chosen time, offering its page (RecapService).
+        case recap
 
         /// Higher shows first and may cut a lower one short.
         var priority: Int {
@@ -26,7 +28,7 @@ struct ZenithNotice: Equatable {
             case .batteryLow: return 4
             case .audio, .card: return 3
             case .charging, .unplugged: return 2
-            case .chargeLimit, .download, .export, .devServer: return 1
+            case .chargeLimit, .download, .export, .devServer, .recap: return 1
             }
         }
     }
@@ -63,6 +65,8 @@ struct ZenithNotice: Equatable {
         case importCard(String)
         /// Opens a dev server in the default browser.
         case openURL(URL)
+        /// Opens the island's Today page.
+        case openRecap
     }
 
     let kind: Kind
@@ -116,6 +120,8 @@ struct ZenithNoticeQueue {
         case .chargeLimit, .download, .card, .export: return 30
         // A server that started a while ago is old news.
         case .devServer: return 20
+        // Once a day and in no hurry: it waits out a full screen app or an open island.
+        case .recap: return 10 * 60
         }
     }
 
@@ -196,6 +202,8 @@ enum ZenithNoticeKey {
     static func export(_ id: String) -> String { "export." + id }
     /// A dev server: its project (or framework) and port, so a restart updates it.
     static func devServer(_ key: String) -> String { "devserver." + key }
+    /// The recap of one day, so the same day never queues twice.
+    static func recap(_ day: String) -> String { "recap." + day }
 }
 
 // MARK: - Battery
@@ -379,6 +387,8 @@ enum ZenithNoticeTiming {
         case .card: return 7
         // Long enough to reach for Open.
         case .devServer: return 5
+        // A line of figures to read, with a choice to open it.
+        case .recap: return 8
         default: return 4
         }
     }

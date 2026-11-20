@@ -43,6 +43,7 @@ enum ZenithIslandPalette {
         case .github: return 0xCBD5E1        // slate
         case .cardImport: return 0xFDBA74    // peach, the warm 300 step: the wheel's 400s are all taken
         case .devServers: return 0x86EFAC    // light green, the 300 step: a server up and running
+        case .recap: return 0xA5B4FC         // periwinkle, the indigo 300 step: calm, for the end of a day
         }
     }
 

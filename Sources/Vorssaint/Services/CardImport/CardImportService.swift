@@ -408,12 +408,24 @@ final class CardImportService: ObservableObject {
     // MARK: Ledger
 
     private func record(_ keys: [String], card: String) {
+        noteRecap(keys, card: card)
         session?.copiedKeys.formUnion(keys)
         var ledger = ledgers[card] ?? CardImportLedger(volume: card)
         ledger.record(keys)
         ledgers[card] = ledger
         unsavedKeys += keys.count
         if unsavedKeys >= CardImportTiming.ledgerBatch { saveLedger(card) }
+    }
+
+    /// The day's recap counts what came off cards, by kind.
+    private func noteRecap(_ keys: [String], card: String) {
+        guard let files = cards.first(where: { $0.id == card })?.scan?.files else { return }
+        let wanted = Set(keys)
+        let copied = files.filter { wanted.contains($0.ledgerKey) }
+        guard !copied.isEmpty else { return }
+        RecapService.record(.imported(photos: copied.filter(\.kind.isPhoto).count,
+                                      videos: copied.filter { $0.kind == .video }.count,
+                                      bytes: copied.reduce(0) { $0 + $1.size }, at: Date()))
     }
 
     private func saveLedger(_ card: String) {

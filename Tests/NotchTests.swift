@@ -2534,12 +2534,13 @@ enum NotchTests {
         // and GitHub on a Mac with the GitHub CLI. Vercel waits until it is
         // turned on (saving a token does that). Card Import shows while card
         // detection is on, as it is by default, and Dev servers while their
-        // detection is on, as it is by default too.
+        // detection is on, as it is by default too. Today (the day's recap)
+        // is always there.
         let wakaTime: [NotchModule] = WakaTimeSupport.hasConfiguration() ? [.wakatime] : []
         let gitHub: [NotchModule] = GitHubCLI.isInstalled() ? [.github] : []
         let upstreamModules: [NotchModule] = [.system, .music, .controls, .mixer, .captures, .files, .tools, .calendar,
                                               .notifications, .timer, .camera, .downloads, .scratchpad, .agents, .watch]
-        let zenithModules: [NotchModule] = [.cardImport, .devServers] // Zenith fork
+        let zenithModules: [NotchModule] = [.cardImport, .devServers, .recap] // Zenith fork
         let withoutVercel: [NotchModule] = upstreamModules + wakaTime + gitHub + zenithModules
         suite.expect(NotchSupport.modules(in: defaults) == withoutVercel,
                "module order ignores unknown ids and duplicates, preserving newly added modules")

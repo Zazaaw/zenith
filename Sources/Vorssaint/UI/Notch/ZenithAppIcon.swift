@@ -209,6 +209,7 @@ extension NotchModule {
         case .github: return "arrow.triangle.branch"
         case .cardImport: return "sdcard.fill"
         case .devServers: return "server.rack"
+        case .recap: return "sun.horizon.fill"
         }
     }
 }

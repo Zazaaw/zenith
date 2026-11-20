@@ -157,6 +157,11 @@ final class CommandActivityService: ObservableObject {
                                  uniquingKeysWith: { first, _ in first })
         for event in CommandActivitySupport.ordered(events.map(\.event)) {
             guard let name = byEvent[event.id + "." + event.phase.rawValue] else { continue }
+            // The day's recap counts the commands long enough to have shown.
+            if event.phase == .end, let run = tracker.running[event.id],
+               event.time.timeIntervalSince(run.start) >= configuration.threshold {
+                RecapService.record(.command(duration: event.time.timeIntervalSince(run.start), ended: event.time))
+            }
             if tracker.apply(event, configuration: configuration, now: now) {
                 applied.insert(name)
                 continue
