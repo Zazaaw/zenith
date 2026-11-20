@@ -926,6 +926,16 @@ enum DefaultsKey {
     static let notchCommandIgnored = "notchCommandIgnored" // extra programs left out, by name
     // When the shell hook last wrote; unregistered, so it stays out of backups.
     static let notchCommandLastEvent = "notchCommandLastEvent"
+    // Zenith fork: capsule notices (ZenithNoticeSupport): one switch each, and the battery thresholds.
+    static let notchNoticeBatteryLow = "notchNoticeBatteryLow"
+    static let notchNoticeBatteryLowLevel = "notchNoticeBatteryLowLevel" // percent: 15, 20, 25 or 30
+    static let notchNoticeBatteryCritical = "notchNoticeBatteryCritical"
+    static let notchNoticeBatteryCriticalLevel = "notchNoticeBatteryCriticalLevel" // percent: 5, 10 or 15
+    static let notchNoticeBatteryHigh = "notchNoticeBatteryHigh"
+    static let notchNoticeBatteryHighLevel = "notchNoticeBatteryHighLevel" // percent: 80, 85, 90 or 95
+    static let notchNoticeCharger = "notchNoticeCharger"
+    static let notchNoticeAudio = "notchNoticeAudio"
+    static let notchNoticeDownload = "notchNoticeDownload"
     static let notchCalendarEnabled = "notchCalendarEnabled"
     static let notchCalendarCountdown = "notchCalendarCountdown"
     static let notchCalendarCountdownLead = "notchCalendarCountdownLead" // minutes before a start, chosen events included
@@ -1598,6 +1608,15 @@ enum Defaults {
         DefaultsKey.notchCommandThreshold: CommandActivitySupport.defaultThreshold, // Zenith fork
         DefaultsKey.notchCommandShowsFolder: false, // Zenith fork
         DefaultsKey.notchCommandIgnored: "", // Zenith fork
+        DefaultsKey.notchNoticeBatteryLow: true, // Zenith fork
+        DefaultsKey.notchNoticeBatteryLowLevel: 20, // Zenith fork
+        DefaultsKey.notchNoticeBatteryCritical: true, // Zenith fork
+        DefaultsKey.notchNoticeBatteryCriticalLevel: 10, // Zenith fork
+        DefaultsKey.notchNoticeBatteryHigh: true, // Zenith fork
+        DefaultsKey.notchNoticeBatteryHighLevel: 80, // Zenith fork
+        DefaultsKey.notchNoticeCharger: true, // Zenith fork
+        DefaultsKey.notchNoticeAudio: true, // Zenith fork
+        DefaultsKey.notchNoticeDownload: true, // Zenith fork
         DefaultsKey.notchEnabled: false,
         DefaultsKey.notchDisplay: NotchDisplay.automatic.rawValue,
         DefaultsKey.notchSilhouette: NotchSilhouette.capsule.rawValue,

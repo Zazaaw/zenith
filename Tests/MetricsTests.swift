@@ -265,6 +265,7 @@ struct MetricsTests {
             ("gh", { GitHubTests.run(suite) }),
             ("command-activity", { CommandActivityTests.run(suite) }),
             ("photo-actions", { PhotoActionsTests.run(suite) }),
+            ("notices", { ZenithNoticeTests.run(suite) }),
         ]
         var selected = Set<String>()
         var listOnly = false
