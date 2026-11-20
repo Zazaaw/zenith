@@ -629,6 +629,7 @@ extension ZenithHomeWidget {
         if self == .weather { return ZenithStrings.lockScreenWidgets(language).weather }
         if self == .prayer { return ZenithStrings.sky(language).prayerTab }
         if self == .golden { return ZenithStrings.sky(language).goldenTab }
+        if self == .workspaces { return ZenithStrings.workspaces(language).title }
         return (module ?? .controls).title(language)
     }
 }

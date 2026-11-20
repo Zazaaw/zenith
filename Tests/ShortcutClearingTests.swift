@@ -139,6 +139,12 @@ enum ShortcutClearingTests {
     enum ClipboardHistoryService { static let shared = Suspension() }
     enum SoundOutputSwitcher { static let shared = Suspension() }
     enum WindowLayoutService { static let shared = Suspension() }
+    // Zenith fork: workspaces register their shortcuts again when recording ends.
+    final class WorkspaceService {
+        static let shared = WorkspaceService()
+        var syncs = 0
+        func syncHotkeys() { syncs += 1 }
+    }
     final class FeatureRuntime {
         static let shared = FeatureRuntime()
         var lastSynced: [AppFeature] = []
