@@ -887,6 +887,8 @@ enum DefaultsKey {
     static let zenithTabBarModules = "zenithTabBarModules"
     static let zenithTabBarCurrentPage = "zenithTabBarCurrentPage"
     static let zenithTabBarBadges = "zenithTabBarBadges"
+    // Zenith fork: workspaces (WorkspaceLibrary) as JSON; empty until edited, which shows the examples.
+    static let zenithWorkspaces = "zenithWorkspaces"
     static let notchSize = "notchSize"
     static let notchOutlineEnabled = "notchOutlineEnabled"
     static let notchHideMenuBarGap = "notchHideMenuBarGap"
@@ -1613,6 +1615,7 @@ enum Defaults {
         DefaultsKey.zenithTabBarModules: ZenithTabBar.defaultEncoded, // Zenith fork
         DefaultsKey.zenithTabBarCurrentPage: true, // Zenith fork
         DefaultsKey.zenithTabBarBadges: true, // Zenith fork
+        DefaultsKey.zenithWorkspaces: "", // Zenith fork
         DefaultsKey.notchSize: NotchSize.spacious.rawValue,
         DefaultsKey.notchOutlineEnabled: false,
         DefaultsKey.notchHideMenuBarGap: false,

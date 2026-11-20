@@ -125,6 +125,7 @@ extension ZenithNotice.Tone {
         case .accent: return Color(nsColor: .controlAccentColor)
         case .white: return .white.opacity(0.95)
         case .tint(let module): return module.zenithTint
+        case .hex(let value): return ZenithIslandPalette.color(hex: value)
         }
     }
 }

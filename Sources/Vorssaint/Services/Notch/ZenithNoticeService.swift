@@ -188,6 +188,13 @@ final class ZenithNoticeCenter: ObservableObject {
                              glyph: .symbol(symbol, .tint(NotchModule.sky))))
     }
 
+    /// Zenith fork: a workspace finished (WorkspaceService): "Coding workspace
+    /// ready" in its colour with a checkmark, or what did not work below.
+    func workspaceFinished(id: String, title: String, subtitle: String, symbol: String, hex: UInt32, succeeded: Bool) {
+        enqueue(ZenithNotice(kind: .workspace, key: ZenithNoticeKey.workspace(id), title: title, subtitle: subtitle,
+                             glyph: .symbol(symbol, .hex(hex)), accessory: succeeded ? .checkmark : .none))
+    }
+
     private static func reading(_ power: PowerReading) -> ZenithBatteryReading {
         ZenithBatteryReading(percent: power.chargePercent, external: power.externalConnected, charging: power.isCharging)
     }
@@ -627,6 +634,7 @@ final class ZenithNoticeCenter: ObservableObject {
                 return !options.enabled || !options.announces
             case .recap: return !RecapSettings.current(in: defaults).enabled
             case .prayer: return !NotchSupport.modules(in: defaults).contains(.sky)
+            case .workspace: return false
             }
         }
     }
