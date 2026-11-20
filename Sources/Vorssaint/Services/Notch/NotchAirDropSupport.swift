@@ -5,15 +5,18 @@ import AppKit
 
 /// Where files dragged onto the open island land. Zenith adds AirDrop beside
 /// upstream's two targets: the shelf (Files) and Optimize media, and, for
-/// images, the photo actions (NotchPhotoActionsSupport).
+/// images, the photo actions (NotchPhotoActionsSupport) and the design
+/// overlay (DesignOverlaySupport).
 enum NotchDropTarget: Equatable {
     case files
     case airDrop
     case media
     case transform
     case removeBackground
+    case overlay
 
-    var isPhotoAction: Bool { self == .transform || self == .removeBackground }
+    /// The targets only an image drag gets, which follow the others.
+    var isPhotoAction: Bool { self == .transform || self == .removeBackground || self == .overlay }
 }
 
 /// Zenith fork: the AirDrop drop zone in the notch. Drop files on it and the

@@ -641,6 +641,16 @@ enum DefaultsKey {
     static let quitAppsKeptApps = "quitAppsKeptApps"
     static let cameraPreviewShortcutEnabled = "cameraPreviewShortcutEnabled"
     static let cameraPreviewShortcut = "cameraPreviewShortcut"
+    // Zenith fork: the design QA overlay (Services/DesignOverlay). The per-display
+    // records and the last image's name are this Mac's state, so they stay unregistered.
+    static let designOverlayShortcutEnabled = "designOverlayShortcutEnabled"
+    static let designOverlayShortcut = "designOverlayShortcut"
+    static let designOverlayDefaultOpacity = "designOverlayDefaultOpacity"
+    static let designOverlayDefaultBlend = "designOverlayDefaultBlend"
+    static let designOverlayGridPreset = "designOverlayGridPreset"
+    static let designOverlayDropEnabled = "designOverlayDropEnabled"
+    static let designOverlayDisplays = "designOverlayDisplays"
+    static let designOverlayLastImage = "designOverlayLastImage"
     static let wallpaperApplyAllDisplays = "wallpaperApplyAllDisplays"
     static let wallpaperFilter = "wallpaperFilter"
     static let wallpaperOwnBookmarks = "wallpaperOwnBookmarks"
@@ -1963,6 +1973,13 @@ enum Defaults {
         DefaultsKey.quitAppsKeptApps: mandatoryAutoQuitExceptionBundleIDs,
         DefaultsKey.cameraPreviewShortcutEnabled: false,
         DefaultsKey.cameraPreviewShortcut: GlobalShortcut.cameraPreviewDefault.storageValue,
+        // Zenith fork: the design overlay.
+        DefaultsKey.designOverlayShortcutEnabled: true,
+        DefaultsKey.designOverlayShortcut: GlobalShortcut.designOverlayDefault.storageValue,
+        DefaultsKey.designOverlayDefaultOpacity: 0.5,
+        DefaultsKey.designOverlayDefaultBlend: "normal",
+        DefaultsKey.designOverlayGridPreset: "desktop",
+        DefaultsKey.designOverlayDropEnabled: true,
         DefaultsKey.wallpaperApplyAllDisplays: true,
         DefaultsKey.wallpaperFilter: "all",
         DefaultsKey.scratchpadShortcutEnabled: false,

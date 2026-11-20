@@ -332,6 +332,7 @@ final class FeatureRuntime: ObservableObject {
             ScreenCaptureService.shared.syncWithPreferences()
             ScreenshotService.shared.syncWithPreferences()
             RecentCaptureService.shared.syncWithPreferences()
+            MainActor.assumeIsolated { DesignOverlayService.shared.syncWithPreferences() } // Zenith fork
         },
         .screenRecorder: {
             ScreenCaptureService.shared.syncWithPreferences()
