@@ -34,6 +34,7 @@ struct GeneralToolSettings: View {
                         }
                     }
                     .settingsSectionAnchor(.panelConfiguration, cornerRadius: ZenithRadius.panel)
+                    MenuBarHiderSettingsSection() // Zenith fork
                 case .mixer:
                     MixerSection(settingsMode: true)
                         .settingsSectionAnchor(.mixer, cornerRadius: ZenithRadius.panel)
