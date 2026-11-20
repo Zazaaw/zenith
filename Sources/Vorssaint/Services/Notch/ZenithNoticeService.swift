@@ -158,6 +158,19 @@ final class ZenithNoticeCenter: ObservableObject {
                              glyph: .file(url), accessory: .checkmark, action: .reveal(url)))
     }
 
+    /// A dev server started (DevServersService): `Next.js · Swift-portfolio ·
+    /// localhost:3000`, and Open as the click. Returns whether a capsule shows it.
+    @discardableResult
+    func devServerStarted(_ server: DevServer) -> Bool {
+        guard DevServersOptions.current().announces, DevServersOptions.isEnabled(), let url = server.url else { return false }
+        let text = ZenithStrings.devServers(L10n.shared.language)
+        enqueue(ZenithNotice(kind: .devServer, key: ZenithNoticeKey.devServer(server.coalescingKey),
+                             title: DevServersFormat.noticeTitle(server), subtitle: text.started,
+                             glyph: .symbol(NotchModule.devServers.zenithIconSymbol, .tint(NotchModule.devServers)),
+                             accessory: .action(text.open), action: .openURL(url)))
+        return true
+    }
+
     private static func reading(_ power: PowerReading) -> ZenithBatteryReading {
         ZenithBatteryReading(percent: power.chargePercent, external: power.externalConnected, charging: power.isCharging)
     }
@@ -508,6 +521,8 @@ final class ZenithNoticeCenter: ObservableObject {
             dismiss(quickly: true)
             DispatchQueue.main.async { CardImportService.shared.openImport(volume: volume) }
             return
+        case .openURL(let url):
+            if !NSWorkspace.shared.open(url) { NSSound.beep() }
         }
         dismiss(quickly: true)
     }
@@ -585,6 +600,9 @@ final class ZenithNoticeCenter: ObservableObject {
             case .download: return !defaults.bool(forKey: DefaultsKey.notchNoticeDownload)
             case .card: return !CardImportOptions.isEnabled(in: defaults)
             case .export: return !ExportTrackerSupport.isEnabled(in: defaults)
+            case .devServer:
+                let options = DevServersOptions.current(in: defaults)
+                return !options.enabled || !options.announces
             }
         }
     }

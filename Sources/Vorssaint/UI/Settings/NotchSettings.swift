@@ -569,6 +569,9 @@ struct NotchSettings: View {
         case .cardImport:
             // Zenith fork: card detection, the base folder and the import defaults.
             CardImportSettings()
+        case .devServers:
+            // Zenith fork: detection, the notice, the closed island's count and extra ports or names.
+            DevServersSettings()
         case .mixer, .system, .tools:
             EmptyView()
         }
@@ -913,7 +916,7 @@ struct NotchSettings: View {
         case .scratchpad: return .scratchpad
         case .agents: return .notchAgents
         case .watch: return .notchWatch
-        case .wakatime, .vercel, .github, .cardImport: return nil // Zenith fork: cardImport
+        case .wakatime, .vercel, .github, .cardImport, .devServers: return nil // Zenith fork: cardImport, devServers
         }
     }
 

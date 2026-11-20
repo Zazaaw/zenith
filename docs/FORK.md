@@ -1605,6 +1605,113 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     pil di island berubah langsung saat saklar/urutan diganti (spring, kapsul pilihan meluncur, tab masuk/keluar), 6 pin +
     halaman sekarang + badge (lebar pil dan koridor hover), bar mati (pil hilang, tombol galeri kembali di baris atas
     island dan preview Settings, tanpa ruang kosong di bawah island), badge notifikasi, VoiceOver.
+- **Dev servers di island (branch `feat/dev-servers`):** dev server yang sedang jalan (Next.js, Vite, Laravel, …)
+  tampil sebagai halaman island sendiri, widget Home, notice kapsul saat ada yang baru, dan (opsional) jumlahnya di
+  island tertutup. Kode di `Services/DevServers/DevServersSupport.swift` (murni, ikut `TEST_SOURCES`: klasifikasi,
+  nama proyek, alamat dan URL, pengelompokan, uptime, parsing argv, coalescing notice, state machine Kill),
+  `DevServersProbe.swift` (libproc/sysctl, ikut `TEST_SOURCES`), `DevServersService.swift` (polling, cache, aksi),
+  `UI/Notch/DevServersPage.swift`, `DevServersStrip.swift`, `DevServersWidget.swift`, `DevServersSettings.swift`. Teks di
+  `ZenithStrings.devServers` (15 bahasa). Test di `Tests/DevServersTests.swift` (suite `dev-servers`).
+  - **Sumber data:** tidak ada scanner kedua. Daftar port memakai pembaca Port Manager apa adanya
+    (`PortManagerService.zenithListeners()`, kait satu baris ke `snapshot()` privat: lsof `-iTCP -sTCP:LISTEN` yang
+    sama, sekitar 30 ms, parser `PortManagerSupport.parseLsof`). Proses di belakang tiap port dibaca sekali dari kernel
+    (`DevServersProbe`): argv lewat `KERN_PROCARGS2`, folder kerja lewat `proc_pidinfo(PROC_PIDVNODEPATHINFO)`, uid,
+    parent dan waktu mulai lewat `PROC_PIDTBSDINFO`, path lewat `proc_pidpath`, nama parent lewat `proc_name`. Di-cache per
+    pid + waktu mulai, jadi pid yang dipakai ulang dibaca lagi. Tidak ada proses yang dijalankan selain lsof itu.
+  - **Hanya yang lokal dan milik sendiri:** endpoint loopback atau wildcard (`127.x`, `::1`, `*`, `0.0.0.0`, `::`); bind
+    ke IP LAN tertentu dilewati. Proses uid lain, pid Zenith sendiri, nama Zenith/Vorssaint, layanan sistem (path di
+    `/System/`, `/usr/libexec/`, `/usr/sbin/`, `/sbin/`, `/Library/Apple/`, atau nama seperti ControlCenter (AirPlay di
+    5000/7000), rapportd, sharingd, launchd), dan helper yang dibundel app (path berisi `.app/`, misalnya node milik
+    Adobe atau Code Helper VS Code) tidak pernah tampil, bahkan kalau portnya didaftarkan sendiri. Pengecualian `.app/`:
+    Python (CLT dan Homebrew menjalankan `Python.app` di dalam framework-nya) dan Docker/OrbStack.
+  - **Klasifikasi** (dari nama proses lsof `+c0`, argv, parent, path):
+    - Next.js: argv[0] `next-server (vX)` (judul yang dipasang Next sendiri), path `/next/dist/`, atau bin `next` + `dev`/`start`.
+    - Nuxt (`nuxi`/`nuxt`), Astro, Remix (`remix`, `remix-serve`, `@remix-run/`), dicek sebelum Vite karena ketiganya
+      menjalankan Vite di dalam; Vite (`.bin/vite`, `vite/bin/vite.js`, juga lewat `bun --bun vite`); webpack
+      (`webpack-dev-server`, `webpack serve`).
+    - PHP: `php artisan serve` dan anaknya (`php -S … /laravel/framework/…/server.php`) = Laravel; `php -S` lain = PHP;
+      php-fpm tidak.
+    - Python: `-m http.server` = Python, `uvicorn` (bin atau `-m`) = Uvicorn, `flask run` = Flask, `manage.py runserver` = Django.
+    - Rails: `rails s`/`rails server`, atau judul Puma (`puma 6.4.2 (tcp://…)`).
+    - Go: parent `go` (`go run`) atau `air`, atau binary di folder `go-build`; binary `*.test` (server test) tidak.
+    - Flutter: `dart` yang menjalankan `flutter_tools.snapshot` (`flutter run -d chrome`).
+    - Supabase: port 54321–54324 milik Docker (atau proses bernama supabase), satu baris untuk keempatnya, URL ke Studio
+      (54323). Docker: `com.docker.*`, `docker-proxy`, `vpnkit*`, OrbStack, `limactl`; satu baris per port.
+    - Runtime polos (`node`, `bun`, `deno`) hanya kalau folder kerjanya bukan `/` dan ada `package.json`/`deno.json`/
+      lockfile Bun, atau argv-nya berisi `dev`, `--watch`, `--hot`, `serve`, `nodemon`, `tsx`, `ts-node`.
+    - Tambahan sendiri: port (boleh rentang, `9000-9002`, maks. 64 per rentang) dan nama proses (tanpa beda huruf besar)
+      jadi "custom" dengan nama prosesnya. Framework yang dikenali tetap memakai namanya walau portnya didaftarkan.
+  - **Pengelompokan:** satu baris per proses (IPv4 + IPv6 port yang sama = satu, beberapa port = satu dengan port terkecil
+    sebagai URL). Server yang fork dengan socket bersama (reloader uvicorn, cluster) diwakili parent-nya. Docker satu baris
+    per port; Supabase satu baris. Urut menurut port.
+  - **Nama proyek:** basename folder kerja proses; folder di dalam `node_modules` dan folder generik (`src`, `public`,
+    `dist`, `build`, `out`, `.next`, `tmp`, `bin`) naik ke proyeknya; `/` dan home = tanpa nama (baris dipimpin nama
+    framework). Docker/Supabase tanpa proyek.
+  - **Alamat:** semua yang lokal dibuka sebagai `http://localhost:<port>` dan ditulis `localhost:3000` (IPv4, IPv6 dan
+    wildcard sama-sama dijawab localhost, seperti yang dicetak framework-nya).
+  - **Polling:** tiap 3 dtk selama halaman atau widget Home tampil (hitungan `shown()`/`hidden()`, termasuk preview di
+    Settings), tiap 10 dtk hanya kalau "Announce new servers" atau hitungan island tertutup nyala (dan island jalan),
+    selain itu tidak ada timer sama sekali. Timer di main run loop dengan toleransi 20%; lsof dan probe di queue
+    `utility` sendiri.
+  - **Halaman `NotchModule.devServers`** (⌥⌘L, glyph `server.rack`, warna hijau muda `#86EFAC`, tingkat 300 seperti Card
+    Import karena tingkat 400 sudah habis). Selalu terdaftar di Content; tampil selama deteksi nyala (default nyala). Tiap
+    baris kartu lembut 48 pt (radius 14): monogram framework di tile lembut warna framework (tanpa logo merek: `N`, `V`,
+    `L`, `Py`, `Go`, …), proyek (13 semibold), framework + `localhost:3000` mono, uptime mono (`0:42`, `12:03`,
+    `3:05:12`, `2d 03:05`) dengan `numericText` di slot selebar bacaan terlebar bentuknya, lalu Open
+    (`arrow.up.right.square`, browser default), Copy URL (ikon jadi ✓ 1,6 dtk) dan Kill. Klik kanan baris: Open, Copy URL.
+    Kosong: tile modul + "No dev servers running" + contoh perintah. State halaman (memuat/kosong/daftar) lewat
+    `.zenithMorph(on:)`.
+  - **Kill:** klik pertama mengubah tiga tombol jadi satu kapsul merah "Kill?" di tempat yang sama (Open/Copy blur dan pudar
+    di bawahnya, jadi layout baris tidak bergeser); klik kedua dalam 3 dtk menghentikan, selain itu pertanyaannya lewat
+    sendiri. Lalu SIGTERM lewat jalur yang sama dengan Port Manager (`KillProcessService.kill(pid:name:startedAt:force:)`,
+    identitas pid + waktu mulai dicek, proses terlindungi ditolak), dan SIGKILL kalau proses yang persis sama masih ada
+    setelah 3 dtk. Selama itu spinner kecil. Baris Docker/Supabase tidak punya Kill (membunuh backend Docker = Docker
+    berhenti); ikonnya `shippingbox` redup dengan tooltip. Tidak digerbang `AppFeature.killProcess` (fitur opt-in Port
+    Manager/Kill Process), karena yang dihentikan hanya proses milik sendiri atas dua klik eksplisit.
+  - **Gerak (120 Hz):** baris masuk naik 8 pt dari blur 8 + opacity + skala 0,96, keluar blur + pudar + skala; daftar
+    bergeser dengan spring `ZenithMorph`; Kill → "Kill?" spring 0,3 (skala dari kanan + opacity, blur di tombol lain).
+    Reduce Motion: fade saja, tanpa gulir angka.
+  - **Notice:** `ZenithNotice.Kind.devServer` (prioritas 1, tampil 5 dtk, menunggu island maks. 20 dtk), judul
+    `Next.js · Swift-portfolio · localhost:3000`, subjudul "New dev server", glyph modul, aksesori `.action("Open")`, aksi
+    baru `.openURL`. Coalescing di `DevServersAnnouncer`: look pertama = baseline (yang sudah jalan diam), key = proyek
+    (atau framework) + port, dan key yang terlihat dalam 30 dtk terakhir dianggap restart (hot reload, nodemon, air) jadi
+    tidak diumumkan; key notice yang sama juga di-coalesce oleh antrean. Saklar dimatikan lalu dinyalakan = baseline baru.
+  - **Widget Home `ZenithHomeWidget.devServers`** (lebar 216): heading + jumlah, maks. tiga baris (titik hijau, proyek,
+    host mono), kosong "No dev servers running", klik membuka halaman. Header dan tombol buka widget dibuka dari `private`
+    supaya bisa dipakai di file sendiri.
+  - **Island tertutup (opsional, default mati):** `NotchCompactActivity.devServers`, ada selama saklar nyala dan ada server.
+    Kiri titik hijau `ZenithStatusDot` (live), kanan jumlah mono 11 dengan `numericText`; kapsul: titik + jumlah. Wing pinjam
+    geometri Watch. Urutan otomatis setelah music, sebelum Keep Awake (jalan seharian seperti Keep Awake), tidak pernah
+    berpasangan, klik membuka halaman. Rapi di sistem activity yang ada, jadi dibuat.
+  - **Settings:** opsi section Dev servers di Dynamic Island → Content: "Detect dev servers" (`notchDevServersEnabled`,
+    nyala), "Announce new servers" (`notchDevServersAnnounce`, nyala), "Show the count in the closed island"
+    (`notchDevServersIndicator`, mati), "Also these ports" (`notchDevServersExtraPorts`) dan "Also these processes"
+    (`notchDevServersExtraNames`), keduanya disimpan saat Return atau fokus pindah. Semua `ZenithSwitchRow`, tanpa
+    `SettingsRow`; terdaftar di `registeredDefaults` (ikut backup).
+  - Edit di file upstream bertanda `// Zenith fork`: `PortManagerService` (kait `zenithListeners`), `NotchSupport` (case
+    modul dan activity, simbol, shortcut, ketersediaan, gerbang modul, tinggi konten, urutan activity), `NotchService`
+    (activity, wing, kapsul, sync/stop, langganan `$indicator`), `NotchView`/`NotchMirrorView` (strip, halaman, judul),
+    `NotchTimerStrip`/`NotchCapsuleViews` (tidak berpasangan), `NotchContentEditor`, `NotchEditorStrings`,
+    `NotchSettings`, `Defaults`, `build.sh` (`TEST_SOURCES`), `Tests/MetricsTests.swift` (suite). File fork yang ikut
+    berubah: `ZenithIslandPalette`, `ZenithAppIcon`, `ZenithNoticeSupport`/`Service` (kind, aksi), `ZenithHomeLayoutSupport`,
+    `ZenithHomeWidgets`. Test diubah: `NotchMusicVisibilityTests` (double diberi `hasDevServersActivity` dan
+    `devServersStripWing`), `NotchTests` (urutan modul + `.devServers`; galeri "≤ 3 posisi baris" jadi "> 1" karena 21
+    modul = 11 baris; tujuannya tetap: preset perlu melangkah untuk mencapai baris terakhir).
+  - **Test (`dev-servers`):** klasifikasi ~40 contoh proses/argv, layanan sistem yang diabaikan walau portnya didaftarkan,
+    nama proyek dari folder, format host/URL IPv4/IPv6/0.0.0.0/LAN, uptime, pengelompokan (dual-stack, multi-port, fork,
+    Docker, Supabase), parsing `KERN_PROCARGS2`, tambahan port/nama, coalescing restart, state machine Kill, notice,
+    setelan (suite `com.vorssaint.tests.dev-servers`), urutan activity, dan satu test nyata: test membuka socket TCP di
+    port acak 127.0.0.1, membacanya lewat lsof dengan argumen Port Manager + `parseLsof`, lalu probe (uid, waktu mulai,
+    folder, argv) dan scanner (port didaftarkan → baris custom; dengan konteks asli → diabaikan karena milik Zenith
+    sendiri). Tidak ada proses yang diberi sinyal.
+  - **Sudah dicoba di Mac ini (tanpa UI):** harness kecil dari Support + Probe + parser Port Manager terhadap lsof asli
+    menemukan `node server.js` (folder dengan package.json, bind `[::1]`) sebagai Node.js dan `python3 -m http.server` (dari
+    Python.app CLT) sebagai Python, keduanya dengan nama proyek dari folder; ControlCenter, rapportd, Spotify, Figma
+    agent, Code Helper VS Code, Claude Code dan `ruby` dengan socket polos tidak masuk.
+  - **Belum diverifikasi visual:** app UI tidak dijalankan. Perlu dicek di Mac (120 Hz): halaman (baris masuk/keluar, Kill →
+    "Kill?" → spinner → baris hilang, Copy ✓, uptime bergulir), widget Home, notice + Open, hitungan di island tertutup dan
+    kapsul, Settings, dengan `next dev`, `vite` dan `php artisan serve` sungguhan (Next/Vite/Laravel belum dijalankan di
+    sini: tidak ada proyek dan PHP tidak terpasang).
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.

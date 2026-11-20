@@ -30,6 +30,7 @@ struct ZenithHomeWidgetView: View {
         case .system: ZenithHomeSystemWidget(service: service).modifier(ZenithHomeWidgetCard(framed: true))
         case .agents: ZenithHomeAgentsWidget(service: service).modifier(ZenithHomeWidgetCard(framed: true))
         case .shelf: ZenithHomeShelfWidget(service: service).modifier(ZenithHomeWidgetCard(framed: true))
+        case .devServers: DevServersHomeWidget(service: service).modifier(ZenithHomeWidgetCard(framed: true))
         }
     }
 }
@@ -54,7 +55,7 @@ private struct ZenithHomeWidgetCard: ViewModifier {
 
 /// A widget's heading: its page's colour as a small icon, a mono label, and
 /// what a click on the body does at the far end.
-private struct ZenithHomeWidgetHeader<Trailing: View>: View {
+struct ZenithHomeWidgetHeader<Trailing: View>: View {
     let widget: ZenithHomeWidget
     let title: String
     @ViewBuilder var trailing: () -> Trailing
@@ -81,7 +82,7 @@ extension ZenithHomeWidgetHeader where Trailing == EmptyView {
 }
 
 /// The whole card opens a page: a plain button with no chrome.
-private struct ZenithHomeOpenButton<Label: View>: View {
+struct ZenithHomeOpenButton<Label: View>: View {
     let action: () -> Void
     @ViewBuilder var label: () -> Label
 
