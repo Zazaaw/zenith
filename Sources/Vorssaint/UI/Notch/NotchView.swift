@@ -439,6 +439,7 @@ struct NotchView: View {
     /// The island's own actions, on a secondary click anywhere a page has no
     /// menu of its own. The floating buttons and the keys reach them too.
     @ViewBuilder private var islandMenu: some View {
+        ZenithHomeMenuItem(service: service) // Zenith fork: Customize Home
         if !service.modules.isEmpty {
             Button(action: service.toggleSections) {
                 Label(service.showingSections ? l10n.s.obBack : text.sectionsTitle, systemImage: "square.grid.2x2")

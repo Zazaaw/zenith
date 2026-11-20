@@ -125,6 +125,31 @@ struct ZenithAppIcon: View {
     }
 }
 
+/// A chosen or current icon's mark: a small accent disc with a check, so the
+/// state never rests on colour alone.
+struct ZenithAppIconCheck: View {
+    var size: CGFloat = 18
+
+    var body: some View {
+        Image(systemName: "checkmark")
+            .font(.system(size: size * 0.5, weight: .bold))
+            .foregroundStyle(.white)
+            .frame(width: size, height: size)
+            .background(ZenithIsland.accent, in: Circle())
+            .overlay { Circle().strokeBorder(Color.black, lineWidth: 1.5) }
+            .accessibilityHidden(true)
+    }
+}
+
+/// A press sinks the icon a little, on a quick spring.
+struct ZenithAppIconButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.94 : 1)
+            .animation(ZenithMotion.respecting(.spring(response: 0.24, dampingFraction: 0.7)), value: configuration.isPressed)
+    }
+}
+
 // MARK: - Glyphs and colours
 
 extension NotchModule {

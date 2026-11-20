@@ -980,6 +980,7 @@ final class NotchService: ObservableObject {
         if !showingSections, !showingAppPanel, selectedMetric == nil, !modules.isEmpty {
             result.pageContentWidth = NotchLayout.naturalContentWidth(selected, controls: homeControls,
                                                                       within: geometry.contentWidth)
+            if selected == .controls { result.zenithHome = ZenithHomeIsland.geometry(modules: modules) } // Zenith fork
         } else {
             result.sectionsButtonInRow = false
         }

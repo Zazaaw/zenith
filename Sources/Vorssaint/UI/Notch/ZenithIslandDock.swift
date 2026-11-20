@@ -256,6 +256,7 @@ struct ZenithIslandDockView: View {
         .accessibilityValue(item == .files && count > 0 ? "\(count)" : "")
         .accessibilityAddTraits(chosen ? .isSelected : [])
         .accessibilityIdentifier("notch.dock.\(identifier(item))")
+        .modifier(ZenithDockHomeMenu(home: item == .home, service: service))
     }
 
     private func module(_ item: ZenithIslandDockItem) -> NotchModule? {
@@ -356,5 +357,19 @@ private struct ZenithIslandDockButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed && !reduceMotion ? ZenithMotion.pressedScale : 1)
             .animation(reduceMotion ? nil : configuration.isPressed ? ZenithMotion.press : ZenithMotion.spring(),
                        value: configuration.isPressed)
+    }
+}
+
+/// The Home tab's secondary click offers Customize Home.
+private struct ZenithDockHomeMenu: ViewModifier {
+    let home: Bool
+    let service: NotchService
+
+    func body(content: Content) -> some View {
+        if home {
+            content.contextMenu { ZenithHomeMenuItem(service: service) }
+        } else {
+            content
+        }
     }
 }

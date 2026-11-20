@@ -2321,6 +2321,8 @@ struct NotchGeometry: Equatable {
     /// The 28-point controls a page that wraps the camera hands the row,
     /// as the player's lyrics and queue toggles while a song plays.
     var pageTrailingControls = 0
+    /// Zenith fork: the home page's widgets (ZenithHomeIsland), set while it shows.
+    var zenithHome: ZenithHomeIslandGeometry? = nil
     private var allowsActivityFooter = true
     private var minimumCompactWidth: CGFloat = 0
     /// Narrower wings than this are dropped rather than drawn cramped.
@@ -2724,9 +2726,11 @@ struct NotchGeometry: Equatable {
         var wing = pageBandSide + (rowShowsSectionsButton ? NotchBand.sectionsButtonRoom : 0)
         let ending = max(wing, trailingSectionsRoom + NotchBand.cameraClearance)
         if sectionsButtonEndsRow, cameraWidth + ending * 2 + NotchLayout.horizontalInset * 2 <= chosen { wing = ending }
-        let preferred = layout == .custom ? chosen : pageContentWidth.map { natural in
+        var preferred = layout == .custom ? chosen : pageContentWidth.map { natural in
             min(chosen, max(natural, isNotched ? cameraWidth + wing * 2 : 0) + NotchLayout.horizontalInset * 2)
         } ?? chosen
+        // Zenith fork: widgets side by side widen the home page past the chosen width.
+        if let home = zenithHome?.contentWidth { preferred = max(preferred, home + NotchLayout.horizontalInset * 2) }
         return min(max(preferred, cameraWidth + 36), screen.width - 24 - NotchQuickAccessLayout.gutter * 2)
     }
     var contentWidth: CGFloat { max(0, expandedWidth - NotchLayout.horizontalInset * 2) }
@@ -2810,10 +2814,12 @@ struct NotchGeometry: Equatable {
                 let band = NotchBand(geometry: self, contentWidth: contentWidth)
                 let levelRow = NotchLayout.bandLevelCount(levels, band: band) < levels
                 let room = budget + (levelRow && layout != .custom ? NotchLayout.levelRowHeight + NotchLayout.rowSpacing : 0)
-                let home = NotchLayout.controls(hasCards: controlsHaveMusic, levelRow: levelRow,
+                let hasCards = zenithHome?.hasCards ?? controlsHaveMusic // Zenith fork: the widgets' row
+                let home = NotchLayout.controls(hasCards: hasCards, levelRow: levelRow,
                                                 shortcutCount: max(0, shortcutCount), width: contentWidth, height: room)
-                let empty = !controlsHaveMusic && sliderCount <= 0 && shortcutCount <= 0
+                let empty = !hasCards && sliderCount <= 0 && shortcutCount <= 0
                 contentHeight = min(room, empty ? NotchLayout.emptyHeight : home.height)
+                    + (zenithHome?.stripHeight ?? 0) // Zenith fork: the edit strip
             case .music:
                 let player = NotchLayout.musicPlayerHeight(band: musicBandHeight, playing: musicHasContent)
                 // Presets grow for the optional row; a custom height keeps

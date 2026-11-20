@@ -34,7 +34,10 @@ final class WeatherService: NSObject, ObservableObject {
     private var timer: Timer?
     private var locateTimeout: Timer?
     private var locating = false
-    private var showing = false
+    /// The lock screen shows the weather, or the home page's widget does.
+    private var lockShowing = false
+    private var homeShowing = false
+    private var showing: Bool { lockShowing || homeShowing }
 
     private override init() {
         super.init()
@@ -81,7 +84,30 @@ final class WeatherService: NSObject, ObservableObject {
     // MARK: Lock screen
 
     func lockScreenShown() {
-        showing = true
+        lockShowing = true
+        resume()
+    }
+
+    func lockScreenHidden() {
+        lockShowing = false
+        pauseIfHidden()
+    }
+
+    // MARK: Home page
+
+    /// The home page's weather widget came into view: the same reads as the
+    /// lock screen's, for as long as it shows. Never asks for access.
+    func homeShown() {
+        homeShowing = true
+        resume()
+    }
+
+    func homeHidden() {
+        homeShowing = false
+        pauseIfHidden()
+    }
+
+    private func resume() {
         guard refreshAccess() == .granted else { return }
         if WeatherSupport.isFresh(snapshot, now: Date()) {
             schedule(after: WeatherSupport.refreshInterval - Date().timeIntervalSince(snapshot?.fetched ?? Date()))
@@ -90,8 +116,8 @@ final class WeatherService: NSObject, ObservableObject {
         }
     }
 
-    func lockScreenHidden() {
-        showing = false
+    private func pauseIfHidden() {
+        guard !showing else { return }
         timer?.invalidate()
         timer = nil
         finishLocating(with: nil, fetches: false)

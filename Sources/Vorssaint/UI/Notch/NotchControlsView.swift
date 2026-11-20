@@ -10,9 +10,16 @@ struct NotchControlsView: View {
     @ObservedObject private var l10n = L10n.shared
     @AppStorage(DefaultsKey.brightnessControlEnabled) private var brightnessEnabled = false
     @Environment(\.notchBand) private var band
+    @ObservedObject private var homeEditor = ZenithHomeEditor.shared // Zenith fork: the home page's widgets
+    @Environment(\.notchSettingsPreview) private var preview // Zenith fork: Settings shows no edit mode
+    @Namespace private var homeWidgets // Zenith fork: icons flying from the edit strip
 
     var body: some View {
         let items = NotchSupport.controls()
+        // Zenith fork: the card row holds the chosen widgets, and edit mode adds its strip below.
+        let homeEditing = homeEditor.editing && !preview
+        let homeCards = !homeEditor.shown(modules: service.modules).isEmpty || homeEditing
+        let stripRoom = homeEditing ? ZenithHomeIsland.stripHeight + ZenithHomeIsland.stripSpacing : 0
         let levels = items.filter(\.isLevel)
         // The levels go to the island's top row with no readout: the slider
         // there already shows the level. Beside a camera that cannot split
@@ -21,9 +28,10 @@ struct NotchControlsView: View {
         let bandLevels = Array(levels.prefix(inBand))
         let belowLevels = Array(levels.dropFirst(inBand))
         let shortcuts = items.filter { !$0.isLevel && $0 != .music }
-        let layout = NotchLayout.controls(hasCards: items.contains(.music), levelRow: !belowLevels.isEmpty,
-                                          shortcutCount: shortcuts.count, width: size.width, height: size.height)
-        if items.isEmpty {
+        let layout = NotchLayout.controls(hasCards: homeCards, levelRow: !belowLevels.isEmpty, // Zenith fork
+                                          shortcutCount: shortcuts.count, width: size.width,
+                                          height: size.height - stripRoom) // Zenith fork
+        if items.isEmpty && !homeCards { // Zenith fork: widgets alone make a home page
             NotchEmptyView(symbol: "slider.horizontal.3", message: FeatureStrings.notch(l10n.language).empty)
         } else {
             VStack(spacing: NotchLayout.rowSpacing) {
@@ -31,7 +39,9 @@ struct NotchControlsView: View {
                     NotchLevelRow(levels: belowLevels) { level($0) }
                 }
                 if layout.cardRow > 0 {
-                    NotchMusicControlsView(notch: service, height: layout.cardRow).frame(height: layout.cardRow)
+                    // Zenith fork: the chosen widgets, the player alone as before.
+                    ZenithHomeCardRow(service: service, width: size.width, height: layout.cardRow, namespace: homeWidgets)
+                        .frame(height: layout.cardRow)
                 }
                 if layout.shortcutRows > 0 {
                     NotchRail(items: shortcuts, rows: layout.shortcutRows, itemWidth: NotchLayout.shortcutWidth,
@@ -41,8 +51,13 @@ struct NotchControlsView: View {
                         shortcut(item)
                     }
                 }
+                if homeEditing { // Zenith fork: the widgets to add, Cancel and Done
+                    Spacer(minLength: 0)
+                    ZenithHomeEditStrip(service: service, namespace: homeWidgets)
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .onDisappear { if !preview { homeEditor.abandon() } } // Zenith fork: leaving the page cancels the edit
             .notchBand(leading: {
                 NotchBandLevels(band: band, levels: bandLevels, side: .leading) { level($0) }
             }, trailing: {
