@@ -1843,7 +1843,7 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     pilihan Mac `id` atau region `ID` (app tidak punya bahasa Indonesia). Nama Indonesia: Imsak, Subuh, Terbit, Dzuhur,
     Ashar, Maghrib, Isya; "Waktunya Dzuhur". Nama per bahasa app ada di `ZenithStrings.sky.prayerNames` (Turki Sabah/Öğle/
     İkindi/Akşam/Yatsı, Cina 晨礼/晌礼/晡礼/昏礼/宵礼, dst.).
-  - **Modul baru `NotchModule.sky`** (⌥⌘Y, glyph `sun.horizon`, warna dusk indigo `#A5B4FC`, tingkat 300; golden
+  - **Modul baru `NotchModule.sky`** (⌥⌘Q, glyph `sun.horizon`, warna biru langit `#93C5FD`, tingkat 300 (bentrok ⌥⌘Y dan warna dengan Today diselesaikan saat merge); golden
     `#FCD34D`, blue `#93C5FD`, warna identitas, bukan status). Selalu tersedia. Halaman (min. 196 pt): segmented
     "Prayer times | Golden hour" (`notchSkyPage`, tidak ikut backup), meta kota · metode di kanan.
     - *Prayer times:* hero (tile glyph, "NEXT · ASHAR", countdown mono 24 pt `-1:12:04` dengan `numericText` di slot

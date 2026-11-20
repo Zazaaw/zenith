@@ -511,7 +511,7 @@ enum SkyTests {
     }
 
     private static func island(_ suite: TestSuite) {
-        suite.expect(NotchModule.sky.isAvailable() && NotchModule.sky.shortcutKey == "y"
+        suite.expect(NotchModule.sky.isAvailable() && NotchModule.sky.shortcutKey == "q"
                      && Set(NotchModule.allCases.map(\.shortcutKey)).count == NotchModule.allCases.count,
                      "the Sky section is always available and has a key of its own")
         suite.expect(ZenithHomeWidget.prayer.module == .sky && ZenithHomeWidget.golden.module == .sky
