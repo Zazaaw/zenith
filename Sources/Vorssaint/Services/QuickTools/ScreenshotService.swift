@@ -377,6 +377,9 @@ final class ScreenshotService: ObservableObject {
     /// exists to reach for.
     private func route(_ capture: ScreenshotSelectionController.Capture) {
         beginLatestCapture(capture)
+        // Zenith fork: Beautify after capture frames the shot, then routes the framed one,
+        // which becomes the latest capture in turn.
+        if ScreenshotBeautifyAuto.intercept(capture, resume: { [weak self] in self?.route($0) }) { return }
         // The island's companion blinks hard, as a flash, if it is there to see.
         NotchService.shared.reactMascot(.flash, patience: 1)
         preview?.close()
@@ -489,7 +492,9 @@ final class ScreenshotService: ObservableObject {
                 guard let self else { return [] }
                 switch action {
                 case .edit:
-                    self.editFromPreview(capture, latestCapture: latestCapture)
+                    // Zenith fork: the saved file goes along, so Beautify can save beside it.
+                    self.editFromPreview(ScreenshotBeautifyAuto.withSource(capture, saved?.url),
+                                         latestCapture: latestCapture)
                     return [.edit]
                 case .pin:
                     ScreenshotPinController.shared.pin(image: capture.image, scale: capture.scale)
@@ -666,7 +671,8 @@ final class ScreenshotService: ObservableObject {
     func editImage(at url: URL) {
         importImage({ ScreenshotImageImport(url: url) }, from: .file) { capture in
             NotchService.shared.perform {
-                ScreenshotService.shared.openEditor(with: capture)
+                // Zenith fork: the picture's file, for Beautify's Save beside the original.
+                ScreenshotService.shared.openEditor(with: ScreenshotBeautifyAuto.withSource(capture, url))
             }
         }
     }

@@ -881,6 +881,12 @@ struct ScreenshotEditorView: View {
             }
 
             Divider().frame(height: 16).padding(.horizontal, 3)
+            ScreenshotBeautifyEditorButton { // Zenith fork: Beautify
+                commitEditingTextIfNeeded()
+                controller.beautify.enter()
+            }
+
+            Divider().frame(height: 16).padding(.horizontal, 3)
 
             Button {
                 commitEditingTextIfNeeded()

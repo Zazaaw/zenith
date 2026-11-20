@@ -494,6 +494,10 @@ final class ScreenshotQuickPreviewController {
             case kVK_Return, kVK_ANSI_KeypadEnter, kVK_ANSI_E:
                 self.perform(.edit)
                 return nil
+            case kVK_ANSI_B: // Zenith fork: Edit, opened in Beautify
+                ScreenshotBeautifyHandoff.request()
+                self.perform(.edit)
+                return nil
             case kVK_Delete, kVK_ForwardDelete:
                 self.perform(.discard)
                 return nil
@@ -616,6 +620,16 @@ private struct ScreenshotQuickPreviewView: View {
                 .controlSize(.small)
                 .screenshotSafeHelp(strings.pinButton)
                 .accessibilityLabel(strings.pinButton)
+                Button { // Zenith fork: Edit, opened in Beautify
+                    ScreenshotBeautifyHandoff.request()
+                    perform(.edit)
+                } label: {
+                    Image(systemName: "wand.and.stars").frame(width: 28, height: 28)
+                }
+                .modifier(ScreenshotPreviewActionStyle(embedded: true))
+                .controlSize(.small)
+                .screenshotSafeHelp(ScreenshotBeautifyHandoff.title)
+                .accessibilityLabel(ScreenshotBeautifyHandoff.title)
             }
             Button { perform(.edit) } label: {
                 if embedded { Image(systemName: "pencil").frame(width: 28, height: 28) }
@@ -653,6 +667,10 @@ private struct ScreenshotQuickPreviewView: View {
                             action: systemShare)
                 .background(ShelfSharePickerAnchor(anchor: shareAnchor))
             thumbnailButton(symbol: "pin", title: strings.pinButton) { perform(.pin) }
+            thumbnailButton(symbol: "wand.and.stars", title: ScreenshotBeautifyHandoff.title) { // Zenith fork
+                ScreenshotBeautifyHandoff.request()
+                perform(.edit)
+            }
         }
         .padding(6)
     }

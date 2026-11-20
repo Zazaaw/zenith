@@ -23,6 +23,7 @@ final class ScreenshotSelectionController {
         /// The captured area in Cocoa global coordinates.
         let anchorRect: CGRect
         var sourceFormat: MediaImageFormat = .png
+        var sourceURL: URL? = nil // Zenith fork: the file it came from, so Beautify can save beside it.
     }
 
     /// What the caller wants out of the same gesture. The screenshot tool

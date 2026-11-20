@@ -48,6 +48,7 @@ struct ScreenCaptureSettings: View {
             selectedSettings
             if AppFeature.screenshot.isAvailable {
                 DesignOverlaySettingsSection() // Zenith fork: the design QA overlay.
+                ScreenshotBeautifySettingsSection() // Zenith fork: Beautify.
             }
         }
         .formStyle(.grouped)
