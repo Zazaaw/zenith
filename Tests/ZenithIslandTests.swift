@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Satu Visual
 
+import AVFoundation
 import CoreGraphics
 import SwiftUI
 
 // Zenith fork: the open island's silhouette and its shoulders' skirt, its
-// concentric radii, the morph's reach and the modules' colours.
+// concentric radii, the morph's reach, the modules' colours and the Camera
+// page starting its mirror.
 enum ZenithIslandTests {
     static func run(_ suite: TestSuite) {
         closedStripsUnchanged(suite)
@@ -16,6 +18,7 @@ enum ZenithIslandTests {
         concentricRadii(suite)
         morphReach(suite)
         palette(suite)
+        cameraAutoStart(suite)
     }
 
     /// Upstream's silhouette, as it drew before the fork reshaped the open island.
@@ -221,6 +224,61 @@ enum ZenithIslandTests {
             suite.expect(NotchLayout.flared(size) == size && NotchLayout.shoulderFlare(height: size.height) == 0,
                          "a closed \(Int(size.width))-point strip keeps its size and shoulder")
         }
+    }
+
+    /// The Camera page starts its mirror itself only with access granted,
+    /// once per visit, and only while its switch is on.
+    private static func cameraAutoStart(_ suite: TestSuite) {
+        suite.expect(ZenithCameraAutoStart.startsOnAppear(status: .authorized, isOn: true, attempted: false),
+                     "with access granted the Camera page starts its mirror as it appears")
+        suite.expect(!ZenithCameraAutoStart.startsOnAppear(status: .notDetermined, isOn: true, attempted: false)
+                     && !ZenithCameraAutoStart.startsOnAppear(status: .denied, isOn: true, attempted: false)
+                     && !ZenithCameraAutoStart.startsOnAppear(status: .restricted, isOn: true, attempted: false),
+                     "without access the page never raises the prompt or starts by itself")
+        suite.expect(!ZenithCameraAutoStart.startsOnAppear(status: .authorized, isOn: false, attempted: false)
+                     && !ZenithCameraAutoStart.startsOnAppear(status: .authorized, isOn: true, attempted: true),
+                     "turned off, or stopped by hand on this visit, the mirror stays off")
+        suite.expect(Defaults.registeredDefaults[DefaultsKey.notchCameraAutoStart] as? Bool == true,
+                     "the switch starts on and travels with settings backups")
+        let domain = "com.vorssaint.tests.camera-auto-start"
+        let defaults = UserDefaults(suiteName: domain)!
+        defaults.removePersistentDomain(forName: domain)
+        defer { defaults.removePersistentDomain(forName: domain) }
+        suite.expect(ZenithCameraAutoStart.isOn(in: defaults), "without a choice the mirror starts by itself")
+        defaults.set(false, forKey: DefaultsKey.notchCameraAutoStart)
+        suite.expect(!ZenithCameraAutoStart.isOn(in: defaults), "turned off, the page waits for Open camera")
+        suite.expect(ZenithCameraAutoStart.blur == 10 && ZenithCameraAutoStart.loadingDelay == 0.15,
+                     "the image blurs in from 10 and a spinner waits 150 ms")
+    }
+
+    /// Core Animation interpolates the island's keyframed outlines element by
+    /// element, so every size must draw the same elements.
+    private static func morphableKeyframes(_ suite: TestSuite) {
+        func elements(_ size: CGSize) -> [String] {
+            var kinds: [String] = []
+            zenithPath(size).forEach { element in
+                switch element {
+                case .move: kinds.append("m")
+                case .line: kinds.append("l")
+                case .quadCurve: kinds.append("q")
+                case .curve: kinds.append("c")
+                case .closeSubpath: kinds.append("z")
+                }
+            }
+            return kinds
+        }
+        let reference = elements(CGSize(width: 200, height: 32))
+        for size in [CGSize(width: 200, height: 0), CGSize(width: 0, height: 0), CGSize(width: 300, height: 90),
+                     CGSize(width: 520, height: 300), CGSize(width: 40, height: 400)] {
+            suite.expect(elements(size) == reference, "an outline of \(size) keeps the elements every resize interpolates")
+        }
+        var finite = true
+        zenithPath(CGSize(width: 0, height: 0)).forEach { element in
+            if case .curve(let to, let one, let two) = element {
+                finite = finite && [to, one, two].allSatisfy { $0.x.isFinite && $0.y.isFinite }
+            }
+        }
+        suite.expect(finite, "an island drawn from nothing has no undefined points")
     }
 
     private static func concentricRadii(_ suite: TestSuite) {

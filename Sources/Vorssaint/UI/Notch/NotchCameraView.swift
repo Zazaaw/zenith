@@ -9,13 +9,23 @@ struct NotchCameraView: View {
     @ObservedObject private var service = CameraPreviewService.shared
     @ObservedObject private var l10n = L10n.shared
     private var text: NotchActivityStrings { FeatureStrings.notchActivities(l10n.language) }
+    // Zenith fork: with access granted the page starts the mirror itself
+    // (ZenithCameraAutoStart), once per appearance.
+    @AppStorage(DefaultsKey.notchCameraAutoStart) private var autoStart = true
+    @State private var autoStartAttempted = false
+    private var startsByItself: Bool {
+        ZenithCameraAutoStart.startsOnAppear(isOn: autoStart, attempted: autoStartAttempted)
+    }
 
     var body: some View {
         Group {
-            if service.isEmbeddedPresented {
+            // Zenith fork: a page about to start its mirror is already the
+            // mirror's dark page, so "Open camera" never flashes first.
+            if service.isEmbeddedPresented || startsByItself {
                 // The preview takes the whole page; its camera picker and stop
                 // button sit in the island's top row, clear of the image.
-                CameraPreviewView(size: NotchLayout.cameraPreviewSize(in: size), showsCameraMenu: false)
+                CameraPreviewView(size: NotchLayout.cameraPreviewSize(in: size), showsCameraMenu: false,
+                                  revealsGently: true) // Zenith fork
             } else {
                 HStack(spacing: 16) {
                     Image(systemName: "web.camera").font(.system(size: 30, weight: .light))
@@ -33,7 +43,15 @@ struct NotchCameraView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onDisappear { service.hideEmbedded() }
+        .onAppear { // Zenith fork
+            guard startsByItself else { return }
+            autoStartAttempted = true
+            service.showEmbedded()
+        }
+        .onDisappear {
+            service.hideEmbedded()
+            autoStartAttempted = false // Zenith fork: the next visit starts it again
+        }
     }
 }
 
