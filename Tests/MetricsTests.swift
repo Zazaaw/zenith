@@ -269,6 +269,7 @@ struct MetricsTests {
             ("photo-actions", { PhotoActionsTests.run(suite) }),
             ("notices", { ZenithNoticeTests.run(suite) }),
             ("reply", { ReplyTests.run(suite) }),
+            ("card-import", { CardImportTests.run(suite) }),
         ]
         var selected = Set<String>()
         var listOnly = false
