@@ -2216,6 +2216,103 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     output (dengan dan tanpa fitur Mixer), wallpaper (dengan dan tanpa fitur Wallpaper), notice kapsul (siap/masalah,
     notch dan capsule), widget Home (spinner, Reduce Motion), baris Command Bar, shortcut global setelah merekam
     shortcut lain.
+- **Teleprompter di bawah kamera (branch `feat/teleprompter`):** Faiz merekam tutorial dan klip talking-head
+  untuk studionya; naskahnya dibaca tepat di bawah kamera supaya mata tetap dekat lensa. Kode di
+  `Services/Prompter/PrompterSupport.swift` (murni, ikut `TEST_SOURCES`: setelan, paragraf dan hitungan kata,
+  estimasi layout dan kecepatan, lompat paragraf, sisa waktu, jam gulir, state machine voice pace, tombol, format,
+  geometri island, penyimpanan naskah), `Services/Prompter/PrompterService.swift` (naskah, satu sesi, countdown,
+  shortcut global, meter mikrofon `PrompterVoiceMonitor`), `UI/Notch/PrompterPage.swift` (halaman island dan pembaca)
+  dan `UI/Notch/PrompterSettings.swift`. Teks di `ZenithStrings.prompter` (15 bahasa, apostrof lengkung, tanpa em
+  dash; disisipkan setelah blok Camera). Test di `Tests/PrompterTests.swift` (suite `prompter`).
+  - **Naskah:** tiap naskah satu file `<container>/Prompter/<uuid>.md` (atau `.txt` untuk hasil import teks), ditulis
+    owner-only lewat `PrivateFileStore`; daftarnya (`id`, nama, format, waktu ubah) JSON
+    `{"version":1,"scripts":[…]}` di kunci terdaftar `notchPrompterScripts`, jadi daftar ikut backup tapi isinya
+    tidak (di Mac lain entri tetap ada dan isinya kosong). Naskah terakhir yang dipilih `notchPrompterLastScript`
+    (tidak terdaftar, tidak ikut backup). Sumber: tulis/tempel di halaman island atau di Settings (disimpan 0,6 dtk
+    setelah berhenti mengetik), import `.txt`/`.md`/`.markdown` (UTF-8 dengan/tanpa BOM atau UTF-16 dengan BOM,
+    maks. 4 MB, file biner ditolak, nama dari nama file), atau "New from Scratchpad" (pad yang sedang dipilih, nama
+    pad jadi nama naskah). Rename dan Delete (dengan konfirmasi) di Settings.
+  - **Teks:** paragraf dipisah baris kosong; baris tunggal tetap jadi baris baru. Heading Markdown (`# `) tampil tebal
+    dan sedikit redup tanpa tanda `#`; `**`, `__` dan backtick dibuang. Hitungan kata: token berhuruf/angka di antara
+    spasi, dan tiap karakter Jepang/Tionghoa dihitung satu kata.
+  - **Mode prompting dan ukuran island:** tidak ada frame jendela yang diubah manual. Selama sesi jalan,
+    `NotchService.expandedGeometry` (kait `// Zenith fork`) memberi `NotchGeometry.zenithPrompter`
+    (`ZenithPrompterIslandGeometry`: lebar body dan tinggi area baca), `pageTop = .none` dan tanpa tombol galeri.
+    `expandedWidth` memakai lebar itu di semua layout (juga custom), `expandedSize` memakai tinggi itu untuk
+    `.prompter` dan tidak memotongnya ke tinggi custom; batas tinggi layar tetap. Lebar 360–520 (default 420) +
+    flare bahu, tinggi area baca 200–640 (default 340). Karena `pageTop` `.none`, island tanpa baris atas saat lebar
+    tidak cukup untuk membungkus kamera: area baca mulai 10 pt di bawah kamera (`safeContentTop`), panduan baca di
+    sepertiga atas. Island berubah ukuran lewat `refreshPresentation(transitionContent: .replace)` (spring siluet +
+    blur morph milik host; Reduce Motion: crossfade). Pil tab dan tombol mengambang disembunyikan selama prompting.
+    NotchService membaca semua ini lewat `ZenithPrompterIsland` (di file Support), bukan `PrompterService`, karena
+    potongan NotchService ikut dikompilasi ke fixture test.
+  - **Pembaca:** teks putih (SF Pro semibold, 18–48 pt, line spacing 1,0–2,0×, rata tengah atau kiri) di atas kartu
+    hitam radius 20 (konsentris), pita panduan putih 7% (14% dengan Increase Contrast) dengan dua tanda kecil warna
+    modul di sepertiga atas, fade atas (teks yang sudah dibaca meredup ke 40% lalu hilang) dan fade bawah, mirror
+    horizontal opsional (`scaleEffect(x: -1)` pada teks, countdown ikut dibalik; kontrol tidak). Countdown 3-2-1
+    (angka 64 pt rounded, morph blur per angka, teks di belakang 35%); Space saat countdown langsung mulai. Akhir
+    naskah: berhenti sendiri, "End of script"; Space mulai lagi dari atas. Klik di area baca = play/pause.
+  - **Gulir (120 Hz):** `PrompterClock` adalah fungsi waktu: anchor offset + (t − anchor) × kecepatan, plus glide
+    ease-out 0,38 dtk untuk lompatan. Kolom teks digeser `.offset(y:)` di dalam `TimelineView(.animation)` yang
+    membaca offset untuk tanggal frame tiap refresh display (ProMotion 120 Hz), jadi tidak ada langkah. Kolomnya
+    `Equatable` sehingga tiap frame hanya transform yang berubah, tanpa layout ulang. Timeline di-`paused` saat tidak
+    bergerak (pause, countdown, menunggu suara) supaya tidak membakar CPU saat merekam. Kecepatan = jarak baris
+    pertama ke baris terakhir di garis panduan ÷ (kata ÷ WPM), jadi sisa waktu = sisa jarak ÷ kecepatan. Sebelum
+    tergambar dipakai estimasi (`PrompterLayout.estimate`: lebar rata-rata 0,55 em Latin / 1 em CJK, wrap per kata);
+    setelah tergambar, tiap paragraf melaporkan frame-nya (`onGeometryChange` di coordinate space kolom) dan
+    timeline diganti hasil ukur, posisi dipertahankan di paragraf yang sama (`translate`). Ganti ukuran teks juga
+    memakai translate.
+  - **Kontrol:** Space play/pause, ↑/↓ kecepatan ±10 WPM (60–260, default 140), ←/→ lompat ke awal paragraf
+    ini/sebelumnya atau ke paragraf berikutnya (glide; Reduce Motion: langsung), +/− (baris angka atau keypad)
+    ukuran teks ±2, Esc keluar ke halaman naskah. Tombol dengan ⌘/⌃/⌥ tetap milik island (⌘K, ⌥⌘ modul). Kait di
+    local key monitor NotchService, sebelum penanganan Esc/galeri. Footer: garis progres warna modul, tombol
+    play/pause, WPM mono, sisa waktu mono (`1:23 left`), mirror, dan ✕. Kecepatan dan ukuran terakhir disimpan
+    untuk sesi berikutnya.
+  - **Island tetap terbuka:** `keepsSurfaceOnClick` ditambah `ZenithPrompterIsland.holdsIsland` (selama sesi, dan
+    selama dialog import dari island terbuka), jadi klik di app lain (OBS, misalnya), pointer keluar, atau app lain
+    aktif tidak menutupnya. Keyboard: `open(.prompter)` atau `presentationWindow?.makeKey()` seperti Scratchpad.
+    Pindah modul, membuka galeri, atau island ditutup mengakhiri sesi.
+  - **Voice pace (opsional, default mati):** hanya level mikrofon lewat tap input `AVAudioEngine` (RMS → dBFS per
+    buffer 2048 frame), tanpa speech recognition, tanpa buffer yang disimpan. Lantai sunyi diambil dari bacaan
+    pertama (saat countdown), turun dengan bacaan yang lebih sunyi, naik pelan hanya dari bacaan yang bukan suara;
+    suara = ≥ lantai + 12 dB (minimal −55 dBFS, lantai maks. −45). 1,5 dtk tanpa suara menahan gulir, kata berikutnya
+    melepasnya. Izin mikrofon hanya diminta saat saklar dinyalakan di Settings; tanpa izin, sesi tetap jalan tanpa
+    voice pace dan Settings menampilkan "Open System Settings…". Engine hanya jalan selama sesi.
+  - **Entry:** modul `NotchModule.prompter` ("Prompter", ⌥⌘X, glyph `scroll`/`scroll.fill`, warna lavender
+    `#C4B5FD` = violet 300). Halaman saat diam: editor naskah terpilih (`PlainTextEditor`, lembar island), menu naskah
+    di kiri baris atas (daftar, New Script, Import Text File…, New from Scratchpad), Start di kanan, perkiraan durasi
+    dan WPM mono di bawah. Shortcut global start/stop naskah terakhir: `notchPrompterShortcut` (default kosong),
+    `QuickToolHotkey` id 1950, didaftar ulang setelah merekam shortcut lewat `.zenithShortcutCaptureEnded`; stop dari
+    shortcut menutup island.
+  - **Settings:** opsi section Prompter di Dynamic Island → Content: daftar naskah + New/Import/From Scratchpad, nama
+    (rename saat Return/fokus pindah), Start, Delete, editor; Reading: speed, text size, line spacing, alignment,
+    panel width/height; saklar Mirror, Reading guide, Pause when I stop talking (semua `ZenithSwitchRow`, tanpa
+    `SettingsRow`); perekam shortcut. Kunci terdaftar (ikut backup): `notchPrompterScripts`, `…Speed`, `…TextSize`,
+    `…LineSpacing`, `…Alignment`, `…Mirror`, `…Guide` (nyala), `…VoicePaced` (mati), `…Width`, `…Height`,
+    `…Shortcut`.
+  - Edit di file upstream bertanda `// Zenith fork`: `NotchSupport` (case, simbol, shortcut, ketersediaan,
+    `zenithPrompter`, lebar, tinggi), `NotchService` (geometri, `keepsSurfaceOnClick`, key monitor, pil/tombol
+    mengambang), `NotchView` (halaman, judul), `NotchContentEditor`, `NotchEditorStrings`, `NotchSettings`,
+    `ZenithTabBarSettings`, `AppDelegate`, `Defaults`, `build.sh` (`TEST_SOURCES`), `Tests/MetricsTests.swift` (suite).
+    File fork yang ikut berubah: `ZenithIslandPalette`, `ZenithAppIcon`, `ZenithStrings`. Test diubah: `NotchTests`
+    urutan modul (+ `.prompter`).
+  - **Test (`prompter`):** paragraf/heading/emphasis, hitungan kata (CJK), kecepatan dari estimasi (angka tangan:
+    20 kata 4 huruf di 30 pt / 300 pt = 7 baris, 324 pt dalam 10 dtk di 120 WPM; lebih lebar lebih lambat, lebih besar
+    lebih cepat), target lompat paragraf, sisa waktu dan format jam, translate antar-layout, jam (jalan, ganti
+    kecepatan, pause, akhir, glide, Reduce Motion, relayout), voice pace dengan level palsu dan jam palsu (jeda < 1,5
+    dtk tidak menahan, ≥ 1,5 dtk menahan, kata berikutnya melepas, dengung ruangan bukan suara, bicara panjang tetap
+    suara), tombol, penyimpanan di container sementara + suite `com.vorssaint.tests.prompter` (create/rename/save/
+    delete, mode file 0600, file hilang, daftar rusak, id ganda, import Markdown dengan BOM, UTF-16, biner/jenis
+    lain/folder ditolak), registrasi + backup, clamp setelan, ukuran island (lebar dan tinggi melewati custom, batas
+    layar), keunikan shortcut/warna/glyph modul, teks 15 bahasa.
+  - **Belum diverifikasi di Mac:** app UI tidak dijalankan, mikrofon tidak dinyalakan. Perlu dicek saat merekam:
+    kehalusan gulir di 120 Hz (dan di layar 60 Hz), island tumbuh ke bawah dari notch dan kembali (spring + blur), posisi
+    area baca terhadap lensa, countdown, pita panduan dan fade, mirror di rig beam splitter, Space/panah/+−/Esc dengan
+    island di-hover vs dibuka dari shortcut, island tetap terbuka saat klik OBS/QuickTime, voice pace di ruangan
+    sungguhan (ambang −55/+12 dB), lompat paragraf tepat di awal paragraf setelah diukur, ukuran ekstrem (48 pt di
+    360 pt), island kaca, Reduce Motion, dan Settings (editor, rename, import, shortcut). Prompt izin mikrofon masih
+    memakai `NSMicrophoneUsageDescription` lama (menyebut rekaman layar); belum diubah karena menyentuh Info.plist dan 14
+    `InfoPlist.strings` upstream.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
