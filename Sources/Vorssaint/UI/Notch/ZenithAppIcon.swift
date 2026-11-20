@@ -176,6 +176,7 @@ extension NotchModule {
         case .wakatime: return "chevron.left.forwardslash.chevron.right"
         case .vercel: return "triangle.fill"
         case .github: return "arrow.triangle.branch"
+        case .cardImport: return "sdcard.fill"
         }
     }
 }
