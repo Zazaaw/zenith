@@ -264,6 +264,7 @@ struct MetricsTests {
             ("vercel", { VercelTests.run(suite) }),
             ("gh", { GitHubTests.run(suite) }),
             ("command-activity", { CommandActivityTests.run(suite) }),
+            ("claude-hooks", { ClaudeHooksTests.run(suite) }),
             ("photo-actions", { PhotoActionsTests.run(suite) }),
         ]
         var selected = Set<String>()

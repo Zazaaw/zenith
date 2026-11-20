@@ -956,6 +956,10 @@ enum DefaultsKey {
     static let notchAgentsLimitThreshold = "notchAgentsLimitThreshold"
     static let notchAgentsDailyBudget = "notchAgentsDailyBudget"
     static let notchAgentsPriceUpdates = "notchAgentsPriceUpdates"
+    // Zenith fork: Claude Code's hooks followed live (ClaudeHooksService). A soft sound when a
+    // session needs the person; when the hook last wrote, unregistered so it stays out of backups.
+    static let notchAgentsClaudeSound = "notchAgentsClaudeSound"
+    static let notchAgentsClaudeLastEvent = "notchAgentsClaudeLastEvent"
     static let notchEnabled = "notchEnabled"
     static let notchDisplay = "notchDisplay"
     // How the island looks on a display without a camera housing.
@@ -1582,6 +1586,7 @@ enum Defaults {
         DefaultsKey.notchAgentsLimitThreshold: NotchAgentSupport.defaultLimitThreshold,
         DefaultsKey.notchAgentsDailyBudget: 0.0,
         DefaultsKey.notchAgentsPriceUpdates: true,
+        DefaultsKey.notchAgentsClaudeSound: true, // Zenith fork
         DefaultsKey.notchLyricsEnabled: true,
         DefaultsKey.notchLyricsOnline: false,
         DefaultsKey.notchBrowserCovers: false,
