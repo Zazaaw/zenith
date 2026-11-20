@@ -172,7 +172,7 @@ struct NotchPagePreview: View {
         case .agents:
             // Off, nothing reads the logs, so the page would wait forever.
             if NotchAgentSupport.isEnabled() {
-                NotchAgentsView(size: size)
+                NotchAgentsLivePage(size: size) // Zenith fork
             } else {
                 NotchEmptyView(symbol: "sparkles", message: FeatureStrings.notchEditor(l10n.language).agentsSummary)
             }

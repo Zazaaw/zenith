@@ -604,7 +604,7 @@ struct NotchView: View {
             // here would replace.
             case .tools: QuickLauncherView(notchSize: pageSize)
             case .scratchpad: NotchScratchpadView(service: service)
-            case .agents: NotchAgentsView(size: pageSize)
+            case .agents: NotchAgentsLivePage(size: pageSize) // Zenith fork: Progress, Usage and Stats
             case .watch: NotchWatchView(size: pageSize)
             case .wakatime: NotchWakaTimeView(size: pageSize)
             case .vercel: NotchVercelView(size: pageSize)

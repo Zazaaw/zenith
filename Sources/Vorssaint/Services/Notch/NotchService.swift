@@ -553,7 +553,8 @@ final class NotchService: ObservableObject {
     }
 
     var hasAgentActivity: Bool {
-        NotchAgentSupport.showsLiveActivity() && !AgentUsageService.shared.snapshot.live.isEmpty
+        NotchAgentSupport.showsLiveActivity() && (!AgentUsageService.shared.snapshot.live.isEmpty
+            || (ClaudeHooksService.shared.strip != nil && !geometry.floats)) // Zenith fork: a session that needs you
     }
 
     var hasCalendarActivity: Bool {
@@ -709,7 +710,7 @@ final class NotchService: ObservableObject {
         case .downloads:
             let name = NotchDownloadService.shared.items.first { $0.active && !$0.completed }?.name
             return geometry.compactDownloadGeometry(wing: NotchDownloadSupport.compactWing(for: name, in: geometry))
-        case .agents: return geometry.compactAgentGeometry(wing: agentStripWing(in: geometry))
+        case .agents: return agentStripGeometry(in: geometry) // Zenith fork
         case .watch: return geometry.compactWatchGeometry(wing: watchStripWing(in: geometry))
         case .calendar:
             return geometry.compactCalendarGeometry(wing: calendarStripWing(for: companion, in: geometry),
@@ -838,6 +839,16 @@ final class NotchService: ObservableObject {
             ]).width.rounded(.up)
     }
 
+    /// Zenith fork: a Claude Code session that needs you, or just finished,
+    /// takes the watch's wider wings for its words; otherwise the agents' own.
+    private func agentStripGeometry(in geometry: NotchGeometry) -> NotchGeometry {
+        if let hook = ClaudeHooksService.shared.strip, !geometry.floats {
+            return geometry.compactWatchGeometry(wing: NotchAgentsLiveStripLayout.stripWing(
+                hook, language: L10n.shared.language, in: geometry))
+        }
+        return geometry.compactAgentGeometry(wing: agentStripWing(in: geometry))
+    }
+
     /// The wider of the two sides, the reading or the working agents' marks,
     /// with the clearance from the silhouette's curve that the strip keeps
     /// and air beside the camera.
@@ -935,6 +946,8 @@ final class NotchService: ObservableObject {
     /// The AI page is as tall as the cards it shows; nil while the logs are
     /// first read, when the page fills the island with its progress.
     private func agentsContentHeight(width: CGFloat) -> CGFloat? {
+        // Zenith fork: Progress and Usage keep one height; Stats adds its header to the cards'.
+        if let fixed = NotchAgentsPageLayout.fixedHeight() { return fixed }
         let usage = AgentUsageService.shared.snapshot
         let enabled = NotchAgentSupport.providers()
         // Added Codex accounts have cards before, or without, any log.
@@ -945,10 +958,10 @@ final class NotchService: ObservableObject {
         let providers = enabled.filter { usage.seen.contains($0) || ($0 == .codex && !accounts.isEmpty)
             || ($0 == .claude && claudeAccount != nil) }
         guard !providers.isEmpty else { return 0 }
-        return NotchAgentSupport.contentHeight(NotchAgentSupport.rows(
+        return NotchAgentsPageLayout.statsHeight(cards: NotchAgentSupport.contentHeight(NotchAgentSupport.rows( // Zenith fork
             NotchAgentSupport.tiles(cards: NotchAgentSupport.cards(), providers: providers, codexAccounts: accounts,
                                     claudeAccount: claudeAccount),
-            width: width))
+            width: width)))
     }
     var expandedGeometry: NotchGeometry {
         var result = geometry
@@ -1236,6 +1249,7 @@ final class NotchService: ObservableObject {
         VercelService.shared.syncWithPreferences()
         GitHubService.shared.syncWithPreferences()
         CommandActivityService.shared.syncWithPreferences() // Zenith fork: watches only while its switch is on.
+        ClaudeHooksService.shared.syncWithPreferences() // Zenith fork: Claude Code's hooks, while Claude shows.
         followsPointer = displayPreference == .pointer || displayPreference == .all
         showsOnAllDisplays = displayPreference == .all
         updateFullscreenDisplays()
@@ -1327,6 +1341,7 @@ final class NotchService: ObservableObject {
         NotchFileToolsService.shared.stop()
         NotchPhotoActionsService.shared.stop() // Zenith fork
         AgentUsageService.shared.stop()
+        ClaudeHooksService.shared.stop() // Zenith fork
         guard running else { return }
         running = false
         NotchTimerService.shared.stop()
@@ -4398,6 +4413,15 @@ final class NotchService: ObservableObject {
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] _ in
                     self?.syncMenuSpaceMonitoring()
+                    self?.objectWillChange.send()
+                    self?.refreshPresentation()
+                }.store(in: &subscriptions)
+            // Zenith fork: a Claude Code session needing you, or just done,
+            // changes the strip; a tab changes the page's height.
+            ClaudeHooksService.shared.$strip.map { _ in () }.dropFirst()
+                .merge(with: NotchAgentsPageState.shared.$tab.removeDuplicates().map { _ in () }.dropFirst())
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
                     self?.objectWillChange.send()
                     self?.refreshPresentation()
                 }.store(in: &subscriptions)
