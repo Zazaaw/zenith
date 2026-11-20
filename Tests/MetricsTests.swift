@@ -271,6 +271,7 @@ struct MetricsTests {
             ("watermark", { WatermarkTests.run(suite) }),
             ("design-overlay", { DesignOverlayTests.run(suite) }),
             ("screenshot-beautify", { ScreenshotBeautifyTests.run(suite) }),
+            ("menubar-hider", { MenuBarHiderTests.run(suite) }),
             ("notices", { ZenithNoticeTests.run(suite) }),
             ("reply", { ReplyTests.run(suite) }),
             ("home-layout", { HomeLayoutTests.run(suite) }),

@@ -295,6 +295,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Notch/NotchWatermarkSupport.swift
         Sources/Vorssaint/Services/Notch/NotchWatermarkRenderer.swift
         Sources/Vorssaint/Services/DesignOverlay/DesignOverlaySupport.swift
+        Sources/Vorssaint/Services/MenuBarHider/MenuBarHiderSupport.swift
         Sources/Vorssaint/Services/WakaTime/WakaTimeSupport.swift
         Sources/Vorssaint/Services/WakaTime/WakaTimeStats.swift
         Sources/Vorssaint/Services/ZenithSecretStore.swift

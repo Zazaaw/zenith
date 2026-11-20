@@ -155,6 +155,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
             guard StatusItemAnchorSupport.isTrustworthyStatusFrame(frame) else { return nil }
             return frame
         }
+        // Zenith fork: the menu bar hider seeds its dividers just left of this icon and never hides it.
+        MenuBarHiderService.shared.start { [weak self] in
+            guard let item = self?.statusController?.statusItem, item.isVisible,
+                  let frame = item.button?.window?.frame,
+                  StatusItemAnchorSupport.isTrustworthyStatusFrame(frame) else { return nil }
+            return frame
+        }
 
         setUpPopover()
         bindManagers()
@@ -333,6 +340,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
     func applicationWillTerminate(_ notification: Notification) {
         isTerminating = true
         CommandBarService.shared.restoreBorrowedInputSource()
+        MenuBarHiderService.shared.prepareForTermination() // Zenith fork
         if AppFeature.notch.isAvailable { NotchService.shared.stop(restoreCapture: false) }
         // Quitting properly means the start worked, whenever it happened.
         endStartupWatch()

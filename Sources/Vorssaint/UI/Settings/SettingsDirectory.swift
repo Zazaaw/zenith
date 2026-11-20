@@ -206,7 +206,11 @@ enum SettingsDirectory {
                 .general, sectionAnchor: .panelConfiguration),
             title: s.menuBarSection, icon: "menubar.rectangle",
             keywords: [s.showMenuBarIcon, FeatureStrings.generalSettings(language).menuBarIconTitle,
-                       FeatureStrings.generalSettings(language).iconMissingTitle, "SF Symbols"]))
+                       FeatureStrings.generalSettings(language).iconMissingTitle, "SF Symbols",
+                       // Zenith fork: the menu bar hider's section on the same page.
+                       ZenithStrings.menuBarHider(language).title, ZenithStrings.menuBarHider(language).enable,
+                       ZenithStrings.menuBarHider(language).alwaysHidden, ZenithStrings.menuBarHider(language).hover,
+                       ZenithStrings.menuBarHider(language).notch, ZenithStrings.menuBarHider(language).shortcut]))
         items.append(SettingsSearchSupport.scrollingScreenshotItem(language: language))
         let alerts = FeatureStrings.monitorAlerts(language)
         items.append(SettingsSearchItem(

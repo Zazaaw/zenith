@@ -207,6 +207,9 @@ struct GlobalShortcut: Equatable, Hashable {
     // Zenith fork: O for overlay, the design QA overlay.
     static let designOverlayDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_O),
                                                      modifiers: [.option, .command])
+    // Zenith fork: B for bar, the menu bar hider's toggle (off until switched on).
+    static let menuBarHiderDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_B),
+                                                    modifiers: [.control, .option, .command])
     // V for Vorssaint: the quick launcher's own combination.
     static let quickLauncherDefault = GlobalShortcut(keyCode: Int64(kVK_ANSI_V),
                                                      modifiers: [.control, .command])
@@ -744,6 +747,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
     case pointerNextDisplay
     case notch
     case designOverlay // Zenith fork
+    case menuBarHider // Zenith fork
 
     var id: String { storageKey }
 
@@ -784,6 +788,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .pointerNextDisplay: return DefaultsKey.pointerDisplayShortcut
         case .notch: return DefaultsKey.notchShortcut
         case .designOverlay: return DefaultsKey.designOverlayShortcut // Zenith fork
+        case .menuBarHider: return DefaultsKey.menuBarHiderShortcut // Zenith fork
         }
     }
 
@@ -824,6 +829,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .pointerNextDisplay: return .pointerNextDisplayDefault
         case .notch: return .notchDefault
         case .designOverlay: return .designOverlayDefault // Zenith fork
+        case .menuBarHider: return .menuBarHiderDefault // Zenith fork
         }
     }
 
@@ -908,6 +914,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .pointerNextDisplay: return PointerDisplayStrings.localized(L10n.shared.language).title
         case .notch: return FeatureStrings.notch(L10n.shared.language).title
         case .designOverlay: return ZenithStrings.designOverlay(L10n.shared.language).title // Zenith fork
+        case .menuBarHider: return ZenithStrings.menuBarHider(L10n.shared.language).shortcut // Zenith fork
         }
     }
 
@@ -973,6 +980,7 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .pointerNextDisplay: return [DefaultsKey.pointerDisplayEnabled]
         case .notch: return [DefaultsKey.notchEnabled, DefaultsKey.notchShortcutEnabled]
         case .designOverlay: return [DefaultsKey.designOverlayShortcutEnabled] // Zenith fork
+        case .menuBarHider: return [DefaultsKey.menuBarHiderEnabled, DefaultsKey.menuBarHiderShortcutEnabled] // Zenith fork
         }
     }
 
@@ -1008,6 +1016,8 @@ enum GlobalShortcutRole: CaseIterable, Identifiable {
         case .notch: return .notch
         // Zenith fork: the overlay's settings sit with the screenshot tool.
         case .designOverlay: return .screenshot
+        // Zenith fork: the menu bar hider has no hub entry; its shortcut lists with Quick Controls.
+        case .menuBarHider: return .quickToggles
         }
     }
 

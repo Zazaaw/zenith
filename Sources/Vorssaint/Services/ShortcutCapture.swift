@@ -41,5 +41,7 @@ enum ShortcutCapture {
         isCapturing = false
         AppSwitcher.shared.setCapturingShortcut(false)
         FeatureRuntime.shared.sync(GlobalShortcutRole.featuresToSilenceWhileRecording)
+        // Zenith fork: the menu bar hider has no hub feature to sync, so it hears this instead.
+        NotificationCenter.default.post(name: .zenithShortcutCaptureEnded, object: nil)
     }
 }
