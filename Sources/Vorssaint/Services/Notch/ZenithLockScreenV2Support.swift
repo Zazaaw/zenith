@@ -25,6 +25,11 @@ struct ZenithLockScreenV2Gates: Equatable {
     var fullJobs = false
     var fullCoverColor = false
     var fullLoginHint = false
+    /// The full layer's background, read with the rest: one colour or the
+    /// blurred cover, the blur's strength, and the colour picked in Settings.
+    var fullBackground = ZenithLockScreenFullBackground.fallback
+    var fullBlurRadius = ZenithLockScreenFullBlur.fallback
+    var fullCustomColor = ZenithLockScreenCustomColor.fallback
 
     /// `music` is the lock screen's own music gate; `lyricsAvailable` is
     /// whether the island's lyrics are on at all (`NotchLyricsSupport.isEnabled`).
@@ -45,6 +50,11 @@ struct ZenithLockScreenV2Gates: Equatable {
         gates.fullJobs = gates.full && on(.fullJobs)
         gates.fullCoverColor = gates.full && on(.fullCoverColor)
         gates.fullLoginHint = gates.full && on(.fullLoginHint)
+        if gates.full {
+            gates.fullBackground = ZenithLockScreenFullBackground.current(in: defaults)
+            gates.fullBlurRadius = ZenithLockScreenFullBlur.radius(in: defaults)
+            gates.fullCustomColor = ZenithLockScreenCustomColor.rgb(in: defaults)
+        }
         return gates
     }
 
@@ -129,8 +139,12 @@ struct ZenithLockScreenRGB: Equatable {
 /// that always reads on it.
 enum ZenithLockScreenPalette {
     struct Scheme: Equatable {
+        /// The colour behind everything; over a blurred cover, its average
+        /// once dimmed, which the spindle hole and the ink are measured by.
         let background: ZenithLockScreenRGB
         let ink: ZenithLockScreenRGB
+        /// How much black dims a blurred cover; 0 for a solid colour.
+        var dim: Double = 0
         var inkIsDark: Bool { ink == .darkInk }
         static let neutral = Scheme(background: .neutral, ink: .white)
     }
@@ -159,7 +173,13 @@ enum ZenithLockScreenPalette {
     /// reaches 4.5:1.
     static func scheme(cover: ZenithLockScreenRGB?) -> Scheme {
         guard let cover else { return .neutral }
-        var background = softened(cover)
+        return solid(softened(cover))
+    }
+
+    /// A solid colour as it is, such as the one picked in Settings, moved
+    /// only as far as its ink needs to reach 4.5:1.
+    static func solid(_ color: ZenithLockScreenRGB) -> Scheme {
+        var background = color
         let ink = ink(on: background)
         var hsb = background.hsb
         var steps = 0
@@ -169,6 +189,55 @@ enum ZenithLockScreenPalette {
             steps += 1
         }
         return Scheme(background: background, ink: ink)
+    }
+
+    /// A blurred cover starts under this much black, which keeps it calm.
+    static let baseDim = 0.28
+    static let maximumDim = 0.86
+
+    /// The ink over a blurred cover whose average colour is `average`,
+    /// judged on that average once dimmed. Where white ink would not reach
+    /// 4.5:1 the dim deepens rather than any colour changing.
+    static func blurred(average: ZenithLockScreenRGB) -> Scheme {
+        func dimmed(_ amount: Double) -> ZenithLockScreenRGB {
+            ZenithLockScreenRGB(red: average.red * (1 - amount), green: average.green * (1 - amount),
+                                blue: average.blue * (1 - amount))
+        }
+        var dim = baseDim
+        let ink = ink(on: dimmed(dim))
+        while dimmed(dim).contrast(with: ink) < minimumContrast, dim < maximumDim {
+            dim = min(maximumDim, dim + 0.02)
+        }
+        return Scheme(background: dimmed(dim), ink: ink, dim: dim)
+    }
+
+    /// The mean colour of an RGBA8 bitmap's readable pixels, unpremultiplied.
+    static func average(rgba pixels: [UInt8], count: Int) -> ZenithLockScreenRGB? {
+        guard count > 0, pixels.count >= count * 4 else { return nil }
+        var sum = (0.0, 0.0, 0.0), counted = 0.0
+        for index in 0..<count {
+            let offset = index * 4
+            let alpha = Double(pixels[offset + 3]) / 255
+            guard alpha >= 0.5 else { continue }
+            sum.0 += min(1, Double(pixels[offset]) / 255 / alpha)
+            sum.1 += min(1, Double(pixels[offset + 1]) / 255 / alpha)
+            sum.2 += min(1, Double(pixels[offset + 2]) / 255 / alpha)
+            counted += 1
+        }
+        guard counted > 0 else { return nil }
+        return ZenithLockScreenRGB(red: sum.0 / counted, green: sum.1 / counted, blue: sum.2 / counted)
+    }
+
+    /// The full layer's scheme for the background chosen. `cover` is the
+    /// cover's dominant colour and `blurredAverage` the blurred cover's mean,
+    /// when there is a cover. With no cover, the picked colour stands in.
+    static func scheme(for gates: ZenithLockScreenV2Gates, cover: ZenithLockScreenRGB?,
+                       blurredAverage: ZenithLockScreenRGB?) -> Scheme {
+        let picked = solid(ZenithLockScreenRGB(hex: gates.fullCustomColor))
+        switch gates.fullBackground {
+        case .blurredCover: return blurredAverage.map(blurred(average:)) ?? picked
+        case .solid: return gates.fullCoverColor ? cover.map { solid(softened($0)) } ?? picked : picked
+        }
     }
 
     /// The most common colour of an RGBA8 bitmap (premultiplied or not),
@@ -196,6 +265,21 @@ enum ZenithLockScreenPalette {
         guard let best = weights.indices.max(by: { weights[$0] < weights[$1] }), weights[best] > 0 else { return nil }
         let weight = weights[best]
         return ZenithLockScreenRGB(red: sums[best].0 / weight, green: sums[best].1 / weight, blue: sums[best].2 / weight)
+    }
+}
+
+/// The blurred cover behind the full layer is blurred once per song, on a
+/// small copy that is then scaled up to fill the screen.
+enum ZenithLockScreenBackdrop {
+    /// The small copy's side, in pixels.
+    static let side = 160
+    /// A blur of `points` on screen, in pixels of an `image` sized copy
+    /// filling `screen` (aspect fill).
+    static func imageRadius(points: Double, image: CGSize, screen: CGSize) -> Double {
+        guard points.isFinite, points > 0, image.width > 0, image.height > 0,
+              screen.width > 0, screen.height > 0 else { return 0 }
+        let fill = max(screen.width / image.width, screen.height / image.height)
+        return points / Double(fill)
     }
 }
 

@@ -3,6 +3,7 @@
 
 import AppKit
 import Combine
+import CoreImage
 import OpenDirectory
 import SwiftUI
 import SystemConfiguration
@@ -36,12 +37,20 @@ struct ZenithLockScreenAccount: Equatable {
     }
 }
 
+/// Zenith fork: the blurred cover behind the full layer, rendered once per
+/// song; a new `id` crossfades to it.
+struct ZenithLockScreenBackdropImage: Equatable {
+    let id: Int
+    let image: NSImage
+}
+
 /// Zenith fork: what the lock screen v2 shows, settled when the lock screen
 /// appears, and whether the full layer is up.
 final class ZenithLockScreenV2Model: ObservableObject {
     @Published var gates = ZenithLockScreenV2Gates()
     @Published var fullShown = false
     @Published var scheme = ZenithLockScreenPalette.Scheme.neutral
+    @Published var backdrop: ZenithLockScreenBackdropImage?
     @Published var account: ZenithLockScreenAccount?
     /// Whether the lyric's hover hint may still show, read as the lock screen appears.
     @Published private(set) var hintAvailable = false
@@ -84,6 +93,10 @@ final class ZenithLockScreenV2 {
     private var closeWork: DispatchWorkItem?
     private var lyricsShown = false
     private var accountRequest = 0
+    private var backdropRequest = 0
+    private var screenSize = CGSize.zero
+    private static let renderQueue = DispatchQueue(label: "com.vorssaint.lockscreen-v2.backdrop", qos: .utility)
+    private static let imageContext = CIContext(options: [.cacheIntermediates: false])
 
     init() {
         model.openFull = { [weak self] in self?.openFull() }
@@ -116,16 +129,16 @@ final class ZenithLockScreenV2 {
                 .sink { [weak self] _ in self?.checkFull() }
                 .store(in: &subscriptions)
         }
-        if gates.fullCoverColor {
+        screenSize = full?.frame.size ?? .zero
+        model.backdrop = nil
+        model.scheme = ZenithLockScreenPalette.scheme(for: gates, cover: nil, blurredAverage: nil)
+        let followsCover = gates.full && (gates.fullBackground == .blurredCover || gates.fullCoverColor)
+        if followsCover {
             music.$artwork
                 .receive(on: DispatchQueue.main)
-                .sink { [weak self] image in
-                    let scheme = ZenithLockScreenPalette.scheme(cover: image.flatMap(Self.dominantColor(of:)))
-                    if self?.model.scheme != scheme { self?.model.scheme = scheme }
-                }
+                .removeDuplicates { $0 === $1 }
+                .sink { [weak self] image in self?.coverChanged(image) }
                 .store(in: &subscriptions)
-        } else {
-            model.scheme = .neutral
         }
         if gates.fullAccount || gates.fullDevice { loadAccount() } else { model.account = nil }
     }
@@ -138,6 +151,8 @@ final class ZenithLockScreenV2 {
         closeWork?.cancel()
         closeWork = nil
         accountRequest += 1
+        backdropRequest += 1
+        model.backdrop = nil
         if lyricsShown {
             lyricsShown = false
             NotchLyricsService.shared.hide()
@@ -260,6 +275,79 @@ final class ZenithLockScreenV2 {
     }
 
     // MARK: Cover colour
+
+    private func coverChanged(_ image: NSImage?) {
+        let gates = model.gates
+        backdropRequest += 1
+        switch gates.fullBackground {
+        case .solid:
+            let scheme = ZenithLockScreenPalette.scheme(for: gates, cover: image.flatMap(Self.dominantColor(of:)),
+                                                        blurredAverage: nil)
+            if model.scheme != scheme { model.scheme = scheme }
+        case .blurredCover:
+            guard let image, let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+                model.backdrop = nil
+                model.scheme = ZenithLockScreenPalette.scheme(for: gates, cover: nil, blurredAverage: nil)
+                return
+            }
+            let request = backdropRequest
+            let radius = gates.fullBlurRadius
+            let screen = screenSize
+            // Blurred once per song, off the main thread, on a small copy.
+            Self.renderQueue.async { [weak self] in
+                let rendered = Self.blurredCover(cgImage, points: radius, screen: screen)
+                DispatchQueue.main.async {
+                    guard let self, self.backdropRequest == request else { return }
+                    guard let rendered else {
+                        self.model.backdrop = nil
+                        self.model.scheme = ZenithLockScreenPalette.scheme(for: gates, cover: nil, blurredAverage: nil)
+                        return
+                    }
+                    let size = NSSize(width: rendered.image.width, height: rendered.image.height)
+                    self.model.backdrop = ZenithLockScreenBackdropImage(id: request, image: NSImage(cgImage: rendered.image, size: size))
+                    self.model.scheme = ZenithLockScreenPalette.scheme(for: gates, cover: nil, blurredAverage: rendered.average)
+                }
+            }
+        }
+    }
+
+    /// The cover filled into a small square, Gaussian-blurred by what
+    /// `points` comes to once that square fills `screen`, with its mean colour.
+    static func blurredCover(_ cover: CGImage, points: Double,
+                             screen: CGSize) -> (image: CGImage, average: ZenithLockScreenRGB)? {
+        let side = ZenithLockScreenBackdrop.side
+        guard let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let small = CGContext(data: nil, width: side, height: side, bitsPerComponent: 8, bytesPerRow: side * 4,
+                                    space: space, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        // Aspect fill into the square, as the screen will fill with it.
+        let width = CGFloat(cover.width), height = CGFloat(cover.height)
+        guard width > 0, height > 0 else { return nil }
+        let scale = max(CGFloat(side) / width, CGFloat(side) / height)
+        small.interpolationQuality = .medium
+        small.draw(cover, in: CGRect(x: (CGFloat(side) - width * scale) / 2, y: (CGFloat(side) - height * scale) / 2,
+                                     width: width * scale, height: height * scale))
+        guard let copy = small.makeImage() else { return nil }
+        let radius = ZenithLockScreenBackdrop.imageRadius(points: points, image: CGSize(width: side, height: side),
+                                                          screen: screen)
+        let input = CIImage(cgImage: copy)
+        // Clamped first, so the edges blur into the cover, not into clear.
+        let blurred = input.clampedToExtent()
+            .applyingGaussianBlur(sigma: max(0.5, radius))
+            .cropped(to: input.extent)
+        guard let image = imageContext.createCGImage(blurred, from: input.extent, format: .RGBA8, colorSpace: space) else {
+            return nil
+        }
+        var pixels = [UInt8](repeating: 0, count: side * side * 4)
+        let read = pixels.withUnsafeMutableBytes { buffer -> Bool in
+            guard let context = CGContext(data: buffer.baseAddress, width: side, height: side, bitsPerComponent: 8,
+                                          bytesPerRow: side * 4, space: space,
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            context.draw(image, in: CGRect(x: 0, y: 0, width: side, height: side))
+            return true
+        }
+        guard read, let average = ZenithLockScreenPalette.average(rgba: pixels, count: side * side) else { return nil }
+        return (image, average)
+    }
 
     /// The cover drawn into 24 × 24 sRGB pixels, then its most common colour.
     static func dominantColor(of image: NSImage) -> ZenithLockScreenRGB? {

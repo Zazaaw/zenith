@@ -12,6 +12,7 @@ enum LockScreenV2Tests {
         gates(suite)
         luminance(suite)
         scheme(suite)
+        backgrounds(suite)
         dominant(suite)
         karaoke(suite)
         lyricWindow(suite)
@@ -128,6 +129,78 @@ enum LockScreenV2Tests {
                      && mid.background.hsb.brightness < softened.hsb.brightness
                      && abs(mid.background.hsb.hue - softened.hsb.hue) < 0.01,
                      "a mid blue too light for white ink is darkened, keeping its hue")
+    }
+
+    private static func backgrounds(_ suite: TestSuite) {
+        let name = "com.vorssaint.tests.lockscreen-v2-background"
+        let defaults = UserDefaults(suiteName: name)!
+        defaults.removePersistentDomain(forName: name)
+        defer { defaults.removePersistentDomain(forName: name) }
+        let standard = ZenithLockScreenV2Gates.resolve(music: true, lyricsAvailable: true, in: defaults)
+        suite.expect(standard.fullBackground == .solid && standard.fullBlurRadius == 40 && standard.fullCustomColor == 0x1C1C1E,
+                     "the full layer starts on a solid colour, a 40 point blur and #1C1C1E")
+        defaults.set("blurredCover", forKey: DefaultsKey.zenithLockFullBackground)
+        defaults.set(200.0, forKey: DefaultsKey.zenithLockFullBlurRadius)
+        defaults.set("#F5F5F4", forKey: DefaultsKey.zenithLockFullCustomColor)
+        let chosen = ZenithLockScreenV2Gates.resolve(music: true, lyricsAvailable: true, in: defaults)
+        suite.expect(chosen.fullBackground == .blurredCover && chosen.fullBlurRadius == 80 && chosen.fullCustomColor == 0xF5F5F4,
+                     "the background, the blur (kept within 10...80) and the picked colour are read at lock")
+
+        var gates = standard
+        let cover = ZenithLockScreenRGB(hex: 0xFFF3C4)
+        // Solid, cover colour on: the cover's colour, softened.
+        let fromCover = ZenithLockScreenPalette.scheme(for: gates, cover: cover, blurredAverage: nil)
+        suite.expect(fromCover == ZenithLockScreenPalette.scheme(cover: cover) && fromCover.inkIsDark && fromCover.dim == 0,
+                     "solid with the cover colour on follows the cover, with dark ink on a pale one")
+        suite.expect(ZenithLockScreenPalette.scheme(for: gates, cover: nil, blurredAverage: nil)
+                     == ZenithLockScreenPalette.Scheme(background: .neutral, ink: .white),
+                     "with no cover the picked colour stands in")
+        // Solid, cover colour off: the picked colour as it is.
+        gates.fullCoverColor = false
+        gates.fullCustomColor = 0xF5F5F4
+        let light = ZenithLockScreenPalette.scheme(for: gates, cover: cover, blurredAverage: nil)
+        suite.expect(light.background == ZenithLockScreenRGB(hex: 0xF5F5F4) && light.inkIsDark,
+                     "solid with the cover colour off keeps the picked light colour, with dark ink")
+        gates.fullCustomColor = 0x1C1C1E
+        suite.expect(ZenithLockScreenPalette.scheme(for: gates, cover: cover, blurredAverage: nil) == .neutral,
+                     "the default picked colour is #1C1C1E with white ink")
+        gates.fullCustomColor = 0x7A8FA0
+        let middling = ZenithLockScreenPalette.scheme(for: gates, cover: cover, blurredAverage: nil)
+        suite.expect(middling.ink == .white && middling.background.contrast(with: .white) >= 4.5
+                     && middling.background.relativeLuminance < ZenithLockScreenRGB(hex: 0x7A8FA0).relativeLuminance,
+                     "a picked colour too light for white ink is darkened just enough")
+        // Blurred cover: the ink comes from the dimmed average; the dim deepens for white ink.
+        gates.fullBackground = .blurredCover
+        let bright = ZenithLockScreenPalette.scheme(for: gates, cover: nil, blurredAverage: ZenithLockScreenRGB(red: 1, green: 1, blue: 0.98))
+        suite.expect(bright.inkIsDark && bright.dim == ZenithLockScreenPalette.baseDim
+                     && bright.background.contrast(with: bright.ink) >= 4.5,
+                     "a bright blurred cover keeps its light dim and takes dark ink")
+        let mid = ZenithLockScreenPalette.scheme(for: gates, cover: nil, blurredAverage: ZenithLockScreenRGB(red: 0.62, green: 0.74, blue: 0.82))
+        suite.expect(mid.ink == .white && mid.dim > ZenithLockScreenPalette.baseDim && mid.dim <= ZenithLockScreenPalette.maximumDim
+                     && mid.background.contrast(with: .white) >= 4.5,
+                     "a middling blurred cover is dimmed further until white ink reads at 4.5:1")
+        let dark = ZenithLockScreenPalette.scheme(for: gates, cover: nil, blurredAverage: ZenithLockScreenRGB(hex: 0x202830))
+        suite.expect(dark.ink == .white && dark.dim == ZenithLockScreenPalette.baseDim,
+                     "a dark blurred cover needs no more than the light dim")
+        var failing = 0
+        for value in stride(from: 0.0, through: 1.0, by: 0.05) {
+            let scheme = ZenithLockScreenPalette.blurred(average: ZenithLockScreenRGB(red: value, green: value * 0.9, blue: 1 - value))
+            if scheme.background.contrast(with: scheme.ink) < 4.5 - 1e-9 { failing += 1 }
+        }
+        suite.expect(failing == 0, "every blurred average reaches 4.5:1 with its ink")
+        suite.expect(ZenithLockScreenPalette.scheme(for: gates, cover: cover, blurredAverage: nil)
+                     == ZenithLockScreenPalette.solid(ZenithLockScreenRGB(hex: 0x7A8FA0)),
+                     "a blurred cover with no artwork falls back to the picked colour")
+
+        suite.expectClose(ZenithLockScreenBackdrop.imageRadius(points: 40, image: CGSize(width: 160, height: 160),
+                                                               screen: CGSize(width: 1800, height: 1169)), 40 * 160 / 1800.0,
+                          "the blur is sized for the copy that fills the screen")
+        suite.expectClose(ZenithLockScreenBackdrop.imageRadius(points: 40, image: CGSize(width: 160, height: 160), screen: .zero), 0,
+                          "no screen, no blur")
+        let average = ZenithLockScreenPalette.average(rgba: [255, 0, 0, 255, 0, 0, 255, 255, 9, 9, 9, 0], count: 3)
+        suite.expect(average.map { abs($0.red - 0.5) < 1e-9 && abs($0.blue - 0.5) < 1e-9 && $0.green == 0 } == true
+                     && ZenithLockScreenPalette.average(rgba: [], count: 0) == nil,
+                     "the average skips clear pixels")
     }
 
     private static func dominant(_ suite: TestSuite) {

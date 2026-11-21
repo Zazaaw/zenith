@@ -32,7 +32,7 @@ struct ZenithLockScreenFullView: View {
         let scheme = zenith.scheme
         let ink = scheme.ink.color
         ZStack(alignment: .topLeading) {
-            scheme.background.color
+            backdrop(scheme)
             if live {
                 if zenith.gates.fullClock {
                     clock(layout, ink: ink)
@@ -69,6 +69,28 @@ struct ZenithLockScreenFullView: View {
             try? await Task.sleep(nanoseconds: 450_000_000)
             if !Task.isCancelled, !zenith.fullShown { live = false }
         }
+    }
+
+    /// One solid colour, or the cover blurred to fill the screen under a
+    /// light dim, crossfading as the song changes.
+    private func backdrop(_ scheme: ZenithLockScreenPalette.Scheme) -> some View {
+        ZStack {
+            scheme.background.color
+            if zenith.gates.fullBackground == .blurredCover, let backdrop = zenith.backdrop {
+                Image(nsImage: backdrop.image)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: size.width, height: size.height)
+                    .clipped()
+                    .overlay(Color.black.opacity(scheme.dim))
+                    .id(backdrop.id)
+                    .transition(.opacity)
+            }
+        }
+        .frame(width: size.width, height: size.height)
+        .animation(reduceMotion ? .easeInOut(duration: 0.3) : .easeInOut(duration: 0.6), value: zenith.backdrop?.id)
+        .accessibilityHidden(true)
     }
 
     // MARK: Corners

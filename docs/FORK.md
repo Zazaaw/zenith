@@ -378,9 +378,15 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     bertimestamp tidak ada yang tampil dan lapisan penuh tidak ditawarkan. lrclib hanya memberi waktu
     per baris, jadi karaoke dibagi rata per karakter (paling lama 0,18 dtk per karakter, minimal 1,5 dtk).
   - **Penuh:** panel layar penuh di Space lock screen yang sama, dibuat saat lock screen muncul tapi
-    baru di-order saat dibuka; island gembok tetap di atasnya; fade 0,35 dtk. Latar dari warna dominan
-    cover (saturasi maks 0,42, kecerahan 0,16–0,80), mati = #1C1C1E; tinta #1C1917 kalau luminans > 0,4,
-    selain itu putih; kalau kontras < 4,5:1 latar digeser lebih gelap/terang. Keluar saat pointer
+    baru di-order saat dibuka; island gembok tetap di atasnya; fade 0,35 dtk. Latar
+    (`ZenithLockScreenFullBackground`): `.solid` dengan `fullCoverColor` nyala = warna dominan cover
+    (saturasi maks 0,42, kecerahan 0,16–0,80), mati = warna pilihan (`ZenithLockScreenCustomColor`,
+    default #1C1C1E); `.blurredCover` = cover aspect-fill selayar, di-blur Gaussian sekali per lagu
+    (CoreImage pada salinan 160 px, radius `ZenithLockScreenFullBlur` 10–80 pt dikonversi ke piksel
+    salinan, lalu di-scale), diredupkan hitam 28%, crossfade 0,6 dtk saat lagu ganti. Tanpa cover,
+    warna pilihan yang dipakai. Tinta #1C1917 kalau luminans > 0,4, selain itu putih; kalau kontras
+    < 4,5:1 latar solid digeser lebih gelap/terang, dan untuk cover blur yang dinaikkan peredupnya
+    (maks 86%), diukur dari rata-rata warna gambar blur setelah diredupkan. Keluar saat pointer
     bergerak > 8 pt (dicek 4×/detik), klik di luar tombol, musik berhenti > 1,2 dtk, atau tombol
     keyboard kalau event-nya sampai. Panel tidak pernah jadi key, jadi password tetap ke loginwindow.
     Foto akun dari Open Directory (`JPEGPhoto`, atau path `Picture`), fallback inisial; nama dari
