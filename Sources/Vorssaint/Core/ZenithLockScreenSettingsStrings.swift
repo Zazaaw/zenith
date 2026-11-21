@@ -6,8 +6,6 @@
 // screen's own work and this page never touch the same lines.
 
 struct ZenithLockScreenSettingsStrings {
-    /// Under the page's title.
-    let subtitle: String
     /// The section of what shows over the wallpaper.
     let overWallpaper: String
     let jobs: String
@@ -62,8 +60,7 @@ extension ZenithStrings {
     static func lockScreenSettings(_ language: AppLanguage) -> ZenithLockScreenSettingsStrings {
         switch language {
         case .enUS:
-            return .init(subtitle: "What shows over the wallpaper while your Mac is locked, the terminal readout and full-screen lyrics.",
-                         overWallpaper: "Over the wallpaper", jobs: "Job progress",
+            return .init(overWallpaper: "Over the wallpaper", jobs: "Job progress",
                          jobExport: "Exports, such as DaVinci Resolve", jobCardImport: "SD card import",
                          jobBackup: "Backups", jobCommand: "Long terminal commands", jobVercel: "Vercel deployments",
                          nowPlaying: "Now playing title", lyrics: "Lyrics", karaoke: "Karaoke highlight",
@@ -83,8 +80,7 @@ extension ZenithStrings {
                          open: "Open", labelExport: "Export", labelImport: "Import", labelBackup: "Backup",
                          labelCheck: "Check")
         case .ptBR:
-            return .init(subtitle: "O que aparece sobre o papel de parede enquanto o Mac está bloqueado, a leitura de terminal e a letra em tela cheia.",
-                         overWallpaper: "Sobre o papel de parede", jobs: "Progresso de tarefas",
+            return .init(overWallpaper: "Sobre o papel de parede", jobs: "Progresso de tarefas",
                          jobExport: "Exportações, como o DaVinci Resolve", jobCardImport: "Importação de cartão SD",
                          jobBackup: "Backups", jobCommand: "Comandos longos do terminal", jobVercel: "Implantações da Vercel",
                          nowPlaying: "Título do que está tocando", lyrics: "Letra", karaoke: "Destaque de karaokê",
@@ -104,8 +100,7 @@ extension ZenithStrings {
                          open: "Abrir", labelExport: "Exportação", labelImport: "Importação", labelBackup: "Backup",
                          labelCheck: "Verificação")
         case .tr:
-            return .init(subtitle: "Mac kilitliyken duvar kâğıdının üzerinde görünenler, terminal görünümü ve tam ekran şarkı sözleri.",
-                         overWallpaper: "Duvar kâğıdının üzerinde", jobs: "İş ilerlemesi",
+            return .init(overWallpaper: "Duvar kâğıdının üzerinde", jobs: "İş ilerlemesi",
                          jobExport: "DaVinci Resolve gibi dışa aktarmalar", jobCardImport: "SD kart içe aktarma",
                          jobBackup: "Yedeklemeler", jobCommand: "Uzun terminal komutları", jobVercel: "Vercel dağıtımları",
                          nowPlaying: "Çalan şarkının adı", lyrics: "Şarkı sözleri", karaoke: "Karaoke vurgusu",
@@ -125,8 +120,7 @@ extension ZenithStrings {
                          open: "Aç", labelExport: "Dışa aktarma", labelImport: "İçe aktarma", labelBackup: "Yedekleme",
                          labelCheck: "Denetim")
         case .ru:
-            return .init(subtitle: "Что показывать поверх обоев, пока Mac заблокирован, терминальная сводка и текст песни на весь экран.",
-                         overWallpaper: "Поверх обоев", jobs: "Ход задач",
+            return .init(overWallpaper: "Поверх обоев", jobs: "Ход задач",
                          jobExport: "Экспорт, например из DaVinci Resolve", jobCardImport: "Импорт с SD-карты",
                          jobBackup: "Резервные копии", jobCommand: "Долгие команды терминала", jobVercel: "Развёртывания Vercel",
                          nowPlaying: "Название играющей песни", lyrics: "Текст песни", karaoke: "Подсветка как в караоке",
@@ -146,8 +140,7 @@ extension ZenithStrings {
                          open: "Открыть", labelExport: "Экспорт", labelImport: "Импорт", labelBackup: "Копия",
                          labelCheck: "Проверка")
         case .es:
-            return .init(subtitle: "Lo que aparece sobre el fondo de pantalla con el Mac bloqueado, la lectura de terminal y la letra a pantalla completa.",
-                         overWallpaper: "Sobre el fondo de pantalla", jobs: "Progreso de tareas",
+            return .init(overWallpaper: "Sobre el fondo de pantalla", jobs: "Progreso de tareas",
                          jobExport: "Exportaciones, como DaVinci Resolve", jobCardImport: "Importación de tarjeta SD",
                          jobBackup: "Copias de seguridad", jobCommand: "Comandos largos de terminal", jobVercel: "Despliegues de Vercel",
                          nowPlaying: "Título de lo que suena", lyrics: "Letra", karaoke: "Resaltado de karaoke",
@@ -167,8 +160,7 @@ extension ZenithStrings {
                          open: "Abrir", labelExport: "Exportación", labelImport: "Importación", labelBackup: "Copia",
                          labelCheck: "Comprobación")
         case .sk:
-            return .init(subtitle: "Čo sa zobrazí nad tapetou, keď je Mac zamknutý, terminálový prehľad a text piesne na celú obrazovku.",
-                         overWallpaper: "Nad tapetou", jobs: "Priebeh úloh",
+            return .init(overWallpaper: "Nad tapetou", jobs: "Priebeh úloh",
                          jobExport: "Exporty, napríklad z DaVinci Resolve", jobCardImport: "Import z SD karty",
                          jobBackup: "Zálohy", jobCommand: "Dlhé príkazy v termináli", jobVercel: "Nasadenia Vercel",
                          nowPlaying: "Názov prehrávanej skladby", lyrics: "Text piesne", karaoke: "Zvýraznenie ako pri karaoke",
@@ -188,8 +180,7 @@ extension ZenithStrings {
                          open: "Otvoriť", labelExport: "Export", labelImport: "Import", labelBackup: "Záloha",
                          labelCheck: "Kontrola")
         case .de:
-            return .init(subtitle: "Was über dem Hintergrundbild erscheint, solange der Mac gesperrt ist, die Terminal-Anzeige und der Liedtext im Vollbild.",
-                         overWallpaper: "Über dem Hintergrundbild", jobs: "Fortschritt von Aufgaben",
+            return .init(overWallpaper: "Über dem Hintergrundbild", jobs: "Fortschritt von Aufgaben",
                          jobExport: "Exporte, etwa aus DaVinci Resolve", jobCardImport: "Import von SD-Karte",
                          jobBackup: "Backups", jobCommand: "Lange Terminal-Befehle", jobVercel: "Vercel-Deployments",
                          nowPlaying: "Titel der Wiedergabe", lyrics: "Liedtext", karaoke: "Karaoke-Hervorhebung",
@@ -209,8 +200,7 @@ extension ZenithStrings {
                          open: "Öffnen", labelExport: "Export", labelImport: "Import", labelBackup: "Backup",
                          labelCheck: "Prüfung")
         case .fr:
-            return .init(subtitle: "Ce qui s’affiche sur le fond d’écran quand le Mac est verrouillé, l’affichage terminal et les paroles en plein écran.",
-                         overWallpaper: "Sur le fond d’écran", jobs: "Progression des tâches",
+            return .init(overWallpaper: "Sur le fond d’écran", jobs: "Progression des tâches",
                          jobExport: "Exports, comme DaVinci Resolve", jobCardImport: "Importation de carte SD",
                          jobBackup: "Sauvegardes", jobCommand: "Longues commandes du terminal", jobVercel: "Déploiements Vercel",
                          nowPlaying: "Titre en cours de lecture", lyrics: "Paroles", karaoke: "Surlignage karaoké",
@@ -230,8 +220,7 @@ extension ZenithStrings {
                          open: "Ouvrir", labelExport: "Export", labelImport: "Import", labelBackup: "Sauvegarde",
                          labelCheck: "Vérification")
         case .it:
-            return .init(subtitle: "Cosa appare sopra lo sfondo mentre il Mac è bloccato, la lettura da terminale e il testo a schermo intero.",
-                         overWallpaper: "Sopra lo sfondo", jobs: "Avanzamento delle attività",
+            return .init(overWallpaper: "Sopra lo sfondo", jobs: "Avanzamento delle attività",
                          jobExport: "Esportazioni, come DaVinci Resolve", jobCardImport: "Importazione da scheda SD",
                          jobBackup: "Backup", jobCommand: "Comandi lunghi del terminale", jobVercel: "Deployment di Vercel",
                          nowPlaying: "Titolo in riproduzione", lyrics: "Testo", karaoke: "Evidenziazione karaoke",
@@ -251,8 +240,7 @@ extension ZenithStrings {
                          open: "Apri", labelExport: "Esportazione", labelImport: "Importazione", labelBackup: "Backup",
                          labelCheck: "Verifica")
         case .ja:
-            return .init(subtitle: "Macのロック中に壁紙の上に表示するもの、ターミナル表示、全画面の歌詞。",
-                         overWallpaper: "壁紙の上", jobs: "ジョブの進行状況",
+            return .init(overWallpaper: "壁紙の上", jobs: "ジョブの進行状況",
                          jobExport: "DaVinci Resolveなどの書き出し", jobCardImport: "SDカードの読み込み",
                          jobBackup: "バックアップ", jobCommand: "時間のかかるターミナルコマンド", jobVercel: "Vercelのデプロイ",
                          nowPlaying: "再生中のタイトル", lyrics: "歌詞", karaoke: "カラオケ風のハイライト",
@@ -272,8 +260,7 @@ extension ZenithStrings {
                          open: "開く", labelExport: "書き出し", labelImport: "読み込み", labelBackup: "バックアップ",
                          labelCheck: "確認")
         case .ko:
-            return .init(subtitle: "Mac이 잠겨 있는 동안 배경화면 위에 보이는 항목, 터미널 표시, 전체 화면 가사.",
-                         overWallpaper: "배경화면 위", jobs: "작업 진행 상황",
+            return .init(overWallpaper: "배경화면 위", jobs: "작업 진행 상황",
                          jobExport: "DaVinci Resolve 같은 내보내기", jobCardImport: "SD 카드 가져오기",
                          jobBackup: "백업", jobCommand: "오래 걸리는 터미널 명령", jobVercel: "Vercel 배포",
                          nowPlaying: "재생 중인 제목", lyrics: "가사", karaoke: "노래방 하이라이트",
@@ -293,8 +280,7 @@ extension ZenithStrings {
                          open: "열기", labelExport: "내보내기", labelImport: "가져오기", labelBackup: "백업",
                          labelCheck: "확인")
         case .uk:
-            return .init(subtitle: "Що показувати поверх шпалер, поки Mac замкнено, термінальне зведення й текст пісні на весь екран.",
-                         overWallpaper: "Поверх шпалер", jobs: "Перебіг завдань",
+            return .init(overWallpaper: "Поверх шпалер", jobs: "Перебіг завдань",
                          jobExport: "Експорт, наприклад із DaVinci Resolve", jobCardImport: "Імпорт з SD-картки",
                          jobBackup: "Резервні копії", jobCommand: "Довгі команди термінала", jobVercel: "Розгортання Vercel",
                          nowPlaying: "Назва пісні, що грає", lyrics: "Текст пісні", karaoke: "Підсвічування як у караоке",
@@ -314,8 +300,7 @@ extension ZenithStrings {
                          open: "Відкрити", labelExport: "Експорт", labelImport: "Імпорт", labelBackup: "Копія",
                          labelCheck: "Перевірка")
         case .zhHans:
-            return .init(subtitle: "Mac 锁定时显示在墙纸上的内容、终端读数和全屏歌词。",
-                         overWallpaper: "墙纸上方", jobs: "任务进度",
+            return .init(overWallpaper: "墙纸上方", jobs: "任务进度",
                          jobExport: "导出，例如 DaVinci Resolve", jobCardImport: "SD 卡导入",
                          jobBackup: "备份", jobCommand: "耗时较长的终端命令", jobVercel: "Vercel 部署",
                          nowPlaying: "正在播放的标题", lyrics: "歌词", karaoke: "卡拉 OK 高亮",
@@ -335,8 +320,7 @@ extension ZenithStrings {
                          open: "打开", labelExport: "导出", labelImport: "导入", labelBackup: "备份",
                          labelCheck: "检查")
         case .zhTW:
-            return .init(subtitle: "Mac 鎖定時顯示在背景圖片上的內容、終端機讀數和全螢幕歌詞。",
-                         overWallpaper: "背景圖片上方", jobs: "工作進度",
+            return .init(overWallpaper: "背景圖片上方", jobs: "工作進度",
                          jobExport: "輸出，例如 DaVinci Resolve", jobCardImport: "SD 卡匯入",
                          jobBackup: "備份", jobCommand: "耗時較長的終端機指令", jobVercel: "Vercel 部署",
                          nowPlaying: "正在播放的標題", lyrics: "歌詞", karaoke: "卡拉 OK 標示",
@@ -356,8 +340,7 @@ extension ZenithStrings {
                          open: "打開", labelExport: "輸出", labelImport: "匯入", labelBackup: "備份",
                          labelCheck: "檢查")
         case .zhHK:
-            return .init(subtitle: "Mac 鎖定時顯示在背景圖片上的內容、終端機讀數及全螢幕歌詞。",
-                         overWallpaper: "背景圖片上方", jobs: "工作進度",
+            return .init(overWallpaper: "背景圖片上方", jobs: "工作進度",
                          jobExport: "輸出，例如 DaVinci Resolve", jobCardImport: "SD 卡匯入",
                          jobBackup: "備份", jobCommand: "耗時較長的終端機指令", jobVercel: "Vercel 部署",
                          nowPlaying: "正在播放的標題", lyrics: "歌詞", karaoke: "卡拉 OK 標示",

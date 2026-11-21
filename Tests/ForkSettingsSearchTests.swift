@@ -61,6 +61,7 @@ enum ForkSettingsSearchTests {
         let lockScreen = FeatureSettingsDestination(.lockScreen, sectionAnchor: .zenithLockScreen)
         let lockTerminal = FeatureSettingsDestination(.lockScreen, sectionAnchor: .zenithLockScreenTerminal)
         let lockLyrics = FeatureSettingsDestination(.lockScreen, sectionAnchor: .zenithLockScreenLyrics)
+        let lockMusic = FeatureSettingsDestination(.lockScreen, sectionAnchor: .zenithLockScreenMusic)
         let commands = FeatureSettingsDestination(notch: .activity, sectionAnchor: .zenithCommandActivity)
         let exports = FeatureSettingsDestination(notch: .activity, sectionAnchor: .zenithExportTracker)
         let notices = FeatureSettingsDestination(notch: .activity, sectionAnchor: .zenithNotices)
@@ -81,8 +82,11 @@ enum ForkSettingsSearchTests {
             ("design overlay", anchored(.zenithDesignOverlay)), ("backup", backup), ("dev server", module(.devServers)),
             ("recap", module(.recap)), ("today", module(.recap)), ("card import", module(.cardImport)),
             ("lock screen", lockScreenPage), ("weather", lockScreen), ("terminal readout", lockTerminal),
-            ("job progress", lockScreen), ("karaoke", lockScreen), ("full-screen lyrics", lockLyrics),
+            ("job progress", lockScreen), ("activity row", lockScreen), ("karaoke", lockMusic),
+            ("lyric timing", lockMusic), ("lyric shade", lockMusic), ("music on the lock screen", lockMusic),
+            ("full-screen lyrics", lockLyrics), ("spin the record", lockLyrics), ("top right", lockLyrics),
             ("cover color", lockLyrics), ("blurred cover", lockLyrics), ("background color", lockLyrics),
+            ("muted", lockLyrics),
             ("terminal commands", commands), ("exports", exports), ("notices", notices), ("tab bar", tabBar),
             ("claude code", hooks), ("whatsapp", reply), ("start the mirror", camera),
             ("menu bar hiding", menuBar), ("about", FeatureSettingsDestination(.about)),
@@ -96,6 +100,9 @@ enum ForkSettingsSearchTests {
             ("sembunyikan ikon", menuBar), ("ruang kerja", FeatureSettingsDestination(.workspaces)),
             ("layar kunci", lockScreenPage), ("cuaca", lockScreen), ("lirik layar penuh", lockLyrics),
             ("progres", lockScreen), ("terminal layar kunci", lockTerminal), ("latar", lockLyrics),
+            ("lirik", lockMusic), ("bayangan lirik", lockMusic), ("timing lirik", lockMusic), ("geser lirik", lockMusic),
+            ("piringan muter", lockLyrics), ("pojok kanan atas", lockLyrics), ("nada warna", lockLyrics),
+            ("redam", lockLyrics),
             ("warna latar", lockLyrics), ("warna sendiri", lockLyrics), ("zona drop", anchored(.zenithDropZones)),
             ("percantik", anchored(.zenithBeautify)), ("perintah terminal", commands), ("ekspor", exports),
             ("balas", reply), ("tentang", FeatureSettingsDestination(.about)),
