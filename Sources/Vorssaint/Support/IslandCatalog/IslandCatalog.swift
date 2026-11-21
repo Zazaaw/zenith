@@ -52,6 +52,12 @@ enum IslandCatalog {
             print("ISLAND CATALOG FAILED: \(error.localizedDescription)")
             exit(1)
         }
+        // Zenith fork: `--only motion…` renders frame sequences of transitions instead.
+        if let only, only.hasPrefix("motion") {
+            let failures = CatalogMotion.render(prefix: only, into: folder)
+            print(failures.isEmpty ? "ISLAND MOTION OK" : "ISLAND MOTION FAILED: \(failures)")
+            exit(failures.isEmpty ? 0 : 1)
+        }
         var manifest: [[String: Any]] = []
         var failures: [String] = []
         for shot in CatalogShots.all where only.map({ shot.id.hasPrefix($0) }) ?? true {

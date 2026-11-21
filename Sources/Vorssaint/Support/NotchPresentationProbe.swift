@@ -705,7 +705,8 @@ enum NotchPresentationProbe {
         if intermediate.height <= geometry.collapsed.height || intermediate.height >= geometry.expanded.height {
             if !reduceMotion { failures.append("opening has no intermediate frames") }
         }
-        if !reduceMotion, host.contentProbeGrowthDrift > 0.5 {
+        // Zenith fork: arriving content rides 8 points up into place as it grows.
+        if !reduceMotion, host.contentProbeGrowthDrift > ZenithContentRide.incomingRise + 0.5 {
             failures.append("growing content left the island's top centre: \(host.contentProbeGrowthDrift)")
         }
         if !reduceMotion {
@@ -728,7 +729,7 @@ enum NotchPresentationProbe {
         let beforeMeasurement = host.resizeCount
         host.present(size: geometry.expanded, geometry: updatedGeometry, animated: true, usesGlass: true)
         if host.resizeCount != beforeMeasurement { failures.append("menu measurement restarted an unchanged presentation") }
-        advance(0.52)
+        advance(1.2) // Zenith fork: the content rides the island until its swing settles
         if nativeResizes > 2 { failures.append("opening resized its native window every frame: \(nativeResizes)") }
         let openingResizes = nativeResizes
         if !reduceMotion, host.backdropProbeOpenness < 0.99 {
@@ -747,13 +748,14 @@ enum NotchPresentationProbe {
         if host.resizeCount != beforeBurst { failures.append("value burst restarted the resize") }
         advance(0.08)
         checkBackdrop(host, failures: &failures)
-        if !reduceMotion, host.contentProbeOpacity > 0.01 {
+        // Zenith fork: the leaving page fades out over 0.12 s as it rides the shape.
+        if !reduceMotion, host.contentProbeOpacity > 0.7 {
             failures.append("closing left content visible under the moving clip")
         }
         if host.contentProbeAlpha != 1 {
             failures.append("closing disabled the hosting view's interaction frame")
         }
-        advance(0.52)
+        advance(1.2) // Zenith fork: the bouncier close settles later
         tracksClosingGlass = false
         if !reduceMotion, (closingGlassOpenness ?? 1) > 0.15 {
             failures.append("glass reached the black strip still open: \(closingGlassOpenness ?? 1)")

@@ -297,12 +297,11 @@ enum ZenithIslandTests {
     }
 
     private static func morphReach(_ suite: TestSuite) {
-        suite.expect(!ZenithMorph.morphs(height: 32) && !ZenithMorph.morphs(height: 64) && ZenithMorph.morphs(height: 220),
-                     "open pages morph, while a closed strip's reading only fades")
-        suite.expect(ZenithMorph.blur == 10 && ZenithMorph.scale == 0.97
-                     && ZenithMorph.layerPeak > 0 && ZenithMorph.layerPeak < 1
-                     && ZenithMorph.layerDuration <= ZenithMotion.slow,
-                     "the morph blurs to 10, dips to 97% and lasts no longer than a large transform")
+        // The island's own page swaps ride the shape (IslandMotionTests);
+        // SwiftUI swaps take the same leaving fade and arriving ease.
+        suite.expect(ZenithContentRide.outgoingFade < ZenithContentRide.incomingDelay + ZenithContentRide.incomingFade
+                     && ZenithContentRide.incomingDelay + ZenithContentRide.incomingFade <= ZenithMotion.slow,
+                     "a SwiftUI swap fades out first and is sharp again within a large transform's time")
     }
 
     private static func palette(_ suite: TestSuite) {

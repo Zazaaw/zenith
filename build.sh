@@ -310,6 +310,9 @@ if (( TEST )); then
         Sources/Vorssaint/Services/ExportTracker/ExportWriterProbe.swift
         Sources/Vorssaint/Services/Notch/ZenithNoticeSupport.swift
         Sources/Vorssaint/Services/Notch/ZenithIslandRoom.swift
+        Sources/Vorssaint/Services/Notch/ZenithIslandMotion.swift
+        Sources/Vorssaint/Services/Notch/ZenithLockIslandSupport.swift
+        Sources/Vorssaint/Core/ZenithLockIslandStrings.swift
         Sources/Vorssaint/Services/Notch/ZenithCalendarSupport.swift
         Sources/Vorssaint/Services/Notch/ZenithIslandBurstSupport.swift
         Sources/Vorssaint/Core/ZenithIslandStrings.swift

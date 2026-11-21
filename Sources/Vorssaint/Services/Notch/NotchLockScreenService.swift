@@ -28,6 +28,7 @@ final class NotchLockScreenService {
 
     private let model = NotchLockScreenModel()
     private let zenith = ZenithLockScreenV2() // Zenith fork
+    private let zenithIsland = ZenithLockIslandController() // Zenith fork: the padlock island's slots and greetings
     /// The player and the line of activities.
     private var scene: [NotchLockScreenPanel] = []
     private var island: NotchLockScreenPanel?
@@ -45,6 +46,7 @@ final class NotchLockScreenService {
     func sync(_ session: NotchSessionState) {
         let locking = session.locked && !wasLocked
         wasLocked = session.locked
+        if locking { zenithIsland.locked() } // Zenith fork: the welcome counts from here
         if !session.locked { model.playedWhileLocked = false }
         if session.showsLockScreen, NotchLockScreenSupport.isEnabled() {
             // Locked at the Mac, the padlock is seen closing; back from a
@@ -100,7 +102,8 @@ final class NotchLockScreenService {
                 in: geometry.screen, cameraWidth: geometry.bareCutout.width, cameraHeight: geometry.bareCutout.height,
                 wing: geometry.lockScreenMusicGeometry.compactActivityWingWidth)
             frames.islandSurface = surface
-            frames.island = surface.map(NotchLockScreenLayout.islandFrame(around:))
+            // Zenith fork: room for the island's greetings and their swing.
+            frames.island = surface.map { ZenithLockIsland.windowFrame(around: $0, in: geometry.screen) }
         }
         return frames
     }
@@ -165,8 +168,9 @@ final class NotchLockScreenService {
         }
         let island = frames.island.flatMap { frame in
             frames.islandSurface.map { surface in
-                Self.makePanel(frame: frame, content: NotchLockScreenIsland(
-                    model: model, size: surface.size, cameraWidth: NotchService.shared.geometry.bareCutout.width,
+                Self.makePanel(frame: frame, content: ZenithLockScreenIsland( // Zenith fork
+                    model: model, island: zenithIsland.model, size: surface.size,
+                    cameraWidth: NotchService.shared.geometry.bareCutout.width,
                     geometry: NotchService.shared.geometry.lockScreenMusicGeometry,
                     window: frame.size, origin: CGPoint(x: surface.minX - frame.minX, y: frame.maxY - surface.maxY)))
             }
@@ -189,10 +193,12 @@ final class NotchLockScreenService {
         self.scene = scene
         self.island = island
         shownFrames = frames
+        // Zenith fork: as the Mac locks, the farewell holds the padlock open.
+        let padlockHold = island == nil ? 0.35 : zenithIsland.begin(locking: closingPadlock)
         if closingPadlock {
             let work = DispatchWorkItem { [weak self] in self?.model.padlockOpen = false }
             padlockWork = work
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: work)
+            DispatchQueue.main.asyncAfter(deadline: .now() + padlockHold, execute: work)
         }
         for panel in panels {
             // Zenith fork: the padlock island replaces the island at once, so
@@ -260,6 +266,7 @@ final class NotchLockScreenService {
         self.island = nil
         self.space = nil
         guard unlocking else {
+            zenithIsland.end() // Zenith fork
             (scene + [island, full].compactMap { $0 }).forEach { $0.orderOut(nil) } // Zenith fork: full
             space.close()
             return
@@ -273,10 +280,15 @@ final class NotchLockScreenService {
         leaving.forEach { Self.fadeOut($0, after: 0, completion: finished) }
         if let island {
             model.padlockOpen = true
+            // Zenith fork: the welcome holds the island over the desktop, which
+            // takes no clicks, then it shrinks back and fades.
+            let stay = zenithIsland.unlocking() ?? 0.55
             // The island comes back on this turn and holds the main thread, so
             // the padlock is first seen opening once that is done. Its time
             // starts there, or the island would fade while the padlock opens.
-            DispatchQueue.main.async { Self.fadeOut(island, after: 0.55, completion: finished) }
+            DispatchQueue.main.async { Self.fadeOut(island, after: stay, completion: finished) }
+        } else {
+            zenithIsland.end() // Zenith fork
         }
     }
 

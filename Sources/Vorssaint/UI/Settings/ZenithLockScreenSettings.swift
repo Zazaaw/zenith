@@ -226,8 +226,40 @@ private struct ZenithLockScreenWallpaperTab: View {
                 }
                 .disabled(!jobs)
             }
+            ZenithLockScreenIslandCard()
         }
         .zenithSectionAnchor(.zenithLockScreen, cornerRadius: ZenithRadius.panel + 6, inset: 6) // Settings search lands here
+    }
+}
+
+/// The padlock island at the camera: its slots and its greetings, one switch each.
+private struct ZenithLockScreenIslandCard: View {
+    @ObservedObject private var l10n = L10n.shared
+    @AppStorage(DefaultsKey.zenithLockIslandCharging) private var charging = true
+    @AppStorage(DefaultsKey.zenithLockIslandFocus) private var focus = true
+    @AppStorage(DefaultsKey.zenithLockIslandFarewell) private var farewell = true
+    @AppStorage(DefaultsKey.zenithLockIslandWelcome) private var welcome = true
+
+    var body: some View {
+        let text = ZenithStrings.lockIsland(l10n.language)
+        ZenithLockScreenCard(title: text.section, caption: text.sectionCaption) {
+            VStack(alignment: .leading, spacing: 0) {
+                line(text.charging, symbol: "bolt.fill", caption: text.chargingCaption, isOn: $charging)
+                ZenithLockScreenDivider()
+                line(text.focus, symbol: "moon.fill", caption: text.focusCaption, isOn: $focus)
+                ZenithLockScreenDivider()
+                line(text.farewell, symbol: "hand.wave", caption: text.farewellCaption, isOn: $farewell)
+                ZenithLockScreenDivider()
+                line(text.welcome, symbol: "lock.open", caption: text.welcomeCaption, isOn: $welcome)
+            }
+        }
+    }
+
+    private func line(_ title: String, symbol: String, caption: String, isOn: Binding<Bool>) -> some View {
+        ZenithSwitchRow(title, isOn: isOn) {
+            ZenithLockScreenLineLabel(title: title, symbol: symbol, caption: caption)
+        }
+        .padding(.vertical, 11)
     }
 }
 

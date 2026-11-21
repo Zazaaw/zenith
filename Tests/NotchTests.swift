@@ -2984,7 +2984,10 @@ enum NotchTests {
                     suite.expect(envelope.width >= geometry.notice.width && envelope.height >= geometry.notice.height
                            && envelope.width >= target.width && envelope.height >= target.height,
                            "the backing window can reveal either endpoint without resizing each frame")
-                    suite.expect(NotchMotion.envelope(from: envelope, to: geometry.collapsed) == envelope,
+                    // Zenith fork: pulling up fast, the body widens by up to the squash's limit.
+                    let closing = NotchMotion.envelope(from: envelope, to: geometry.collapsed)
+                    suite.expect(closing.width <= envelope.width + ZenithIslandMotion.narrowingLimit
+                                     && closing.height == envelope.height,
                            "an interrupted closing retains its backing area until the silhouette settles")
                 }
                 suite.expect(geometry.peek.height <= geometry.cameraHeight + NotchLayout.headerHeight + 32
@@ -3088,8 +3091,8 @@ enum NotchTests {
             }
         }
         let idle = roomy.restingSize(showsContent: false)
-        suite.expect(NotchMotion.duration(from: idle, to: roomy.notice)
-               == NotchMotion.duration(from: idle, to: roomy.expanded),
+        suite.expect(NotchMotion.duration(from: idle, to: roomy.notice) == NotchMotion.growingWidth.duration // Zenith fork
+               && NotchMotion.duration(from: idle, to: roomy.expanded) == NotchMotion.growingHeight.duration,
                "horizontal reveals use the opening curve even when their height stays unchanged")
         suite.expect(NotchMotion.duration(from: roomy.notice, to: idle)
                < NotchMotion.duration(from: idle, to: roomy.notice),
@@ -3103,10 +3106,13 @@ enum NotchTests {
             suite.expect(moving && widths.allSatisfy { min(from.width, to.width) <= $0 && $0 <= max(from.width, to.width) }
                          && steady.sizes.last == to,
                          "a notice fitting a new reading eases to its width without swinging past it")
-            let usual = NotchMotion.size(at: 0.1, from: from, to: to)
-            let eased = NotchMotion.size(at: 0.1, from: from, to: to, steady: true)
-            suite.expect(abs(eased.width - from.width) < abs(usual.width - from.width)
-                         && steady.duration > NotchMotion.frames(from: from, to: to).duration,
+            // Zenith fork: the bouncy springs ring on longer than the steady
+            // ease and wait their lag, so their top speeds are compared.
+            func topSpeed(steady: Bool) -> CGFloat {
+                stride(from: 0.0, through: 1.0, by: 1.0 / 240)
+                    .map { abs(NotchMotion.velocity(at: $0, from: from, to: to, steady: steady).width) }.max() ?? 0
+            }
+            suite.expect(topSpeed(steady: true) < topSpeed(steady: false),
                          "a notice fitting a new reading moves more gently than the island's springs")
         }
         // Equal total widths still move when the longer notice wing changes sides.
@@ -3147,19 +3153,27 @@ enum NotchTests {
                    "the island's motion starts on screen and ends exactly at its target")
             suite.expect(widest <= envelope.width && tallest <= envelope.height,
                    "the reserved backing area holds every frame of the swing")
-            suite.expect(envelope.width <= max(from.width, to.width) + NotchMotion.overshootLimit
-                   && envelope.height <= max(from.height, to.height) + NotchMotion.overshootLimit,
+            // Zenith fork: the swing's sanity cap and the squash replace the 12 point cap.
+            suite.expect(envelope.width <= max(from.width, to.width) + ZenithIslandMotion.widthSwingLimit
+                             + ZenithIslandMotion.narrowingLimit
+                   && envelope.height <= max(from.height, to.height) + ZenithIslandMotion.heightSwingLimit
+                             + ZenithIslandMotion.flatteningLimit,
                    "a long travel swings no farther than the room kept around the island")
-            suite.expect(motion.duration > 0.1 && motion.duration < 0.6,
+            suite.expect(motion.duration > 0.1 && motion.duration < 1.6, // Zenith fork: bouncier springs settle later
                    "the island settles within the time its surroundings wait for it: \(motion.duration)")
             suite.expect(motion.sizes.allSatisfy { $0.height >= 0 && $0.width >= 0 }, "no frame turns inside out")
+            // Zenith fork: shrinking swings a little past its target too, within the sanity cap.
             if to.width < from.width {
-                suite.expect(motion.sizes.allSatisfy { $0.width >= to.width - 0.001 },
-                       "a narrowing island never passes its resting width beside the camera")
+                suite.expect(motion.sizes.allSatisfy {
+                                 $0.width >= to.width - ZenithIslandMotion.widthSwingLimit - ZenithIslandMotion.narrowingLimit
+                             },
+                       "a narrowing island passes its resting width beside the camera by no more than the sanity cap")
             }
             if to.height < from.height {
-                suite.expect(motion.sizes.allSatisfy { $0.height >= to.height - 0.001 },
-                       "a shortening island never passes its resting height")
+                suite.expect(motion.sizes.allSatisfy {
+                                 $0.height >= max(0, to.height - ZenithIslandMotion.heightSwingLimit - ZenithIslandMotion.flatteningLimit)
+                             },
+                       "a shortening island passes its resting height by no more than the sanity cap")
             }
             if to.width > from.width + 40 {
                 suite.expect(widest > to.width, "a widening island stretches past its size before settling")
@@ -3169,14 +3183,16 @@ enum NotchTests {
             }
         }
         let long = NotchMotion.envelope(from: CGSize(width: 200, height: 32), to: CGSize(width: 1_400, height: 900))
-        suite.expect(long.width <= 1_400 + NotchMotion.overshootLimit && long.height <= 900 + NotchMotion.overshootLimit
+        suite.expect(long.width <= 1_400 + ZenithIslandMotion.widthSwingLimit + ZenithIslandMotion.narrowingLimit // Zenith fork
+               && long.height <= 900 + ZenithIslandMotion.heightSwingLimit + ZenithIslandMotion.flatteningLimit
                && long.width > 1_400 && long.height > 900,
                "a long travel keeps its stretch within the room kept around the island")
         let drop = NotchMotion.frames(from: roomy.collapsed, to: roomy.expanded)
-        let early = drop.sizes[drop.sizes.count / 8]
+        // Zenith fork: as the phone's island does, the width now leads by 20 ms.
+        let early = NotchMotion.size(at: 0.05, from: roomy.collapsed, to: roomy.expanded)
         suite.expect((early.height - roomy.collapsed.height) / (roomy.expanded.height - roomy.collapsed.height)
-               > (early.width - roomy.collapsed.width) / (roomy.expanded.width - roomy.collapsed.width),
-               "an opening island drops a little ahead of widening")
+               < (early.width - roomy.collapsed.width) / (roomy.expanded.width - roomy.collapsed.width),
+               "an opening island widens a little ahead of dropping")
         let arrival = NotchMotion.arrivalTime(from: roomy.collapsed, to: roomy.expanded)
         let arrived = NotchMotion.size(at: arrival, from: roomy.collapsed, to: roomy.expanded)
         suite.expect(arrival > 0 && arrival < drop.duration
@@ -3184,7 +3200,10 @@ enum NotchTests {
                && roomy.expanded.height - arrived.height <= (roomy.expanded.height - roomy.collapsed.height) * 0.01,
                "floating controls emerge once the island reaches its size, before its swing settles")
         let horizontal = NotchMotion.frames(from: idle, to: roomy.notice)
-        suite.expect(horizontal.sizes.allSatisfy { $0.height == idle.height },
+        // Zenith fork: it flattens a little while it spreads fast, and
+        // stretches as little as it swings back, then rests at its height.
+        suite.expect(horizontal.sizes.allSatisfy { abs($0.height - idle.height) <= ZenithIslandMotion.flatteningLimit }
+                     && horizontal.sizes.last?.height == idle.height,
                "horizontal feedback never swings below the menu bar")
         suite.expect(NotchMotion.envelope(from: roomy.expanded, to: roomy.expanded) == roomy.expanded,
                "an unchanged size reserves nothing more")
@@ -3232,12 +3251,15 @@ enum NotchTests {
                 suite.expect(heightAfter > restartedHeight + heightBefore / 2,
                              "a side whose target moves further keeps its speed as the new pull starts")
                 let frames = carried.frames()
-                suite.expect(frames.sizes.first == at && frames.sizes.last == rows && frames.keyTimes.first == 0
+                suite.expect(frames.sizes.first == carried.shape(at: retarget) && frames.sizes.last == rows // Zenith fork: as drawn
+                             && frames.keyTimes.first == 0
                              && frames.keyTimes.last == 1 && frames.keyTimes.count == frames.sizes.count,
                              "a carried motion starts on screen and ends exactly at its new target")
                 suite.expect(frames.duration > 0.1 && frames.duration < 1,
                              "a carried motion settles within the time its surroundings wait for it: \(frames.duration)")
-                let lowest = CGSize(width: at.width - 0.001, height: at.height - 0.001)
+                // Zenith fork: the drawn width narrows while the island drops.
+                let lowest = CGSize(width: at.width - ZenithIslandMotion.narrowingLimit - 0.001,
+                                    height: at.height - ZenithIslandMotion.flatteningLimit - 0.001)
                 let farthest = CGSize(width: rows.width + NotchMotion.overshootLimit, height: rows.height + NotchMotion.overshootLimit)
                 suite.expect(frames.sizes.allSatisfy {
                                  $0.width >= lowest.width && $0.height >= lowest.height
@@ -3247,9 +3269,12 @@ enum NotchTests {
             } else {
                 suite.expect(false, "a taller target while opening carries the motion on")
             }
-            suite.expect(opening.continued(to: roomy.collapsed, at: retarget) == nil
-                         && opening.continued(to: CGSize(width: 616, height: field.height - 20), at: retarget) == nil,
-                         "a motion turning back starts again from where it is drawn")
+            // Zenith fork: a motion turning back carries its place and speed.
+            let back = opening.continued(to: roomy.collapsed, at: retarget)
+            suite.expect(back.map { $0.size(at: retarget) == opening.size(at: retarget)
+                             && abs($0.velocity(at: retarget).height - opening.velocity(at: retarget).height) < 1e-6 } == true
+                         && opening.continued(to: CGSize(width: 616, height: field.height - 20), at: retarget) != nil,
+                         "a motion turning back carries on from where it is, at its speed")
             suite.expect(NotchMotionTimeline(from: idle, to: roomy.notice, begin: 0, steady: true)
                              .continued(to: roomy.expanded, at: 0.05) == nil
                          && NotchMotionTimeline(from: idle, to: roomy.notice, begin: 0, offset: 40)

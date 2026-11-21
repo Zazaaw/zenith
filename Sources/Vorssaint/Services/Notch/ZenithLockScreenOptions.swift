@@ -20,6 +20,9 @@ enum ZenithLockScreenOption: String, CaseIterable, Identifiable {
     case fullDiscSpin
     /// What sits at the top right beside the close button, with `fullJobs`.
     case fullTopPrayer, fullTopWeather, fullTopTimer, fullTopCalendar, fullTopWakaTime
+    /// The padlock island at the camera: its right slot while charging or in a
+    /// Focus, and its greetings as the Mac locks and unlocks.
+    case islandCharging, islandFocus, islandFarewell, islandWelcome
 
     var id: String { rawValue }
 
@@ -45,6 +48,10 @@ enum ZenithLockScreenOption: String, CaseIterable, Identifiable {
         case .fullTopTimer: return DefaultsKey.zenithLockFullTopTimer
         case .fullTopCalendar: return DefaultsKey.zenithLockFullTopCalendar
         case .fullTopWakaTime: return DefaultsKey.zenithLockFullTopWakaTime
+        case .islandCharging: return DefaultsKey.zenithLockIslandCharging
+        case .islandFocus: return DefaultsKey.zenithLockIslandFocus
+        case .islandFarewell: return DefaultsKey.zenithLockIslandFarewell
+        case .islandWelcome: return DefaultsKey.zenithLockIslandWelcome
         }
     }
 

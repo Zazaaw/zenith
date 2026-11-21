@@ -27,7 +27,7 @@ enum CatalogShots {
         return values
     }()
 
-    static var all: [CatalogShot] { closed + compact + notices + pages + home + interactions + lockScreens }
+    static var all: [CatalogShot] { closed + compact + notices + pages + home + interactions + lockScreens + lockIslands }
 
     // MARK: Geometry
 

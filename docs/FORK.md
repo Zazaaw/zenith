@@ -2830,6 +2830,64 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   - **Belum diverifikasi di Mac:** colok/cabut charger sungguhan, Optimized Battery Charging, perkiraan waktu dari
     macOS, menyalakan Low Power Mode saat notice tampil, morph adzan di waktu salat sungguhan, island di layar tanpa
     notch, dan job lock screen di Mac terkunci.
+- **Gerak island ala iOS + island gembok lock screen (branch `feat/island-motion-ios`):** gerak island dibangun
+  ulang mengikuti simulasi yang disetujui Faiz ("ala iOS, mantul lebih"). Matematika murni di
+  `Services/Notch/ZenithIslandMotion.swift` (`ZenithIslandMotion`, `ZenithContentRide`), dipakai window host, island
+  gembok, test dan renderer frame.
+  - **Pegas:** tumbuh: lebar `Spring(0.52, 0.42)`, tinggi `Spring(0.56, 0.38)` mulai 20 ms setelah lebar. Menyusut:
+    tinggi `Spring(0.44, 0.30)`, lebar `Spring(0.48, 0.36)` mulai 35 ms setelahnya. Batas ayun 12 pt dihapus; tinggal
+    batas waras 64 pt (lebar) / 36 pt (tinggi), muat di 48 pt yang selalu disisakan island tertinggi. Menyusut juga
+    mantul sedikit melewati target (di notch fisik bagian itu tersembunyi di balik kamera).
+  - **Squash & stretch:** lebar −= clamp(vh·0,011, ±14), tinggi −= clamp(vw·0,004, ±7); kecepatan dari turunan
+    analitik pegas (`Spring.velocity`), bukan selisih frame. `NotchMotion.shape`/`NotchMotionTimeline.shape` = bentuk
+    yang digambar; keyframe path, kontur backdrop, envelope jendela memakai bentuk itu.
+  - **Interupsi:** `NotchMotionTimeline.continued` kini juga menerima arah balik: pegas baru dijumlahkan dari posisi
+    dan kecepatan saat itu (tanpa lompatan, tanpa mulai dari diam). Yang masih mulai ulang: lebar steady dan pusat
+    yang sedang bergeser (seperti upstream).
+  - **Isi menumpang bentuk** (`NotchCanvas.beginRide`): halaman keluar pudar 0,12 dtk + blur sampai 8 pt + skala
+    lebar island / lebarnya (0,35…1,3); halaman masuk mulai 0,05 dtk, ease 0,3 dtk, blur 12 → 0, skala lebar island /
+    lebar target (0,35…1,04), naik dari −8 pt. Berurutan: satu hosting layer, halaman lama = snapshot `CATransition`
+    (kurva Bézier yang menahan halaman baru sampai yang lama setengah hilang), mask opacity = jumlah keduanya, blur,
+    skala dan naik = rata-rata berbobot halaman yang terlihat (`ZenithContentRide.composite`). Transform mengikuti
+    timeline bentuk sampai ayunan selesai, disampel 120 Hz. Berlaku untuk buka/tutup, hover peek, ganti halaman,
+    strip compact (HUD volume/brightness, AirPods, aksesori), burst (adzan, charging, baterai, timer, chat), zona
+    drop, Command Bar di island, dan departure notice. `AnyTransition.zenithMorph` (swap SwiftUI) memakai urutan
+    yang sama (blur 8 keluar, blur 12 + naik 8 pt masuk). Reduce Motion: bentuk langsung, crossfade 0,2 dtk.
+  - **Island gembok** (`UI/Notch/ZenithLockScreenIsland.swift`, `Services/Notch/ZenithLockIsland*.swift`, teks
+    `Core/ZenithLockIslandStrings.swift`): menggantikan `NotchLockScreenIsland` di service (view upstream dibiarkan).
+    Bergerak dengan `NotchMotionTimeline` yang sama lewat `TimelineView(.animation)`; jendela island dibesarkan
+    (`ZenithLockIsland.windowFrame`) supaya salam dan ayunannya muat; jendela tetap tidak menerima klik.
+    - Gembok 17 pt (dulu ±13), animasi buka/tutup tetap.
+    - Slot kanan: charger tersambung = petir + persen hijau #34D399, 5 detik pertama setelah colok menang atas
+      Focus (dan musik); lalu musik, lalu Focus (bulan + nama, ungu #A78BFA), lalu charging. Daya dibaca
+      `PowerSampler` + `IOPSNotificationCreateRunLoopSource` selama lock screen tampil.
+    - **Focus tanpa data:** macOS tidak punya cara tanpa izin untuk membaca Focus (`INFocusStatusCenter` butuh
+      entitlement + prompt dan hanya memberi on/off; database Do Not Disturb di balik Full Disk Access). Slot,
+      warna dan saklar sudah ada; `ZenithLockIslandFocus.reader` kosong sampai ada pembaca.
+    - "See you, {nama} 👋" saat Mac dikunci: island melebar ±2,2 dtk dengan gembok terbuka, lalu gembok menutup dan
+      island menyusut. Nama depan dari `NSFullUserName()` (fallback `NSUserName()`).
+    - "Welcome back, {nama}" saat dibuka: island dua baris (gembok hijau terbuka, salam, "Locked for 2h 14m", foto
+      akun dari Open Directory atau inisial) ±3 dtk, lalu menyusut dan memudar di atas island yang sudah kembali.
+      Tidak menahan unlock (jendela non-interaktif). Jumlah notifikasi tidak ditampilkan: Zenith hanya menyimpan
+      notifikasi dari sesi tidak terkunci; parameter `notifications:` sudah ada.
+    - Saklar baru `ZenithLockScreenOption.islandCharging/islandFocus/islandFarewell/islandWelcome` (default nyala),
+      kartu "Island" di Settings › Lock Screen › Over the wallpaper, teks 15 bahasa.
+  - **Catalog:** shot `lock-island-*` (rest, music, charging, focus, farewell, welcome) dan
+    `ONLY=motion… Tools/IslandCatalog/render.sh <dir>` untuk urutan frame (30 fps, 1 dtk, plus sheet) dari
+    `motion-open`, `-swap`, `-close`, `-notice`, `-burst`, `-lock-farewell`, `-lock-welcome`, digambar dari render
+    kedua ujung dengan matematika yang sama (bukan rekaman host Core Animation).
+  - **Test:** suite baru `island-motion` (pegas dan kecepatannya, lag, batas ayun, squash, urutan isi, interupsi,
+    Reduce Motion) dan `lock-island`. Diubah karena mengunci pegas lama (`NotchTests`): durasi settle (< 1,6 dtk),
+    batas ayun 12 pt → batas waras + squash, "menyusut tidak pernah melewati target" → maksimal batas waras,
+    "turun dulu baru melebar" → "melebar dulu", tinggi notice horizontal boleh pipih/memanjang ±7 pt, motion yang
+    berbalik kini lanjut (dulu nil), envelope tutup boleh +14 pt lebar, perbandingan steady vs pegas pakai kecepatan
+    puncak, durasi notice = durasi pegas lebar. `ZenithIslandTests.morphReach` mengikuti ride.
+    `NotchPresentationProbe` diselaraskan (drift naik 8 pt, tunggu ayunan selesai) tapi belum dijalankan.
+  - **Belum diverifikasi di Mac:** semua gerak di layar sungguhan (120 Hz, blur CAFilter, urutan crossfade
+    `CATransition`, transform selama ayunan, interupsi hover), bayangan lembut saat terbuka (belum dibuat: jendela
+    island hanya seluas siluet, bayangan butuh ruang tambahan di sekitar jendela), island gembok di Mac terkunci
+    (salam, colok charger, foto akun, fade setelah unlock), dan droplet Command Bar (sistem gerak sendiri, tidak
+    diubah).
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
