@@ -393,6 +393,50 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     `NSFullUserName()`, nama Mac dari `SCDynamicStoreCopyComputerName`. Semua lokal.
   - **Belum diverifikasi di Mac terkunci:** tampilan, hover di panel non-key, urutan panel penuh di
     bawah island, event keyboard saat terkunci, dan klik pada lapisan penuh.
+  - **Ronde dua (menggantikan aturan ronde satu di atas yang bertentangan):**
+    - *Minimal:* judul + lirik satu blok. Teks judul 24 pt di bawah frame baris aktivitas (sama
+      dengan jarak jam → teks baris), baris lirik aktif 7 pt di bawahnya, baris berikut 2 pt di
+      bawahnya (42%). Panel minimal kini naik sampai atas frame baris, supaya bayangan lirik
+      (`.lyricShade`, default nyala: gradien elips hitam 40% → 0, 110 × 44 pt melewati blok) memudar
+      di belakang baris, bukan terpotong. Terminal `.low`: kartu menempel ke bawah frame (frame
+      disiapkan untuk semua baris yang mungkin tampil), jadi bawah kartu selalu 260 pt dari bawah;
+      `.normal` tetap menggantung dari atas frame seperti sebelumnya.
+    - *Waktu lirik:* posisi = posisi player + offset island + `ZenithLockScreenLyricOffset`
+      (−3…+3 dtk, positif = lebih lambat), dipakai untuk baris aktif dan karaoke di kedua lapisan.
+      Penyebab lirik telat di ronde satu: bukan polling (adapter now-playing berbasis notifikasi dan
+      sudah mengekstrapolasi elapsed dengan timestamp + rate MediaRemote), tapi karaoke 0,18 dtk per
+      karakter yang direntangkan sampai baris berikut (baris 30 karakter baru penuh setelah 5,4 dtk)
+      dan animasi ganti baris 0,45–0,6 dtk. Sekarang 0,085 dtk per karakter (min 1,2 dtk, selesai
+      di 92% jarak ke baris berikut), animasi 0,28 dtk (minimal) / spring 0,42 (penuh).
+    - *Karaoke per kata:* kata utuh menyala; kata yang sedang dinyanyikan memudar masuk dari huruf
+      pertama dengan tepi lembut (`ZenithLockScreenKaraoke.levels`); tidak pernah ada kata terbelah.
+      Teks CJK: tiap karakter satu kata.
+    - *Warna latar dari cover:* klaster hue jenuh terbanyak (bin 10°, jendela 30°, hanya piksel
+      saturasi ≥ 0,28, kecerahan ≥ 0,18, kroma ≥ 0,12, minimal 6% cover), bukan rata-rata; tanpa
+      klaster jenuh baru rata-rata. `ZenithLockScreenFullTone.vivid` = warna itu apa adanya,
+      `.muted` = versi tenang ronde satu. Tinta tetap (luminans > 0,4 → #1C1917); dengan tinta gelap
+      opasitas baris pudar ×1,3.
+    - *Layout penuh:* piringan 320 pt + 90 pt + lirik 690 pt = satu grup di tengah layar (kiri 350 pt
+      di 1800 pt), kolom piringan di tengah antara baris atas dan bawah, tengah baris aktif = tengah
+      piringan (`ZenithLockScreenLyricStack`). Judul/artis/progres rata kiri dengan piringan, tombol
+      di tengah. Lirik: 1 sebelum (35%), aktif (54 pt, maks 2 baris), 3 berikut (45/28/14%, blur naik,
+      40 pt, 1 baris), dimask sebelum jam dan sebelum baris bawah.
+    - *Piringan:* tanpa lubang; cincin hub 26 pt (tinta 35%); cincin tepi tipis (tinta 25%) hanya
+      kalau salah satu dari 8 busur tepi cover mirip latar (`ZenithLockScreenRecordEdge`).
+      `.fullDiscSpin` (default mati): satu putaran per 8 dtk saat main, melambat 1,2 dtk saat jeda;
+      Reduce Motion = diam.
+    - *Kanan atas:* tombol tutup bulat 42 pt (tinta 16%) di pojok, lalu ke kiri: job, salat
+      berikutnya, cuaca, timer, kalender, WakaTime (saklar masing-masing, hanya kalau ada isi).
+      WakaTime dan cuaca dinyalakan selama lock screen tampil kalau baris aktivitas belum
+      membacanya (cuaca hanya kalau izinnya sudah ada); timer dan kalender memakai yang sudah jalan.
+    - *Keluar:* tombol tutup, musik berhenti > 1,2 dtk, Esc kalau event-nya sampai, atau unlock.
+      Gerak pointer dan klik di mana saja tidak lagi menutup. Hint: "Type your password or use Touch ID".
+    - *Preview Settings* (`UI/Notch/ZenithLockScreenPreview.swift`): lapisan minimal/penuh yang asli
+      dengan contoh ("Lose You Now" – Nadia Rae, cover merah buatan, job contoh
+      `ZenithLockScreenJobLine.sampleJobs`, cuaca/salat contoh, akun dan Mac asli) di atas wallpaper
+      layar utama (dibaca sekali, diperkecil ke 1600 px; gagal = gradien netral). Mengikuti saklar
+      langsung lewat `UserDefaults.didChangeNotification`; lirik di preview selalu dianggap tersedia.
+      Klik bagian = `onSelect`, `highlight` = garis putus-putus aksen.
 - **Panel menu bar, bahasa desain Settings (branch `feat/panel-redesign`):** panel memakai
   bahasa p441z.my.id yang sama dengan Settings, diperkecil untuk panel 332 pt. Hanya
   visual; perilaku, layout, dan daftar section tidak berubah. Komponen baru di

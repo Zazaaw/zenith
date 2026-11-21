@@ -51,6 +51,8 @@ final class ZenithLockScreenV2Model: ObservableObject {
     @Published var fullShown = false
     @Published var scheme = ZenithLockScreenPalette.Scheme.neutral
     @Published var backdrop: ZenithLockScreenBackdropImage?
+    /// A thin ring round the record, where the cover's rim is close to the background.
+    @Published var edgeRing = false
     @Published var account: ZenithLockScreenAccount?
     /// Whether the lyric's hover hint may still show, read as the lock screen appears.
     @Published private(set) var hintAvailable = false
@@ -87,9 +89,9 @@ final class ZenithLockScreenV2 {
     private var full: NotchLockScreenPanel?
     private weak var island: NSPanel?
     private var subscriptions = Set<AnyCancellable>()
-    private var pointerTimer: Timer?
-    private var pointerOrigin = CGPoint.zero
     private var keyMonitors: [Any] = []
+    /// WakaTime, when the full layer's top right started it, stopped on hide.
+    private var startedWakaTime = false
     private var closeWork: DispatchWorkItem?
     private var lyricsShown = false
     private var accountRequest = 0
@@ -104,8 +106,9 @@ final class ZenithLockScreenV2 {
     }
 
     /// As the lock screen appears. `full` has joined the lock screen's Space
-    /// but is not ordered in; `island` stays drawn above it.
-    func begin(_ gates: ZenithLockScreenV2Gates, full: NotchLockScreenPanel?, island: NSPanel?) {
+    /// but is not ordered in; `island` stays drawn above it. `rowWeather` says
+    /// whether the activity row already reads the weather.
+    func begin(_ gates: ZenithLockScreenV2Gates, full: NotchLockScreenPanel?, island: NSPanel?, rowWeather: Bool) {
         subscriptions.removeAll()
         model.gates = gates
         model.fullShown = false
@@ -131,8 +134,10 @@ final class ZenithLockScreenV2 {
         }
         screenSize = full?.frame.size ?? .zero
         model.backdrop = nil
+        model.edgeRing = false
         model.scheme = ZenithLockScreenPalette.scheme(for: gates, cover: nil, blurredAverage: nil)
-        let followsCover = gates.full && (gates.fullBackground == .blurredCover || gates.fullCoverColor)
+        // The record's edge ring follows the cover too.
+        let followsCover = gates.full && (gates.fullBackground == .blurredCover || gates.fullCoverColor || gates.fullDisc)
         if followsCover {
             music.$artwork
                 .receive(on: DispatchQueue.main)
@@ -141,6 +146,31 @@ final class ZenithLockScreenV2 {
                 .store(in: &subscriptions)
         }
         if gates.fullAccount || gates.fullDevice { loadAccount() } else { model.account = nil }
+        startTopSources(gates, rowWeather: rowWeather)
+    }
+
+    /// The top right's WakaTime and weather read only while the lock screen
+    /// shows, as the row's own items do; the weather only with its permission
+    /// already granted, never asking for it here.
+    private func startTopSources(_ gates: ZenithLockScreenV2Gates, rowWeather: Bool) {
+        MainActor.assumeIsolated {
+            if gates.fullTopWakaTime, WakaTimeSupport.hasConfiguration() || WakaTimeService.shared.hasToken {
+                WakaTimeService.shared.viewAppeared()
+                startedWakaTime = true
+            }
+        }
+        if gates.fullTopWeather, !rowWeather,
+           MainActor.assumeIsolated({ WeatherService.shared.refreshAccess() == .granted }) {
+            // Stopped with the row's own items by NotchLockScreenWidgets.stop().
+            NotchLockScreenWidgets.start(weather: true, reminders: false)
+        }
+    }
+
+    private func stopTopSources() {
+        if startedWakaTime {
+            startedWakaTime = false
+            MainActor.assumeIsolated { WakaTimeService.shared.viewDisappeared() }
+        }
     }
 
     /// As the lock screen leaves. Hands back the full layer when it is on
@@ -153,6 +183,8 @@ final class ZenithLockScreenV2 {
         accountRequest += 1
         backdropRequest += 1
         model.backdrop = nil
+        model.edgeRing = false
+        stopTopSources()
         if lyricsShown {
             lyricsShown = false
             NotchLyricsService.shared.hide()
@@ -242,36 +274,24 @@ final class ZenithLockScreenV2 {
         DispatchQueue.main.asyncAfter(deadline: .now() + ZenithLockScreenFullExit.pauseGrace, execute: work)
     }
 
-    /// The pointer moving, or a key if one reaches this app while locked,
-    /// hands the screen back to the login controls. The panels never take
-    /// key focus, so the keystroke still goes to the password field.
+    /// Esc, if key events reach this app while locked, hands the screen
+    /// back to the minimal layer. The panels never take key focus, so every
+    /// keystroke still goes to the password field; the pointer moving never
+    /// closes the layer, as clicking it would close it at once.
     private func startWatching() {
         stopWatching()
-        pointerOrigin = NSEvent.mouseLocation
-        let timer = Timer(timeInterval: ZenithLockScreenFullExit.pollInterval, repeats: true) { [weak self] _ in
-            self?.pollPointer()
-        }
-        RunLoop.main.add(timer, forMode: .common)
-        pointerTimer = timer
-        if let monitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown], handler: { [weak self] _ in
-            self?.closeFull(animated: true)
+        if let monitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown], handler: { [weak self] event in
+            if ZenithLockScreenFullExit.closes(keyCode: event.keyCode) { self?.closeFull(animated: true) }
         }) { keyMonitors.append(monitor) }
         if let monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown], handler: { [weak self] event in
-            self?.closeFull(animated: true)
+            if ZenithLockScreenFullExit.closes(keyCode: event.keyCode) { self?.closeFull(animated: true) }
             return event
         }) { keyMonitors.append(monitor) }
     }
 
     private func stopWatching() {
-        pointerTimer?.invalidate()
-        pointerTimer = nil
         keyMonitors.forEach(NSEvent.removeMonitor)
         keyMonitors.removeAll()
-    }
-
-    private func pollPointer() {
-        guard model.fullShown else { stopWatching(); return }
-        if ZenithLockScreenFullExit.moved(from: pointerOrigin, to: NSEvent.mouseLocation) { closeFull(animated: true) }
     }
 
     // MARK: Cover colour
@@ -279,36 +299,47 @@ final class ZenithLockScreenV2 {
     private func coverChanged(_ image: NSImage?) {
         let gates = model.gates
         backdropRequest += 1
-        switch gates.fullBackground {
-        case .solid:
-            let scheme = ZenithLockScreenPalette.scheme(for: gates, cover: image.flatMap(Self.dominantColor(of:)),
-                                                        blurredAverage: nil)
-            if model.scheme != scheme { model.scheme = scheme }
-        case .blurredCover:
-            guard let image, let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
-                model.backdrop = nil
-                model.scheme = ZenithLockScreenPalette.scheme(for: gates, cover: nil, blurredAverage: nil)
-                return
-            }
-            let request = backdropRequest
-            let radius = gates.fullBlurRadius
-            let screen = screenSize
-            // Blurred once per song, off the main thread, on a small copy.
-            Self.renderQueue.async { [weak self] in
-                let rendered = Self.blurredCover(cgImage, points: radius, screen: screen)
-                DispatchQueue.main.async {
-                    guard let self, self.backdropRequest == request else { return }
-                    guard let rendered else {
-                        self.model.backdrop = nil
-                        self.model.scheme = ZenithLockScreenPalette.scheme(for: gates, cover: nil, blurredAverage: nil)
-                        return
-                    }
-                    let size = NSSize(width: rendered.image.width, height: rendered.image.height)
-                    self.model.backdrop = ZenithLockScreenBackdropImage(id: request, image: NSImage(cgImage: rendered.image, size: size))
-                    self.model.scheme = ZenithLockScreenPalette.scheme(for: gates, cover: nil, blurredAverage: rendered.average)
+        let request = backdropRequest
+        guard let image, let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            model.backdrop = nil
+            model.edgeRing = false
+            model.scheme = ZenithLockScreenPalette.scheme(for: gates, cover: nil, blurredAverage: nil)
+            return
+        }
+        let screen = screenSize
+        // Read once per song, off the main thread, on small copies.
+        Self.renderQueue.async { [weak self] in
+            let rendered = Self.render(cgImage, gates: gates, screen: screen)
+            DispatchQueue.main.async {
+                guard let self, self.backdropRequest == request else { return }
+                self.model.backdrop = rendered.backdrop.map { backdrop in
+                    ZenithLockScreenBackdropImage(id: request, image: NSImage(
+                        cgImage: backdrop, size: NSSize(width: backdrop.width, height: backdrop.height)))
                 }
+                if self.model.scheme != rendered.scheme { self.model.scheme = rendered.scheme }
+                self.model.edgeRing = rendered.edgeRing
             }
         }
+    }
+
+    /// Everything the full layer takes from a cover: its scheme, the blurred
+    /// backdrop when that is the background, and whether the record needs its
+    /// edge ring. Also used by the Settings preview.
+    static func render(_ cover: CGImage, gates: ZenithLockScreenV2Gates,
+                       screen: CGSize) -> (scheme: ZenithLockScreenPalette.Scheme, backdrop: CGImage?, edgeRing: Bool) {
+        let reading = read(cover)
+        var scheme = ZenithLockScreenPalette.scheme(for: gates, cover: reading?.color, blurredAverage: nil)
+        var backdrop: CGImage?
+        if gates.fullBackground == .blurredCover {
+            if let blurred = blurredCover(cover, points: gates.fullBlurRadius, screen: screen) {
+                backdrop = blurred.image
+                scheme = ZenithLockScreenPalette.scheme(for: gates, cover: nil, blurredAverage: blurred.average)
+            } else {
+                scheme = ZenithLockScreenPalette.scheme(for: gates, cover: nil, blurredAverage: nil)
+            }
+        }
+        let ring = reading.map { ZenithLockScreenRecordEdge.needsRing(edge: $0.edge, background: scheme.background) } ?? false
+        return (scheme, backdrop, ring)
     }
 
     /// The cover filled into a small square, Gaussian-blurred by what
@@ -349,21 +380,26 @@ final class ZenithLockScreenV2 {
         return (image, average)
     }
 
-    /// The cover drawn into 24 × 24 sRGB pixels, then its most common colour.
-    static func dominantColor(of image: NSImage) -> ZenithLockScreenRGB? {
-        guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
-              let space = CGColorSpace(name: CGColorSpace.sRGB) else { return nil }
-        let side = 24
+    /// The cover filled into 48 × 48 sRGB pixels, as the record fills its
+    /// circle: its colour (`ZenithLockScreenPalette.coverColor`) and its rim.
+    static func read(_ cover: CGImage) -> (color: ZenithLockScreenRGB?, edge: [ZenithLockScreenRGB])? {
+        guard let space = CGColorSpace(name: CGColorSpace.sRGB), cover.width > 0, cover.height > 0 else { return nil }
+        let side = 48
         var pixels = [UInt8](repeating: 0, count: side * side * 4)
         let drawn = pixels.withUnsafeMutableBytes { buffer -> Bool in
             guard let context = CGContext(data: buffer.baseAddress, width: side, height: side, bitsPerComponent: 8,
                                           bytesPerRow: side * 4, space: space,
                                           bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
             context.interpolationQuality = .medium
-            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: side, height: side))
+            let width = CGFloat(cover.width), height = CGFloat(cover.height)
+            let scale = max(CGFloat(side) / width, CGFloat(side) / height)
+            context.draw(cover, in: CGRect(x: (CGFloat(side) - width * scale) / 2, y: (CGFloat(side) - height * scale) / 2,
+                                           width: width * scale, height: height * scale))
             return true
         }
-        return drawn ? ZenithLockScreenPalette.dominant(rgba: pixels, count: side * side) : nil
+        guard drawn else { return nil }
+        return (ZenithLockScreenPalette.coverColor(rgba: pixels, count: side * side),
+                ZenithLockScreenRecordEdge.samples(rgba: pixels, side: side))
     }
 }
 
