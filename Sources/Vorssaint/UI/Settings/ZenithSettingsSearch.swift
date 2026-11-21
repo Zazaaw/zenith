@@ -36,6 +36,7 @@ enum ZenithSettingsSearch {
         let vercelAlerts = ZenithStrings.vercelAlerts(language)
         let gitHub = ZenithStrings.gitHub(language)
         let hooks = ZenithStrings.claudeHooks(language)
+        let chime = ZenithStrings.claudeChime(language) // Zenith fork: when Claude needs you
         let card = ZenithStrings.cardImport(language)
         let backup = ZenithStrings.cardBackup(language)
         let servers = ZenithStrings.devServers(language)
@@ -184,8 +185,9 @@ enum ZenithSettingsSearch {
         // Claude Code's hooks show under the AI agents options while Claude is on.
         if state.on(DefaultsKey.notchAgentsClaude) {
             items.append(section(.zenithClaudeHooks, in: .module(.agents), title: hooks.section, icon: "sparkles",
-                                 keywords: [hooks.connect, hooks.sound],
-                                 aliases: ["Claude Code", "hooks", "live steps", "langkah Claude"], feature: .notchAgents))
+                                 keywords: [hooks.connect, hooks.sound, chime.alert, chime.soundAndIsland, chime.needsYou],
+                                 aliases: ["Claude Code", "hooks", "live steps", "langkah Claude", "chime", "Tink", "bunyi",
+                                           "suara Claude", "Claude butuh kamu"], feature: .notchAgents))
         }
         return items
     }

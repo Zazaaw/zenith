@@ -313,6 +313,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Notch/ZenithIslandMotion.swift
         Sources/Vorssaint/Services/Notch/ZenithLockIslandSupport.swift
         Sources/Vorssaint/Core/ZenithLockIslandStrings.swift
+        Sources/Vorssaint/Core/ZenithClaudeChimeStrings.swift
         Sources/Vorssaint/Services/Notch/ZenithCalendarSupport.swift
         Sources/Vorssaint/Services/Notch/ZenithIslandBurstSupport.swift
         Sources/Vorssaint/Core/ZenithIslandStrings.swift

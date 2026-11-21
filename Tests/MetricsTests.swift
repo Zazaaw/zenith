@@ -279,6 +279,7 @@ struct MetricsTests {
             ("island-room", { IslandRoundThreeTests.run(suite) }),
             ("island-motion", { IslandMotionTests.run(suite) }),
             ("lock-island", { LockIslandTests.run(suite) }),
+            ("island-floor", { IslandFloorTests.run(suite) }),
             ("reply", { ReplyTests.run(suite) }),
             ("home-layout", { HomeLayoutTests.run(suite) }),
             ("tab-bar", { TabBarTests.run(suite) }),

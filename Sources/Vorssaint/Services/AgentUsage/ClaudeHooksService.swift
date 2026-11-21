@@ -25,6 +25,8 @@ final class ClaudeHooksService: ObservableObject {
     @Published private(set) var strip: ClaudeHooksSupport.Strip?
     /// When the hook last wrote, kept on this Mac only (never backed up).
     @Published private(set) var lastEvent: Date?
+    /// Zenith fork: how often sessions waiting for the person may chime; main thread only.
+    private var chimeLimiter = ClaudeChimeLimiter()
 
     private let queue = DispatchQueue(label: "com.vorssaint.zenith.claude-hooks", qos: .utility)
     /// Main thread: published values are accepted only while running.
@@ -204,9 +206,18 @@ final class ClaudeHooksService: ObservableObject {
         UserDefaults.standard.set(date.timeIntervalSince1970, forKey: DefaultsKey.notchAgentsClaudeLastEvent)
     }
 
-    /// A soft sound once when a session starts needing the person.
+    /// Zenith fork: when a session starts needing the person, a soft sound
+    /// with the island's burst naming the project, never the sound alone, and
+    /// no more often than `ClaudeChimeLimiter` allows.
     private func announce(_ strip: ClaudeHooksSupport.Strip?, after before: ClaudeHooksSupport.Strip?) {
-        guard let strip, case .needsYou = strip.kind, strip != before, ClaudeHooksSupport.playsSound() else { return }
+        guard let strip, case .needsYou = strip.kind, strip != before,
+              ClaudeHooksSupport.chime() == .soundAndIsland, chimeLimiter.allows(session: strip.session, at: Date()) else { return }
+        let island = NotchService.shared
+        let burst = ZenithAgentBurst(provider: .claude, title: ZenithStrings.claudeChime(L10n.shared.language).needsYou,
+                                     subtitle: strip.folder)
+        // An open island already shows the AI page's own row; the burst
+        // waits a moment for it to close. Anything else keeps quiet.
+        guard island.showZenithBurst(.agent(burst)) || island.expanded else { return }
         guard let sound = NSSound(named: "Tink")?.copy() as? NSSound else { return }
         sound.volume = 0.35
         sound.play()

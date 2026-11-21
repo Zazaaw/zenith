@@ -115,6 +115,17 @@ extension CatalogShots {
                 DefaultsKey.notchSilhouette: NotchSilhouette.capsule.rawValue]) { $1 },
                   geometry: capsule, elapsed: 3.2, setup: { CatalogSamples.prayer(arrived: true) }, prayer),
             burst("burst-charging") { charge(.charging, percent: 82, minutes: 70) },
+            burst("burst-welcome") {
+                let text = ZenithStrings.lockIsland(.enUS)
+                return .welcome(ZenithWelcomeBurst(
+                    title: text.welcomeBack("Faiz"),
+                    subtitle: text.detail(duration: ZenithLockIsland.duration(2 * 3_600 + 14 * 60, locale: Locale(identifier: "en_US")),
+                                          notifications: nil),
+                    photo: nil, initials: "FH"))
+            },
+            burst("burst-claude") {
+                .agent(ZenithAgentBurst(provider: .claude, title: ZenithStrings.claudeChime(.enUS).needsYou, subtitle: "zenith"))
+            },
             burst("burst-charging-estimating") { charge(.charging, percent: 46, minutes: nil) },
             burst("burst-charge-limit") { charge(.charging, percent: 80, minutes: nil,
                                                  hint: ZenithStrings.notices(.enUS).chargeHint) },

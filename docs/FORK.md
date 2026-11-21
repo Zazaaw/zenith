@@ -2883,6 +2883,35 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     berbalik kini lanjut (dulu nil), envelope tutup boleh +14 pt lebar, perbandingan steady vs pegas pakai kecepatan
     puncak, durasi notice = durasi pegas lebar. `ZenithIslandTests.morphReach` mengikuti ride.
     `NotchPresentationProbe` diselaraskan (drift naik 8 pt, tunggu ayunan selesai) tapi belum dijalankan.
+  - **Ronde dua (setelah dicoba Faiz di MacBook Pro M4, notch 205 × 37 pt):**
+    - *Lantai notch:* tidak ada frame yang lebih kecil dari cutout kamera (`NotchMotionFloor`: kamera telanjang di
+      layar ber-notch, atau strip tujuan saat menutup ke strip; kapsul tanpa lantai). Sisi yang mendarat ke lantai
+      memakai pegas pendaratan yang lebih lembut (`landingWidth 0,48/0,15`, `landingHeight 0,44/0,12`) dan ayunan
+      lewat target dipantulkan ke luar (rebound kecil, < 4% jarak), squash juga di-clamp ke lantai. Menyusut ke
+      halaman terbuka yang lebih kecil boleh undershoot asal tetap di atas kamera. Island yang disembunyikan (tinggi
+      0) boleh lewat di balik kamera. Lantai ikut ke motion yang diteruskan (`continued(to:at:floor:)`).
+    - *Tutup ease-in:* sisi yang menyusut memakai jam yang dipercepat pelan selama 80 ms pertama
+      (`ZenithIslandMotion.warp`, laju kontinu, lalu 40 ms di belakang jam), jadi tutup tidak langsung di kecepatan
+      puncak; buka tetap langsung dan mantul. Sampel (catalog, 505×234 ↔ 215×38): buka 0 ms 215×38, 40 ms 238×38,
+      80 ms 294×64, 120 ms 363×105, 200 ms 477×187, 300 ms 532×242, 450 ms 518×247, 700 ms 502×233, 1000 ms
+      505×234; tutup 0 ms 505×234, 20 ms 505×234, 40 ms 507×232, 80 ms 512×212, 120 ms 481×173, 200 ms 358×99,
+      300 ms 256×53, 450 ms 215×39, 700 ms 216×38, 1000 ms 215×38.
+    - *Penyebab "datar" yang ditemukan:* blur dan transform isi diberi `beginTime` = saat transisi diminta, padahal
+      halaman baru baru di-layout SwiftUI secara sinkron sesudahnya dan semuanya sampai ke layar saat commit; layout
+      halaman yang berat menghabiskan waktu ride sebelum terlihat, jadi isi muncul tajam tanpa tumpangan. Sekarang
+      ride dimulai Core Animation saat commit (bersama halaman), transform diambil dari waktu mulai yang dicap CA.
+      Bentuknya sendiri sudah benar di matematika (lihat sampel); yang di layar perlu dicek lewat log dev:
+      `defaults write id.satuvisual.zenith.dev zenithMotionTrace -bool true`, lalu
+      `~/Library/Logs/ZenithDeveloper/island-motion.log` (keyframe yang dipasang + ukuran di layar per frame).
+    - *Welcome tidak lagi di jendela lock screen:* jendela gembok memudar 0,55 dtk seperti dulu, lalu 0,8 dtk setelah
+      unlock island desktop sendiri yang tumbuh (`ZenithIslandBurst.welcome`: gembok hijau, salam, lama terkunci,
+      foto/inisial, 3 dtk). Kalau island sedang terbuka, burst menunggu maksimal 5 dtk lalu dibatalkan
+      (`ZenithIslandBurstTiming.patience`); tidak pernah menumpuk di atas halaman (penyebab 61.png/62.png).
+    - *Claude needs you:* saklar suara diganti pilihan Off / Sound + island (`notchAgentsClaudeChime`, default
+      Sound + island; bool lama `false` tetap berarti Off sampai dipilih ulang). Suara selalu bersama burst island
+      (`ZenithIslandBurst.agent`: mark Claude, "Claude needs you", nama folder; klik membuka halaman AI), dan hanya
+      berbunyi kalau burst tampil atau island sedang terbuka. `ClaudeChimeLimiter`: per sesi maks sekali per 3 menit,
+      semua sesi maks sekali per 30 dtk. Teks 15 bahasa, alias pencarian. Test: suite `island-floor`.
   - **Belum diverifikasi di Mac:** semua gerak di layar sungguhan (120 Hz, blur CAFilter, urutan crossfade
     `CATransition`, transform selama ayunan, interupsi hover), bayangan lembut saat terbuka (belum dibuat: jendela
     island hanya seluas siluet, bayangan butuh ruang tambahan di sekitar jendela), island gembok di Mac terkunci

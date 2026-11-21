@@ -12,7 +12,9 @@ import SwiftUI
 struct NotchAgentsClaudeHooksSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var service = ClaudeHooksService.shared
+    // Zenith fork: the old sound switch, read only to keep its "off".
     @AppStorage(DefaultsKey.notchAgentsClaudeSound) private var sound = true
+    @AppStorage(DefaultsKey.notchAgentsClaudeChime) private var chime = ClaudeChimeMode.soundAndIsland.rawValue
     @State private var state = ClaudeHooksSettings.State.missing
     @State private var changed = false
     @State private var editFailed = false
@@ -45,18 +47,34 @@ struct NotchAgentsClaudeHooksSettings: View {
             if editFailed {
                 Text(text.editFailed).font(.caption).foregroundStyle(ZenithStatus.error)
             }
-            ZenithSwitchRow(text.sound, isOn: $sound) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(text.sound)
-                    Text(text.soundCaption).font(.caption).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
+            chimePicker
             Text(text.privacy).font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .zenithSectionAnchor(.zenithClaudeHooks) // Settings search lands here
         .onAppear(perform: refresh)
+    }
+
+    /// Off, or the sound with the island's burst: never the sound alone.
+    private var chimePicker: some View {
+        let words = ZenithStrings.claudeChime(l10n.language)
+        let selection = Binding<ClaudeChimeMode>(
+            get: { _ = (sound, chime); return ClaudeHooksSupport.chime() },
+            set: { ClaudeHooksSupport.setChime($0) })
+        return HStack(alignment: .firstTextBaseline, spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(words.alert)
+                Text(words.alertCaption).font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 8)
+            Picker(words.alert, selection: selection) {
+                Text(words.off).tag(ClaudeChimeMode.off)
+                Text(words.soundAndIsland).tag(ClaudeChimeMode.soundAndIsland)
+            }
+            .labelsHidden()
+            .fixedSize()
+        }
     }
 
     private var status: some View {

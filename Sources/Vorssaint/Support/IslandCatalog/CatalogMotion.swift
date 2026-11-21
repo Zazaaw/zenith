@@ -20,12 +20,6 @@ extension CatalogShots {
             lockIsland("lock-island-charging") { $0.charging = true; $0.percent = 82 },
             lockIsland("lock-island-focus") { $0.charging = true; $0.percent = 82; $0.focus = "Work" },
             lockIsland("lock-island-farewell", open: true) { $0.moment = .farewell },
-            lockIsland("lock-island-welcome", open: true) {
-                $0.moment = .welcome
-                $0.detail = ZenithStrings.lockIsland(.enUS)
-                    .detail(duration: ZenithLockIsland.duration(2 * 3_600 + 14 * 60, locale: Locale(identifier: "en_US")),
-                            notifications: 3)
-            },
         ]
     }
 
@@ -69,7 +63,10 @@ enum CatalogMotion {
         Sequence(id: "motion-notice", from: "closed-idle", to: "notice-volume"),
         Sequence(id: "motion-burst", from: "closed-idle", to: "burst-prayer"),
         Sequence(id: "motion-lock-farewell", from: "lock-island-rest", to: "lock-island-farewell"),
-        Sequence(id: "motion-lock-welcome", from: "lock-island-rest", to: "lock-island-welcome"),
+        Sequence(id: "motion-close-strip", from: "page-home", to: "compact-music"),
+        Sequence(id: "motion-welcome", from: "closed-idle", to: "burst-welcome"),
+        Sequence(id: "motion-welcome-close", from: "burst-welcome", to: "closed-idle"),
+        Sequence(id: "motion-claude", from: "closed-idle", to: "burst-claude"),
     ]
 
     static let fps = 30.0
@@ -159,7 +156,16 @@ enum CatalogMotion {
 
     private static func draw(_ sequence: Sequence, from start: End, to finish: End) -> [CGImage] {
         let scale = max(start.scale, finish.scale)
-        let timeline = NotchMotionTimeline(from: start.size, to: finish.size, begin: 0)
+        let floor = sequence.id.hasPrefix("motion-lock")
+            ? NotchMotionFloor.floor(camera: CGSize(width: CatalogShots.notched.bareCutout.width, height: min(start.size.height, finish.size.height)),
+                                     target: finish.size, closedHeight: min(start.size.height, finish.size.height))
+            : NotchMotionFloor.floor(for: finish.size, geometry: CatalogShots.notched)
+        let timeline = NotchMotionTimeline(from: start.size, to: finish.size, begin: 0, floor: floor)
+        let samples = [0, 0.02, 0.04, 0.06, 0.08, 0.12, 0.2, 0.3, 0.45, 0.7, 1.0].map { time -> String in
+            let shape = timeline.shape(at: time)
+            return "\(Int((time * 1_000).rounded())) ms \(Int(shape.width.rounded()))x\(Int(shape.height.rounded()))"
+        }
+        print("samples \(sequence.id) floor \(Int(floor.width))x\(Int(floor.height)): " + samples.joined(separator: ", "))
         let reach = timeline.frames().sizes.reduce(CGSize.zero) { CGSize(width: max($0.width, $1.width), height: max($0.height, $1.height)) }
         let canvas = CGSize(width: (reach.width + 160).rounded(.up), height: (reach.height + 60).rounded(.up))
         let count = Int(length * fps)

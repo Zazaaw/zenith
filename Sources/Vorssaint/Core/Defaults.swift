@@ -1101,7 +1101,8 @@ enum DefaultsKey {
     static let notchAgentsPriceUpdates = "notchAgentsPriceUpdates"
     // Zenith fork: Claude Code's hooks followed live (ClaudeHooksService). A soft sound when a
     // session needs the person; when the hook last wrote, unregistered so it stays out of backups.
-    static let notchAgentsClaudeSound = "notchAgentsClaudeSound"
+    static let notchAgentsClaudeSound = "notchAgentsClaudeSound" // Zenith fork: replaced by notchAgentsClaudeChime; false still means off
+    static let notchAgentsClaudeChime = "notchAgentsClaudeChime" // Zenith fork: ClaudeChimeMode.rawValue
     static let notchAgentsClaudeLastEvent = "notchAgentsClaudeLastEvent"
     static let notchEnabled = "notchEnabled"
     static let notchDisplay = "notchDisplay"
@@ -1787,6 +1788,7 @@ enum Defaults {
         DefaultsKey.notchAgentsDailyBudget: 0.0,
         DefaultsKey.notchAgentsPriceUpdates: true,
         DefaultsKey.notchAgentsClaudeSound: true, // Zenith fork
+        DefaultsKey.notchAgentsClaudeChime: ClaudeChimeMode.soundAndIsland.rawValue, // Zenith fork
         DefaultsKey.notchLyricsEnabled: true,
         DefaultsKey.notchLyricsOnline: false,
         DefaultsKey.notchBrowserCovers: false,
