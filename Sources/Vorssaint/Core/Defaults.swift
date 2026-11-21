@@ -1168,6 +1168,26 @@ enum DefaultsKey {
     static let notchLockScreenTerminalLines = "notchLockScreenTerminalLines" // NotchLockScreenTerminalSelection.stored
     static let notchLockScreenTerminalProjects = "notchLockScreenTerminalProjects"
     static let notchLockScreenTerminalTitle = "notchLockScreenTerminalTitle" // Zenith fork, "" = zenith — status
+    // Zenith fork: the lock screen v2 (ZenithLockScreenOption), one switch each.
+    static let zenithLockJobs = "zenithLockJobs"
+    static let zenithLockJobExport = "zenithLockJobExport"
+    static let zenithLockJobCardImport = "zenithLockJobCardImport"
+    static let zenithLockJobBackup = "zenithLockJobBackup"
+    static let zenithLockJobCommand = "zenithLockJobCommand"
+    static let zenithLockJobVercel = "zenithLockJobVercel"
+    static let zenithLockNowPlaying = "zenithLockNowPlaying"
+    static let zenithLockLyrics = "zenithLockLyrics"
+    static let zenithLockKaraoke = "zenithLockKaraoke"
+    static let zenithLockTitleControls = "zenithLockTitleControls"
+    static let zenithLockTerminalPlacement = "zenithLockTerminalPlacement" // ZenithLockScreenTerminalPlacement
+    static let zenithLockFull = "zenithLockFull"
+    static let zenithLockFullDisc = "zenithLockFullDisc"
+    static let zenithLockFullAccount = "zenithLockFullAccount"
+    static let zenithLockFullDevice = "zenithLockFullDevice"
+    static let zenithLockFullClock = "zenithLockFullClock"
+    static let zenithLockFullJobs = "zenithLockFullJobs"
+    static let zenithLockFullCoverColor = "zenithLockFullCoverColor"
+    static let zenithLockFullLoginHint = "zenithLockFullLoginHint"
     static let wakaTimeDailyGoalMinutes = "wakaTimeDailyGoalMinutes" // Zenith fork, 0 = off
     // Companion: a small friend who rests in the closed island and is the Command Bar's face.
     static let notchMascotEnabled = "notchMascotEnabled"
@@ -1881,6 +1901,26 @@ enum Defaults {
         DefaultsKey.notchLockScreenTerminalLines: NotchLockScreenTerminalSelection.defaultValue,
         DefaultsKey.notchLockScreenTerminalProjects: false,
         DefaultsKey.notchLockScreenTerminalTitle: "", // Zenith fork
+        // Zenith fork: lock screen v2 (ZenithLockScreenOption.isOnByDefault).
+        DefaultsKey.zenithLockJobs: true,
+        DefaultsKey.zenithLockJobExport: true,
+        DefaultsKey.zenithLockJobCardImport: true,
+        DefaultsKey.zenithLockJobBackup: true,
+        DefaultsKey.zenithLockJobCommand: true,
+        DefaultsKey.zenithLockJobVercel: true,
+        DefaultsKey.zenithLockNowPlaying: true,
+        DefaultsKey.zenithLockLyrics: true,
+        DefaultsKey.zenithLockKaraoke: true,
+        DefaultsKey.zenithLockTitleControls: true,
+        DefaultsKey.zenithLockTerminalPlacement: "low",
+        DefaultsKey.zenithLockFull: true,
+        DefaultsKey.zenithLockFullDisc: true,
+        DefaultsKey.zenithLockFullAccount: true,
+        DefaultsKey.zenithLockFullDevice: true,
+        DefaultsKey.zenithLockFullClock: true,
+        DefaultsKey.zenithLockFullJobs: true,
+        DefaultsKey.zenithLockFullCoverColor: true,
+        DefaultsKey.zenithLockFullLoginHint: true,
         DefaultsKey.wakaTimeDailyGoalMinutes: 0,
         DefaultsKey.notchMascotEnabled: false,
         DefaultsKey.notchMascotVisits: true,
