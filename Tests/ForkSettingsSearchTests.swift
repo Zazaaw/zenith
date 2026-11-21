@@ -82,7 +82,7 @@ enum ForkSettingsSearchTests {
             ("recap", module(.recap)), ("today", module(.recap)), ("card import", module(.cardImport)),
             ("lock screen", lockScreenPage), ("weather", lockScreen), ("terminal readout", lockTerminal),
             ("job progress", lockScreen), ("karaoke", lockScreen), ("full-screen lyrics", lockLyrics),
-            ("cover color", lockLyrics),
+            ("cover color", lockLyrics), ("blurred cover", lockLyrics), ("background color", lockLyrics),
             ("terminal commands", commands), ("exports", exports), ("notices", notices), ("tab bar", tabBar),
             ("claude code", hooks), ("whatsapp", reply), ("start the mirror", camera),
             ("menu bar hiding", menuBar), ("about", FeatureSettingsDestination(.about)),
@@ -95,7 +95,8 @@ enum ForkSettingsSearchTests {
             ("rekap", module(.recap)), ("hari ini", module(.recap)), ("menu bar", menuBar),
             ("sembunyikan ikon", menuBar), ("ruang kerja", FeatureSettingsDestination(.workspaces)),
             ("layar kunci", lockScreenPage), ("cuaca", lockScreen), ("lirik layar penuh", lockLyrics),
-            ("progres", lockScreen), ("terminal layar kunci", lockTerminal), ("zona drop", anchored(.zenithDropZones)),
+            ("progres", lockScreen), ("terminal layar kunci", lockTerminal), ("latar", lockLyrics),
+            ("warna latar", lockLyrics), ("warna sendiri", lockLyrics), ("zona drop", anchored(.zenithDropZones)),
             ("percantik", anchored(.zenithBeautify)), ("perintah terminal", commands), ("ekspor", exports),
             ("balas", reply), ("tentang", FeatureSettingsDestination(.about)),
         ]

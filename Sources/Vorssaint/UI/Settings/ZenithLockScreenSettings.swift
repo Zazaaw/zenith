@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Satu Visual
 
+import AppKit
 import SwiftUI
 
 /// Zenith fork: Settings → Lock Screen. The island's lock screen switch and
@@ -35,6 +36,10 @@ struct ZenithLockScreenSettings: View {
     @AppStorage(DefaultsKey.zenithLockFullJobs) private var fullJobs = true
     @AppStorage(DefaultsKey.zenithLockFullCoverColor) private var fullCoverColor = true
     @AppStorage(DefaultsKey.zenithLockFullLoginHint) private var fullLoginHint = true
+    @AppStorage(DefaultsKey.zenithLockFullBackground) private var storedBackground = ZenithLockScreenFullBackground.fallback.rawValue
+    @AppStorage(DefaultsKey.zenithLockFullBlurRadius) private var blurRadius = ZenithLockScreenFullBlur.fallback
+    @AppStorage(DefaultsKey.zenithLockFullCustomColor) private var customColor =
+        ZenithLockScreenCustomColor.string(ZenithLockScreenCustomColor.fallback)
 
     private var text: ZenithLockScreenSettingsStrings { ZenithStrings.lockScreenSettings(l10n.language) }
     private var locked: NotchLockScreenStrings { FeatureStrings.notchLockScreen(l10n.language) }
@@ -118,9 +123,8 @@ struct ZenithLockScreenSettings: View {
                 row(text.fullClock, symbol: "clock", isOn: $fullClock, enabled: full)
                 // The rings come from the job progress above.
                 row(text.jobs, symbol: "hourglass", isOn: $fullJobs, enabled: full && jobs)
-                row(text.fullCoverColor, symbol: "paintpalette", caption: text.fullCoverColorCaption,
-                    isOn: $fullCoverColor, enabled: full)
                 row(text.fullLoginHint, symbol: "key", isOn: $fullLoginHint, enabled: full)
+                backgroundRows
             }
             .padding(.leading, Self.indent)
             Text(text.fullCaption)
@@ -131,7 +135,67 @@ struct ZenithLockScreenSettings: View {
         .zenithSectionAnchor(.zenithLockScreenLyrics, cornerRadius: ZenithRadius.panel + 6, inset: 6)
     }
 
+    /// The full layer's background: a solid colour, from the cover or chosen
+    /// here, or the cover itself blurred, with how strongly.
+    @ViewBuilder
+    private var backgroundRows: some View {
+        let blurred = fullBackground == .blurredCover
+        choiceRow(text.background, symbol: "photo", selection: backgroundChoice) {
+            Text(text.backgroundSolid).tag(ZenithLockScreenFullBackground.solid)
+            Text(text.backgroundBlurred).tag(ZenithLockScreenFullBackground.blurredCover)
+        }
+        Group {
+            if blurred {
+                HStack(spacing: 12) {
+                    ZenithLockScreenRowLabel(title: text.blur, symbol: "drop")
+                    Spacer(minLength: 12)
+                    Text(text.blurSoft).font(ZenithType.caption).foregroundStyle(.secondary)
+                    Slider(value: blurChoice, in: ZenithLockScreenFullBlur.range, step: 1) { Text(text.blur) }
+                        .labelsHidden()
+                        .frame(minWidth: 120, maxWidth: 200)
+                    Text(text.blurStrong).font(ZenithType.caption).foregroundStyle(.secondary)
+                }
+            } else {
+                choiceRow(text.color, symbol: "paintpalette", selection: $fullCoverColor) {
+                    Text(text.colorFromCover).tag(true)
+                    Text(text.colorChoose).tag(false)
+                }
+                if !fullCoverColor {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 12) {
+                            ZenithLockScreenRowLabel(title: text.colorChoose, symbol: "eyedropper")
+                            Spacer(minLength: 12)
+                            ColorPicker(text.colorChoose, selection: customColorChoice, supportsOpacity: false)
+                                .labelsHidden()
+                        }
+                        Text(text.customColorCaption)
+                            .font(ZenithType.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.leading, 28)
+                    }
+                }
+            }
+        }
+        .padding(.leading, Self.indent)
+        .disabled(!full)
+    }
+
     // MARK: Rows
+
+    /// A label and a few segments, greyed while the full layer is off.
+    private func choiceRow<Value: Hashable, Options: View>(_ title: String, symbol: String, selection: Binding<Value>,
+                                                           @ViewBuilder options: () -> Options) -> some View {
+        HStack(spacing: 12) {
+            ZenithLockScreenRowLabel(title: title, symbol: symbol)
+            Spacer(minLength: 12)
+            Picker(title, selection: selection) { options() }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
+        }
+        .disabled(!full)
+    }
 
     /// How far a part that depends on the row above it is indented.
     private static let indent: CGFloat = 22
@@ -155,6 +219,34 @@ struct ZenithLockScreenSettings: View {
     private var placementChoice: Binding<ZenithLockScreenTerminalPlacement> {
         Binding(get: { ZenithLockScreenTerminalPlacement(rawValue: placement) ?? .fallback },
                 set: { placement = $0.rawValue })
+    }
+
+    private var fullBackground: ZenithLockScreenFullBackground {
+        ZenithLockScreenFullBackground(rawValue: storedBackground) ?? .fallback
+    }
+
+    private var backgroundChoice: Binding<ZenithLockScreenFullBackground> {
+        Binding(get: { fullBackground }, set: { storedBackground = $0.rawValue })
+    }
+
+    private var blurChoice: Binding<Double> {
+        Binding(get: { min(max(blurRadius, ZenithLockScreenFullBlur.range.lowerBound), ZenithLockScreenFullBlur.range.upperBound) },
+                set: { blurRadius = $0.rounded() })
+    }
+
+    /// The chosen colour as "RRGGBB", read and written in sRGB.
+    private var customColorChoice: Binding<Color> {
+        Binding(get: {
+            let rgb = ZenithLockScreenCustomColor.parse(customColor) ?? ZenithLockScreenCustomColor.fallback
+            return Color(.sRGB, red: Double(rgb >> 16 & 0xFF) / 255, green: Double(rgb >> 8 & 0xFF) / 255,
+                         blue: Double(rgb & 0xFF) / 255)
+        }, set: { color in
+            guard let srgb = NSColor(color).usingColorSpace(.sRGB) else { return }
+            func byte(_ value: CGFloat) -> UInt32 { UInt32((min(max(value, 0), 1) * 255).rounded()) }
+            let value = ZenithLockScreenCustomColor.string(byte(srgb.redComponent) << 16 | byte(srgb.greenComponent) << 8
+                                                           | byte(srgb.blueComponent))
+            if value != customColor { customColor = value }
+        })
     }
 
     private func title(_ placement: ZenithLockScreenTerminalPlacement) -> String {
