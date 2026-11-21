@@ -46,6 +46,7 @@ enum ZenithSettingsSearch {
         let camera = ZenithStrings.camera(language)
         let reply = ZenithStrings.reply(language)
         let lockScreen = ZenithStrings.lockScreenSettings(language)
+        let lockPage = ZenithStrings.lockScreenPage(language)
         let widgets = ZenithStrings.lockScreenWidgets(language)
         let terminal = ZenithStrings.lockScreenTerminal(language)
         let terminalTitle = ZenithStrings.lockScreenTerminalTitle(language)
@@ -107,26 +108,34 @@ enum ZenithSettingsSearch {
             section(.zenithReply, in: .module(.notifications), title: reply.autoWhatsApp,
                     icon: "arrowshape.turn.up.left", keywords: [],
                     aliases: ["reply", "balas", "balas pesan", "WhatsApp", "iMessage"], feature: .notchNotifications),
-            // Lock Screen: what shows over the wallpaper, the terminal readout and full-screen lyrics.
+            // Lock Screen: one result per tab, each landing on its tab.
             page(.zenithLockScreen, title: lockScreen.overWallpaper, icon: "lock.display",
-                 keywords: [widgets.weather, widgets.reminders, sky.lockPrayer, sky.lockGolden, lockScreen.jobs,
-                            lockScreen.jobExport, lockScreen.jobCardImport, lockScreen.jobBackup, lockScreen.jobCommand,
-                            lockScreen.jobVercel, lockScreen.nowPlaying, lockScreen.lyrics, lockScreen.karaoke,
-                            lockScreen.titleControls],
-                 aliases: ["cuaca", "pengingat", "progress", "progres", "progres pekerjaan", "lirik", "lyrics",
-                           "karaoke", "lagu", "now playing", "sedang diputar"]),
+                 keywords: [lockPage.activityRow, widgets.weather, widgets.reminders, sky.lockPrayer, sky.lockGolden,
+                            lockScreen.jobs, lockScreen.jobExport, lockScreen.jobCardImport, lockScreen.jobBackup,
+                            lockScreen.jobCommand, lockScreen.jobVercel, lockPage.jobExport, lockPage.jobCardImport,
+                            lockPage.jobCommand],
+                 aliases: ["activity row", "baris aktivitas", "cuaca", "pengingat", "progress", "progres",
+                           "progres pekerjaan"]),
+            page(.zenithLockScreenMusic, title: lockPage.tabMusic, icon: "music.note",
+                 keywords: [lockPage.music, lockScreen.nowPlaying, lockScreen.titleControls, lockScreen.lyrics,
+                            lockScreen.karaoke, lockPage.lyricShade, lockPage.lyricTiming],
+                 aliases: ["lirik", "lyrics", "karaoke", "lagu", "musik", "now playing", "sedang diputar",
+                           "bayangan lirik", "lyric shade", "timing lirik", "geser lirik", "lyric offset",
+                           "lyrics delay", "lirik telat", "sinkron lirik"]),
             page(.zenithLockScreenTerminal, title: terminal.title, icon: "terminal",
                  keywords: [lockScreen.terminal, terminal.lines, terminal.showProjects, terminalTitle.windowTitle,
                             terminalTitle.useComputerName, lockScreen.placement],
                  aliases: ["terminal readout", "terminal layar kunci", "posisi terminal"]),
             page(.zenithLockScreenLyrics, title: lockScreen.fullSection, icon: "music.note.list",
-                 keywords: [lockScreen.full, lockScreen.fullDisc, lockScreen.fullAccount, lockScreen.fullDevice,
-                            lockScreen.fullClock, lockScreen.fullLoginHint, lockScreen.background,
-                            lockScreen.backgroundSolid, lockScreen.backgroundBlurred, lockScreen.colorFromCover,
-                            lockScreen.colorChoose, lockScreen.blur],
+                 keywords: [lockScreen.full, lockScreen.fullDisc, lockPage.fullDiscSpin, lockScreen.fullAccount,
+                            lockPage.fullAccount, lockScreen.fullDevice, lockScreen.fullClock, lockScreen.fullLoginHint,
+                            lockPage.topRight, lockScreen.background, lockPage.style, lockScreen.backgroundSolid,
+                            lockScreen.backgroundBlurred, lockScreen.color, lockScreen.colorFromCover,
+                            lockScreen.colorChoose, lockPage.tone, lockPage.toneVivid, lockPage.toneMuted, lockScreen.blur],
                  aliases: ["full lyrics", "full-screen lyrics", "lirik layar penuh", "lirik penuh", "piringan hitam",
-                           "vinyl", "cover color", "background color", "latar", "latar belakang", "blur", "warna latar",
-                           "warna sendiri", "warna sampul", "sampul blur"]),
+                           "piringan muter", "spin the record", "vinyl", "pojok kanan atas", "top right corner",
+                           "cover color", "background color", "latar", "latar belakang", "blur", "warna latar",
+                           "warna sendiri", "warna sampul", "sampul blur", "nada warna", "redam", "muted color"]),
             // Dynamic Island › Activity: the fork's cards.
             section(.zenithCommandActivity, in: .activity, title: commands.section, icon: "terminal",
                     keywords: [commands.toggle, commands.showAfter, commands.showFolder, commands.ignore, commands.hook],
