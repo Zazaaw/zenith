@@ -2912,6 +2912,22 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
       (`ZenithIslandBurst.agent`: mark Claude, "Claude needs you", nama folder; klik membuka halaman AI), dan hanya
       berbunyi kalau burst tampil atau island sedang terbuka. `ClaudeChimeLimiter`: per sesi maks sekali per 3 menit,
       semua sesi maks sekali per 30 dtk. Teks 15 bahasa, alias pencarian. Test: suite `island-floor`.
+  - **Ronde tiga (dibandingkan dengan reel mockup, 120 fps):**
+    - *Tutup:* halaman keluar menumpang bentuk yang menyusut (skala ≤ 100%) dan memudar selama ~60% penyusutan
+      (`ZenithContentRide.Timing.closing`: 0,17 dtk; isi tertutup mulai 0,1 dtk), ease-in 40 ms (dulu 80), pegas
+      pendaratan `landingWidth 0,24/0,1`, `landingHeight 0,28/0,1`: ukuran tertutup tercapai (≤ 1 pt) sekitar 0,3 dtk,
+      tetap di atas lantai notch dengan rebound ke luar yang sangat kecil.
+    - *Buka:* blur masuk 6 pt (dulu 12), mulai 0,03 dtk, tajam dan utuh ~0,23 dtk. Skala halaman masuk maksimal 100%
+      dan tidak pernah turun lagi setelah tumbuh (`ZenithContentRide.frames`), jadi hanya bentuk yang mantul; keyframe
+      terakhir tepat identitas. Isi strip yang keluar saat buka tumbuh maksimal 110% dan pudar dalam 0,1 dtk.
+    - *Kaca saat bergerak:* `NotchMotionSurface`: permukaan kaca jadi hampir hitam (0,9) selama gerak (naik dalam
+      80 ms, turun lagi di 0,3 dtk terakhir), `NotchBackdropPresentation.motionSolid`.
+    - *Kedip lock/unlock:* saat dikunci di depan Mac, island desktop yang tertutup tetap tergambar 0,6 dtk di bawah
+      island gembok (`retiringHost`) baru ditutup. Saat unlock, island gembok baru memudar setelah island desktop
+      tampil lagi (`NotchService.islandOnScreen`, tunggu maks 1,5 dtk) dengan tumpang 0,35 dtk; welcome burst mulai
+      0,1 dtk setelah unlock, di bawah island gembok yang masih ada.
+    - *Render:* `ZENITH_MOTION_FPS=120 ZENITH_MOTION_LENGTH=1.2 ONLY=motion Tools/IslandCatalog/render.sh <dir>`;
+      sampel ukuran, skala dan opacity isi dicetak per urutan.
   - **Belum diverifikasi di Mac:** semua gerak di layar sungguhan (120 Hz, blur CAFilter, urutan crossfade
     `CATransition`, transform selama ayunan, interupsi hover), bayangan lembut saat terbuka (belum dibuat: jendela
     island hanya seluas siluet, bayangan butuh ruang tambahan di sekitar jendela), island gembok di Mac terkunci

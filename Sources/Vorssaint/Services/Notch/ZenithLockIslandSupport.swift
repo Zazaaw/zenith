@@ -37,9 +37,16 @@ enum ZenithLockIsland {
     static let chargeLead: TimeInterval = 5
     /// How long the farewell holds before the island draws back.
     static let farewellHold: TimeInterval = 2.2
-    /// After unlocking, when the desktop island greets: once the padlock
-    /// island over it has faded.
-    static let welcomeDelay: TimeInterval = 0.8
+    /// After unlocking, when the desktop island greets: as soon as it is back,
+    /// under the padlock island, which fades once the greeting has begun.
+    static let welcomeDelay: TimeInterval = 0.1
+    /// How long the padlock island stays over the returned desktop island.
+    static let unlockOverlap: TimeInterval = 0.35
+    /// The longest the padlock island waits for the desktop island to return.
+    static let unlockPatience: TimeInterval = 1.5
+    /// How long the closed desktop island stays drawn under the lock
+    /// screen's padlock island as the Mac locks.
+    static let handoffOverlap: TimeInterval = 0.6
 
     /// The right slot: a charger just plugged in first, for its first five
     /// seconds; then a song playing; then a Focus; then the charge while the

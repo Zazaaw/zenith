@@ -290,8 +290,22 @@ final class NotchLockScreenService {
             // The island comes back on this turn and holds the main thread, so
             // the padlock is first seen opening once that is done. Its time
             // starts there, or the island would fade while the padlock opens.
-            DispatchQueue.main.async { Self.fadeOut(island, after: 0.55, completion: finished) }
+            // Zenith fork: it fades only once the desktop island is back on
+            // screen beneath it, with some overlap, so the camera never shows bare.
+            DispatchQueue.main.async { Self.fadeOutOverIsland(island, completion: finished) }
         }
+    }
+
+    /// Zenith fork: the padlock island fades over the desktop island once
+    /// that is on screen (or after a short wait, should it not return).
+    private static func fadeOutOverIsland(_ panel: NSPanel, waited: TimeInterval = 0, completion: @escaping () -> Void) {
+        guard NotchService.shared.islandOnScreen || waited >= ZenithLockIsland.unlockPatience else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                fadeOutOverIsland(panel, waited: waited + 0.05, completion: completion)
+            }
+            return
+        }
+        fadeOut(panel, after: max(0.55 - waited, ZenithLockIsland.unlockOverlap), completion: completion)
     }
 
     private static func fadeOut(_ panel: NSPanel, after delay: TimeInterval, completion: @escaping () -> Void) {

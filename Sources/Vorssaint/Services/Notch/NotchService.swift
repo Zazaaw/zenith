@@ -198,6 +198,13 @@ final class NotchService: ObservableObject {
 
     private var windowHost: NotchWindowHost?
     private var panel: NotchPanel? { windowHost?.panel }
+    /// Zenith fork: whether the island is on screen, for the lock screen's
+    /// padlock to hand back to without a gap.
+    var islandOnScreen: Bool { panel?.isVisible == true }
+    /// Zenith fork: locking at the Mac hands the closed island over to the
+    /// lock screen's padlock island; the island's window stays drawn under
+    /// it for a moment instead of baring the camera while that one comes in.
+    private var retiringHost: NotchWindowHost?
     private var captureControlsCancel: (() -> Void)?
     private var captureControlsSubscription: AnyCancellable?
     private var captureControlsWork: DispatchWorkItem?
@@ -1324,6 +1331,8 @@ final class NotchService: ObservableObject {
     }
 
     func syncWithPreferences() {
+        // Zenith fork: an island retired under the lock screen goes once one returns.
+        if let retiringHost, windowHost !== retiringHost { retiringHost.close(); self.retiringHost = nil }
         preferenceSyncWork?.cancel(); preferenceSyncWork = nil
         guard NotchSupport.isEnabled() else { stop(); return }
         if !running {
@@ -1495,6 +1504,10 @@ final class NotchService: ObservableObject {
     }
 
     private func tearDownPresentation() {
+        // Zenith fork: locked at the Mac, a closed island waits under the
+        // padlock island the lock screen brings in this same turn.
+        let handsOff = session.locked && session.showsLockScreen && NotchLockScreenSupport.isEnabled()
+            && geometry.isNotched && !expanded && !peeking && captureControls == nil
         cancelRelocation()
         screenRefreshWork?.cancel(); screenRefreshWork = nil
         stopAppFullscreenMonitoring()
@@ -1573,7 +1586,17 @@ final class NotchService: ObservableObject {
         musicTitleWork?.cancel(); musicTitleWork = nil
         capsuleMusicTitleShown = false
         closeMirrors()
-        windowHost?.close()
+        if handsOff, let host = windowHost { // Zenith fork: retired once the padlock island is up
+            retiringHost?.close()
+            retiringHost = host
+            DispatchQueue.main.asyncAfter(deadline: .now() + ZenithLockIsland.handoffOverlap) { [weak self] in
+                guard let self, self.retiringHost === host else { return }
+                host.close()
+                self.retiringHost = nil
+            }
+        } else {
+            windowHost?.close()
+        }
         windowHost = nil
         // Shown again, an island that follows the pointer starts on its display.
         displayID = nil

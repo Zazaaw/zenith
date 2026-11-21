@@ -69,8 +69,10 @@ enum CatalogMotion {
         Sequence(id: "motion-claude", from: "closed-idle", to: "burst-claude"),
     ]
 
-    static let fps = 30.0
-    static let length: TimeInterval = 1.0
+    /// Frames per second and seconds drawn; `ZENITH_MOTION_FPS` and
+    /// `ZENITH_MOTION_LENGTH` override them, as for a 120 fps check.
+    static let fps = ProcessInfo.processInfo.environment["ZENITH_MOTION_FPS"].flatMap(Double.init) ?? 30
+    static let length: TimeInterval = ProcessInfo.processInfo.environment["ZENITH_MOTION_LENGTH"].flatMap(Double.init) ?? 1
 
     /// Renders every sequence whose id starts with `prefix`; the failures' ids.
     static func render(prefix: String, into folder: URL) -> [String] {
@@ -161,11 +163,22 @@ enum CatalogMotion {
                                      target: finish.size, closedHeight: min(start.size.height, finish.size.height))
             : NotchMotionFloor.floor(for: finish.size, geometry: CatalogShots.notched)
         let timeline = NotchMotionTimeline(from: start.size, to: finish.size, begin: 0, floor: floor)
-        let samples = [0, 0.02, 0.04, 0.06, 0.08, 0.12, 0.2, 0.3, 0.45, 0.7, 1.0].map { time -> String in
+        // Closing (the island getting shorter) lets the page leave with the shrink.
+        let timing: ZenithContentRide.Timing = finish.size.height < start.size.height ? .closing : .opening
+        // The content's folded scale and opacity as the window host draws them.
+        let probe = [0, 0.02, 0.04, 0.06, 0.08, 0.12, 0.2, 0.3, 0.45, 0.7, 1.0]
+        let dense = stride(from: 0.0, through: 1.0, by: 1.0 / 240).map { $0 }
+        let composites = ZenithContentRide.frames(at: dense, islandWidths: dense.map { timeline.shape(at: $0).width },
+                                                  from: start.size.width, to: finish.size.width, timing: timing)
+        let samples = probe.map { time -> String in
             let shape = timeline.shape(at: time)
+            let frame = composites[min(composites.count - 1, Int((time * 240).rounded()))]
+            let scale = Int((frame.scale * 100).rounded()), opacity = Int((frame.opacity * 100).rounded())
             return "\(Int((time * 1_000).rounded())) ms \(Int(shape.width.rounded()))x\(Int(shape.height.rounded()))"
+                + " scale \(scale)% opacity \(opacity)%"
         }
         print("samples \(sequence.id) floor \(Int(floor.width))x\(Int(floor.height)): " + samples.joined(separator: ", "))
+        var incomingFloor: CGFloat = 0
         let reach = timeline.frames().sizes.reduce(CGSize.zero) { CGSize(width: max($0.width, $1.width), height: max($0.height, $1.height)) }
         let canvas = CGSize(width: (reach.width + 160).rounded(.up), height: (reach.height + 60).rounded(.up))
         let count = Int(length * fps)
@@ -192,8 +205,10 @@ enum CatalogMotion {
             context.saveGState()
             context.addPath(path)
             context.clip()
-            let leaving = ZenithContentRide.outgoing(at: time, islandWidth: shape.width, pageWidth: start.size.width)
-            let arriving = ZenithContentRide.incoming(at: time, islandWidth: shape.width, pageWidth: finish.size.width)
+            let leaving = ZenithContentRide.outgoing(at: time, islandWidth: shape.width, pageWidth: start.size.width, timing: timing)
+            let arriving = ZenithContentRide.incoming(at: time, islandWidth: shape.width, pageWidth: finish.size.width,
+                                                      timing: timing, scaleFloor: incomingFloor)
+            incomingFloor = max(incomingFloor, arriving.scale)
             place(start, layer: leaving, key: sequence.id + "-from", in: context, canvas: canvas)
             place(finish, layer: arriving, key: sequence.id + "-to", in: context, canvas: canvas)
             context.restoreGState()
@@ -221,7 +236,7 @@ enum CatalogMotion {
 
     /// Every other frame, half size, three to a row, numbered.
     private static func sheet(_ frames: [CGImage]) -> CGImage? {
-        let picked = frames.enumerated().filter { $0.offset % 2 == 0 }
+        let picked = frames.enumerated().filter { $0.offset % max(2, Int(fps / 30)) == 0 }
         guard let first = picked.first?.element else { return nil }
         let cell = CGSize(width: first.width / 2, height: first.height / 2)
         let columns = 3, rows = (picked.count + columns - 1) / columns
