@@ -20,6 +20,7 @@ final class NotchLockScreenModel: ObservableObject {
         var reminders = false
         var prayer = false
         var golden = false
+        var jobs = false // Lock screen v2: long jobs beside the activities.
     }
 
     @Published var gates = Gates()
@@ -373,6 +374,7 @@ struct NotchLockScreenActivities: View {
         .lineLimit(1)
         .fixedSize()
         .legibleOnWallpaper()
+        .modifier(ZenithLockScreenJobsBeside(enabled: model.gates.jobs)) // Zenith fork
     }
 
     @ViewBuilder private func entry(_ item: NotchLockScreenActivity, at date: Date) -> some View {

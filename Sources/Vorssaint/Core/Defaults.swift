@@ -1168,6 +1168,8 @@ enum DefaultsKey {
     static let notchLockScreenTerminalLines = "notchLockScreenTerminalLines" // NotchLockScreenTerminalSelection.stored
     static let notchLockScreenTerminalProjects = "notchLockScreenTerminalProjects"
     static let notchLockScreenTerminalTitle = "notchLockScreenTerminalTitle" // Zenith fork, "" = zenith — status
+    // Zenith fork: how many lock screens have shown the lyric's "Click for full lyrics" hint (stops at 3).
+    static let zenithLockLyricHintCount = "zenithLockLyricHintCount"
     // Zenith fork: the lock screen v2 (ZenithLockScreenOption), one switch each.
     static let zenithLockJobs = "zenithLockJobs"
     static let zenithLockJobExport = "zenithLockJobExport"
