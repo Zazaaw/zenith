@@ -538,7 +538,22 @@ enum ZenithNoticeLayout {
     /// The Low Power pill and the On chip.
     static let pillHeight: CGFloat = 30
 
+    /// Zenith fork: what a hanging capsule's row holds, its tallest piece
+    /// (a glyph, the ring, a pill, the title over the subtitle): the row
+    /// starts right under the camera and keeps the island's padding below.
+    /// A floating pill centres its content in `rowHeight`, whose round ends
+    /// give it half their radius of room.
+    static let contentHeight: CGFloat = 32
+    /// A grown hanging capsule's bottom corner: the open island's.
+    static var hangingRadius: CGFloat { ZenithIslandInset.cornerRadius }
+
     static func rowHeight(lines: Int) -> CGFloat { rowHeight + CGFloat(max(1, lines) - 1) * lineHeight }
+
+    /// The row the content is centred in: a floating pill's `rowHeight`, or
+    /// a hanging capsule's content.
+    static func rowHeight(lines: Int, floats: Bool) -> CGFloat {
+        floats ? rowHeight(lines: lines) : contentHeight + CGFloat(max(1, lines) - 1) * lineHeight
+    }
 
     /// The shoulders a capsule's content clears: a hanging one's, or none
     /// for a floating pill, whose round ends the edge already clears.
@@ -551,10 +566,10 @@ enum ZenithNoticeLayout {
     /// still does not fit. The title keeps one line.
     static func fit(fixed: CGFloat, title: CGFloat, subtitle: CGFloat, closedWidth: CGFloat, screenWidth: CGFloat,
                     floats: Bool) -> (width: CGFloat, lines: Int) {
-        let shoulder = shoulder(floats: floats)
+        let shoulder = shoulder(floats: floats), edge = ZenithIslandRoom.edge(floats: floats)
         let width = ZenithIslandRoom.width(content: fixed + max(title, subtitle), shoulder: shoulder,
-                                           covering: closedWidth, screenWidth: screenWidth)
-        return (width, ZenithIslandRoom.lines(text: subtitle, fixed: fixed, width: width, shoulder: shoulder))
+                                           covering: closedWidth, edge: edge, screenWidth: screenWidth)
+        return (width, ZenithIslandRoom.lines(text: subtitle, fixed: fixed, width: width, shoulder: shoulder, edge: edge))
     }
 
     /// The capsule in screen coordinates (origin at the bottom left). A
@@ -564,12 +579,15 @@ enum ZenithNoticeLayout {
                       top: CGFloat, stripHeight: CGFloat) -> CGRect {
         let margin = ZenithIslandRoom.screenMargin
         let width = max(0, min(width, screen.width - margin * 2))
-        let row = rowHeight(lines: lines)
-        let height = floats ? row : stripHeight + row - 6
+        let row = rowHeight(lines: lines, floats: floats)
+        let height = floats ? row : ZenithIslandInset.height(content: row, strip: stripHeight)
         let x = min(max(screen.minX + margin, centerX - width / 2), screen.maxX - margin - width)
         return CGRect(x: x, y: screen.maxY - top - height, width: width, height: height)
     }
 
-    /// The row the content takes inside the capsule, from its top.
-    static func rowTop(floats: Bool, stripHeight: CGFloat) -> CGFloat { floats ? 0 : stripHeight - 6 }
+    /// The row the content takes inside the capsule, from its top: right
+    /// under a hanging capsule's camera strip.
+    static func rowTop(floats: Bool, stripHeight: CGFloat) -> CGFloat {
+        floats ? 0 : stripHeight + ZenithIslandInset.belowCamera
+    }
 }

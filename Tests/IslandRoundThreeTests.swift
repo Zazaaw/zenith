@@ -124,9 +124,13 @@ enum IslandRoundThreeTests {
         suite.expect(ZenithIslandRoom.contentWidth(width: size.width, shoulder: shoulder) >= ZenithIslandBurstLayout.contentWidth(burst)
                         && size.width >= ZenithIslandRoom.minimumWidth,
                      "the prayer's row fits inside the room rule")
-        suite.expect(size.height == geometry.stripHeight - ZenithIslandBurstLayout.rowOverlap
-                        + ZenithIslandBurstLayout.contentHeight(burst) && size.height > geometry.stripHeight + 60,
-                     "the row and its line sit below the camera, the island taller than the pill")
+        suite.expect(size.height == ZenithIslandInset.height(content: ZenithIslandBurstLayout.contentHeight(burst),
+                                                             strip: geometry.stripHeight)
+                        && size.height > geometry.stripHeight + 60,
+                     "the row and its line sit right below the camera with the island's padding under them")
+        suite.expect(ZenithIslandBurstLayout.prayerRow == ZenithIslandBurstLayout.tile
+                        && ZenithIslandBurstLayout.bottomInset(geometry: geometry) == ZenithIslandInset.padding,
+                     "the title centres against the tile, and the island ends one padding below the line")
         let alone = ZenithIslandBurst(.prayer(ZenithPrayerBurst(symbol: "moon", title: "Waktunya Isya", subtitle: "19.07 · Kemenag RI",
                                                                 nextLabel: "Next", next: nil)), start: start)
         suite.expect(ZenithIslandBurstLayout.contentWidth(alone) < ZenithIslandBurstLayout.contentWidth(burst),
@@ -223,7 +227,12 @@ enum IslandRoundThreeTests {
 
     private static func room(_ suite: TestSuite) {
         let edge = ZenithIslandRoom.edge
-        suite.expect(edge >= 30, "content keeps at least 30 points from the island's sides")
+        suite.expect(edge == ZenithIslandInset.padding && ZenithIslandRoom.edge(floats: false) == edge
+                        && ZenithIslandRoom.edge(floats: true) == ZenithIslandRoom.floatingEdge,
+                     "content keeps the open island's one padding from its sides; a floating pill its own room")
+        suite.expect(ZenithIslandRoom.width(content: 400, shoulder: 0, edge: 16, screenWidth: 1512) == 432
+                        && ZenithIslandRoom.contentWidth(width: 432, shoulder: 0, edge: 16) == 400,
+                     "an edge of its own widens the island by exactly that edge")
         suite.expect(ZenithIslandRoom.width(content: 100, shoulder: 14, screenWidth: 1512) == ZenithIslandRoom.minimumWidth,
                      "short content keeps the island at its narrowest grown width")
         suite.expect(ZenithIslandRoom.width(content: 400, shoulder: 14, screenWidth: 1512) == 400 + (edge + 14) * 2,
@@ -265,9 +274,9 @@ enum IslandRoundThreeTests {
             }
             suite.expect(fits && size.width >= geometry.cameraWidth + 56,
                          "\(language.rawValue): every tool's row fits the collapsed island, clear of its shoulders")
-            suite.expect(size.height == geometry.stripHeight - ZenithCaptureStripLayout.rowOverlap
-                            + ZenithCaptureStripLayout.rowHeight,
-                         "\(language.rawValue): the row sits below the camera")
+            suite.expect(size.height == geometry.stripHeight + ZenithIslandInset.belowCamera
+                            + ZenithCaptureStripLayout.button + ZenithIslandInset.padding,
+                         "\(language.rawValue): the row sits right below the camera, the island's padding under its chevron")
         }
         let en = ZenithCaptureStripLayout.self
         suite.expect(en.hint(.screenshot, language: .enUS) == "Drag to choose an area"

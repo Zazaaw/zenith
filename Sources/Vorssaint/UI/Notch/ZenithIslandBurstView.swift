@@ -14,14 +14,14 @@ struct ZenithIslandBurstView: View {
 
     var body: some View {
         let size = Layout.size(burst, geometry: geometry)
-        let shoulder = geometry.floats ? 0 : NotchLayout.shoulder(height: size.height)
+        let shoulder = NotchLayout.shoulder(height: size.height)
         Group {
             switch burst.content {
             case .prayer(let prayer): ZenithPrayerBurstRow(prayer: prayer, burst: burst)
             case .charge(let charge): ZenithChargeBurstRow(charge: charge)
             }
         }
-        .padding(.horizontal, ZenithIslandRoom.edge + shoulder)
+        .padding(.horizontal, ZenithIslandRoom.edge(floats: geometry.floats) + shoulder)
         .padding(.top, Layout.rowTop(geometry: geometry))
         .frame(width: size.width, height: size.height, alignment: .top)
         .foregroundStyle(.white)

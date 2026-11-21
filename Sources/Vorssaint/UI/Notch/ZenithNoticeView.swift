@@ -28,7 +28,8 @@ struct ZenithNoticeRoot: View {
                         .frame(width: outline.rect.width, height: outline.rect.height)
                         .offset(x: outline.rect.minX, y: outline.rect.minY)
                     ZenithNoticeContent(notice: notice, shown: center.contentShown, reduceMotion: reduceMotion,
-                                        thumbnail: thumbnail(for: notice), lines: center.lines)
+                                        thumbnail: thumbnail(for: notice), lines: center.lines,
+                                        edge: ZenithIslandRoom.edge(floats: !outline.hanging))
                         .id(center.revision)
                         .transition(reduceMotion ? AnyTransition.opacity : AnyTransition(.blurReplace))
                         .frame(width: center.row.width, height: center.row.height)
@@ -138,6 +139,8 @@ private struct ZenithNoticeContent: View {
     let reduceMotion: Bool
     let thumbnail: NSImage?
     var lines = 1
+    /// Zenith fork: the island's padding, or a floating pill's room from its ends.
+    var edge = ZenithIslandRoom.edge
 
     private typealias Layout = ZenithNoticeLayout
 
@@ -150,7 +153,8 @@ private struct ZenithNoticeContent: View {
                     .zenithNoticeReveal(shown, index: 0, count: pieces, reduceMotion: reduceMotion)
             } else if notice.glyph != .none {
                 glyph
-                    .frame(width: Layout.glyph, height: Layout.glyph)
+                    // Zenith fork: the glyph starts on the padding line, as a tile would.
+                    .frame(width: Layout.glyph, height: Layout.glyph, alignment: .leading)
                     .zenithNoticeReveal(shown, index: 0, count: pieces, reduceMotion: reduceMotion)
             }
             VStack(alignment: .leading, spacing: 1) {
@@ -176,7 +180,7 @@ private struct ZenithNoticeContent: View {
                 .zenithNoticeReveal(shown, index: pieces - 1, count: pieces, reduceMotion: reduceMotion)
         }
         // Zenith fork: the island's room rule, the same at both ends.
-        .padding(.horizontal, ZenithIslandRoom.edge)
+        .padding(.horizontal, edge)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 

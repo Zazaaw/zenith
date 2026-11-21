@@ -177,33 +177,40 @@ enum ZenithIslandBurstTiming {
     }
 }
 
-/// The burst's island: a row below the camera with the room rule around it.
+/// The burst's island: a row right below the camera, with the open
+/// island's padding beside and below it (ZenithIslandInset).
 enum ZenithIslandBurstLayout {
-    static let rowOverlap: CGFloat = 2
     // Prayer.
     static let tile: CGFloat = 46
     static let tileGap: CGFloat = 14
     static let columnGap: CGFloat = 24
-    static let prayerRow: CGFloat = 56
+    /// The tile's row: the title and subtitle centre against the tile.
+    static let prayerRow: CGFloat = tile
     static let progressHeight: CGFloat = 3
-    static let progressGap: CGFloat = 10
+    static let progressGap: CGFloat = 12
     static let prayerTitleFont = NSFont.systemFont(ofSize: 17, weight: .semibold)
     static let prayerSubtitleFont = NSFont.systemFont(ofSize: 13, weight: .regular)
     static let nextLabelFont = NSFont.systemFont(ofSize: 11, weight: .medium)
     static let nextValueFont = NSFont.systemFont(ofSize: 14, weight: .semibold)
     // Charge.
-    static let chargeRow: CGFloat = 44
+    /// The title over the subtitle, which the battery centres against.
+    static let chargeRow: CGFloat = 36
     static let chargeTitleFont = NSFont.systemFont(ofSize: 15, weight: .semibold)
     static let chargeSubtitleFont = NSFont.systemFont(ofSize: 12.5, weight: .regular)
     static let figureFont = NSFont.monospacedDigitSystemFont(ofSize: ZenithNoticeLayout.figureSize, weight: .semibold)
-    static let bottomInset: CGFloat = 10
 
-    /// The rows' height, without the strip above them.
+    /// The rows' height, without the strip above them or the room below.
     static func contentHeight(_ burst: ZenithIslandBurst) -> CGFloat {
         switch burst.content {
-        case .prayer: return prayerRow + progressGap + progressHeight + bottomInset
-        case .charge: return chargeRow + bottomInset
+        case .prayer: return prayerRow + progressGap + progressHeight
+        case .charge: return chargeRow
         }
+    }
+
+    /// Below the rows: the island's padding, or a floating capsule's even
+    /// room above and below and its margin.
+    static func bottomInset(geometry: NotchGeometry) -> CGFloat {
+        geometry.floats ? ZenithIslandRoom.vertical + (geometry.floatingGap ?? 0) : ZenithIslandInset.padding
     }
 
     /// The content's width, the gaps included.
@@ -222,17 +229,20 @@ enum ZenithIslandBurstLayout {
         }
     }
 
-    /// Where the row starts from the island's top: below the camera's
-    /// strip, or inside a floating capsule's margin.
+    /// Where the row starts from the island's top: right below the camera's
+    /// strip, or inside a floating capsule's margin and room.
     static func rowTop(geometry: NotchGeometry) -> CGFloat {
-        geometry.floats ? (geometry.floatingGap ?? 0) + 6 : geometry.stripHeight - rowOverlap
+        geometry.floats ? (geometry.floatingGap ?? 0) + ZenithIslandRoom.vertical
+            : geometry.stripHeight + ZenithIslandInset.belowCamera
     }
 
     static func size(_ burst: ZenithIslandBurst, geometry: NotchGeometry) -> CGSize {
-        let height = rowTop(geometry: geometry) + contentHeight(burst) + (geometry.floats ? (geometry.floatingGap ?? 0) : 0)
-        let shoulder = geometry.floats ? 0 : NotchLayout.shoulder(height: height)
-        let width = ZenithIslandRoom.width(content: contentWidth(burst), shoulder: shoulder,
-                                           minimum: minimumWidth(burst), screenWidth: geometry.screen.width)
+        let height = rowTop(geometry: geometry) + contentHeight(burst) + bottomInset(geometry: geometry)
+        // A floating capsule draws its pill inside the same shoulders (NotchLayout.capsuleBody).
+        let shoulder = NotchLayout.shoulder(height: height)
+        let width = ZenithIslandRoom.width(content: contentWidth(burst), shoulder: shoulder, minimum: minimumWidth(burst),
+                                           edge: ZenithIslandRoom.edge(floats: geometry.floats),
+                                           screenWidth: geometry.screen.width)
         return CGSize(width: width, height: height)
     }
 
