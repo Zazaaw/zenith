@@ -1206,6 +1206,10 @@ enum DefaultsKey {
     static let zenithLockFullTopTimer = "zenithLockFullTopTimer"
     static let zenithLockFullTopCalendar = "zenithLockFullTopCalendar"
     static let zenithLockFullTopWakaTime = "zenithLockFullTopWakaTime"
+    static let zenithLockIslandCharging = "zenithLockIslandCharging" // Zenith fork: the padlock island's slots and greetings
+    static let zenithLockIslandFocus = "zenithLockIslandFocus"
+    static let zenithLockIslandFarewell = "zenithLockIslandFarewell"
+    static let zenithLockIslandWelcome = "zenithLockIslandWelcome"
     static let wakaTimeDailyGoalMinutes = "wakaTimeDailyGoalMinutes" // Zenith fork, 0 = off
     // Companion: a small friend who rests in the closed island and is the Command Bar's face.
     static let notchMascotEnabled = "notchMascotEnabled"
@@ -1951,6 +1955,10 @@ enum Defaults {
         DefaultsKey.zenithLockFullTopTimer: false,
         DefaultsKey.zenithLockFullTopCalendar: false,
         DefaultsKey.zenithLockFullTopWakaTime: false,
+        DefaultsKey.zenithLockIslandCharging: true, // Zenith fork
+        DefaultsKey.zenithLockIslandFocus: true,
+        DefaultsKey.zenithLockIslandFarewell: true,
+        DefaultsKey.zenithLockIslandWelcome: true,
         DefaultsKey.wakaTimeDailyGoalMinutes: 0,
         DefaultsKey.notchMascotEnabled: false,
         DefaultsKey.notchMascotVisits: true,
