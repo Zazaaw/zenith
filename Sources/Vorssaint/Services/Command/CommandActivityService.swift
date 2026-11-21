@@ -256,3 +256,12 @@ final class CommandActivityService: ObservableObject {
         CommandActivitySupport.editHook(at: zshrcURL, install: nil)
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension CommandActivityService {
+    func catalogPose(_ activity: CommandActivitySupport.Activity?) { self.activity = activity }
+}
+#endif

@@ -70,6 +70,10 @@ final class VercelService: ObservableObject {
 
     /// Reads the stored token once, when something first needs it.
     func loadTokenIfNeeded() {
+#if VORSSAINT_DEVELOPMENT
+        // Zenith fork: the island catalog draws sample data only.
+        if IslandCatalog.isRendering { return }
+#endif
         guard !tokenLoaded else { return }
         tokenLoaded = true
         token = ZenithSecretStore.read(Self.secretName)
@@ -188,6 +192,10 @@ final class VercelService: ObservableObject {
     /// The page asks when it appears: a list older than a minute is read
     /// again, even while the section is off (the Settings preview).
     func viewAppeared() {
+#if VORSSAINT_DEVELOPMENT
+        // Zenith fork: the island catalog draws sample data only.
+        if IslandCatalog.isRendering { return }
+#endif
         loadTokenIfNeeded()
         guard token != nil else { return }
         if isFresh() { return }
@@ -342,3 +350,17 @@ final class VercelService: ObservableObject {
         return (status, ok ? data : nil)
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension VercelService {
+    func catalogPose(state: State, deployments: [VercelSupport.Deployment], activity: VercelSupport.Activity?) {
+        self.state = state
+        self.deployments = deployments
+        self.activity = activity
+        hasToken = state != .missingToken
+    }
+}
+#endif

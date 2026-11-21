@@ -101,6 +101,10 @@ final class CodexProfileLimitsService: ObservableObject {
 
     /// A Settings preview shows what is known without asking.
     func pageDidAppear(preview: Bool = false) {
+#if VORSSAINT_DEVELOPMENT
+        // Zenith fork: the island catalog draws sample data only.
+        if IslandCatalog.isRendering { return }
+#endif
         if !preview { visible = true }
         synchronize()
     }

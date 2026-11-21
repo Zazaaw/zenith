@@ -385,3 +385,16 @@ final class NotchDownloadService: ObservableObject {
         if items != updated { items = updated }
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension NotchDownloadService {
+    func catalogPose(items: [NotchDownloadItem], folderName: String?) {
+        self.items = items
+        self.folderName = folderName
+        folderUnavailable = false
+    }
+}
+#endif

@@ -659,3 +659,33 @@ final class ZenithNoticeCenter: ObservableObject {
 private final class ZenithNoticeHostingView<Content: View>: NSHostingView<Content> {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension ZenithNoticeCenter {
+    /// `next` fully shown, laid out as `present` lays it out, in a panel just the capsule's size.
+    func catalogPose(_ next: ZenithNotice?) {
+        guard let next else { notice = nil; return }
+        let island = NotchService.shared
+        let geometry = island.geometry
+        let capsule = ZenithNoticeLayout.frame(screen: geometry.screen, centerX: geometry.screen.midX,
+                                               closedWidth: island.surfaceSize.width, floats: geometry.floats,
+                                               top: geometry.floats ? geometry.floatingDrop + (geometry.floatingGap ?? 0) : 0,
+                                               stripHeight: geometry.stripHeight)
+        panelFrame = capsule
+        panelSize = capsule.size
+        let end = outline(closedFrame: capsule, closed: false)
+        let rowTop = ZenithNoticeLayout.rowTop(floats: geometry.floats, stripHeight: geometry.stripHeight)
+        row = CGRect(x: end.rect.minX + end.shoulder, y: end.rect.minY + rowTop,
+                     width: end.rect.width - end.shoulder * 2, height: ZenithNoticeLayout.rowHeight)
+        lowPowerOn = false
+        notice = next
+        contentShown = true
+        outline = end
+        surfaceOpacity = 1
+        revision += 1
+    }
+}
+#endif

@@ -48,6 +48,10 @@ final class AgentCodexResetService: ObservableObject {
     private init() {}
 
     func refreshIfStale(now: Date = Date()) {
+#if VORSSAINT_DEVELOPMENT
+        // Zenith fork: the island catalog draws sample data only.
+        if IslandCatalog.isRendering { return }
+#endif
         // Only the person can sign Codex in or update it, so those wait as long as a reading.
         let settled = failure == nil || failure == .needsSignIn || failure == .outdated
         guard now.timeIntervalSince(attempted) >= (settled ? Self.freshness : Self.retryAfter) else { return }

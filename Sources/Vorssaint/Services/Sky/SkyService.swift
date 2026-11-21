@@ -262,3 +262,17 @@ final class SkyService: ObservableObject {
         UserDefaults.standard.removeObject(forKey: DefaultsKey.notchSkyPrayerSoundFile)
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension SkyService {
+    func catalogPose(day: SkyDay?, prayer: PrayerTimesSupport.Activity?, golden: SkyGoldenSupport.Activity?) {
+        self.day = day
+        settings = SkySettings.current()
+        prayerActivity = prayer
+        goldenActivity = golden
+    }
+}
+#endif

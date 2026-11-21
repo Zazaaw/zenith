@@ -126,6 +126,10 @@ final class WakaTimeService: ObservableObject {
     // MARK: Refresh
 
     func viewAppeared() {
+#if VORSSAINT_DEVELOPMENT
+        // Zenith fork: the island catalog draws sample data only.
+        if IslandCatalog.isRendering { return }
+#endif
         viewers += 1
         refreshIfStale()
         guard timer == nil else { return }
@@ -145,6 +149,10 @@ final class WakaTimeService: ObservableObject {
     }
 
     func refreshIfStale() {
+#if VORSSAINT_DEVELOPMENT
+        // Zenith fork: the island catalog draws sample data only.
+        if IslandCatalog.isRendering { return }
+#endif
         if state == .ready, let lastFetch,
            Date().timeIntervalSince(lastFetch) < WakaTimeSupport.refreshInterval { return }
         refresh()
@@ -204,3 +212,20 @@ final class WakaTimeService: ObservableObject {
         return data
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension WakaTimeService {
+    func catalogPose(today: WakaTimeSupport.Today?, history: [String: Double]) {
+        state = today == nil ? .missingKey : .ready
+        self.today = today
+        self.history = history
+        hasToken = today != nil
+        range = .today
+        summaryDays = []
+        stats = nil
+    }
+}
+#endif

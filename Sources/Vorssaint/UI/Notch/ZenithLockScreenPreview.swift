@@ -542,3 +542,18 @@ enum ZenithLockScreenPreviewSample {
         return NotchLockScreenTerminalLine(source: source, value: value)
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension ZenithLockScreenPreviewAssets {
+    /// A sample wallpaper and account in place of this Mac's; `load` then reads nothing.
+    func catalogPose(wallpaper: NSImage?, account: ZenithLockScreenAccount) {
+        if let screen = Self.mainScreen { wallpaperURL = NSWorkspace.shared.desktopImageURL(for: screen) }
+        accountLoaded = true
+        self.wallpaper = wallpaper
+        self.account = account
+    }
+}
+#endif

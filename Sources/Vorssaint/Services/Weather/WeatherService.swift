@@ -72,6 +72,10 @@ final class WeatherService: NSObject, ObservableObject {
     /// Reads the current status; never prompts.
     @discardableResult
     func refreshAccess() -> LockScreenWidgetAccess {
+#if VORSSAINT_DEVELOPMENT
+        // Zenith fork: the island catalog draws sample data only.
+        if IslandCatalog.isRendering { return access }
+#endif
         let current = LockScreenWidgetAccess(location: locationManager().authorizationStatus)
         if access != current { access = current }
         return current
@@ -106,6 +110,10 @@ final class WeatherService: NSObject, ObservableObject {
     /// The home page's weather widget came into view: the same reads as the
     /// lock screen's, for as long as it shows. Never asks for access.
     func homeShown() {
+#if VORSSAINT_DEVELOPMENT
+        // Zenith fork: the island catalog draws sample data only.
+        if IslandCatalog.isRendering { return }
+#endif
         homeShowing = true
         resume()
     }
