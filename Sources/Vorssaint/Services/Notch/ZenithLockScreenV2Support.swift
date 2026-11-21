@@ -17,19 +17,31 @@ struct ZenithLockScreenV2Gates: Equatable {
     var lyrics = false
     var karaoke = false
     var titleControls = false
+    /// A soft dark glow behind the title and the lyric.
+    var lyricShade = false
     var full = false
     var fullDisc = false
+    var fullDiscSpin = false
     var fullAccount = false
     var fullDevice = false
     var fullClock = false
     var fullJobs = false
     var fullCoverColor = false
     var fullLoginHint = false
+    /// What sits at the top right beside the close button, with `fullJobs`.
+    var fullTopPrayer = false
+    var fullTopWeather = false
+    var fullTopTimer = false
+    var fullTopCalendar = false
+    var fullTopWakaTime = false
     /// The full layer's background, read with the rest: one colour or the
     /// blurred cover, the blur's strength, and the colour picked in Settings.
     var fullBackground = ZenithLockScreenFullBackground.fallback
     var fullBlurRadius = ZenithLockScreenFullBlur.fallback
     var fullCustomColor = ZenithLockScreenCustomColor.fallback
+    var fullTone = ZenithLockScreenFullTone.fallback
+    /// Seconds added to the lyric's timing, on top of the island's own adjustment.
+    var lyricOffset = 0.0
 
     /// `music` is the lock screen's own music gate; `lyricsAvailable` is
     /// whether the island's lyrics are on at all (`NotchLyricsSupport.isEnabled`).
@@ -42,19 +54,28 @@ struct ZenithLockScreenV2Gates: Equatable {
         gates.lyrics = gates.nowPlaying && lyricsAvailable && on(.lyrics)
         gates.karaoke = gates.lyrics && on(.karaoke)
         gates.titleControls = gates.nowPlaying && on(.titleControls)
+        gates.lyricShade = gates.nowPlaying && on(.lyricShade)
         gates.full = gates.lyrics && on(.full)
         gates.fullDisc = gates.full && on(.fullDisc)
+        gates.fullDiscSpin = gates.fullDisc && on(.fullDiscSpin)
         gates.fullAccount = gates.full && on(.fullAccount)
         gates.fullDevice = gates.full && on(.fullDevice)
         gates.fullClock = gates.full && on(.fullClock)
         gates.fullJobs = gates.full && on(.fullJobs)
         gates.fullCoverColor = gates.full && on(.fullCoverColor)
         gates.fullLoginHint = gates.full && on(.fullLoginHint)
+        gates.fullTopPrayer = gates.full && on(.fullTopPrayer)
+        gates.fullTopWeather = gates.full && on(.fullTopWeather)
+        gates.fullTopTimer = gates.full && on(.fullTopTimer)
+        gates.fullTopCalendar = gates.full && on(.fullTopCalendar)
+        gates.fullTopWakaTime = gates.full && on(.fullTopWakaTime)
         if gates.full {
             gates.fullBackground = ZenithLockScreenFullBackground.current(in: defaults)
             gates.fullBlurRadius = ZenithLockScreenFullBlur.radius(in: defaults)
             gates.fullCustomColor = ZenithLockScreenCustomColor.rgb(in: defaults)
+            gates.fullTone = ZenithLockScreenFullTone.current(in: defaults)
         }
+        if gates.lyrics { gates.lyricOffset = ZenithLockScreenLyricOffset.seconds(in: defaults) }
         return gates
     }
 
@@ -103,6 +124,14 @@ struct ZenithLockScreenRGB: Equatable {
         return (max(a, b) + 0.05) / (min(a, b) + 0.05)
     }
 
+    /// How far apart two colours look, 0 (the same) to 1 (black and white),
+    /// with green weighed most and red and blue by how red the pair is.
+    func distance(to other: Self) -> Double {
+        let redMean = (red + other.red) / 2
+        let dr = red - other.red, dg = green - other.green, db = blue - other.blue
+        return ((2 + redMean) * dr * dr + 4 * dg * dg + (3 - redMean) * db * db).squareRoot() / 3
+    }
+
     var hsb: (hue: Double, saturation: Double, brightness: Double) {
         let highest = max(red, green, blue), lowest = min(red, green, blue)
         let range = highest - lowest
@@ -135,12 +164,12 @@ struct ZenithLockScreenRGB: Equatable {
     }
 }
 
-/// The full layer's colours: one calm background from the cover and an ink
-/// that always reads on it.
+/// The full layer's colours: one background from the cover and an ink that
+/// always reads on it.
 enum ZenithLockScreenPalette {
     struct Scheme: Equatable {
         /// The colour behind everything; over a blurred cover, its average
-        /// once dimmed, which the spindle hole and the ink are measured by.
+        /// once dimmed, which the ink and the record's edge are measured by.
         let background: ZenithLockScreenRGB
         let ink: ZenithLockScreenRGB
         /// How much black dims a blurred cover; 0 for a solid colour.
@@ -149,8 +178,8 @@ enum ZenithLockScreenPalette {
         static let neutral = Scheme(background: .neutral, ink: .white)
     }
 
-    /// Covers are softened to at most this saturation and between these
-    /// brightnesses, so the screen stays calm whatever the artwork.
+    /// The muted tone softens a cover to at most this saturation and between
+    /// these brightnesses, so the screen stays calm whatever the artwork.
     static let maximumSaturation = 0.42
     static let brightnessRange = 0.16...0.80
     /// Above this luminance the ink turns dark.
@@ -167,17 +196,22 @@ enum ZenithLockScreenPalette {
         background.relativeLuminance > darkInkLuminance ? .darkInk : .white
     }
 
-    /// The background and ink for a cover's dominant colour, or the neutral
-    /// pair without one. A background too close to its ink is nudged away
-    /// from it, lighter under dark ink and darker under white, until the pair
-    /// reaches 4.5:1.
+    /// The background and ink for a cover's colour in the muted tone, or the
+    /// neutral pair without one.
     static func scheme(cover: ZenithLockScreenRGB?) -> Scheme {
         guard let cover else { return .neutral }
-        return solid(softened(cover))
+        return scheme(cover: cover, tone: .muted)
     }
 
-    /// A solid colour as it is, such as the one picked in Settings, moved
+    /// The cover's colour as it is (vivid) or calmed (muted), then moved
     /// only as far as its ink needs to reach 4.5:1.
+    static func scheme(cover: ZenithLockScreenRGB, tone: ZenithLockScreenFullTone) -> Scheme {
+        solid(tone == .vivid ? cover : softened(cover))
+    }
+
+    /// A solid colour as it is, such as the one picked in Settings. A colour
+    /// too close to its ink is nudged away from it, lighter under dark ink
+    /// and darker under white, until the pair reaches 4.5:1.
     static func solid(_ color: ZenithLockScreenRGB) -> Scheme {
         var background = color
         let ink = ink(on: background)
@@ -216,55 +250,139 @@ enum ZenithLockScreenPalette {
         guard count > 0, pixels.count >= count * 4 else { return nil }
         var sum = (0.0, 0.0, 0.0), counted = 0.0
         for index in 0..<count {
-            let offset = index * 4
-            let alpha = Double(pixels[offset + 3]) / 255
-            guard alpha >= 0.5 else { continue }
-            sum.0 += min(1, Double(pixels[offset]) / 255 / alpha)
-            sum.1 += min(1, Double(pixels[offset + 1]) / 255 / alpha)
-            sum.2 += min(1, Double(pixels[offset + 2]) / 255 / alpha)
+            guard let pixel = pixel(pixels, index) else { continue }
+            sum.0 += pixel.red
+            sum.1 += pixel.green
+            sum.2 += pixel.blue
             counted += 1
         }
         guard counted > 0 else { return nil }
         return ZenithLockScreenRGB(red: sum.0 / counted, green: sum.1 / counted, blue: sum.2 / counted)
     }
 
+    /// One pixel of an RGBA8 bitmap (premultiplied or not) at its own colour;
+    /// nil when it is mostly transparent.
+    static func pixel(_ pixels: [UInt8], _ index: Int) -> ZenithLockScreenRGB? {
+        let offset = index * 4
+        guard offset >= 0, offset + 3 < pixels.count else { return nil }
+        let alpha = Double(pixels[offset + 3]) / 255
+        guard alpha >= 0.5 else { return nil }
+        // Undo premultiplication; an opaque pixel is unchanged.
+        return ZenithLockScreenRGB(red: min(1, Double(pixels[offset]) / 255 / alpha),
+                                   green: min(1, Double(pixels[offset + 1]) / 255 / alpha),
+                                   blue: min(1, Double(pixels[offset + 2]) / 255 / alpha))
+    }
+
     /// The full layer's scheme for the background chosen. `cover` is the
-    /// cover's dominant colour and `blurredAverage` the blurred cover's mean,
-    /// when there is a cover. With no cover, the picked colour stands in.
+    /// cover's colour (`coverColor`) and `blurredAverage` the blurred cover's
+    /// mean, when there is a cover. With no cover, the picked colour stands in.
     static func scheme(for gates: ZenithLockScreenV2Gates, cover: ZenithLockScreenRGB?,
                        blurredAverage: ZenithLockScreenRGB?) -> Scheme {
         let picked = solid(ZenithLockScreenRGB(hex: gates.fullCustomColor))
         switch gates.fullBackground {
         case .blurredCover: return blurredAverage.map(blurred(average:)) ?? picked
-        case .solid: return gates.fullCoverColor ? cover.map { solid(softened($0)) } ?? picked : picked
+        case .solid:
+            guard gates.fullCoverColor, let cover else { return picked }
+            return scheme(cover: cover, tone: gates.fullTone)
         }
     }
 
-    /// The most common colour of an RGBA8 bitmap (premultiplied or not),
-    /// counted in coarse bins, colourful pixels counting a little more.
-    /// Mostly transparent pixels are skipped; nothing readable gives nil.
-    static func dominant(rgba pixels: [UInt8], count: Int) -> ZenithLockScreenRGB? {
+    // MARK: Cover colour
+
+    /// A pixel counts towards the cover's colour only when it has colour of
+    /// its own: saturated enough, and neither near black nor near white.
+    static let colourfulSaturation = 0.28
+    static let colourfulBrightness = 0.18
+    static let colourfulChroma = 0.12
+    static let hueBins = 36
+    /// The commonest colour must cover at least this share of the cover, or
+    /// the cover counts as having none (a grey photo with a small red logo).
+    static let minimumShare = 0.06
+
+    static func isColourful(_ color: ZenithLockScreenRGB) -> Bool {
+        let hsb = color.hsb
+        let chroma = max(color.red, color.green, color.blue) - min(color.red, color.green, color.blue)
+        return hsb.saturation >= colourfulSaturation && hsb.brightness >= colourfulBrightness && chroma >= colourfulChroma
+    }
+
+    /// The cover's commonest saturated colour: its colourful pixels are
+    /// counted by hue in 10° bins, each by its saturation; the 30° window with
+    /// the most colour wins, and its pixels are averaged.
+    /// Near white, near black and grey pixels never count, so a red cover with
+    /// a white hand gives red, not the pink their average would. Nil when no
+    /// hue covers `minimumShare` of the readable pixels.
+    static func saturatedCluster(rgba pixels: [UInt8], count: Int) -> ZenithLockScreenRGB? {
         guard count > 0, pixels.count >= count * 4 else { return nil }
-        var weights = [Double](repeating: 0, count: 512)
-        var sums = [(Double, Double, Double)](repeating: (0, 0, 0), count: 512)
+        var readable = 0
+        var colourful: [(color: ZenithLockScreenRGB, bin: Int, weight: Double)] = []
+        var histogram = [Double](repeating: 0, count: hueBins)
         for index in 0..<count {
-            let offset = index * 4
-            let alpha = Double(pixels[offset + 3]) / 255
-            guard alpha >= 0.5 else { continue }
-            // Undo premultiplication; an opaque pixel is unchanged.
-            let red = min(1, Double(pixels[offset]) / 255 / alpha)
-            let green = min(1, Double(pixels[offset + 1]) / 255 / alpha)
-            let blue = min(1, Double(pixels[offset + 2]) / 255 / alpha)
-            let bin = min(7, Int(red * 8)) << 6 | min(7, Int(green * 8)) << 3 | min(7, Int(blue * 8))
-            let weight = 1 + ZenithLockScreenRGB(red: red, green: green, blue: blue).hsb.saturation
-            weights[bin] += weight
-            sums[bin].0 += red * weight
-            sums[bin].1 += green * weight
-            sums[bin].2 += blue * weight
+            guard let pixel = pixel(pixels, index) else { continue }
+            readable += 1
+            guard isColourful(pixel) else { continue }
+            let hsb = pixel.hsb
+            let bin = min(hueBins - 1, Int(hsb.hue * Double(hueBins)))
+            colourful.append((pixel, bin, hsb.saturation))
+            histogram[bin] += hsb.saturation
         }
-        guard let best = weights.indices.max(by: { weights[$0] < weights[$1] }), weights[best] > 0 else { return nil }
-        let weight = weights[best]
-        return ZenithLockScreenRGB(red: sums[best].0 / weight, green: sums[best].1 / weight, blue: sums[best].2 / weight)
+        guard readable > 0, !colourful.isEmpty else { return nil }
+        func bin(_ value: Int) -> Int { (value % hueBins + hueBins) % hueBins }
+        // Each bin with its two neighbours: the 30° of hue with the most colour.
+        let scores = (0..<hueBins).map { histogram[bin($0 - 1)] + histogram[$0] + histogram[bin($0 + 1)] }
+        guard let best = scores.indices.max(by: { scores[$0] < scores[$1] }) else { return nil }
+        let window = Set([bin(best - 1), best, bin(best + 1)])
+        let cluster = colourful.filter { window.contains($0.bin) }
+        guard Double(cluster.count) / Double(readable) >= minimumShare else { return nil }
+        let total = cluster.reduce(0) { $0 + $1.weight }
+        guard total > 0 else { return nil }
+        return ZenithLockScreenRGB(red: cluster.reduce(0) { $0 + $1.color.red * $1.weight } / total,
+                                   green: cluster.reduce(0) { $0 + $1.color.green * $1.weight } / total,
+                                   blue: cluster.reduce(0) { $0 + $1.color.blue * $1.weight } / total)
+    }
+
+    /// The colour the full layer takes from a cover: its commonest saturated
+    /// colour, or, for a cover with none (black and white, grey), its average.
+    static func coverColor(rgba pixels: [UInt8], count: Int) -> ZenithLockScreenRGB? {
+        saturatedCluster(rgba: pixels, count: count) ?? average(rgba: pixels, count: count)
+    }
+}
+
+/// The record's edge: a thin ring in the ink, only where the cover's rim is
+/// close to the background, so the record does not dissolve into it.
+enum ZenithLockScreenRecordEdge {
+    /// Closer than this (`ZenithLockScreenRGB.distance`) reads as the same colour.
+    static let threshold = 0.16
+    static let arcs = 8
+
+    static func needsRing(edge samples: [ZenithLockScreenRGB], background: ZenithLockScreenRGB) -> Bool {
+        samples.contains { $0.distance(to: background) < threshold }
+    }
+
+    /// The rim of the circle inscribed in a square RGBA8 bitmap `side` wide
+    /// (the outer tenth of its radius), averaged in `arcs` arcs. An arc with
+    /// no readable pixel is left out.
+    static func samples(rgba pixels: [UInt8], side: Int) -> [ZenithLockScreenRGB] {
+        guard side > 1, pixels.count >= side * side * 4 else { return [] }
+        let centre = Double(side) / 2, radius = Double(side) / 2
+        var sums = [(Double, Double, Double, Double)](repeating: (0, 0, 0, 0), count: arcs)
+        for y in 0..<side {
+            for x in 0..<side {
+                let dx = Double(x) + 0.5 - centre, dy = Double(y) + 0.5 - centre
+                let distance = (dx * dx + dy * dy).squareRoot()
+                guard distance <= radius, distance >= radius * 0.8,
+                      let pixel = ZenithLockScreenPalette.pixel(pixels, y * side + x) else { continue }
+                var angle = atan2(dy, dx) / (2 * Double.pi)
+                if angle < 0 { angle += 1 }
+                let arc = min(arcs - 1, Int(angle * Double(arcs)))
+                sums[arc].0 += pixel.red
+                sums[arc].1 += pixel.green
+                sums[arc].2 += pixel.blue
+                sums[arc].3 += 1
+            }
+        }
+        return sums.compactMap { sum in
+            sum.3 > 0 ? ZenithLockScreenRGB(red: sum.0 / sum.3, green: sum.1 / sum.3, blue: sum.2 / sum.3) : nil
+        }
     }
 }
 
@@ -285,19 +403,34 @@ enum ZenithLockScreenBackdrop {
 
 // MARK: - Lyrics
 
+/// Where the lyrics are in the song: the player's position, moved by the
+/// island's own adjustment and the lock screen's lyric timing together.
+/// Positive offsets show each line later.
+enum ZenithLockScreenLyricTiming {
+    static func offset(island: Double, lockScreen: Double) -> Double {
+        (island.isFinite ? island : 0) + (lockScreen.isFinite ? lockScreen : 0)
+    }
+}
+
 /// lrclib.net times lines, not words, so the sung part of a line is worked
-/// out from the time spent in it, one character after another.
+/// out from the time spent in it, one word after another, each word taking
+/// time for its letters. A word lights up whole; the one being sung fades in
+/// from its first letter with a soft edge, and no word is ever left split.
 enum ZenithLockScreenKaraoke {
-    /// A line held over a long instrumental gap finishes at a singing pace
-    /// rather than crawling until the next line.
-    static let secondsPerCharacter = 0.18
-    static let minimumSpan = 1.5
+    /// About a sung syllable's pace. A line held over a long instrumental gap
+    /// finishes at this pace rather than crawling until the next line.
+    static let secondsPerCharacter = 0.085
+    static let minimumSpan = 1.2
+    /// The singing ends a little before the next line starts.
+    static let gapShare = 0.92
+    /// How far the fade's soft edge reaches back through a word.
+    static let softness = 0.8
 
     /// How long the singing of a line of `characters` takes.
     static func span(start: Double, next: Double?, characters: Int) -> Double {
         let paced = max(minimumSpan, Double(max(0, characters)) * secondsPerCharacter)
         guard let next, next.isFinite else { return paced }
-        return min(max(0, next - start), paced)
+        return min(max(0, next - start) * gapShare, paced)
     }
 
     /// How far through its line the singing is, 0...1.
@@ -308,12 +441,67 @@ enum ZenithLockScreenKaraoke {
         return min(1, max(0, (position - start) / span))
     }
 
-    /// The characters sung through, and how far into the next one.
-    static func sung(characters: Int, progress: Double) -> (whole: Int, partial: Double) {
-        guard characters > 0, progress.isFinite else { return (0, 0) }
-        let exact = min(1, max(0, progress)) * Double(characters)
-        let whole = min(characters, Int(exact))
-        return (whole, whole >= characters ? 0 : exact - Double(whole))
+    /// The words of a line, as ranges of character offsets: runs between
+    /// spaces, and every CJK character its own word, as those lines have none.
+    static func words(_ text: String) -> [Range<Int>] {
+        var words: [Range<Int>] = []
+        var start: Int?
+        for (offset, character) in text.enumerated() {
+            if character.isWhitespace {
+                if let begun = start { words.append(begun..<offset) }
+                start = nil
+            } else if isLogographic(character) {
+                if let begun = start { words.append(begun..<offset) }
+                words.append(offset..<(offset + 1))
+                start = nil
+            } else if start == nil {
+                start = offset
+            }
+        }
+        if let begun = start { words.append(begun..<text.count) }
+        return words
+    }
+
+    private static func isLogographic(_ character: Character) -> Bool {
+        character.unicodeScalars.contains { scalar in
+            scalar.properties.isIdeographic
+                || (0x3040...0x30FF).contains(scalar.value) // Hiragana, Katakana
+                || (0xAC00...0xD7AF).contains(scalar.value) // Hangul syllables
+        }
+    }
+
+    /// How lit each character is, 0...1, at `progress` through the line:
+    /// words before the one being sung are whole, words after it unlit, and
+    /// the one being sung fades in from its first letter.
+    static func levels(_ text: String, progress: Double) -> [Double] {
+        let count = text.count
+        guard count > 0 else { return [] }
+        let words = words(text)
+        guard !words.isEmpty else { return Array(repeating: progress >= 1 ? 1 : 0, count: count) }
+        let p = progress.isFinite ? min(1, max(0, progress)) : 0
+        // Each word takes its letters' time and a beat for the gap after it.
+        let weights = words.map { Double($0.count) + 1 }
+        let total = weights.reduce(0, +)
+        var levels = [Double](repeating: 0, count: count)
+        var start = 0.0
+        for (word, weight) in zip(words, weights) {
+            let length = Double(word.count)
+            let lit = min(1, max(0, (p * total - start) / length))
+            for (index, offset) in word.enumerated() {
+                let position = Double(index) / length
+                levels[offset] = min(1, max(0, lit * (1 + softness) - softness * position))
+            }
+            // A space takes the word before it: lit once that word is.
+            if word.upperBound < count, lit >= 1 {
+                var gap = word.upperBound
+                while gap < count, text[text.index(text.startIndex, offsetBy: gap)].isWhitespace {
+                    levels[gap] = 1
+                    gap += 1
+                }
+            }
+            start += weight
+        }
+        return levels
     }
 }
 
@@ -331,6 +519,51 @@ struct ZenithLockScreenLyricWindow: Equatable {
         }
         let last = min(lineCount, active + 1 + max(0, count))
         return Self(previous: active > 0 ? active - 1 : nil, active: active, upcoming: Array((active + 1)..<last))
+    }
+}
+
+/// How the full layer's lyric lines fade: the line before, the line being
+/// sung, then three after it, fainter and softer the further they are. Dark
+/// ink reads weaker than white at the same opacity, so it is raised a little.
+enum ZenithLockScreenFullLyrics {
+    static let upcoming = 3
+    static let previousOpacity = 0.35
+    static let upcomingOpacities = [0.45, 0.28, 0.14]
+    static let previousBlur: CGFloat = 0.75
+    static let upcomingBlurs: [CGFloat] = [0.5, 1.5, 3]
+    /// The part of the sung line still to come.
+    static let restOpacity = 0.45
+    static let darkInkBoost = 1.3
+
+    static func opacity(_ base: Double, darkInk: Bool) -> Double {
+        darkInk ? min(1, base * darkInkBoost) : base
+    }
+
+    static func upcomingOpacity(_ distance: Int, darkInk: Bool) -> Double {
+        opacity(upcomingOpacities[min(max(0, distance), upcomingOpacities.count - 1)], darkInk: darkInk)
+    }
+
+    static func upcomingBlur(_ distance: Int) -> CGFloat {
+        upcomingBlurs[min(max(0, distance), upcomingBlurs.count - 1)]
+    }
+}
+
+/// Where the full layer's lyric lines go: one under another, `spacing`
+/// apart, moved so the line being sung has its middle on `middle`, however
+/// many lines it wraps to. Before the singing starts, the first line waiting
+/// takes that place.
+enum ZenithLockScreenLyricPlacement {
+    static func tops(heights: [CGFloat], spacing: CGFloat, active: Int?, middle: CGFloat) -> [CGFloat] {
+        guard !heights.isEmpty else { return [] }
+        var tops: [CGFloat] = []
+        var y: CGFloat = 0
+        for height in heights {
+            tops.append(y)
+            y += max(0, height) + spacing
+        }
+        let anchor = active.flatMap { heights.indices.contains($0) ? $0 : nil } ?? 0
+        let shift = middle - (tops[anchor] + max(0, heights[anchor]) / 2)
+        return tops.map { ($0 + shift).rounded() }
     }
 }
 
@@ -369,6 +602,39 @@ enum ZenithLockScreenJobLine {
         case .vercel: return nil
         }
     }
+
+    /// Jobs for the Settings preview, as the job feed would publish them.
+    static let sampleJobs = [
+        ZenithLockScreenJob(id: "export", source: .export, label: "DaVinci", fraction: 0.62, finished: false),
+        ZenithLockScreenJob(id: "import", source: .cardImport, label: "Import", fraction: 0.85, finished: false),
+        ZenithLockScreenJob(id: "deploy", source: .vercel, label: "zenith", fraction: 1, finished: true),
+        ZenithLockScreenJob(id: "build", source: .command, label: "npm", fraction: 0.2, finished: false),
+    ]
+}
+
+/// What can sit at the full layer's top right, beside the close button.
+enum ZenithLockScreenTopItem: String, CaseIterable, Identifiable {
+    case jobs, prayer, weather, timer, calendar, wakatime
+    var id: String { rawValue }
+}
+
+enum ZenithLockScreenTopRight {
+    /// The items to show, from the close button outward: the jobs nearest,
+    /// then the next prayer, the weather, the timer, the calendar and
+    /// WakaTime, each only when its switch is on and it has something to show.
+    static func items(_ gates: ZenithLockScreenV2Gates, showing available: Set<ZenithLockScreenTopItem>) -> [ZenithLockScreenTopItem] {
+        ZenithLockScreenTopItem.allCases.filter { item in
+            guard available.contains(item) else { return false }
+            switch item {
+            case .jobs: return gates.fullJobs
+            case .prayer: return gates.fullTopPrayer
+            case .weather: return gates.fullTopWeather
+            case .timer: return gates.fullTopTimer
+            case .calendar: return gates.fullTopCalendar
+            case .wakatime: return gates.fullTopWakaTime
+            }
+        }
+    }
 }
 
 // MARK: - Small rules
@@ -380,18 +646,32 @@ enum ZenithLockScreenHint {
     static func shows(count: Int) -> Bool { count < limit }
 }
 
-/// The full layer leaves for the login controls once the pointer moves.
+/// The full layer closes with its close button, Esc when key events reach
+/// the app, the music staying stopped, or the Mac unlocking. The pointer
+/// moving never closes it: clicking a line would otherwise close it at once.
 enum ZenithLockScreenFullExit {
-    static let pointerTravel: CGFloat = 8
-    static let pollInterval: TimeInterval = 0.25
     /// Music that stays paused or stopped this long closes the full layer;
     /// a player moving on to its next song pauses for less.
     static let pauseGrace: TimeInterval = 1.2
+    static let escapeKeyCode: UInt16 = 53
 
-    static func moved(from origin: CGPoint, to point: CGPoint) -> Bool {
-        guard [origin.x, origin.y, point.x, point.y].allSatisfy(\.isFinite) else { return false }
-        return hypot(point.x - origin.x, point.y - origin.y) > pointerTravel
+    static func closes(keyCode: UInt16) -> Bool { keyCode == escapeKeyCode }
+}
+
+/// The record turns once every eight seconds while the song plays, and
+/// coasts to a stop when it pauses.
+enum ZenithLockScreenDiscSpin {
+    static let degreesPerSecond = 360.0 / 8
+    static let stopDuration = 1.2
+
+    static func angle(from base: Double, startedAt start: Date, at date: Date) -> Double {
+        let elapsed = max(0, date.timeIntervalSince(start))
+        return (base + elapsed * degreesPerSecond).truncatingRemainder(dividingBy: 360)
     }
+
+    /// How far an ease-out stop over `stopDuration` carries the record from
+    /// full speed: half the distance full speed would cover.
+    static var coast: Double { degreesPerSecond * stopDuration / 2 }
 }
 
 /// The account picture's stand-in: the first letter of the first and last
@@ -407,19 +687,28 @@ enum ZenithLockScreenInitials {
 
 // MARK: - Layout
 
-/// The minimal layer under the activity row: the now-playing line 38 points
-/// under the row's frame, the lyric under it, as wide as the row.
+/// The minimal layer under the activity row: the title line one row gap
+/// under the row, the lyric right under the title, as one block.
 enum ZenithLockScreenMinimalLayout {
-    static let titleGap: CGFloat = 38
-    static let lyricGap: CGFloat = 33
+    /// The title's tap target pads its text this much above and below.
+    static let titlePadding: CGFloat = 4
+    /// From the row's frame to the title's text, the clock's gap to the row's
+    /// text: the row gap and the room the row's text leaves in its frame.
+    static var titleGap: CGFloat { NotchLockScreenLayout.rowGap + 6 - titlePadding }
+    /// From the title's text to the sung line's.
+    static let lyricGap: CGFloat = 3
+    static let lineSpacing: CGFloat = 2
     static let lyricWidth: CGFloat = 640
     /// The title controls' glass card, as wide as the old player's pane.
     static let cardWidth: CGFloat = 404
+    /// The shade reaches this far past the title and lyric on each side.
+    static let shadeReach = CGSize(width: 110, height: 44)
 
-    /// The panel over the player's room, widened to the row so a long lyric
-    /// line has the room the row has. Clear pixels pass clicks through.
+    /// The panel over the player's room and up over the activity row, so the
+    /// lyric's shade can fade out behind the row; as wide as the row, so a
+    /// long lyric line has the room the row has. Clear pixels pass clicks through.
     static func frame(row: CGRect, player: CGRect) -> CGRect {
-        CGRect(x: row.minX, y: player.minY, width: row.width, height: player.height)
+        CGRect(x: row.minX, y: player.minY, width: row.width, height: max(player.height, row.maxY - player.minY))
     }
 
     /// The title line's top, from the panel's top.
@@ -431,10 +720,25 @@ enum ZenithLockScreenMinimalLayout {
     static func terminalLift(_ placement: ZenithLockScreenTerminalPlacement) -> CGFloat {
         placement == .low ? 10 : 0
     }
+
+    /// The readout's frame has room for every line that may show. Low, the
+    /// card sits on the frame's bottom, so its bottom stays 10 points over the
+    /// login line however few lines have something to say; normal, it hangs
+    /// from the frame's top as it always has.
+    static func terminalAnchorsBottom(_ placement: ZenithLockScreenTerminalPlacement) -> Bool { placement == .low }
+
+    /// The card's frame inside the readout's `frame` (AppKit coordinates).
+    static func terminalCard(in frame: CGRect, cardHeight: CGFloat, placement: ZenithLockScreenTerminalPlacement) -> CGRect {
+        let height = min(frame.height, max(0, cardHeight))
+        let y = terminalAnchorsBottom(placement) ? frame.minY : frame.maxY - height
+        return CGRect(x: frame.minX, y: y, width: frame.width, height: height)
+    }
 }
 
 /// The full layer, measured on an 1800 × 1169 point display and scaled to
-/// others by the shorter of their two ratios.
+/// others by the shorter of their two ratios. The record with its column and
+/// the lyrics are one group, centred across the screen and between the top
+/// and bottom rows; the record and the sung line share a middle.
 struct ZenithLockScreenFullLayout: Equatable {
     static let reference = CGSize(width: 1800, height: 1169)
     let size: CGSize
@@ -448,38 +752,69 @@ struct ZenithLockScreenFullLayout: Equatable {
 
     private func s(_ value: CGFloat) -> CGFloat { (value * scale).rounded() }
 
+    // Corners.
     var margin: CGFloat { s(110) }
     var clockTop: CGFloat { s(85) }
     var dateSize: CGFloat { s(17) }
     var timeSize: CGFloat { s(60) }
-    /// Where the time's middle sits, which the jobs line up with.
-    var timeMiddle: CGFloat { clockTop + s(22) + s(36) }
-
-    var columnLeft: CGFloat { s(210) }
-    var columnTop: CGFloat { s(300) }
-    var discSize: CGFloat { s(350) }
-    var titleSize: CGFloat { s(27) }
-    var artistSize: CGFloat { s(21) }
-    var barHeight: CGFloat { max(3, s(4)) }
-    var timesSize: CGFloat { max(10, s(12)) }
-    var sideControlSize: CGFloat { s(23) }
-    var mainControlSize: CGFloat { s(30) }
-
-    var lyricsLeft: CGFloat { s(710) }
-    var lyricsWidth: CGFloat { max(200, size.width - lyricsLeft - margin) }
-    /// The sung line's top: about level with the record's middle.
-    var activeTop: CGFloat { (size.height * 0.4).rounded() }
-    var activeSize: CGFloat { s(64) }
-    var lineSize: CGFloat { s(48) }
-    var lineGap: CGFloat { s(20) }
-    static let previousOpacity = 0.30
-    static let previousBlur: CGFloat = 1.25
-    static let upcomingOpacities = [0.42, 0.30, 0.20, 0.12, 0.06]
-    static let upcomingBlurs: [CGFloat] = [1.25, 2.5, 3.75, 5.25, 7]
-
+    /// Where the top row's middle sits: the close button and its items.
+    var topRowMiddle: CGFloat { s(128) }
+    /// Under the clock.
+    var topRowBottom: CGFloat { clockTop + s(22) + s(72) }
+    var closeSize: CGFloat { s(42) }
+    var topItemSize: CGFloat { max(11, s(15)) }
+    var topItemGap: CGFloat { s(30) }
     var identityBottom: CGFloat { s(75) }
     var photoSize: CGFloat { s(48) }
     var nameSize: CGFloat { s(17) }
     var deviceSize: CGFloat { s(13) }
     var hintSize: CGFloat { s(15) }
+    /// Over the account's picture and its ring.
+    var bottomRowTop: CGFloat { size.height - identityBottom - photoSize - s(6) }
+
+    // The group.
+    var discSize: CGFloat { s(320) }
+    var groupGap: CGFloat { s(90) }
+    var lyricsWidth: CGFloat { s(690) }
+    var groupWidth: CGFloat { discSize + groupGap + lyricsWidth }
+    var groupLeft: CGFloat { max(margin, ((size.width - groupWidth) / 2).rounded()) }
+    var lyricsLeft: CGFloat { groupLeft + discSize + groupGap }
+
+    // The record's column.
+    var titleGap: CGFloat { s(30) }
+    var titleSize: CGFloat { s(27) }
+    var titleLine: CGFloat { s(33) }
+    var artistSize: CGFloat { s(21) }
+    var artistGap: CGFloat { s(4) }
+    var artistLine: CGFloat { s(26) }
+    var progressGap: CGFloat { s(22) }
+    var barHeight: CGFloat { max(3, s(4)) }
+    var timesGap: CGFloat { s(8) }
+    var timesSize: CGFloat { max(10, s(12)) }
+    var timesLine: CGFloat { s(15) }
+    var controlsGap: CGFloat { s(12) }
+    var controlsHeight: CGFloat { s(50) }
+    var sideControlSize: CGFloat { s(23) }
+    var mainControlSize: CGFloat { s(30) }
+    var hubSize: CGFloat { s(26) }
+
+    /// The record, the title and artist, the progress and the buttons.
+    var columnHeight: CGFloat {
+        discSize + titleGap + titleLine + artistGap + artistLine + progressGap + barHeight + timesGap + timesLine
+            + controlsGap + controlsHeight
+    }
+    /// Centred between the clock and the account.
+    var columnTop: CGFloat { max(topRowBottom, ((topRowBottom + bottomRowTop) / 2 - columnHeight / 2).rounded()) }
+    /// The record's middle, which the sung line's middle shares.
+    var discMiddle: CGFloat { columnTop + discSize / 2 }
+
+    // The lyrics.
+    var activeSize: CGFloat { s(54) }
+    var lineSize: CGFloat { s(40) }
+    var lineGap: CGFloat { s(22) }
+    /// The lyrics fade out above this, clear of the clock.
+    var lyricsTop: CGFloat { topRowBottom + s(24) }
+    /// And below this, clear of the account and the login hint.
+    var lyricsBottom: CGFloat { bottomRowTop - s(30) }
+    var lyricsFade: CGFloat { s(60) }
 }

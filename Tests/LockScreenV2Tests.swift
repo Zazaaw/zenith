@@ -5,21 +5,28 @@ import CoreGraphics
 import Foundation
 
 /// Zenith fork: the lock screen v2's pure parts: its switches, the full
-/// layer's colours, karaoke timing, the lyric window, the jobs in the row and
-/// the layout. Nothing here draws a window or reads the account.
+/// layer's colours, the cover's colour and the record's edge, karaoke by
+/// word, lyric timing, the lyric window, the jobs, the top right and the
+/// layout. Nothing here draws a window or reads the account.
 enum LockScreenV2Tests {
     static func run(_ suite: TestSuite) {
         gates(suite)
         luminance(suite)
         scheme(suite)
         backgrounds(suite)
-        dominant(suite)
+        coverColour(suite)
+        edgeRing(suite)
         karaoke(suite)
+        words(suite)
+        timing(suite)
         lyricWindow(suite)
         jobs(suite)
+        topRight(suite)
         smallRules(suite)
         minimalLayout(suite)
+        terminalCard(suite)
         fullLayout(suite)
+        lyricPlacement(suite)
     }
 
     /// Fake jobs, as the job feed would publish them, for these tests.
@@ -73,6 +80,26 @@ enum LockScreenV2Tests {
         suite.expect(bare.full && bare.lyrics && !bare.karaoke && !bare.fullDisc && !bare.fullAccount && !bare.fullDevice
                      && !bare.fullClock && !bare.fullJobs && !bare.fullCoverColor && !bare.fullLoginHint,
                      "each part of the full layer has its own switch")
+        defaults.removePersistentDomain(forName: name)
+
+        let fresh = ZenithLockScreenV2Gates.resolve(music: true, lyricsAvailable: true, in: defaults)
+        suite.expect(fresh.lyricShade && !fresh.fullDiscSpin && fresh.fullTopPrayer && fresh.fullTopWeather
+                     && !fresh.fullTopTimer && !fresh.fullTopCalendar && !fresh.fullTopWakaTime
+                     && fresh.fullTone == .vivid && fresh.lyricOffset == 0,
+                     "the shade, prayer and weather start on; the spin, timer, calendar and WakaTime off; vivid, no offset")
+        defaults.set(true, forKey: ZenithLockScreenOption.fullDiscSpin.defaultsKey)
+        defaults.set(false, forKey: ZenithLockScreenOption.fullDisc.defaultsKey)
+        defaults.set("muted", forKey: DefaultsKey.zenithLockFullTone)
+        defaults.set(0.43, forKey: DefaultsKey.zenithLockLyricOffset)
+        let spun = ZenithLockScreenV2Gates.resolve(music: true, lyricsAvailable: true, in: defaults)
+        suite.expect(!spun.fullDiscSpin && spun.fullTone == .muted && abs(spun.lyricOffset - 0.4) < 1e-9,
+                     "the spin needs the record; the tone and the offset (in tenths) are read at lock")
+        defaults.set(9.0, forKey: DefaultsKey.zenithLockLyricOffset)
+        suite.expect(abs(ZenithLockScreenV2Gates.resolve(music: true, lyricsAvailable: true, in: defaults).lyricOffset - 3) < 1e-9
+                     && ZenithLockScreenV2Gates.resolve(music: true, lyricsAvailable: false, in: defaults).lyricOffset == 0,
+                     "the offset stays within 3 seconds and only matters with the lyric")
+        let silentShade = ZenithLockScreenV2Gates.resolve(music: false, lyricsAvailable: true, in: defaults)
+        suite.expect(!silentShade.lyricShade && !silentShade.fullTopPrayer, "no song, no shade and no top row")
     }
 
     private static func luminance(_ suite: TestSuite) {
@@ -148,10 +175,28 @@ enum LockScreenV2Tests {
 
         var gates = standard
         let cover = ZenithLockScreenRGB(hex: 0xFFF3C4)
-        // Solid, cover colour on: the cover's colour, softened.
+        // Solid, cover colour on: the cover's colour as it is (vivid) or calmed (muted).
         let fromCover = ZenithLockScreenPalette.scheme(for: gates, cover: cover, blurredAverage: nil)
-        suite.expect(fromCover == ZenithLockScreenPalette.scheme(cover: cover) && fromCover.inkIsDark && fromCover.dim == 0,
-                     "solid with the cover colour on follows the cover, with dark ink on a pale one")
+        suite.expect(fromCover.background == cover && fromCover.inkIsDark && fromCover.dim == 0,
+                     "vivid takes the cover's colour as it is, with dark ink on a pale one")
+        let red = ZenithLockScreenRGB(hex: 0xE0102A)
+        let vivid = ZenithLockScreenPalette.scheme(for: gates, cover: red, blurredAverage: nil)
+        gates.fullTone = .muted
+        let muted = ZenithLockScreenPalette.scheme(for: gates, cover: red, blurredAverage: nil)
+        suite.expect(vivid.background.hsb.saturation > 0.85 && vivid.ink == .white
+                     && vivid.background.contrast(with: .white) >= 4.5
+                     && muted == ZenithLockScreenPalette.scheme(cover: red)
+                     && muted.background.hsb.saturation <= ZenithLockScreenPalette.maximumSaturation + 1e-9
+                     && abs(muted.background.hsb.hue - vivid.background.hsb.hue) < 0.02,
+                     "muted calms the same red to round one's look, keeping its hue")
+        var toneFailures = 0
+        for value in stride(from: 0.0, through: 1.0, by: 0.1) {
+            let colour = ZenithLockScreenRGB(red: value, green: 1 - value, blue: value * 0.5)
+            let scheme = ZenithLockScreenPalette.scheme(cover: colour, tone: .vivid)
+            if scheme.background.contrast(with: scheme.ink) < 4.5 - 1e-9 { toneFailures += 1 }
+        }
+        suite.expect(toneFailures == 0, "vivid colours still reach 4.5:1 with their ink")
+        gates.fullTone = .vivid
         suite.expect(ZenithLockScreenPalette.scheme(for: gates, cover: nil, blurredAverage: nil)
                      == ZenithLockScreenPalette.Scheme(background: .neutral, ink: .white),
                      "with no cover the picked colour stands in")
@@ -203,49 +248,148 @@ enum LockScreenV2Tests {
                      "the average skips clear pixels")
     }
 
-    private static func dominant(_ suite: TestSuite) {
-        func pixels(_ colours: [(UInt8, UInt8, UInt8, UInt8, Int)]) -> [UInt8] {
-            colours.flatMap { colour in Array(repeating: [colour.0, colour.1, colour.2, colour.3], count: colour.4).flatMap { $0 } }
-        }
-        let mostlyRed = pixels([(220, 30, 40, 255, 70), (20, 40, 200, 255, 30)])
-        let red = ZenithLockScreenPalette.dominant(rgba: mostlyRed, count: 100)
-        suite.expect(red.map { $0.red > 0.8 && $0.blue < 0.3 } == true, "the commonest colour wins")
-        let hidden = pixels([(10, 200, 10, 0, 90), (240, 240, 240, 255, 10)])
-        suite.expect(ZenithLockScreenPalette.dominant(rgba: hidden, count: 100).map { $0.green > 0.9 && $0.red > 0.9 } == true,
+    private static func pixels(_ colours: [(UInt8, UInt8, UInt8, UInt8, Int)]) -> [UInt8] {
+        colours.flatMap { colour in Array(repeating: [colour.0, colour.1, colour.2, colour.3], count: colour.4).flatMap { $0 } }
+    }
+
+    private static func coverColour(_ suite: TestSuite) {
+        // A red cover with a white hand: the average is a dusty pink, the cover's colour is red.
+        let hand = pixels([(222, 12, 40, 255, 55), (244, 238, 236, 255, 30), (200, 190, 188, 255, 5), (24, 18, 18, 255, 10)])
+        let picked = ZenithLockScreenPalette.coverColor(rgba: hand, count: 100)
+        let average = ZenithLockScreenPalette.average(rgba: hand, count: 100)
+        suite.expect(picked.map { $0.red > 0.8 && $0.green < 0.1 && $0.blue < 0.2 && $0.hsb.saturation > 0.85 } == true
+                     && average.map { $0.hsb.saturation < 0.6 } == true,
+                     "a red cover with a white hand gives red, not the pink average")
+        let grey = pixels([(120, 120, 122, 255, 60), (230, 230, 230, 255, 30), (20, 20, 20, 255, 10)])
+        suite.expect(ZenithLockScreenPalette.saturatedCluster(rgba: grey, count: 100) == nil
+                     && ZenithLockScreenPalette.coverColor(rgba: grey, count: 100) == ZenithLockScreenPalette.average(rgba: grey, count: 100),
+                     "a grey cover has no colour of its own and falls back to its average")
+        let logo = pixels([(120, 120, 122, 255, 97), (230, 20, 30, 255, 3)])
+        suite.expect(ZenithLockScreenPalette.saturatedCluster(rgba: logo, count: 100) == nil,
+                     "a small red logo on grey is not the cover's colour")
+        let split = pixels([(30, 90, 220, 255, 40), (230, 200, 20, 255, 25), (250, 250, 250, 255, 35)])
+        suite.expect(ZenithLockScreenPalette.coverColor(rgba: split, count: 100).map { $0.blue > 0.75 && $0.red < 0.2 } == true,
+                     "the commonest hue wins, however much white there is")
+        let reds = pixels([(250, 20, 60, 255, 20), (240, 40, 10, 255, 20), (40, 200, 60, 255, 30)])
+        suite.expect(ZenithLockScreenPalette.coverColor(rgba: reds, count: 70).map { $0.red > 0.85 && $0.green < 0.2 } == true,
+                     "reds either side of 0 degrees count together")
+        let hidden = pixels([(10, 200, 10, 0, 90), (20, 40, 230, 255, 10)])
+        suite.expect(ZenithLockScreenPalette.coverColor(rgba: hidden, count: 100).map { $0.blue > 0.85 } == true,
                      "transparent pixels do not count")
-        suite.expect(ZenithLockScreenPalette.dominant(rgba: [], count: 0) == nil
-                     && ZenithLockScreenPalette.dominant(rgba: [1, 2, 3], count: 1) == nil
-                     && ZenithLockScreenPalette.dominant(rgba: pixels([(1, 2, 3, 0, 4)]), count: 4) == nil,
+        suite.expect(ZenithLockScreenPalette.coverColor(rgba: [], count: 0) == nil
+                     && ZenithLockScreenPalette.coverColor(rgba: [1, 2, 3], count: 1) == nil
+                     && ZenithLockScreenPalette.coverColor(rgba: pixels([(1, 2, 3, 0, 4)]), count: 4) == nil,
                      "nothing readable gives no colour")
         let premultiplied = pixels([(100, 0, 0, 200, 4)])
-        suite.expect(ZenithLockScreenPalette.dominant(rgba: premultiplied, count: 4).map { abs($0.red - 0.5) < 0.01 } == true,
+        suite.expect(ZenithLockScreenPalette.coverColor(rgba: premultiplied, count: 4).map { abs($0.red - 0.5) < 0.01 } == true,
                      "premultiplied pixels are read at their own colour")
+    }
+
+    private static func edgeRing(_ suite: TestSuite) {
+        let red = ZenithLockScreenRGB(hex: 0xE0102A)
+        suite.expect(ZenithLockScreenRecordEdge.needsRing(edge: [ZenithLockScreenRGB(hex: 0xDA1430), .white], background: red),
+                     "a rim the colour of the background gets the ring")
+        suite.expect(!ZenithLockScreenRecordEdge.needsRing(edge: [ZenithLockScreenRGB(hex: 0x101010), .white], background: red)
+                     && !ZenithLockScreenRecordEdge.needsRing(edge: [], background: red),
+                     "a rim that stands apart, or none, gets no ring")
+        suite.expectClose(red.distance(to: red), 0, "a colour's distance to itself")
+        suite.expectClose(ZenithLockScreenRGB.white.distance(to: ZenithLockScreenRGB(hex: 0x000000)), 1, "black to white", tol: 1e-9)
+        // A 10 px cover, yellow on top, cream below: the top arcs read yellow.
+        let side = 10
+        var cover = [UInt8]()
+        for y in 0..<side {
+            for _ in 0..<side { cover += y < side / 2 ? [245, 211, 106, 255] : [239, 229, 200, 255] }
+        }
+        let samples = ZenithLockScreenRecordEdge.samples(rgba: cover, side: side)
+        let yellow = ZenithLockScreenRGB(hex: 0xF5D36A)
+        suite.expect(samples.count == ZenithLockScreenRecordEdge.arcs
+                     && ZenithLockScreenRecordEdge.needsRing(edge: samples, background: yellow)
+                     && !ZenithLockScreenRecordEdge.needsRing(edge: samples, background: ZenithLockScreenRGB(hex: 0x1C1C1E)),
+                     "the rim is read in arcs; one arc matching the background is enough")
+        suite.expect(ZenithLockScreenRecordEdge.samples(rgba: [], side: 10).isEmpty, "no pixels, no rim")
     }
 
     private static func karaoke(_ suite: TestSuite) {
         suite.expectClose(ZenithLockScreenKaraoke.progress(start: 10, next: 14, characters: 20, position: 10), 0, "the line's start")
-        suite.expectClose(ZenithLockScreenKaraoke.progress(start: 10, next: 14, characters: 20, position: 11.8), 0.5,
-                          "halfway through a 3.6 s line of 20 characters")
-        suite.expectClose(ZenithLockScreenKaraoke.progress(start: 10, next: 14, characters: 40, position: 12), 0.5,
-                          "a long line spreads over the time to the next")
-        suite.expectClose(ZenithLockScreenKaraoke.span(start: 10, next: 40, characters: 10), 1.8,
-                          "a line before a long gap is sung at a singing pace")
+        suite.expectClose(ZenithLockScreenKaraoke.span(start: 10, next: 14, characters: 20), 1.7,
+                          "a line of 20 characters is sung at about 12 a second")
+        suite.expectClose(ZenithLockScreenKaraoke.progress(start: 10, next: 14, characters: 20, position: 10.85), 0.5,
+                          "halfway through it")
+        suite.expectClose(ZenithLockScreenKaraoke.span(start: 10, next: 13, characters: 60), 3 * 0.92,
+                          "a long line ends a little before the next one starts")
         suite.expectClose(ZenithLockScreenKaraoke.span(start: 10, next: 40, characters: 2), ZenithLockScreenKaraoke.minimumSpan,
                           "a short line still takes a moment")
-        suite.expectClose(ZenithLockScreenKaraoke.span(start: 10, next: nil, characters: 10), 1.8, "the last line")
+        suite.expectClose(ZenithLockScreenKaraoke.span(start: 10, next: nil, characters: 20), 1.7, "the last line")
         suite.expectClose(ZenithLockScreenKaraoke.progress(start: 10, next: 14, characters: 20, position: 30), 1, "past the line")
         suite.expectClose(ZenithLockScreenKaraoke.progress(start: 10, next: 14, characters: 20, position: 5), 0, "before the line")
         suite.expectClose(ZenithLockScreenKaraoke.progress(start: 10, next: 10, characters: 20, position: 10), 1,
                           "two lines at one time")
         suite.expectClose(ZenithLockScreenKaraoke.progress(start: 10, next: 14, characters: 0, position: 12), 0, "an empty line")
         suite.expectClose(ZenithLockScreenKaraoke.progress(start: 10, next: 14, characters: 5, position: .nan), 0, "a broken position")
-        let sung = ZenithLockScreenKaraoke.sung(characters: 20, progress: 0.525)
-        suite.expect(sung.whole == 10 && abs(sung.partial - 0.5) < 1e-9, "ten and a half characters sung")
-        let done = ZenithLockScreenKaraoke.sung(characters: 20, progress: 1)
-        suite.expect(done.whole == 20 && done.partial == 0, "the whole line sung")
-        suite.expect(ZenithLockScreenKaraoke.sung(characters: 0, progress: 0.5).whole == 0
-                     && ZenithLockScreenKaraoke.sung(characters: 4, progress: 3).whole == 4,
-                     "sung characters stay within the line")
+    }
+
+    private static func words(_ suite: TestSuite) {
+        suite.expect(ZenithLockScreenKaraoke.words("what the  fucking hell") == [0..<4, 5..<8, 10..<17, 18..<22],
+                     "words run between spaces")
+        suite.expect(ZenithLockScreenKaraoke.words("  ") == [] && ZenithLockScreenKaraoke.words("") == [],
+                     "spaces alone have no words")
+        suite.expect(ZenithLockScreenKaraoke.words("君の名は") == [0..<1, 1..<2, 2..<3, 3..<4]
+                     && ZenithLockScreenKaraoke.words("사랑해 you") == [0..<1, 1..<2, 2..<3, 4..<7],
+                     "every CJK character is its own word")
+        // Never split: at any moment the words before the one being sung are
+        // lit, those after it unlit, and the one being sung fades from its start.
+        let line = "what the hell is fucking wrong with me"
+        let words = ZenithLockScreenKaraoke.words(line)
+        var broken: [String] = []
+        for step in 0...200 {
+            let progress = Double(step) / 200
+            let levels = ZenithLockScreenKaraoke.levels(line, progress: progress)
+            guard levels.count == line.count, levels.allSatisfy({ $0 >= 0 && $0 <= 1 }) else { broken.append("\(step) range"); continue }
+            let states = words.map { word -> Int in
+                let values = word.map { levels[$0] }
+                if values.allSatisfy({ $0 >= 1 }) { return 2 }
+                if values.allSatisfy({ $0 <= 0 }) { return 0 }
+                return 1
+            }
+            if states.filter({ $0 == 1 }).count > 1 { broken.append("\(step) two words partly lit") }
+            if zip(states, states.dropFirst()).contains(where: { $0 < $1 }) { broken.append("\(step) out of order") }
+            for word in words {
+                let values = word.map { levels[$0] }
+                if zip(values, values.dropFirst()).contains(where: { $0 < $1 - 1e-12 }) { broken.append("\(step) edge backwards") }
+            }
+        }
+        suite.expect(broken.isEmpty, "a word is never left split and lights from its first letter: \(broken.prefix(3))")
+        let start = ZenithLockScreenKaraoke.levels(line, progress: 0)
+        let end = ZenithLockScreenKaraoke.levels(line, progress: 1)
+        suite.expect(start.allSatisfy { $0 == 0 } && end.allSatisfy { $0 == 1 }, "nothing lit at the start, all of it at the end")
+        let fucking = words[4]
+        var reachedWhole = false
+        for step in 0...400 {
+            let levels = ZenithLockScreenKaraoke.levels(line, progress: Double(step) / 400)
+            let values = fucking.map { levels[$0] }
+            if values.allSatisfy({ $0 >= 1 }) { reachedWhole = true; break }
+            // While "fucking" is lit at its start, its end is on the way too, never a hard cut.
+            if values.first == 1, values.last == 0 { break }
+        }
+        suite.expect(reachedWhole, "the word being sung lights up whole, with a soft edge rather than a cut")
+        suite.expect(ZenithLockScreenKaraoke.levels("", progress: 0.5).isEmpty
+                     && ZenithLockScreenKaraoke.levels("♪", progress: .nan) == [0],
+                     "an empty line, a pause, a broken progress")
+    }
+
+    private static func timing(_ suite: TestSuite) {
+        suite.expectClose(ZenithLockScreenLyricTiming.offset(island: 0.25, lockScreen: -0.5), -0.25,
+                          "the island's adjustment and the lock screen's timing add up")
+        suite.expectClose(ZenithLockScreenLyricTiming.offset(island: .nan, lockScreen: 0.3), 0.3, "a broken offset counts as none")
+        // A positive offset shows each line later; a negative one earlier.
+        let lyrics = NotchLyrics(lines: [NotchLyricLine(time: 10, text: "a"), NotchLyricLine(time: 12, text: "b")],
+                                 plain: "", instrumental: false)
+        suite.expect(lyrics.activeIndex(at: 11.9, offset: 0) == 0
+                     && lyrics.activeIndex(at: 11.9, offset: ZenithLockScreenLyricTiming.offset(island: 0, lockScreen: -0.2)) == 1
+                     && lyrics.activeIndex(at: 12.1, offset: ZenithLockScreenLyricTiming.offset(island: 0, lockScreen: 0.3)) == 0,
+                     "the lock screen's timing moves the line being sung")
+        suite.expectClose(ZenithLockScreenKaraoke.progress(start: 10 + 0.5, next: 12 + 0.5, characters: 10, position: 10.5), 0,
+                          "and the karaoke with it")
     }
 
     private static func lyricWindow(_ suite: TestSuite) {
@@ -290,15 +434,46 @@ enum LockScreenV2Tests {
                      "each source has its ring colour; Vercel's is the ink")
     }
 
+    private static func topRight(_ suite: TestSuite) {
+        var gates = ZenithLockScreenV2Gates()
+        gates.full = true
+        gates.fullJobs = true
+        gates.fullTopPrayer = true
+        gates.fullTopWeather = true
+        let everything = Set(ZenithLockScreenTopItem.allCases)
+        suite.expect(ZenithLockScreenTopRight.items(gates, showing: everything) == [.jobs, .prayer, .weather],
+                     "from the close button outward: jobs, the next prayer, the weather")
+        gates.fullTopTimer = true
+        gates.fullTopCalendar = true
+        gates.fullTopWakaTime = true
+        suite.expect(ZenithLockScreenTopRight.items(gates, showing: everything) == [.jobs, .prayer, .weather, .timer, .calendar, .wakatime],
+                     "then the timer, the calendar and WakaTime")
+        suite.expect(ZenithLockScreenTopRight.items(gates, showing: [.weather, .wakatime]) == [.weather, .wakatime],
+                     "items with nothing to show are left out")
+        gates.fullJobs = false
+        gates.fullTopWeather = false
+        suite.expect(ZenithLockScreenTopRight.items(gates, showing: everything) == [.prayer, .timer, .calendar, .wakatime],
+                     "and so are items switched off")
+        suite.expect(ZenithLockScreenJobLine.sampleJobs.count >= 2 && Set(ZenithLockScreenJobLine.sampleJobs.map(\.id)).count
+                     == ZenithLockScreenJobLine.sampleJobs.count,
+                     "the preview's sample jobs are distinct")
+    }
+
     private static func smallRules(_ suite: TestSuite) {
         suite.expect(ZenithLockScreenHint.shows(count: 0) && ZenithLockScreenHint.shows(count: 2)
                      && !ZenithLockScreenHint.shows(count: 3) && !ZenithLockScreenHint.shows(count: 40),
                      "the lyric's hint shows its first three times only")
-        suite.expect(!ZenithLockScreenFullExit.moved(from: .zero, to: CGPoint(x: 5, y: 6))
-                     && ZenithLockScreenFullExit.moved(from: .zero, to: CGPoint(x: 6, y: 6))
-                     && ZenithLockScreenFullExit.moved(from: CGPoint(x: 100, y: 100), to: CGPoint(x: 100, y: 91))
-                     && !ZenithLockScreenFullExit.moved(from: .zero, to: CGPoint(x: CGFloat.nan, y: 40)),
-                     "the full layer leaves once the pointer travels more than 8 points")
+        suite.expect(ZenithLockScreenFullExit.closes(keyCode: 53) && !ZenithLockScreenFullExit.closes(keyCode: 0)
+                     && !ZenithLockScreenFullExit.closes(keyCode: 36) && ZenithLockScreenFullExit.pauseGrace == 1.2,
+                     "only Esc closes the full layer from the keyboard; music gets 1.2 s of grace")
+        let start = Date(timeIntervalSinceReferenceDate: 0)
+        suite.expectClose(ZenithLockScreenDiscSpin.angle(from: 0, startedAt: start, at: start.addingTimeInterval(8)), 0,
+                          "the record turns once every eight seconds", tol: 1e-9)
+        suite.expectClose(ZenithLockScreenDiscSpin.angle(from: 10, startedAt: start, at: start.addingTimeInterval(2)), 100,
+                          "from where it stopped")
+        suite.expectClose(ZenithLockScreenDiscSpin.angle(from: 10, startedAt: start, at: start.addingTimeInterval(-3)), 10,
+                          "a clock that went back holds it still")
+        suite.expectClose(ZenithLockScreenDiscSpin.coast, 27, "and it coasts 27 degrees to a stop")
         suite.expect(ZenithLockScreenInitials.of("Faiz Andhilmi") == "FA" && ZenithLockScreenInitials.of("faiz") == "F"
                      && ZenithLockScreenInitials.of("Anna Maria de la Cruz") == "AC" && ZenithLockScreenInitials.of("  ") == ""
                      && ZenithLockScreenInitials.of("J. R. Tolkien") == "JT",
@@ -314,10 +489,20 @@ enum LockScreenV2Tests {
         }
         let panel = ZenithLockScreenMinimalLayout.frame(row: row, player: player)
         suite.expect(panel.minX == row.minX && panel.width == row.width && panel.minY == player.minY
-                     && panel.height == player.height,
-                     "the minimal layer takes the player's room, as wide as the row")
-        suite.expectClose(Double(ZenithLockScreenMinimalLayout.titleTop(row: row, panel: panel)), 28,
-                          "the title line's top sits 38 points under the row's frame")
+                     && panel.maxY == row.maxY,
+                     "the minimal layer takes the player's room and reaches up behind the row, as wide as it")
+        let titleTop = ZenithLockScreenMinimalLayout.titleTop(row: row, panel: panel)
+        // The title's text sits under the row by the clock's gap to the row's text.
+        let textTop = panel.maxY - titleTop - ZenithLockScreenMinimalLayout.titlePadding
+        suite.expectClose(Double(titleTop), Double(row.height + ZenithLockScreenMinimalLayout.titleGap),
+                          "the title line starts a row gap under the row")
+        suite.expectClose(Double(row.minY - textTop), Double(NotchLockScreenLayout.rowGap + 6),
+                          "its text as far under the row's frame as the row's text is under the clock")
+        suite.expect(ZenithLockScreenMinimalLayout.lyricGap + ZenithLockScreenMinimalLayout.titlePadding >= 6
+                     && ZenithLockScreenMinimalLayout.lyricGap + ZenithLockScreenMinimalLayout.titlePadding <= 8,
+                     "the sung line starts 6 to 8 points under the title")
+        suite.expect(titleTop - ZenithLockScreenMinimalLayout.shadeReach.height >= 0,
+                     "the shade fades out inside the panel, not against its edge")
         suite.expect(ZenithLockScreenMinimalLayout.terminalLift(.low) == 10 && ZenithLockScreenMinimalLayout.terminalLift(.normal) == 0,
                      "only the low placement lifts the readout")
         let normal = NotchLockScreenTerminalLayout.arrange(row: row, player: player, screen: screen, lines: 4, music: true)
@@ -327,34 +512,90 @@ enum LockScreenV2Tests {
                      && low.terminal?.minY == NotchLockScreenLayout.loginClearance + 10
                      && low.terminal?.height == normal.terminal?.height
                      && low.player.map { $0.minY == (low.terminal?.maxY ?? 0) + NotchLockScreenTerminalLayout.gap } == true,
-                     "the low readout's bottom is 10 points over the login line, hugging its lines, the player above it")
+                     "the low readout's frame is 10 points over the login line, the player above it")
         suite.expect(NotchLockScreenTerminalLayout.arrange(row: row, player: player, screen: screen, lines: 4, music: true,
                                                            lift: .nan).terminal == normal.terminal,
                      "a broken lift leaves the readout where it was")
     }
 
+    private static func terminalCard(_ suite: TestSuite) {
+        let screen = CGRect(x: 0, y: 0, width: 1800, height: 1169)
+        guard let row = NotchLockScreenLayout.rowFrame(in: screen),
+              let frame = NotchLockScreenTerminalLayout.arrange(
+                row: row, player: NotchLockScreenLayout.playerFrame(in: screen), screen: screen, lines: 7, music: true,
+                lift: ZenithLockScreenMinimalLayout.terminalLift(.low)).terminal else {
+            suite.expect(false, "the reference display has room for seven lines")
+            return
+        }
+        // Seven lines may show, four have something to say.
+        let shown = NotchLockScreenTerminalLayout.height(lines: 4)
+        let low = ZenithLockScreenMinimalLayout.terminalCard(in: frame, cardHeight: shown, placement: .low)
+        suite.expect(low.minY == screen.minY + NotchLockScreenLayout.loginClearance + 10 && low.height == shown,
+                     "low, the card's bottom is 10 points over the login line however few lines show")
+        let full = ZenithLockScreenMinimalLayout.terminalCard(in: frame, cardHeight: frame.height, placement: .low)
+        suite.expect(full == frame, "with every line showing the card fills its frame")
+        let normal = ZenithLockScreenMinimalLayout.terminalCard(in: frame, cardHeight: shown, placement: .normal)
+        suite.expect(normal.maxY == frame.maxY && normal.height == shown,
+                     "normal, the card still hangs from its frame's top")
+        suite.expect(ZenithLockScreenMinimalLayout.terminalAnchorsBottom(.low) && !ZenithLockScreenMinimalLayout.terminalAnchorsBottom(.normal)
+                     && ZenithLockScreenMinimalLayout.terminalCard(in: frame, cardHeight: 9999, placement: .low).height == frame.height
+                     && ZenithLockScreenMinimalLayout.terminalCard(in: frame, cardHeight: -4, placement: .low).height == 0,
+                     "the card stays within its frame")
+    }
+
     private static func fullLayout(_ suite: TestSuite) {
         let reference = ZenithLockScreenFullLayout(size: ZenithLockScreenFullLayout.reference)
         suite.expect(reference.scale == 1 && reference.margin == 110 && reference.clockTop == 85
-                     && reference.columnLeft == 210 && reference.columnTop == 300 && reference.discSize == 350
-                     && reference.lyricsLeft == 710 && reference.lyricsWidth == 1800 - 710 - 110
-                     && reference.identityBottom == 75 && reference.activeSize == 64 && reference.lineSize == 48,
+                     && reference.discSize == 320 && reference.groupLeft == 350 && reference.lyricsLeft == 760
+                     && reference.lyricsLeft - (reference.groupLeft + reference.discSize) == 90
+                     && reference.identityBottom == 75 && reference.activeSize == 54 && reference.lineSize == 40
+                     && reference.closeSize == 42 && reference.hubSize == 26,
                      "the reference display keeps the design's measures")
-        let laptop = ZenithLockScreenFullLayout(size: CGSize(width: 1512, height: 982))
-        suite.expect(laptop.scale < 1 && laptop.discSize < 350 && laptop.columnLeft + laptop.discSize < laptop.lyricsLeft
-                     && laptop.lyricsLeft + laptop.lyricsWidth <= 1512 - laptop.margin + 1,
-                     "a smaller display scales down and the lyrics stay right of the record")
-        let wide = ZenithLockScreenFullLayout(size: CGSize(width: 3440, height: 1440))
-        suite.expect(wide.scale <= 1.6 && wide.columnLeft + wide.discSize < wide.lyricsLeft
-                     && wide.activeTop + wide.activeSize < 1440 - wide.identityBottom - wide.photoSize,
-                     "an ultrawide display scales by its height")
+        suite.expectClose(Double(reference.groupLeft * 2 + reference.groupWidth), 1800,
+                          "the record and the lyrics are one group, centred across the screen", tol: 1)
+        let middle = (reference.topRowBottom + reference.bottomRowTop) / 2
+        suite.expectClose(Double(reference.columnTop + reference.columnHeight / 2), Double(middle),
+                          "the record's column sits midway between the top and bottom rows", tol: 1)
+        suite.expectClose(Double(reference.discMiddle), 508, "the record's middle, which the sung line shares", tol: 2)
+        suite.expect(reference.columnTop > reference.topRowBottom && reference.columnTop + reference.columnHeight < reference.bottomRowTop
+                     && reference.lyricsBottom < reference.bottomRowTop && reference.lyricsTop > reference.topRowBottom,
+                     "the group and the lyrics stay clear of the corners")
+        for size in [CGSize(width: 1512, height: 982), CGSize(width: 3440, height: 1440), CGSize(width: 2560, height: 1440)] {
+            let layout = ZenithLockScreenFullLayout(size: size)
+            let centred = abs(layout.groupLeft * 2 + layout.groupWidth - size.width) <= 1
+            suite.expect(centred && layout.groupLeft >= layout.margin
+                         && layout.columnTop + layout.columnHeight < layout.bottomRowTop
+                         && layout.lyricsLeft + layout.lyricsWidth <= size.width - layout.margin,
+                         "a \(Int(size.width)) × \(Int(size.height)) display keeps the group centred and inside the corners")
+        }
         suite.expect(ZenithLockScreenFullLayout(size: .zero).scale == 1
                      && ZenithLockScreenFullLayout(size: CGSize(width: 400, height: 300)).scale == 0.55,
                      "a broken or tiny display keeps a usable scale")
-        suite.expect(ZenithLockScreenFullLayout.upcomingOpacities == [0.42, 0.30, 0.20, 0.12, 0.06]
-                     && ZenithLockScreenFullLayout.upcomingBlurs.count == ZenithLockScreenFullLayout.upcomingOpacities.count
-                     && zip(ZenithLockScreenFullLayout.upcomingBlurs, ZenithLockScreenFullLayout.upcomingBlurs.dropFirst()).allSatisfy { $0 < $1 }
-                     && ZenithLockScreenFullLayout.upcomingBlurs.first == 1.25 && ZenithLockScreenFullLayout.upcomingBlurs.last == 7,
-                     "upcoming lines fade from 42% to 6% and blur from 1.25 to 7 points")
+        suite.expect(ZenithLockScreenFullLyrics.upcoming == 3 && ZenithLockScreenFullLyrics.previousOpacity == 0.35
+                     && ZenithLockScreenFullLyrics.upcomingOpacities == [0.45, 0.28, 0.14]
+                     && ZenithLockScreenFullLyrics.upcomingBlurs.count == ZenithLockScreenFullLyrics.upcomingOpacities.count
+                     && zip(ZenithLockScreenFullLyrics.upcomingBlurs, ZenithLockScreenFullLyrics.upcomingBlurs.dropFirst()).allSatisfy { $0 < $1 },
+                     "one line before at 35%, three after at 45, 28 and 14%, softer the further they are")
+        suite.expect(ZenithLockScreenFullLyrics.upcomingOpacity(0, darkInk: true) > ZenithLockScreenFullLyrics.upcomingOpacity(0, darkInk: false)
+                     && ZenithLockScreenFullLyrics.opacity(0.9, darkInk: true) == 1
+                     && ZenithLockScreenFullLyrics.upcomingOpacity(7, darkInk: false) == 0.14
+                     && ZenithLockScreenFullLyrics.upcomingBlur(-2) == ZenithLockScreenFullLyrics.upcomingBlurs[0],
+                     "dark ink lifts the faded lines a little; distances stay in range")
+        let window = ZenithLockScreenLyricWindow.make(lineCount: 20, active: 6, upcoming: ZenithLockScreenFullLyrics.upcoming)
+        suite.expect(window == ZenithLockScreenLyricWindow(previous: 5, active: 6, upcoming: [7, 8, 9]),
+                     "the full layer shows the line before, the sung one and three after")
+    }
+
+    private static func lyricPlacement(_ suite: TestSuite) {
+        let tops = ZenithLockScreenLyricPlacement.tops(heights: [48, 65, 48, 48, 48], spacing: 22, active: 1, middle: 508)
+        suite.expect(tops.count == 5 && abs(tops[1] + 32.5 - 508) <= 0.5 && tops[0] + 48 + 22 == tops[1]
+                     && tops[2] == tops[1] + 65 + 22,
+                     "the sung line's middle is the record's, the others stacked around it")
+        let wrapped = ZenithLockScreenLyricPlacement.tops(heights: [48, 130, 48], spacing: 22, active: 1, middle: 508)
+        suite.expect(abs(wrapped[1] + 65 - 508) <= 0.5, "a sung line on two lines is centred too")
+        let waiting = ZenithLockScreenLyricPlacement.tops(heights: [48, 48], spacing: 22, active: nil, middle: 508)
+        suite.expect(waiting.first == 484 && ZenithLockScreenLyricPlacement.tops(heights: [], spacing: 22, active: 0, middle: 0).isEmpty
+                     && ZenithLockScreenLyricPlacement.tops(heights: [48], spacing: 22, active: 9, middle: 100) == [76],
+                     "before the singing the first line waits in the middle; a stale index falls back")
     }
 }
