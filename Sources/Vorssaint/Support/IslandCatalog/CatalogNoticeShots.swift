@@ -83,18 +83,26 @@ extension CatalogShots {
         }
     }
 
+    /// A low battery notice as the notice center builds it.
+    static func battery(_ kind: ZenithNotice.Kind, percent: Int, lowPowerOn: Bool, minutesLeft: Int?) -> ZenithNotice {
+        let notice = ZenithNotice(kind: kind, key: ZenithNoticeKey.batteryLow, title: "", subtitle: "",
+                                  glyph: .battery(percent: percent, tone: .red), accessory: .lowPower(on: lowPowerOn),
+                                  action: .batterySettings, minutesLeft: minutesLeft)
+        return ZenithBatteryNoticeLook.refreshed(notice, lowPowerOn: lowPowerOn, island: ZenithStrings.island(.enUS),
+                                                 notices: ZenithStrings.notices(.enUS), locale: Locale(identifier: "en_US"))
+    }
+
     static var capsules: [CatalogShot] {
         let text = ZenithStrings.notices(.enUS)
         return [
             capsuleNotice("capsule-battery-low") {
-                ZenithNotice(kind: .batteryLow, key: ZenithNoticeKey.batteryLow,
-                             title: ZenithNoticeFormat.filling(text.batteryTitle, percent: 20),
-                             subtitle: text.lowPowerAction, accessory: .lowPower(on: false), action: .batterySettings)
+                battery(.batteryLow, percent: 20, lowPowerOn: false, minutesLeft: 70)
             },
             capsuleNotice("capsule-battery-critical") {
-                ZenithNotice(kind: .batteryCritical, key: ZenithNoticeKey.batteryLow,
-                             title: ZenithNoticeFormat.filling(text.batteryTitle, percent: 10),
-                             subtitle: text.lowPowerOn, accessory: .lowPower(on: true), action: .batterySettings)
+                battery(.batteryCritical, percent: 10, lowPowerOn: true, minutesLeft: 25)
+            },
+            capsuleNotice("capsule-battery-critical-unknown") {
+                battery(.batteryCritical, percent: 9, lowPowerOn: true, minutesLeft: nil)
             },
             capsuleNotice("capsule-charging") {
                 ZenithNotice(kind: .charging, key: ZenithNoticeKey.power,

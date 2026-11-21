@@ -51,13 +51,16 @@ struct ZenithNotice: Equatable {
         case symbol(String, Tone)
         /// A QuickLook thumbnail of the file, its icon until one is ready.
         case file(URL)
+        /// Zenith fork: a battery filled to the percentage in the tone, the
+        /// percentage large beside it.
+        case battery(percent: Int, tone: Tone)
     }
 
     enum Accessory: Equatable {
         case none
         /// A ring filled to the percentage, the number inside.
         case ring(percent: Int, tone: Tone)
-        /// A switch-like pill with a battery: Low Power Mode, on or off.
+        /// Low Power Mode: a pill that offers it while off, a filled chip once on.
         case lowPower(on: Bool)
         /// A checkmark that draws itself.
         case checkmark
@@ -87,10 +90,16 @@ struct ZenithNotice: Equatable {
     var glyph: Glyph = .none
     var accessory: Accessory = .none
     var action: Action = .none
+    /// Zenith fork: the battery's time left in minutes, when macOS has one.
+    var minutesLeft: Int? = nil
 
     var priority: Int { kind.priority }
     var duration: TimeInterval { ZenithNoticeTiming.duration(kind) }
-    var accessibilityText: String { [title, subtitle].filter { !$0.isEmpty }.joined(separator: ", ") }
+    var accessibilityText: String {
+        var parts = [title, subtitle]
+        if case let .battery(percent, _) = glyph { parts.insert("\(ZenithNoticeFormat.clamped(percent))%", at: 0) }
+        return parts.filter { !$0.isEmpty }.joined(separator: ", ")
+    }
 }
 
 // MARK: - Queue
@@ -392,6 +401,69 @@ enum ZenithNoticeFormat {
         guard let bytes, bytes >= 0 else { return folder }
         let size = ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
         return folder.isEmpty ? size : size + " · " + folder
+    }
+}
+
+/// Zenith fork: a time to full or to empty, in the language's own words:
+/// “25 min” under an hour, “1h 10m” from there.
+enum ZenithPowerFormat {
+    static func duration(minutes: Int, locale: Locale) -> String {
+        let minutes = max(1, minutes)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = locale
+        let formatter = DateComponentsFormatter()
+        formatter.calendar = calendar
+        formatter.allowedUnits = [.hour, .minute]
+        formatter.unitsStyle = minutes < 60 ? .short : .abbreviated
+        return formatter.string(from: TimeInterval(minutes * 60)) ?? "\(minutes) min"
+    }
+
+    /// A time estimate in seconds as whole minutes, nil when macOS has none
+    /// worth showing (still calculating, or more than a day).
+    static func minutes(_ seconds: TimeInterval?) -> Int? {
+        guard let seconds, seconds.isFinite, seconds >= 60, seconds <= 24 * 3600 else { return nil }
+        return Int((seconds / 60).rounded())
+    }
+
+    /// `%@` in a localized template becomes the duration.
+    static func filling(_ template: String, minutes: Int, locale: Locale) -> String {
+        template.replacingOccurrences(of: "%@", with: duration(minutes: minutes, locale: locale))
+    }
+}
+
+/// Zenith fork: what a low battery notice says. Red with a Low Power pill
+/// while the mode is off; amber with an On chip once it is on, as macOS
+/// paints the battery amber in that mode, and the time left when known.
+enum ZenithBatteryNoticeLook {
+    struct Content: Equatable {
+        let title: String
+        let subtitle: String
+        let tone: ZenithNotice.Tone
+    }
+
+    static func content(lowPowerOn: Bool, minutesLeft: Int?, island: ZenithIslandStrings,
+                        notices: ZenithNoticeStrings, locale: Locale) -> Content {
+        guard lowPowerOn else {
+            return Content(title: island.batteryLow, subtitle: island.batteryLowHint, tone: .red)
+        }
+        var subtitle = island.plugInSoon
+        if let minutesLeft {
+            subtitle += " · " + ZenithPowerFormat.filling(island.aboutLeft, minutes: minutesLeft, locale: locale)
+        }
+        return Content(title: notices.lowPowerOn, subtitle: subtitle, tone: .amber)
+    }
+
+    /// `notice` with Low Power Mode as it is now: words, tone and accessory.
+    static func refreshed(_ notice: ZenithNotice, lowPowerOn: Bool, island: ZenithIslandStrings,
+                          notices: ZenithNoticeStrings, locale: Locale) -> ZenithNotice {
+        var notice = notice
+        let look = content(lowPowerOn: lowPowerOn, minutesLeft: notice.minutesLeft, island: island,
+                           notices: notices, locale: locale)
+        notice.title = look.title
+        notice.subtitle = look.subtitle
+        notice.accessory = .lowPower(on: lowPowerOn)
+        if case let .battery(percent, _) = notice.glyph { notice.glyph = .battery(percent: percent, tone: look.tone) }
+        return notice
     }
 }
 

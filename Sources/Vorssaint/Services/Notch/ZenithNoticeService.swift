@@ -215,10 +215,12 @@ final class ZenithNoticeCenter: ObservableObject {
         let text = text
         switch event {
         case let .low(percent, critical):
-            return ZenithNotice(kind: critical ? .batteryCritical : .batteryLow, key: ZenithNoticeKey.batteryLow,
-                                title: ZenithNoticeFormat.filling(text.batteryTitle, percent: percent),
-                                subtitle: lowPowerOn ? text.lowPowerOn : text.lowPowerAction,
-                                accessory: .lowPower(on: lowPowerOn), action: .batterySettings)
+            // Zenith fork: a battery glyph and the percentage, the words by Low Power Mode.
+            let notice = ZenithNotice(kind: critical ? .batteryCritical : .batteryLow, key: ZenithNoticeKey.batteryLow,
+                                      title: "", subtitle: "", glyph: .battery(percent: percent, tone: .red),
+                                      accessory: .lowPower(on: lowPowerOn), action: .batterySettings,
+                                      minutesLeft: ZenithPowerFormat.minutes(reading.timeRemainingSeconds))
+            return refreshedLowPower(notice)
         case let .charging(percent):
             return ZenithNotice(kind: .charging, key: ZenithNoticeKey.power,
                                 title: ZenithNoticeFormat.titled(text.charging, percent: percent),
@@ -526,11 +528,10 @@ final class ZenithNoticeCenter: ObservableObject {
     // MARK: Low Power Mode
 
     private func refreshedLowPower(_ notice: ZenithNotice) -> ZenithNotice {
-        var notice = notice
-        let on = ProcessInfo.processInfo.isLowPowerModeEnabled
-        notice.accessory = .lowPower(on: on)
-        notice.subtitle = on ? text.lowPowerOn : text.lowPowerAction
-        return notice
+        let language = L10n.shared.language
+        return ZenithBatteryNoticeLook.refreshed(notice, lowPowerOn: ProcessInfo.processInfo.isLowPowerModeEnabled,
+                                                 island: ZenithStrings.island(language), notices: text,
+                                                 locale: language.formattingLocale())
     }
 
     /// Turned on in System Settings while the notice shows, its switch follows.

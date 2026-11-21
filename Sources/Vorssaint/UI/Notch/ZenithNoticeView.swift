@@ -144,7 +144,11 @@ private struct ZenithNoticeContent: View {
     var body: some View {
         let pieces = notice.glyph == .none ? 3 : 4
         HStack(spacing: Layout.spacing) {
-            if notice.glyph != .none {
+            if case let .battery(percent, tone) = notice.glyph {
+                // Zenith fork: the battery and its percentage, large in the notice's colour.
+                ZenithBatteryFigure(percent: percent, color: tone.color)
+                    .zenithNoticeReveal(shown, index: 0, count: pieces, reduceMotion: reduceMotion)
+            } else if notice.glyph != .none {
                 glyph
                     .frame(width: Layout.glyph, height: Layout.glyph)
                     .zenithNoticeReveal(shown, index: 0, count: pieces, reduceMotion: reduceMotion)
@@ -178,7 +182,7 @@ private struct ZenithNoticeContent: View {
 
     @ViewBuilder private var glyph: some View {
         switch notice.glyph {
-        case .none:
+        case .none, .battery:
             EmptyView()
         case let .symbol(name, tone):
             Image(systemName: name)
@@ -197,7 +201,7 @@ private struct ZenithNoticeContent: View {
         case let .ring(percent, tone):
             ZenithNoticeRing(percent: percent, color: tone.color, shown: shown, reduceMotion: reduceMotion)
         case .lowPower(let on):
-            ZenithNoticeLowPowerSwitch(on: on, reduceMotion: reduceMotion)
+            ZenithNoticeLowPowerPill(on: on, reduceMotion: reduceMotion)
         case .checkmark:
             ZenithNoticeCheckmark(shown: shown, reduceMotion: reduceMotion)
         case .action(let title):
@@ -279,33 +283,88 @@ private struct ZenithNoticeRing: View {
     }
 }
 
-/// Low Power Mode as a switch-like pill holding a battery: red and off, or
-/// amber and on, as macOS colours the battery in that mode.
-private struct ZenithNoticeLowPowerSwitch: View {
+/// Zenith fork: Low Power Mode, as words on a tinted pill that offers it
+/// while it is off (red, the click turns it on), or a filled amber chip with
+/// a check once it is on, as macOS paints the battery amber in that mode.
+private struct ZenithNoticeLowPowerPill: View {
     let on: Bool
     let reduceMotion: Bool
+    @ObservedObject private var l10n = L10n.shared
 
     var body: some View {
+        let text = ZenithStrings.island(l10n.language)
         let color = on ? ZenithStatus.warning : ZenithStatus.error
-        let width: CGFloat = 50, height: CGFloat = 28
-        let knob = height - 6
-        ZStack(alignment: on ? .trailing : .leading) {
-            Capsule().fill(color.opacity(0.28))
-            Capsule().strokeBorder(color.opacity(0.55), lineWidth: 1)
-            Image(systemName: on ? "battery.25percent" : "battery.0percent")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(color)
-                .frame(maxWidth: .infinity, alignment: on ? .leading : .trailing)
-                .padding(.horizontal, 6)
-            Circle()
-                .fill(color)
-                .overlay { Capsule().fill(.white.opacity(0.9)).frame(width: 2, height: knob * 0.42) }
-                .frame(width: knob, height: knob)
-                .padding(3)
-                .shadow(color: color.opacity(0.6), radius: 4)
+        HStack(spacing: 6) {
+            Image(systemName: on ? "checkmark" : "leaf.fill")
+                .font(.system(size: 11, weight: .bold))
+            Text(on ? text.on : text.lowPowerPill)
+                .font(.system(size: ZenithNoticeMeasure.pillFontSize, weight: .semibold))
+                .lineLimit(1)
+                .fixedSize()
         }
-        .frame(width: width, height: height)
-        .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.75), value: on)
+        .foregroundStyle(on ? Color.black.opacity(0.85) : color)
+        .padding(.horizontal, ZenithNoticeMeasure.pillPadding)
+        .frame(height: ZenithNoticeLayout.pillHeight)
+        .background(Capsule().fill(on ? color : color.opacity(0.18)))
+        .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8), value: on)
+    }
+}
+
+/// Zenith fork: a battery filled to `percent` in `color`, a bolt over the
+/// fill while it charges. Shared by the low battery notice and the charging
+/// burst, so both read as one battery.
+struct ZenithBatteryGlyph: View {
+    let percent: Int
+    let color: Color
+    var bolt = false
+    var width: CGFloat = ZenithNoticeLayout.batteryWidth
+    var height: CGFloat = ZenithNoticeLayout.batteryHeight
+
+    var body: some View {
+        let line: CGFloat = 1.6
+        let inset = line + 1.6
+        let inner = width - inset * 2
+        let fraction = CGFloat(ZenithNoticeFormat.clamped(percent)) / 100
+        HStack(spacing: 1.5) {
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: height * 0.3, style: .continuous)
+                    .strokeBorder(.white.opacity(0.45), lineWidth: line)
+                RoundedRectangle(cornerRadius: (height - inset * 2) * 0.3, style: .continuous)
+                    .fill(color)
+                    .frame(width: max(height * 0.22, inner * fraction), height: height - inset * 2)
+                    .padding(.leading, inset)
+                if bolt {
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: height * 0.58, weight: .black))
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.25), radius: 1)
+                        .frame(width: width, height: height)
+                }
+            }
+            .frame(width: width, height: height)
+            Capsule().fill(.white.opacity(0.45)).frame(width: 2.5, height: height * 0.36)
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// Zenith fork: the battery and its percentage, large in the status colour.
+struct ZenithBatteryFigure: View {
+    let percent: Int
+    let color: Color
+    var bolt = false
+
+    var body: some View {
+        HStack(spacing: ZenithNoticeMeasure.figureGap) {
+            ZenithBatteryGlyph(percent: percent, color: color, bolt: bolt)
+            Text("\(ZenithNoticeFormat.clamped(percent))%")
+                .font(.system(size: ZenithNoticeLayout.figureSize, weight: .semibold))
+                .monospacedDigit()
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .fixedSize()
+                .contentTransition(.numericText())
+        }
     }
 }
 
@@ -372,11 +431,33 @@ private struct ZenithNoticeCheckShape: Shape {
 /// Zenith fork: what a notice's row needs, measured with the fonts the row
 /// draws with, for the capsule's width (ZenithNoticeLayout.fit).
 enum ZenithNoticeMeasure {
+    static let pillFontSize: CGFloat = 12.5
+    static let pillPadding: CGFloat = 14
+    static let figureGap: CGFloat = 12
+
     /// `fixed` is everything but the text, with the gaps between the pieces.
+    /// A low battery notice is measured as it reads with Low Power Mode on
+    /// and off, so turning it on while it shows never runs out of room.
     static func content(_ notice: ZenithNotice) -> (fixed: CGFloat, title: CGFloat, subtitle: CGFloat) {
+        guard case .lowPower(let on) = notice.accessory else { return measured(notice) }
+        let language = L10n.shared.language
+        let other = ZenithBatteryNoticeLook.refreshed(notice, lowPowerOn: !on, island: ZenithStrings.island(language),
+                                                      notices: ZenithStrings.notices(language),
+                                                      locale: language.formattingLocale())
+        let (a, b) = (measured(notice), measured(other))
+        return (max(a.fixed, b.fixed), max(a.title, b.title), max(a.subtitle, b.subtitle))
+    }
+
+    private static func measured(_ notice: ZenithNotice) -> (fixed: CGFloat, title: CGFloat, subtitle: CGFloat) {
         let layout = ZenithNoticeLayout.self
         var pieces: [CGFloat] = []
-        if notice.glyph != .none { pieces.append(layout.glyph) }
+        if case let .battery(percent, _) = notice.glyph {
+            let figure = ZenithIslandRoom.measure("\(ZenithNoticeFormat.clamped(percent))%",
+                                                  font: .monospacedDigitSystemFont(ofSize: layout.figureSize, weight: .semibold))
+            pieces.append(layout.batteryWidth + 4 + figureGap + figure + 2)
+        } else if notice.glyph != .none {
+            pieces.append(layout.glyph)
+        }
         let accessory = accessoryWidth(notice.accessory)
         if accessory > 0 { pieces.append(accessory) }
         let fixed = pieces.reduce(0, +) + CGFloat(pieces.count) * layout.spacing
@@ -390,7 +471,11 @@ enum ZenithNoticeMeasure {
         switch accessory {
         case .none: return 0
         case .ring, .checkmark: return ZenithNoticeLayout.ring
-        case .lowPower: return 50
+        case .lowPower(let on):
+            let text = ZenithStrings.island(L10n.shared.language)
+            return ZenithIslandRoom.measure(on ? text.on : text.lowPowerPill,
+                                            font: .systemFont(ofSize: pillFontSize, weight: .semibold))
+                + 11 + 6 + pillPadding * 2 + 2
         case .action(let title):
             return ZenithIslandRoom.measure(title, font: .systemFont(ofSize: 12, weight: .semibold)) + 26
         }

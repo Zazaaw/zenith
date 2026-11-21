@@ -10,7 +10,44 @@ enum IslandRoundThreeTests {
     static func run(_ suite: TestSuite) {
         room(suite)
         captureStrip(suite)
+        batteryNotice(suite)
         strings(suite)
+    }
+
+    // MARK: Battery notices
+
+    private static func batteryNotice(_ suite: TestSuite) {
+        let island = ZenithStrings.island(.enUS), notices = ZenithStrings.notices(.enUS)
+        let en = Locale(identifier: "en_US")
+        let off = ZenithBatteryNoticeLook.content(lowPowerOn: false, minutesLeft: 25, island: island, notices: notices, locale: en)
+        suite.expect(off == .init(title: "Battery low", subtitle: "Turn on Low Power Mode to last longer", tone: .red),
+                     "with Low Power Mode off the notice is red and offers it")
+        let on = ZenithBatteryNoticeLook.content(lowPowerOn: true, minutesLeft: 25, island: island, notices: notices, locale: en)
+        suite.expect(on == .init(title: "Low Power Mode is on", subtitle: "Plug in soon · about 25 min left", tone: .amber),
+                     "with Low Power Mode on it turns amber and reads the time left")
+        let unknown = ZenithBatteryNoticeLook.content(lowPowerOn: true, minutesLeft: nil, island: island, notices: notices, locale: en)
+        suite.expect(unknown.subtitle == "Plug in soon", "without an estimate it only asks to plug in")
+
+        let notice = ZenithNotice(kind: .batteryLow, key: ZenithNoticeKey.batteryLow, title: "", subtitle: "",
+                                  glyph: .battery(percent: 20, tone: .red), accessory: .lowPower(on: false),
+                                  action: .batterySettings, minutesLeft: 70)
+        let turnedOn = ZenithBatteryNoticeLook.refreshed(notice, lowPowerOn: true, island: island, notices: notices, locale: en)
+        suite.expect(turnedOn.accessory == .lowPower(on: true) && turnedOn.glyph == .battery(percent: 20, tone: .amber)
+                        && turnedOn.title == notices.lowPowerOn && turnedOn.subtitle == "Plug in soon · about 1h 10m left"
+                        && turnedOn.action == .batterySettings,
+                     "Low Power Mode turned on while it shows recolours the glyph and swaps the pill for the chip")
+        suite.expect(turnedOn.accessibilityText == "20%, Low Power Mode is on, Plug in soon · about 1h 10m left",
+                     "VoiceOver reads the percentage first")
+
+        suite.expect(ZenithPowerFormat.duration(minutes: 25, locale: en) == "25 min"
+                        && ZenithPowerFormat.duration(minutes: 70, locale: en) == "1h 10m"
+                        && ZenithPowerFormat.duration(minutes: 260, locale: en) == "4h 20m"
+                        && ZenithPowerFormat.duration(minutes: 0, locale: en) == "1 min",
+                     "durations read as minutes under an hour, hours and minutes from there")
+        suite.expect(ZenithPowerFormat.minutes(nil) == nil && ZenithPowerFormat.minutes(-1) == nil
+                        && ZenithPowerFormat.minutes(30) == nil && ZenithPowerFormat.minutes(.infinity) == nil
+                        && ZenithPowerFormat.minutes(3 * 86_400) == nil && ZenithPowerFormat.minutes(1500) == 25,
+                     "only a plausible estimate becomes minutes")
     }
 
     // MARK: Room
