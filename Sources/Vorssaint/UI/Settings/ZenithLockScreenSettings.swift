@@ -365,7 +365,7 @@ private struct ZenithLockScreenMusicTab: View {
                 line(page.lyricShade, symbol: "shadow", caption: page.lyricShadeCaption, isOn: $lyricShade)
                     .disabled(!showsTitle)
                 ZenithLockScreenDivider()
-                ZenithLockScreenLyricTiming()
+                ZenithLockScreenLyricTimingSlider()
                     .padding(.vertical, 12)
                     .disabled(!(showsTitle && lyrics))
             }
@@ -386,7 +386,7 @@ private struct ZenithLockScreenMusicTab: View {
 }
 
 /// How far the lyrics are moved against the song, with zero in the middle.
-private struct ZenithLockScreenLyricTiming: View {
+private struct ZenithLockScreenLyricTimingSlider: View {
     @ObservedObject private var l10n = L10n.shared
     @AppStorage(DefaultsKey.zenithLockLyricOffset) private var offset = 0.0
     @Environment(\.isEnabled) private var isEnabled
