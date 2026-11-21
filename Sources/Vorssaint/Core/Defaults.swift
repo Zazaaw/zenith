@@ -1188,6 +1188,9 @@ enum DefaultsKey {
     static let zenithLockFullJobs = "zenithLockFullJobs"
     static let zenithLockFullCoverColor = "zenithLockFullCoverColor"
     static let zenithLockFullLoginHint = "zenithLockFullLoginHint"
+    static let zenithLockFullBackground = "zenithLockFullBackground" // ZenithLockScreenFullBackground
+    static let zenithLockFullBlurRadius = "zenithLockFullBlurRadius" // points, ZenithLockScreenFullBlur.range
+    static let zenithLockFullCustomColor = "zenithLockFullCustomColor" // "RRGGBB", used when the solid colour is not the cover's
     static let wakaTimeDailyGoalMinutes = "wakaTimeDailyGoalMinutes" // Zenith fork, 0 = off
     // Companion: a small friend who rests in the closed island and is the Command Bar's face.
     static let notchMascotEnabled = "notchMascotEnabled"
@@ -1921,6 +1924,9 @@ enum Defaults {
         DefaultsKey.zenithLockFullJobs: true,
         DefaultsKey.zenithLockFullCoverColor: true,
         DefaultsKey.zenithLockFullLoginHint: true,
+        DefaultsKey.zenithLockFullBackground: "solid",
+        DefaultsKey.zenithLockFullBlurRadius: 40.0,
+        DefaultsKey.zenithLockFullCustomColor: "1C1C1E",
         DefaultsKey.wakaTimeDailyGoalMinutes: 0,
         DefaultsKey.notchMascotEnabled: false,
         DefaultsKey.notchMascotVisits: true,
