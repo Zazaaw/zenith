@@ -276,6 +276,10 @@ enum ZenithBatteryEvent: Equatable {
     case charging(percent: Int?)
     case unplugged(percent: Int?)
     case chargeLimit(percent: Int)
+    /// Zenith fork: still plugged in, the charge stopped short of full:
+    /// Optimized Battery Charging or the charge limit holds it. Once per
+    /// time the charger is plugged in.
+    case held(percent: Int)
 }
 
 /// Turns power readings into notices. The first reading is a baseline: a
@@ -286,6 +290,7 @@ struct ZenithBatteryNoticeState {
     private var lowArmed = true
     private var criticalArmed = true
     private var highArmed = true
+    private var heldArmed = true
 
     /// `previous` is the reading before this one when the caller knows it,
     /// which serves as the baseline if this state has none yet.
@@ -299,8 +304,15 @@ struct ZenithBatteryNoticeState {
         last = reading
         var events: [ZenithBatteryEvent] = []
         let percent = reading.percent.map { min(100, max(0, $0)) }
-        if before.external != reading.external, settings.chargerOn {
-            events.append(reading.external ? .charging(percent: percent) : .unplugged(percent: percent))
+        if before.external != reading.external {
+            heldArmed = true
+            if settings.chargerOn {
+                events.append(reading.external ? .charging(percent: percent) : .unplugged(percent: percent))
+            }
+        } else if reading.external, before.charging, !reading.charging, heldArmed, let percent, percent < 100 {
+            // Zenith fork: the charge paused short of full.
+            heldArmed = false
+            if settings.chargerOn { events.append(.held(percent: percent)) }
         }
         guard let percent else { return events }
         let margin = ZenithBatterySettings.hysteresis

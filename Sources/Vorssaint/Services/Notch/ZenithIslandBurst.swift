@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Satu Visual
 
 import AppKit
+import IOKit.ps
 
 // Zenith fork: presents bursts (ZenithIslandBurstSupport) as the island's own
 // notice, so the island grows and shrinks back through its window host, with
@@ -62,5 +63,22 @@ final class ZenithBurstWaiter {
         guard !island.expanded, !island.dragPlaceholder, island.captureControls == nil else { return }
         cancel()
         island.showZenithBurst(waiting.content)
+    }
+}
+
+/// Zenith fork: macOS's own time to full, from the power source's public
+/// description (the battery menu's estimate). Nil while it is calculating or
+/// when the Mac has no battery charging.
+enum ZenithPowerEstimate {
+    static func minutesToFull() -> Int? {
+        guard let info = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
+              let list = IOPSCopyPowerSourcesList(info)?.takeRetainedValue() as? [CFTypeRef] else { return nil }
+        for source in list {
+            guard let description = IOPSGetPowerSourceDescription(info, source)?.takeUnretainedValue() as? [String: Any],
+                  description[kIOPSTypeKey] as? String == kIOPSInternalBatteryType,
+                  let minutes = description[kIOPSTimeToFullChargeKey] as? Int else { continue }
+            return ZenithPowerFormat.minutes(TimeInterval(minutes) * 60)
+        }
+        return nil
     }
 }

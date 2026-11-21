@@ -114,7 +114,23 @@ extension CatalogShots {
             burst("burst-prayer-capsule", preferences: indonesianNames.merging([
                 DefaultsKey.notchSilhouette: NotchSilhouette.capsule.rawValue]) { $1 },
                   geometry: capsule, elapsed: 3.2, setup: { CatalogSamples.prayer(arrived: true) }, prayer),
+            burst("burst-charging") { charge(.charging, percent: 82, minutes: 70) },
+            burst("burst-charging-estimating") { charge(.charging, percent: 46, minutes: nil) },
+            burst("burst-charge-limit") { charge(.charging, percent: 80, minutes: nil,
+                                                 hint: ZenithStrings.notices(.enUS).chargeHint) },
+            burst("burst-charge-held") { charge(.held, percent: 80, minutes: nil) },
+            burst("burst-unplugged") { charge(.onBattery, percent: 76, minutes: 260) },
+            burst("burst-unplugged-low") { charge(.onBattery, percent: 18, minutes: nil) },
+            burst("burst-charging-capsule", preferences: [DefaultsKey.notchSilhouette: NotchSilhouette.capsule.rawValue],
+                  geometry: capsule) { charge(.charging, percent: 82, minutes: 70) },
         ]
+    }
+
+    /// A charger moment as the notice center builds it.
+    static func charge(_ state: ZenithChargeState, percent: Int, minutes: Int?, hint: String? = nil) -> ZenithIslandBurst.Content {
+        .charge(ZenithChargeBurst.make(state, percent: percent, minutes: minutes, hint: hint,
+                                       island: ZenithStrings.island(.enUS), notices: ZenithStrings.notices(.enUS),
+                                       locale: Locale(identifier: "en_US")))
     }
 
     /// A low battery notice as the notice center builds it.
@@ -137,21 +153,6 @@ extension CatalogShots {
             },
             capsuleNotice("capsule-battery-critical-unknown") {
                 battery(.batteryCritical, percent: 9, lowPowerOn: true, minutesLeft: nil)
-            },
-            capsuleNotice("capsule-charging") {
-                ZenithNotice(kind: .charging, key: ZenithNoticeKey.power,
-                             title: ZenithNoticeFormat.titled(text.charging, percent: 54), subtitle: text.chargerConnected,
-                             glyph: .symbol("bolt.fill", .green), accessory: .ring(percent: 54, tone: .green))
-            },
-            capsuleNotice("capsule-charge-limit") {
-                ZenithNotice(kind: .chargeLimit, key: ZenithNoticeKey.chargeLimit,
-                             title: ZenithNoticeFormat.titled(text.charging, percent: 80), subtitle: text.chargeHint,
-                             glyph: .symbol("leaf.fill", .green), accessory: .ring(percent: 80, tone: .green))
-            },
-            capsuleNotice("capsule-unplugged") {
-                ZenithNotice(kind: .unplugged, key: ZenithNoticeKey.power,
-                             title: ZenithNoticeFormat.titled(text.onBattery, percent: 76), subtitle: text.chargerRemoved,
-                             glyph: .symbol("powerplug", .white), accessory: .ring(percent: 76, tone: ZenithNoticeFormat.batteryTone(76)))
             },
             capsuleNotice("capsule-audio") {
                 ZenithNotice(kind: .audio, key: ZenithNoticeKey.audio("AirPods Pro"), title: "AirPods Pro",

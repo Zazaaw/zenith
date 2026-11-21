@@ -96,13 +96,13 @@ private struct ZenithChargeBurstRow: View {
     private typealias Layout = ZenithIslandBurstLayout
 
     var body: some View {
-        HStack(spacing: Layout.columnGap) {
+        HStack(spacing: 0) {
             if let percent = charge.percent {
                 ZenithBatteryFigure(percent: percent, color: charge.tone.color, bolt: charge.bolt)
             } else {
                 ZenithBatteryGlyph(percent: 100, color: charge.tone.color, bolt: charge.bolt)
             }
-            Spacer(minLength: 0)
+            Spacer(minLength: Layout.columnGap)
             VStack(alignment: .trailing, spacing: 2) {
                 Text(charge.title)
                     .font(Font(Layout.chargeTitleFont))

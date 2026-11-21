@@ -78,8 +78,46 @@ final class ZenithNoticeCenter: ObservableObject {
         let previous = Self.reading(before), reading = Self.reading(next)
         let events = battery.update(reading, previous: previous, settings: settings)
         guard NotchSupport.routes(.battery) else { return false }
-        for event in events { enqueue(notice(for: event, reading: next)) }
+        for event in events {
+            // The charger grows the island itself (ZenithIslandBurst); a low
+            // battery stays a capsule with its Low Power pill.
+            if case let .low(percent, critical) = event {
+                enqueue(lowBatteryNotice(percent: percent, critical: critical, reading: next))
+            } else if let charge = chargeBurst(for: event, reading: next) {
+                if case .charging = event { answerLowBattery() }
+                NotchService.shared.showZenithBurst(.charge(charge))
+            }
+        }
         return ZenithBatteryNoticeState.replacesSmallNotice(before: previous, after: reading, settings: settings)
+    }
+
+    /// The island's charging burst for a charger event, nil for a low battery.
+    private func chargeBurst(for event: ZenithBatteryEvent, reading: PowerReading) -> ZenithChargeBurst? {
+        let language = L10n.shared.language
+        let island = ZenithStrings.island(language), locale = language.formattingLocale()
+        func burst(_ state: ZenithChargeState, percent: Int?, minutes: Int?, hint: String? = nil) -> ZenithChargeBurst {
+            ZenithChargeBurst.make(state, percent: percent, minutes: minutes, hint: hint, island: island, notices: text,
+                                   locale: locale)
+        }
+        let plugged = ZenithChargeState.of(external: true, charging: reading.isCharging, percent: reading.chargePercent)
+        switch event {
+        case .low:
+            return nil
+        case .charging(let percent):
+            return burst(plugged, percent: percent, minutes: plugged == .charging ? ZenithPowerEstimate.minutesToFull() : nil)
+        case .chargeLimit(let percent):
+            return burst(plugged, percent: percent, minutes: nil, hint: plugged == .charging ? text.chargeHint : nil)
+        case .held(let percent):
+            return burst(.held, percent: percent, minutes: nil)
+        case .unplugged(let percent):
+            return burst(.onBattery, percent: percent, minutes: ZenithPowerFormat.minutes(reading.timeRemainingSeconds))
+        }
+    }
+
+    /// A charger plugged in answers a low battery warning, waiting or shown.
+    private func answerLowBattery() {
+        queue.removeAll { $0.key == ZenithNoticeKey.batteryLow }
+        if notice?.key == ZenithNoticeKey.batteryLow { dismiss(quickly: true) }
     }
 
     /// An accessory connected. Returns whether a capsule shows it, so the
@@ -204,35 +242,13 @@ final class ZenithNoticeCenter: ObservableObject {
         ZenithBatteryReading(percent: power.chargePercent, external: power.externalConnected, charging: power.isCharging)
     }
 
-    private func notice(for event: ZenithBatteryEvent, reading: PowerReading) -> ZenithNotice {
-        let text = text
-        switch event {
-        case let .low(percent, critical):
-            // Zenith fork: a battery glyph and the percentage, the words by Low Power Mode.
-            let notice = ZenithNotice(kind: critical ? .batteryCritical : .batteryLow, key: ZenithNoticeKey.batteryLow,
-                                      title: "", subtitle: "", glyph: .battery(percent: percent, tone: .red),
-                                      accessory: .lowPower(on: lowPowerOn), action: .batterySettings,
-                                      minutesLeft: ZenithPowerFormat.minutes(reading.timeRemainingSeconds))
-            return refreshedLowPower(notice)
-        case let .charging(percent):
-            return ZenithNotice(kind: .charging, key: ZenithNoticeKey.power,
-                                title: ZenithNoticeFormat.titled(text.charging, percent: percent),
-                                subtitle: text.chargerConnected,
-                                glyph: .symbol("bolt.fill", .green),
-                                accessory: percent.map { .ring(percent: $0, tone: .green) } ?? .none)
-        case let .unplugged(percent):
-            return ZenithNotice(kind: .unplugged, key: ZenithNoticeKey.power,
-                                title: ZenithNoticeFormat.titled(text.onBattery, percent: percent),
-                                subtitle: text.chargerRemoved,
-                                glyph: .symbol("powerplug", .white),
-                                accessory: percent.map { .ring(percent: $0, tone: ZenithNoticeFormat.batteryTone($0)) } ?? .none)
-        case let .chargeLimit(percent):
-            return ZenithNotice(kind: .chargeLimit, key: ZenithNoticeKey.chargeLimit,
-                                title: ZenithNoticeFormat.titled(text.charging, percent: percent),
-                                subtitle: text.chargeHint,
-                                glyph: .symbol("leaf.fill", .green),
-                                accessory: .ring(percent: percent, tone: .green))
-        }
+    /// Zenith fork: a battery glyph and the percentage, the words by Low Power Mode.
+    private func lowBatteryNotice(percent: Int, critical: Bool, reading: PowerReading) -> ZenithNotice {
+        let notice = ZenithNotice(kind: critical ? .batteryCritical : .batteryLow, key: ZenithNoticeKey.batteryLow,
+                                  title: "", subtitle: "", glyph: .battery(percent: percent, tone: .red),
+                                  accessory: .lowPower(on: lowPowerOn), action: .batterySettings,
+                                  minutesLeft: ZenithPowerFormat.minutes(reading.timeRemainingSeconds))
+        return refreshedLowPower(notice)
     }
 
     private func audioNotice(name: String, symbol: String, percent: Int?) -> ZenithNotice {
