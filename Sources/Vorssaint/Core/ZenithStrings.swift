@@ -13084,3 +13084,75 @@ extension ZenithStrings {
         }
     }
 }
+
+/// Zenith fork: the lock screen v2's own words (the minimal and full layers).
+struct ZenithLockScreenV2Strings {
+    /// The chip shown on hovering the lyric, its first few times.
+    let lyricHint: String
+    /// The full layer's bottom right corner.
+    let loginHint: String
+    /// Accessibility: the lyric opens the full lyrics.
+    let fullLyrics: String
+    /// Accessibility: the title line opens the song's controls.
+    let songControls: String
+}
+
+extension ZenithStrings {
+    static func lockScreenV2(_ language: AppLanguage) -> ZenithLockScreenV2Strings {
+        switch language {
+        case .enUS:
+            return .init(lyricHint: "Click for full lyrics", loginHint: "Move the mouse to log in, or use Touch ID",
+                         fullLyrics: "Full lyrics", songControls: "Song controls")
+        case .ptBR:
+            return .init(lyricHint: "Clique para ver a letra completa",
+                         loginHint: "Mova o mouse para iniciar a sessão ou use o Touch ID",
+                         fullLyrics: "Letra completa", songControls: "Controles da música")
+        case .tr:
+            return .init(lyricHint: "Tüm sözler için tıkla", loginHint: "Giriş yapmak için fareyi oynat veya Touch ID kullan",
+                         fullLyrics: "Tüm sözler", songControls: "Şarkı denetimleri")
+        case .ru:
+            return .init(lyricHint: "Нажмите, чтобы открыть весь текст",
+                         loginHint: "Подвиньте мышь, чтобы войти, или используйте Touch ID",
+                         fullLyrics: "Весь текст", songControls: "Управление песней")
+        case .es:
+            return .init(lyricHint: "Haz clic para ver la letra completa",
+                         loginHint: "Mueve el ratón para iniciar sesión o usa Touch ID",
+                         fullLyrics: "Letra completa", songControls: "Controles de la canción")
+        case .sk:
+            return .init(lyricHint: "Kliknutím zobrazíte celý text",
+                         loginHint: "Pohnite myšou a prihláste sa, alebo použite Touch ID",
+                         fullLyrics: "Celý text", songControls: "Ovládanie skladby")
+        case .de:
+            return .init(lyricHint: "Klicken für den ganzen Songtext",
+                         loginHint: "Bewege die Maus, um dich anzumelden, oder nutze Touch ID",
+                         fullLyrics: "Ganzer Songtext", songControls: "Songsteuerung")
+        case .fr:
+            return .init(lyricHint: "Cliquez pour voir toutes les paroles",
+                         loginHint: "Bougez la souris pour vous connecter, ou utilisez Touch ID",
+                         fullLyrics: "Toutes les paroles", songControls: "Commandes du morceau")
+        case .it:
+            return .init(lyricHint: "Fai clic per il testo completo",
+                         loginHint: "Muovi il mouse per accedere o usa Touch ID",
+                         fullLyrics: "Testo completo", songControls: "Controlli del brano")
+        case .ja:
+            return .init(lyricHint: "クリックで歌詞全体を表示", loginHint: "マウスを動かしてログイン、またはTouch IDを使用",
+                         fullLyrics: "歌詞全体", songControls: "曲のコントロール")
+        case .ko:
+            return .init(lyricHint: "클릭하면 전체 가사를 봅니다", loginHint: "마우스를 움직여 로그인하거나 Touch ID를 사용하세요",
+                         fullLyrics: "전체 가사", songControls: "노래 컨트롤")
+        case .uk:
+            return .init(lyricHint: "Натисніть, щоб відкрити весь текст",
+                         loginHint: "Порухайте мишею, щоб увійти, або скористайтеся Touch ID",
+                         fullLyrics: "Увесь текст", songControls: "Керування піснею")
+        case .zhHans:
+            return .init(lyricHint: "点按查看完整歌词", loginHint: "移动鼠标以登录，或使用触控 ID",
+                         fullLyrics: "完整歌词", songControls: "歌曲控制")
+        case .zhTW:
+            return .init(lyricHint: "按一下以查看完整歌詞", loginHint: "移動滑鼠以登入，或使用 Touch ID",
+                         fullLyrics: "完整歌詞", songControls: "歌曲控制項目")
+        case .zhHK:
+            return .init(lyricHint: "按一下以查看完整歌詞", loginHint: "移動滑鼠以登入，或使用 Touch ID",
+                         fullLyrics: "完整歌詞", songControls: "歌曲控制項目")
+        }
+    }
+}

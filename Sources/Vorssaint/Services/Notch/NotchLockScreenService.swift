@@ -23,9 +23,11 @@ final class NotchLockScreenService {
         /// The island itself inside its window, at the camera's fitted size.
         var islandSurface: CGRect?
         var terminal: CGRect? // Zenith fork
+        var screen: CGRect? // Zenith fork: the lock screen v2's full layer covers it.
     }
 
     private let model = NotchLockScreenModel()
+    private let zenith = ZenithLockScreenV2() // Zenith fork
     /// The player and the line of activities.
     private var scene: [NotchLockScreenPanel] = []
     private var island: NotchLockScreenPanel?
@@ -87,7 +89,9 @@ final class NotchLockScreenService {
             (frames.terminal, frames.player) = NotchLockScreenTerminalLayout.arrange(
                 row: frames.row, player: frames.player, screen: screen,
                 lines: NotchLockScreenTerminal.configuration()?.sources.count ?? 0,
-                music: NotchLockScreenSupport.showsMusic() && NotchLockScreenItem.music.isOn())
+                music: NotchLockScreenSupport.showsMusic() && NotchLockScreenItem.music.isOn(),
+                lift: ZenithLockScreenMinimalLayout.terminalLift(ZenithLockScreenTerminalPlacement.current()))
+            frames.screen = screen // Zenith fork
         }
         // The island's own reading of its camera, with the fit the person set.
         let geometry = NotchService.shared.geometry
@@ -125,14 +129,27 @@ final class NotchLockScreenService {
             weather: NotchLockScreenWidgets.showsWeather(),
             reminders: NotchLockScreenWidgets.showsReminders(),
             // Zenith fork: worked out on this Mac, so only their switches.
-            prayer: NotchLockScreenItem.prayer.isOn(), golden: NotchLockScreenItem.golden.isOn())
+            prayer: NotchLockScreenItem.prayer.isOn(), golden: NotchLockScreenItem.golden.isOn(),
+            jobs: ZenithLockScreenOption.jobs.isOn()) // Zenith fork
         if model.gates != gates { model.gates = gates }
+        // Zenith fork: the lock screen v2, its switches read once here like the gates.
+        let v2 = ZenithLockScreenV2Gates.resolve(music: gates.music, lyricsAvailable: NotchLyricsSupport.isEnabled())
         var scene: [NotchLockScreenPanel] = []
         // Without the Music section there is no player to show or to click.
         if gates.music, let frame = frames.player {
-            // The one part that takes clicks: the player's buttons and timeline.
-            scene.append(Self.makePanel(frame: frame, interactive: true,
-                                        content: NotchLockScreenPlayer(model: model, size: frame.size)))
+            if v2.nowPlaying, let row = frames.row {
+                // Zenith fork: the now-playing line and the lyric take the player's place.
+                let minimal = ZenithLockScreenMinimalLayout.frame(row: row, player: frame)
+                let panel = Self.makePanel(frame: minimal, interactive: v2.minimalTakesClicks, content: ZenithLockScreenMinimalView(
+                    model: model, zenith: zenith.model, size: minimal.size,
+                    titleTop: ZenithLockScreenMinimalLayout.titleTop(row: row, panel: minimal)))
+                panel.acceptsMouseMovedEvents = true
+                scene.append(panel)
+            } else {
+                // The one part that takes clicks: the player's buttons and timeline.
+                scene.append(Self.makePanel(frame: frame, interactive: true,
+                                            content: NotchLockScreenPlayer(model: model, size: frame.size)))
+            }
         }
         if let frame = frames.row {
             scene.append(Self.makePanel(frame: frame, content: NotchLockScreenActivities(model: model, size: frame.size)))
@@ -160,6 +177,13 @@ final class NotchLockScreenService {
         // Joined before they are first shown, the windows belong to this
         // Space alone and are drawn over the lock screen with it.
         for panel in panels { space.add(panel) }
+        // Zenith fork: the full layer joins the Space too, but waits ordered out
+        // until the lyric is clicked; the padlock island stays above it.
+        let full = v2.full ? frames.screen.map { screen in
+            Self.makePanel(frame: screen, interactive: true, content: ZenithLockScreenFullView(zenith: zenith.model, size: screen.size))
+        } : nil
+        if let full { space.add(full) }
+        zenith.begin(v2, full: full, island: island)
         self.space = space
         self.scene = scene
         self.island = island
@@ -216,6 +240,8 @@ final class NotchLockScreenService {
         // Zenith fork: weather, reminders and the terminal readout stop with every hide.
         NotchLockScreenWidgets.stop()
         NotchLockScreenTerminal.stop()
+        // Zenith fork: the lock screen v2 stops; its full layer, if up, leaves with the rest.
+        let full = zenith.end()
         if stopsSources, !scene.isEmpty {
             NotchMusicService.shared.stop()
             NotchDownloadService.shared.stop()
@@ -233,16 +259,17 @@ final class NotchLockScreenService {
         self.island = nil
         self.space = nil
         guard unlocking else {
-            (scene + [island].compactMap { $0 }).forEach { $0.orderOut(nil) }
+            (scene + [island, full].compactMap { $0 }).forEach { $0.orderOut(nil) } // Zenith fork: full
             space.close()
             return
         }
         // The lock screen is gone about 0.3 s after the unlock is announced;
         // the player leaves with it rather than lingering over the desktop.
         // The padlock opens first, then the island underneath takes over.
-        var remaining = scene.count + (island == nil ? 0 : 1)
+        let leaving = scene + [full].compactMap { $0 } // Zenith fork: the full layer fades with the scene.
+        var remaining = leaving.count + (island == nil ? 0 : 1)
         let finished = { remaining -= 1; if remaining == 0 { space.close() } }
-        scene.forEach { Self.fadeOut($0, after: 0, completion: finished) }
+        leaving.forEach { Self.fadeOut($0, after: 0, completion: finished) }
         if let island {
             model.padlockOpen = true
             // The island comes back on this turn and holds the main thread, so
