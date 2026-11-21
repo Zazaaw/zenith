@@ -188,7 +188,6 @@ private struct CardImportReadyView: View {
                 footer
             }
         }
-        .padding(.horizontal, 2)
         .padding(.top, 2)
     }
 
@@ -352,7 +351,6 @@ private struct CardImportCopyingView: View {
             .padding(12)
             .zenithIslandSoftCard()
         }
-        .padding(.horizontal, 2)
         .padding(.top, 2)
         .accessibilityElement(children: .contain)
         .accessibilityValue(CardImportStripLayout.percentText(progress.percent))

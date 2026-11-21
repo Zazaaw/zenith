@@ -356,7 +356,8 @@ final class ZenithNoticeCenter: ObservableObject {
         let end = outline(closedFrame: capsule, closed: false)
         let rowTop = ZenithNoticeLayout.rowTop(floats: geometry.floats, stripHeight: geometry.stripHeight)
         row = CGRect(x: end.rect.minX + end.shoulder, y: end.rect.minY + rowTop,
-                     width: end.rect.width - end.shoulder * 2, height: ZenithNoticeLayout.rowHeight(lines: lines))
+                     width: end.rect.width - end.shoulder * 2,
+                     height: ZenithNoticeLayout.rowHeight(lines: lines, floats: geometry.floats))
         self.lines = lines
         lowPowerOn = ProcessInfo.processInfo.isLowPowerModeEnabled
         var transaction = Transaction()
@@ -432,7 +433,7 @@ final class ZenithNoticeCenter: ObservableObject {
 
     /// An outline in the window for a frame on screen. Closed, it keeps the
     /// island's own corners; grown, a floating one is a full pill and a
-    /// hanging one rounds the row below the camera by half its height.
+    /// hanging one takes the open island's corner, which its padding nests in.
     private func outline(closedFrame frame: CGRect, closed: Bool) -> ZenithNoticeOutline {
         let geometry = NotchService.shared.geometry
         let rect = CGRect(x: frame.minX - panelFrame.minX, y: panelFrame.maxY - frame.maxY,
@@ -443,7 +444,7 @@ final class ZenithNoticeCenter: ObservableObject {
         // The notice's own capsule keeps upstream's shoulder: only the open
         // island flares (ZenithIslandSilhouette).
         let shoulder = NotchLayout.plainShoulder(height: frame.height)
-        let radius = closed ? NotchLayout.surfaceRadius(height: frame.height) : ZenithNoticeLayout.rowHeight / 2
+        let radius = closed ? NotchLayout.surfaceRadius(height: frame.height) : ZenithNoticeLayout.hangingRadius
         return ZenithNoticeOutline(rect: rect, hanging: true, shoulder: shoulder, radius: radius)
     }
 
@@ -704,7 +705,8 @@ extension ZenithNoticeCenter {
         let end = outline(closedFrame: capsule, closed: false)
         let rowTop = ZenithNoticeLayout.rowTop(floats: geometry.floats, stripHeight: geometry.stripHeight)
         row = CGRect(x: end.rect.minX + end.shoulder, y: end.rect.minY + rowTop,
-                     width: end.rect.width - end.shoulder * 2, height: ZenithNoticeLayout.rowHeight(lines: lines))
+                     width: end.rect.width - end.shoulder * 2,
+                     height: ZenithNoticeLayout.rowHeight(lines: lines, floats: geometry.floats))
         self.lines = lines
         lowPowerOn = false
         notice = next

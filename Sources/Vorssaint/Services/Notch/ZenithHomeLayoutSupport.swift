@@ -134,8 +134,8 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
 struct ZenithHomeLayout: Equatable {
     /// Side by side in the card row, never more.
     static let maximum = 3
-    /// Between two widgets.
-    static let spacing: CGFloat = 10
+    /// Between two widgets: the island's even gap (ZenithIslandInset).
+    static let spacing: CGFloat = ZenithIslandInset.gap
     /// What a home page that was never customised stores: the layout follows
     /// the old home page, the player when its Music switch is on.
     static let automatic = "auto"

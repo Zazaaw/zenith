@@ -176,7 +176,10 @@ enum NotchSize: String, CaseIterable {
     case compact, spacious, custom
 
     static let widthRange = 360.0...600.0
-    static let heightRange = 260.0...640.0
+    // Zenith fork: four points taller at its least than upstream's 260, the
+    // room the island's padding takes below the page past upstream's 16, so
+    // the smallest island still holds two rows of shortcuts.
+    static let heightRange = 264.0...640.0
     static let defaultWidth = 440.0
     static let defaultHeight = 480.0
 
@@ -311,13 +314,15 @@ struct NotchBand: Equatable {
 /// layout in agreement, including small screens and custom sizes.
 enum NotchLayout {
     static let shoulder: CGFloat = 14
-    // Zenith fork: 28 points as upstream, plus the open island's shoulder
-    // flare, which widens the island by as much (see `shoulderFlare`).
-    static let horizontalInset: CGFloat = 28 + shoulderFlare
+    // Zenith fork: the shoulder and the open island's one padding
+    // (ZenithIslandInset), where upstream kept 28 points in all, plus the
+    // shoulder flare, which widens the island by as much (see `shoulderFlare`).
+    static let horizontalInset: CGFloat = shoulder + ZenithIslandInset.padding + shoulderFlare
     static let headerHeight: CGFloat = 36
     static let navigationHeight: CGFloat = 36
     static let spacing: CGFloat = 12
-    static let bottomInset: CGFloat = 16
+    // Zenith fork: the same padding below the page as beside it (upstream 16).
+    static let bottomInset: CGFloat = ZenithIslandInset.padding
     static var chromeHeight: CGFloat { headerHeight + spacing + bottomInset }
     /// The island stays a wide strip: pages scroll within the preset's budget.
     static let compactContentHeight: CGFloat = 180
@@ -348,8 +353,12 @@ enum NotchLayout {
     static let shortcutLeastRowSpacing: CGFloat = 6
     static let systemCardHeight: CGFloat = 72
     static let systemCardWidth: CGFloat = 128
+    /// Zenith fork: the bento cards keep the island's even gap between them.
+    static let systemSpacing: CGFloat = ZenithIslandInset.gap
     /// Leave room for the card's hover scale, including a single full-width card.
-    static func systemHoverInset(width: CGFloat) -> CGFloat { ceil(max(0, width) * 0.015) + 1 }
+    // Zenith fork: the bento cards wash under the pointer and never scale
+    // (ZenithBentoButtonStyle), so they sit on the island's padding line.
+    static func systemHoverInset(width: CGFloat) -> CGFloat { 0 }
     static let toolHeight: CGFloat = 72
     static let toolWidth: CGFloat = 76
     static let toolSpacing: CGFloat = 6
@@ -380,6 +389,8 @@ enum NotchLayout {
     static let clipboardCompactCardHeight: CGFloat = 52
     static let clipboardCardSpacing: CGFloat = 8
     static let emptyHeight: CGFloat = 140
+    /// Zenith fork: the dashed zone a drag over the closed island shows.
+    static let dropHintHeight: CGFloat = 52
     /// The player as a phone's island lays it out: a small cover, the song
     /// beside it, the timeline and one row of buttons across the island,
     /// which is no wider than that: about 380 points between its sides.
@@ -401,7 +412,9 @@ enum NotchLayout {
     /// Below a camera the title clears it by this much.
     static let musicCameraClearance: CGFloat = 6
     /// Below the buttons, as much room as the timeline keeps above them.
-    static let musicBottomRoom: CGFloat = 8
+    // Zenith fork: none past the island's padding, which is the room below
+    // every page (ZenithIslandInset), so the buttons sit on its line.
+    static let musicBottomRoom: CGFloat = 0
     /// Lyrics or the queue shorter than this give the player's place to the list.
     static let musicMinimumExtraHeight: CGFloat = 88
     /// The ruler and its clock read at the player's width.
@@ -463,8 +476,14 @@ enum NotchLayout {
     static func flared(_ size: CGSize) -> CGSize {
         CGSize(width: size.width + shoulderFlare(height: size.height) * 2, height: size.height)
     }
-    /// Zenith fork: a page's inset on a surface of `height`: upstream's 28
-    /// points and the flare there. Open pages use `horizontalInset`.
+    /// Zenith fork: how much further in the open island's padding puts its
+    /// page than upstream's 28 points (ZenithIslandInset), on each side.
+    static let paddingGrowth: CGFloat = shoulder + ZenithIslandInset.padding - 28
+    /// Zenith fork: what an open island adds to the width chosen for it on
+    /// each side: the flare and the padding's growth, both outside its
+    /// page, so the page keeps upstream's width inside the wider padding.
+    static let openGrowth: CGFloat = shoulderFlare + paddingGrowth    /// Zenith fork: a page's inset on a surface of `height`: the shoulder,
+    /// the padding and the flare there. Open pages use `horizontalInset`.
     static func horizontalInset(height: CGFloat) -> CGFloat {
         horizontalInset - shoulderFlare + shoulderFlare(height: height)
     }
@@ -563,7 +582,7 @@ enum NotchLayout {
     /// left to right and allowing each row to fill its width without empty cells.
     static func systemRowRanges(count: Int, width: CGFloat) -> [Range<Int>] {
         guard count > 0 else { return [] }
-        let columns = railCapacity(width: width, itemWidth: systemCardWidth, spacing: rowSpacing)
+        let columns = railCapacity(width: width, itemWidth: systemCardWidth, spacing: systemSpacing) // Zenith fork
         let rows = (count + columns - 1) / columns
         let base = count / rows
         let remainder = count % rows
@@ -1328,8 +1347,11 @@ enum NotchCapsuleLayout {
 struct NotchActivityPickerLayout {
     static let rowHeight: CGFloat = 32
     static let spacing: CGFloat = 6
-    static let horizontalInset: CGFloat = 24
+    // Zenith fork: the shoulder and the open island's padding (upstream 24).
+    static let horizontalInset: CGFloat = NotchLayout.shoulder + ZenithIslandInset.padding
     static let verticalInset: CGFloat = 12
+    /// Zenith fork: below the buttons, the open island's padding.
+    static let bottomInset: CGFloat = ZenithIslandInset.padding
     static let combinationHeight: CGFloat = 24
     let columns: Int
     let headerHeight: CGFloat
@@ -1347,7 +1369,7 @@ struct NotchActivityPickerLayout {
         // Zenith fork: widened by the shoulders' flare at its height (`horizontalPadding`).
         size = NotchLayout.flared(CGSize(width: min(max(stripSize.width + Self.horizontalInset * 2, width), max(1, screenWidth - 24)),
                       height: headerHeight + CGFloat(rows) * Self.rowHeight
-                        + CGFloat(rows - 1) * Self.spacing + Self.verticalInset * 2
+                        + CGFloat(rows - 1) * Self.spacing + Self.verticalInset + Self.bottomInset // Zenith fork
                         + (hasCombinations ? Self.combinationHeight + Self.spacing : 0)))
     }
 
@@ -1399,7 +1421,8 @@ struct NotchCaptureControlsLayout {
         }
         sideWidth = cameraGap > 0 ? side : 0
         size = CGSize(width: geometry.expandedWidth,
-                      height: headerTop + headerHeight + 12 + NotchLayout.shortcutHeight + 16
+                      height: headerTop + headerHeight + 12 + NotchLayout.shortcutHeight
+                        + NotchLayout.bottomInset // Zenith fork: the island's padding (upstream 16)
                         + (capturesAudio ? 40 : 0))
     }
 }
@@ -2816,7 +2839,7 @@ struct NotchGeometry: Equatable {
     }
     /// A held notification opens as a card about as wide as a native banner,
     /// never wider than the island itself.
-    var notificationPreviewWidth: CGFloat { min(max(400, cameraWidth + 200) + NotchLayout.shoulderFlare * 2, expandedWidth) } // Zenith fork
+    var notificationPreviewWidth: CGFloat { min(max(400, cameraWidth + 200) + NotchLayout.openGrowth * 2, expandedWidth) } // Zenith fork
     var notificationPreviewContentWidth: CGFloat {
         max(0, notificationPreviewWidth - NotchLayout.horizontalInset * 2)
     }
@@ -2825,7 +2848,8 @@ struct NotchGeometry: Equatable {
         return CGSize(width: notificationPreviewWidth, height: min(height, screen.height - 48))
     }
     var peek: CGSize {
-        NotchLayout.flared(CGSize(width: peekWidth, height: safeContentTop + 52)) // Zenith fork
+        // Zenith fork: the row, as tall as its navigation, and the island's padding below it (upstream 52 in all).
+        NotchLayout.flared(CGSize(width: peekWidth, height: safeContentTop + NotchLayout.navigationHeight + NotchLayout.bottomInset))
     }
     /// Zenith fork: upstream's peek width, before the shoulders flare.
     var peekWidth: CGFloat { min(screen.width - 24, max(cameraWidth + 110, 340)) }
@@ -2843,8 +2867,9 @@ struct NotchGeometry: Equatable {
         var wing = pageBandSide + (rowShowsSectionsButton ? NotchBand.sectionsButtonRoom : 0)
         let ending = max(wing, trailingSectionsRoom + NotchBand.cameraClearance)
         // Zenith fork: the chosen width is the island's without its shoulder
-        // flare, which is added outside it, so the page keeps its width.
-        let inset = NotchLayout.horizontalInset - NotchLayout.shoulderFlare
+        // flare and the padding past upstream's inset, which are added
+        // outside it, so the page keeps its width.
+        let inset = NotchLayout.horizontalInset - NotchLayout.openGrowth
         if sectionsButtonEndsRow, cameraWidth + ending * 2 + inset * 2 <= chosen { wing = ending }
         var preferred = layout == .custom ? chosen : pageContentWidth.map { natural in
             min(chosen, max(natural, isNotched ? cameraWidth + wing * 2 : 0) + inset * 2)
@@ -2857,7 +2882,7 @@ struct NotchGeometry: Equatable {
         }
         // Zenith fork: a prompting panel takes its own width on every layout, narrow under the camera.
         if let prompter = zenithPrompter { preferred = prompter.width }
-        return min(max(preferred, cameraWidth + 36) + NotchLayout.shoulderFlare * 2, // Zenith fork
+        return min(max(preferred, cameraWidth + 36) + NotchLayout.openGrowth * 2, // Zenith fork
                    screen.width - 24 - NotchQuickAccessLayout.gutter * 2)
     }
     var contentWidth: CGFloat { max(0, expandedWidth - NotchLayout.horizontalInset * 2) }
@@ -2961,7 +2986,8 @@ struct NotchGeometry: Equatable {
             case .system:
                 let cards = max(0, systemCards)
                 contentHeight = min(budget, cards == 0 ? NotchLayout.emptyHeight
-                    : NotchLayout.railHeight(rows: systemRows(cards: cards), rowHeight: NotchLayout.systemCardHeight, spacing: NotchLayout.rowSpacing)
+                    : NotchLayout.railHeight(rows: systemRows(cards: cards), rowHeight: NotchLayout.systemCardHeight,
+                                             spacing: NotchLayout.systemSpacing) // Zenith fork
                         + NotchLayout.systemHoverInset(width: contentWidth) * 2)
             case .tools:
                 guard let toolCount else { contentHeight = pageBudget; break }
@@ -2972,6 +2998,10 @@ struct NotchGeometry: Equatable {
             case .agents:
                 // Only the cards a person chose; a short set leaves a short island.
                 contentHeight = min(budget, agentsHeight.map { $0 > 0 ? $0 : NotchLayout.emptyHeight } ?? budget)
+            case .files where zenithDropZoneCount > 0:
+                // Zenith fork: a drag choosing a zone fits the island to the zones' rows.
+                let zones = ZenithDropZoneLayout.blockHeight(count: zenithDropZoneCount, width: contentWidth)
+                contentHeight = zones > 0 ? min(budget, zones) : budget
             // Lists and previews fill the chosen content budget.
             case .mixer, .calendar, .clipboard, .captures, .files, .notifications, .downloads, .camera, .scratchpad, .watch,
                  .wakatime, .vercel, .github, .cardImport, .devServers, .recap, .sky, .git: // Zenith fork: devServers, recap, sky, git

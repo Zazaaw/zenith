@@ -313,9 +313,14 @@ enum ZenithNoticeTests {
         let hanging = ZenithNoticeLayout.frame(screen: screen, centerX: screen.midX, width: covering.width,
                                                floats: false, top: 0, stripHeight: 32)
         suite.expect(hanging.width == 480 && hanging.maxY == screen.maxY
-                     && hanging.height == 32 + ZenithNoticeLayout.rowHeight - 6
-                     && ZenithNoticeLayout.rowTop(floats: false, stripHeight: 32) + ZenithNoticeLayout.rowHeight == hanging.height,
-                     "a hanging capsule covers the island it grows from and puts its row below the camera")
+                     && hanging.height == 32 + ZenithIslandInset.belowCamera + ZenithNoticeLayout.contentHeight
+                        + ZenithIslandInset.padding
+                     && ZenithNoticeLayout.rowTop(floats: false, stripHeight: 32)
+                        + ZenithNoticeLayout.rowHeight(lines: 1, floats: false) + ZenithIslandInset.padding == hanging.height,
+                     "a hanging capsule covers the island it grows from, its row right below the camera, the padding below")
+        suite.expect(ZenithNoticeLayout.hangingRadius == ZenithIslandSilhouette.openCornerRadius
+                     && ZenithNoticeLayout.rowHeight(lines: 1, floats: true) == ZenithNoticeLayout.rowHeight,
+                     "a grown hanging capsule takes the open island's corner; a floating pill keeps its row")
         let long = ZenithNoticeLayout.fit(fixed: 84, title: 180, subtitle: 330, closedWidth: 200,
                                           screenWidth: screen.width, floats: false)
         suite.expect(long.width == 84 + 330 + (ZenithIslandRoom.edge + NotchLayout.shoulder) * 2 && long.lines == 1,
@@ -323,7 +328,9 @@ enum ZenithNoticeTests {
         let longest = ZenithNoticeLayout.fit(fixed: 84, title: 180, subtitle: 900, closedWidth: 200,
                                              screenWidth: screen.width, floats: false)
         suite.expect(longest.width == ZenithNoticeLayout.maximumWidth && longest.lines == 2
-                     && ZenithNoticeLayout.rowHeight(lines: 2) == ZenithNoticeLayout.rowHeight + ZenithNoticeLayout.lineHeight,
+                     && ZenithNoticeLayout.rowHeight(lines: 2) == ZenithNoticeLayout.rowHeight + ZenithNoticeLayout.lineHeight
+                     && ZenithNoticeLayout.rowHeight(lines: 2, floats: false)
+                        == ZenithNoticeLayout.contentHeight + ZenithNoticeLayout.lineHeight,
                      "past its widest the subtitle takes a second line and the row grows")
         let narrow = CGRect(x: 0, y: 0, width: 300, height: 600)
         let fitted = ZenithNoticeLayout.frame(screen: narrow, centerX: 150, width: 380, floats: true, top: 0, stripHeight: 24)

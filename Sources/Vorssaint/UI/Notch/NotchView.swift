@@ -113,14 +113,17 @@ struct NotchView: View {
                 }
             }
                 .font(.system(size: 13, weight: .medium)).foregroundStyle(.white)
-                .frame(maxWidth: .infinity, minHeight: 52)
+                .frame(maxWidth: .infinity, minHeight: NotchLayout.dropHintHeight) // Zenith fork
                 .overlay {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    // Zenith fork: on the island's padding line, concentric with its corner.
+                    RoundedRectangle(cornerRadius: ZenithIslandInset.concentricRadius(
+                        inset: ZenithIslandInset.padding,
+                        outer: NotchLayout.surfaceRadius(height: service.surfaceSize.height)), style: .continuous)
                         .strokeBorder(.white.opacity(0.24),
                                       style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
                         .allowsHitTesting(false)
                 }
-                .padding(.horizontal, 18 + NotchLayout.shoulderFlare(height: service.surfaceSize.height)) // Zenith fork
+                .padding(.horizontal, NotchLayout.horizontalInset(height: service.surfaceSize.height)) // Zenith fork
                 .padding(.top, service.geometry.safeContentTop)
         } else if let notice = service.stripNotice {
             if let burst = notice.zenith { // Zenith fork: the island grown for a moment
@@ -202,7 +205,8 @@ struct NotchView: View {
                                         columns: layout.columns, language: l10n.language,
                                         select: service.selectCompactActivity, combine: service.selectCompactCombination)
                         .padding(.horizontal, layout.horizontalPadding) // Zenith fork: past the shoulders' flare
-                        .padding(.vertical, NotchActivityPickerLayout.verticalInset)
+                        .padding(.top, NotchActivityPickerLayout.verticalInset)
+                        .padding(.bottom, NotchActivityPickerLayout.bottomInset) // Zenith fork: the island's padding
                 }
             } else {
                 // Hover grows the capsule around its strip, as it grows the

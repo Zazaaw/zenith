@@ -278,10 +278,10 @@ final class PrompterService: ObservableObject {
     var holdsIsland: Bool { session != nil || modalActive }
 
     /// The reading column's width inside the panel, for the estimate.
-    /// The island is the chosen width plus its shoulders' flare; the page
+    /// The island is the chosen width plus its open growth; the page
     /// sits inside its margins, and the text inside the panel's.
     static func columnWidth(panelWidth: Int) -> Double {
-        Double(panelWidth) + Double(NotchLayout.shoulderFlare - NotchLayout.horizontalInset) * 2
+        Double(panelWidth) + Double(NotchLayout.openGrowth - NotchLayout.horizontalInset) * 2
             - PrompterReaderMetrics.textInset * 2
     }
 

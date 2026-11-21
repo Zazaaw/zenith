@@ -47,7 +47,8 @@ enum NotchAgentsPageLayout {
     static let rowHeight: CGFloat = 16
     static let rowSpacing: CGFloat = 3
     /// The card's corner follows the island's (28) inset by the page's padding.
-    static let cardRadius: CGFloat = 14
+    // Zenith fork: the open island's corner (40) less its padding (ZenithIslandInset).
+    static var cardRadius: CGFloat { ZenithIsland.cardRadius }
     static let ringSize: CGFloat = 58
 
     /// Progress and Usage keep one height, whatever they show; Stats is as

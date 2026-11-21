@@ -353,7 +353,7 @@ enum PrompterTests {
         geometry.zenithPrompter = ZenithPrompterIslandGeometry(settings: settings)
         geometry.pageTop = .none
         let prompting = geometry.expandedSize(module: .prompter)
-        suite.expect(prompting.width == 400 + NotchLayout.shoulderFlare * 2, "the panel is as wide as chosen, past a custom width")
+        suite.expect(prompting.width == 400 + NotchLayout.openGrowth * 2, "the panel is as wide as chosen, past a custom width")
         suite.expect(prompting.height > resting.height && prompting.height > 480
                      && geometry.contentSize(for: prompting).height == 480,
                      "and as tall, past a custom height, its reading area exactly the chosen height")
