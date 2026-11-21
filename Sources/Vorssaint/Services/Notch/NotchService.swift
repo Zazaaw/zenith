@@ -1116,7 +1116,10 @@ final class NotchService: ObservableObject {
             return captureControlsLayout.size
         }
         if expanded { return showingCommandBar ? commandBarSurfaceSize : expandedSize }
-        if dragPlaceholder { return NotchLayout.flared(CGSize(width: geometry.peekWidth, height: geometry.safeContentTop + 66)) } // Zenith fork
+        if dragPlaceholder { // Zenith fork: the hint's zone and the island's padding below it
+            return NotchLayout.flared(CGSize(width: geometry.peekWidth,
+                                             height: geometry.safeContentTop + NotchLayout.dropHintHeight + NotchLayout.bottomInset))
+        }
         if let notice {
             if let burst = notice.zenith { return ZenithIslandBurstLayout.size(burst, geometry: geometry) } // Zenith fork
             guard noticeExpanded else { return geometry.noticeSize(wings: notice.wings(in: geometry)) }

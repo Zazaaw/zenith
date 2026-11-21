@@ -99,7 +99,7 @@ struct NotchSystemView: View {
             let inset = NotchLayout.systemHoverInset(width: size.width)
             let rows = NotchLayout.systemRowRanges(count: cards.count, width: size.width - inset * 2)
             let height = NotchLayout.railHeight(rows: rows.count, rowHeight: NotchLayout.systemCardHeight,
-                                               spacing: NotchLayout.rowSpacing) + inset * 2
+                                               spacing: NotchLayout.systemSpacing) + inset * 2 // Zenith fork
             Group {
                 if height > size.height {
                     ScrollView {
@@ -116,7 +116,7 @@ struct NotchSystemView: View {
 
     private func grid(cards: [Card], rows: [Range<Int>]) -> some View {
         // Zenith fork: a bento grid, hairlines in the gaps the cards kept.
-        ZenithBentoGrid(rows: rows.map { Array(cards[$0]) }, spacing: NotchLayout.rowSpacing,
+        ZenithBentoGrid(rows: rows.map { Array(cards[$0]) }, spacing: NotchLayout.systemSpacing,
                         rowHeight: { _ in NotchLayout.systemCardHeight }) { card in
             cardButton(card)
         }

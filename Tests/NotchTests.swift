@@ -273,10 +273,10 @@ enum NotchTests {
                                  "narrow islands keep a complete usable row below the camera")
                 }
                 let content = geometry.contentSize(for: geometry.expandedSize(module: .system, systemCards: 1))
-                let inset = NotchLayout.systemHoverInset(width: content.width)
-                suite.expect((content.width - inset * 2) * 1.028 <= content.width
-                             && NotchLayout.systemCardHeight * 1.028 <= NotchLayout.systemCardHeight + inset * 2,
-                             "even a full-width system card can grow on hover inside its viewport")
+                // Zenith fork: the bento cards wash under the pointer and never
+                // grow, so they keep no room for it and sit on the padding line.
+                suite.expect(NotchLayout.systemHoverInset(width: content.width) == 0,
+                             "a system card keeps no hover room, so it sits on the island's padding line")
             }
         }
         for layout: NotchSize in [.compact, .spacious] {
@@ -328,7 +328,7 @@ enum NotchTests {
         }
         let clearance = NotchCaptureControlsLayout.cameraClearance
         for geometry in geometries {
-            let previousHeight = geometry.safeContentTop + 28 + 12 + NotchLayout.shortcutHeight + 16
+            let previousHeight = geometry.safeContentTop + 28 + 12 + NotchLayout.shortcutHeight + NotchLayout.bottomInset
             for language in AppLanguage.allCases {
                 let title = titleWidth(language)
                 let layout = NotchCaptureControlsLayout(geometry: geometry, titleWidth: title, capturesAudio: false)
@@ -484,7 +484,7 @@ enum NotchTests {
         custom.pageTop = .wrapsCamera
         custom.pageContentWidth = NotchLayout.musicContentWidth
         // Zenith fork: the open island adds its shoulders' flare outside the chosen width.
-        suite.expect(custom.expandedWidth == 360 + NotchLayout.shoulderFlare * 2 && custom.headerCameraGap == 0,
+        suite.expect(custom.expandedWidth == 360 + NotchLayout.openGrowth * 2 && custom.headerCameraGap == 0,
                      "a chosen width narrower than the player still limits it, and its row then sits below the camera")
         var handSet = true, wraps = true
         for (camera, top) in screens {
@@ -498,12 +498,12 @@ enum NotchTests {
                 for module: NotchModule in [.music, .timer, .controls] {
                     for sectionsButton in [false, true] {
                         let page = base.page(module, controls: shortcuts, sectionsButton: sectionsButton)
-                        handSet = handSet && page.expandedWidth == CGFloat(width) + NotchLayout.shoulderFlare * 2 // Zenith fork
+                        handSet = handSet && page.expandedWidth == CGFloat(width) + NotchLayout.openGrowth * 2 // Zenith fork
                     }
                 }
                 // As wide as the preset's player or wider, it still wraps the camera.
                 let player = base.page(.music, controls: [], sectionsButton: false)
-                if CGFloat(width) + NotchLayout.shoulderFlare * 2 >= preset.expandedWidth { // Zenith fork
+                if CGFloat(width) + NotchLayout.openGrowth * 2 >= preset.expandedWidth { // Zenith fork
                     wraps = wraps && player.headerCameraGap == preset.headerCameraGap
                 }
             }
@@ -1225,7 +1225,9 @@ enum NotchTests {
                         + [geometry.sectionPickerSize(count: NotchModule.allCases.count)]
                     for size in sizes {
                         let positioned = geometry.frame(for: size)
-                        suite.expect(screen.contains(positioned) && positioned.midX == screen.midX
+                        // Zenith fork: a flared width can be a fraction of a point, so its
+                        // centre is compared within floating-point rounding.
+                        suite.expect(screen.contains(positioned) && abs(positioned.midX - screen.midX) < 0.001
                                && positioned.maxY == screen.maxY,
                                "every simulated presentation grows directly from the screen edge and stays within its display")
                     }
@@ -2901,7 +2903,7 @@ enum NotchTests {
                     suite.expect(custom.contentBudget == available, "a custom island's budget is what its height leaves below the chrome")
                     for module in NotchModule.allCases {
                         let size = custom.expandedSize(module: module)
-                        suite.expect(size.width == min(CGFloat(width) + NotchLayout.shoulderFlare * 2, // Zenith fork: the shoulders' flare
+                        suite.expect(size.width == min(CGFloat(width) + NotchLayout.openGrowth * 2, // Zenith fork: the shoulders' flare
                                                        frame.width - 24 - NotchQuickAccessLayout.gutter * 2) && size.height <= height
                                && frame.contains(custom.frame(for: size)),
                                "custom dimensions fit every module and respect the display and height limit")

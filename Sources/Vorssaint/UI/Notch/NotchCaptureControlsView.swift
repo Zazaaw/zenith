@@ -29,7 +29,7 @@ struct NotchCaptureControlsView: View {
                         .focused($focusedControl, equals: .tool(tool))
                 }
             }
-            .padding(.horizontal, 18)
+            .padding(.horizontal, NotchLayout.horizontalInset) // Zenith fork: on the island's padding line
             if options.selectedTool.capturesAudio {
                 NotchRecordingAudioOptions(options: options.recorderAudio, focusedControl: $focusedControl)
             }

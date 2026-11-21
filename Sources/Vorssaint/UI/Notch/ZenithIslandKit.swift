@@ -18,8 +18,8 @@ import SwiftUI
 //
 // The test executable compiles this file (build.sh, TEST_SOURCES) because
 // several island declarations copied into it draw with these pieces: keep it
-// free of anything outside SwiftUI, AppKit, `ZenithTokens`/`ZenithIsland` and
-// `ZenithIslandSilhouette`.
+// free of anything outside SwiftUI, AppKit, `ZenithTokens`/`ZenithIsland`,
+// `ZenithIslandSilhouette` and `ZenithIslandInset` (ZenithIslandRoom.swift).
 //
 // The third pass (after a reference island studied frame by frame) adds
 // concentric radii, bento cells as soft rounded cards, the morph every
@@ -64,18 +64,16 @@ extension ZenithIsland {
 extension ZenithIsland {
     /// The open island's bottom corner, which everything inside it nests in.
     static var islandRadius: CGFloat { ZenithIslandSilhouette.openCornerRadius }
-    /// From the island's side to its page: the page sits 41 points in from
-    /// the window's edge (`NotchLayout.horizontalInset`), 27 of them the
-    /// open island's shoulder.
-    static let pageInset: CGFloat = 14
+    /// From the island's side and bottom to its page: the open island's one
+    /// padding (`ZenithIslandInset.padding`), past its 27-point shoulder.
+    static var pageInset: CGFloat { ZenithIslandInset.padding }
 
     /// The radius of a surface `depth` points inside one of radius `outer`,
     /// so the two curves run parallel: outer less the inset, never below
     /// `minimum`, where a curve would pinch to a point.
     static func innerRadius(depth: CGFloat, outer: CGFloat = islandRadius,
                             minimum: CGFloat = ZenithRadius.small) -> CGFloat {
-        guard depth.isFinite, outer.isFinite else { return minimum }
-        return max(minimum, outer - max(0, depth))
+        ZenithIslandInset.concentricRadius(inset: depth, outer: outer, minimum: minimum)
     }
 
     /// A card laid on a page, concentric with the island's corner (20).

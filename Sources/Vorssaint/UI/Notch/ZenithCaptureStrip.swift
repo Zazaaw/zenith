@@ -47,7 +47,7 @@ struct ZenithCaptureStrip: View {
         }
         .frame(height: Layout.rowHeight)
         .padding(.horizontal, ZenithIslandRoom.edge + NotchLayout.shoulder(height: size.height))
-        .padding(.top, geometry.stripHeight - Layout.rowOverlap)
+        .padding(.top, geometry.stripHeight + ZenithIslandInset.belowCamera)
         .frame(width: size.width, height: size.height, alignment: .top)
     }
 }
