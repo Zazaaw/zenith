@@ -69,7 +69,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
     case zenithClaudeHooks, zenithCardBackup, zenithPrayerTimes, zenithGoldenHour, zenithCameraAutoStart, zenithReply
     case zenithLockScreen, zenithCommandActivity, zenithExportTracker, zenithNotices, zenithTabBar
     case zenithDropZones, zenithWatermark, zenithDesignOverlay, zenithBeautify, zenithQR, zenithMenuBarHider
-    case zenithLockScreenTerminal, zenithLockScreenLyrics
+    case zenithLockScreenTerminal, zenithLockScreenLyrics, zenithLockScreenMusic
 
     var page: SettingsPage {
         switch self {
@@ -98,7 +98,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
              .zenithClaudeHooks, .zenithCardBackup, .zenithPrayerTimes, .zenithGoldenHour, .zenithCameraAutoStart,
              .zenithReply, .zenithCommandActivity, .zenithExportTracker, .zenithNotices, .zenithTabBar:
             return .notch
-        case .zenithLockScreen, .zenithLockScreenTerminal, .zenithLockScreenLyrics: return .lockScreen
+        case .zenithLockScreen, .zenithLockScreenTerminal, .zenithLockScreenLyrics, .zenithLockScreenMusic: return .lockScreen
         case .zenithDropZones, .zenithWatermark: return .shelf
         case .zenithDesignOverlay, .zenithBeautify: return .screenshot
         case .zenithQR: return .clipboard

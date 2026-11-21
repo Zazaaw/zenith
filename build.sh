@@ -329,10 +329,12 @@ if (( TEST )); then
         Sources/Vorssaint/Services/GitHub/GitHubSupport.swift
         Sources/Vorssaint/Core/ZenithStrings.swift
         Sources/Vorssaint/Core/ZenithLockScreenSettingsStrings.swift
+        Sources/Vorssaint/Core/ZenithLockScreenPageStrings.swift
         Sources/Vorssaint/Services/Notch/ZenithLockScreenOptions.swift
         Sources/Vorssaint/Services/Notch/ZenithLockScreenJobFeedSupport.swift
         Sources/Vorssaint/UI/Settings/ZenithAboutSupport.swift
         Sources/Vorssaint/UI/Settings/ZenithSettingsSearch.swift
+        Sources/Vorssaint/UI/Settings/ZenithLockScreenSettingsTab.swift
         Sources/Vorssaint/UI/ZenithTokens.swift
         Sources/Vorssaint/UI/ZenithSwitch.swift
         Sources/Vorssaint/UI/Notch/ZenithIslandChrome.swift
