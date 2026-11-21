@@ -4,7 +4,7 @@
 import SwiftUI
 import SystemConfiguration
 
-/// Zenith fork: the terminal readout's switch in the Lock Screen card, then
+/// Zenith fork: the terminal readout's switch in Settings → Lock Screen, then
 /// its lines (each with a switch and a place in the order), whether project
 /// names may show, and the name in its title bar.
 struct NotchLockScreenTerminalSettings: View {
@@ -22,11 +22,8 @@ struct NotchLockScreenTerminalSettings: View {
     var body: some View {
         let text = ZenithStrings.lockScreenTerminal(l10n.language)
         ZenithSwitchRow(text.title, isOn: $enabled) {
-            Label(text.title, systemImage: "terminal")
-                .foregroundStyle(.secondary)
+            NotchLockScreenItemLabel(title: text.title, symbol: "terminal")
         }
-        .padding(.leading, 40)
-        .padding(.vertical, 2)
         if enabled {
             VStack(alignment: .leading, spacing: 6) {
                 Text(text.caption)
@@ -51,7 +48,7 @@ struct NotchLockScreenTerminalSettings: View {
                 titleField(ZenithStrings.lockScreenTerminalTitle(l10n.language))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.leading, 40 + 28)
+            .padding(.leading, 28)
             .padding(.bottom, 2)
         }
     }

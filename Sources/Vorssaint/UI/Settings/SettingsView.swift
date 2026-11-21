@@ -589,7 +589,7 @@ struct SettingsView: View {
     private var zenithPageTitle: String? {
         let ownHeader: Set<SettingsPage> = [.features, .notch, .notchMascot, .energy, .monitor, .mouse,
                                             .switcher, .dock, .homebrew, .releaseNotes, .about, .support,
-                                            .killProcess, .portManager, .workspaces]
+                                            .killProcess, .portManager, .workspaces, .lockScreen]
         if ownHeader.contains(router.page) { return nil }
         if router.page == .general, !(detailShowsGeneralTool) { return nil }
         let selected = selectedSidebarItem
@@ -649,6 +649,7 @@ struct SettingsView: View {
         case .releaseNotes: ReleaseNotesSettings()
         case .support: SupportSettings()
         case .workspaces: WorkspacesSettings() // Zenith fork
+        case .lockScreen: ZenithLockScreenSettings() // Zenith fork
         }
     }
 }

@@ -81,7 +81,8 @@ enum NotchLockScreenItem: String, CaseIterable, Identifiable {
     }
 }
 
-/// One switch per lock screen item, in the Lock Screen card.
+/// One switch per lock screen item, in Settings → Lock Screen. Zenith fork:
+/// the terminal readout has a card of its own there (ZenithLockScreenSettings).
 struct NotchLockScreenItemToggles: View {
     @ObservedObject private var l10n = L10n.shared
 
@@ -90,8 +91,6 @@ struct NotchLockScreenItemToggles: View {
         ForEach(NotchLockScreenItem.allCases.filter { $0 != .wakatime || WakaTimeSupport.hasConfiguration() }) { item in
             NotchLockScreenItemRow(item: item, title: item.title(l10n.language))
         }
-        // The terminal readout under the clock, with its lines and their order.
-        NotchLockScreenTerminalSettings()
     }
 }
 
@@ -110,11 +109,8 @@ private struct NotchLockScreenItemRow: View {
     // section names, already searchable as those sections.
     var body: some View {
         ZenithSwitchRow(title, isOn: $isOn) {
-            Label(title, systemImage: item.symbol)
-                .foregroundStyle(.secondary)
+            NotchLockScreenItemLabel(title: title, symbol: item.symbol)
         }
-        .padding(.leading, 40)
-        .padding(.vertical, 2)
         // The permission is asked for here, when the person turns the item on,
         // and never at launch or from the lock screen.
         .onChange(of: isOn) { _, on in
@@ -197,7 +193,19 @@ private struct NotchLockScreenAccessNote: View {
         .foregroundStyle(.secondary)
         .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.leading, 40 + 28)
+        .padding(.leading, 28)
         .padding(.bottom, 2)
+    }
+}
+
+/// A lock screen item's icon and name, greyed while the lock screen is off.
+struct NotchLockScreenItemLabel: View {
+    let title: String
+    let symbol: String
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
+        Label(title, systemImage: symbol)
+            .foregroundStyle(isEnabled ? .primary : .secondary)
     }
 }
