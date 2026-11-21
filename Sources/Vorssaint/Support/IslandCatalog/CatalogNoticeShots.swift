@@ -69,7 +69,7 @@ extension CatalogShots {
                                                            detail: sampleNotification.body, symbol: "bell.fill",
                                                            notification: sampleNotification, notificationID: notificationID),
                    expanded: true),
-        ] + capsules
+        ] + bursts + capsules
     }
 
     // MARK: Capsules (ZenithNotice)
@@ -83,33 +83,76 @@ extension CatalogShots {
         }
     }
 
+    // MARK: Bursts (the island grown for a moment)
+
+    /// The island grown for `content`, `elapsed` seconds into its stay.
+    static func burst(_ id: String, preferences: [String: Any] = [:], geometry: NotchGeometry? = nil,
+                      elapsed: TimeInterval = 0, setup: @escaping @MainActor () -> Void = {},
+                      _ content: @escaping @MainActor () -> ZenithIslandBurst.Content) -> CatalogShot {
+        CatalogShot(id: id, preferences: preferences, setup: setup) {
+            let burst = ZenithIslandBurst(content(), start: Date().addingTimeInterval(-elapsed))
+            return island(pose {
+                if let geometry { $0.geometry = geometry }
+                $0.notice = NotchNotice(event: burst.event, title: burst.title, detail: burst.subtitle,
+                                        symbol: "circle", zenith: burst)
+            })
+        }
+    }
+
+    static let indonesianNames: [String: Any] = [DefaultsKey.notchSkyNames: PrayerTimesSupport.NameStyle.indonesian.rawValue]
+
+    static var bursts: [CatalogShot] {
+        // Today's own Asr in Jakarta, so the next prayer is its Maghrib.
+        let prayer: @MainActor () -> ZenithIslandBurst.Content = {
+            let asr = CatalogSamples.skyDay.moments.first { $0.prayer == .asr && Calendar.current.isDateInToday($0.time) }
+                ?? PrayerMoment(prayer: .asr, time: CatalogSamples.now)
+            return .prayer(SkyService.shared.prayerBurst(asr))
+        }
+        return [
+            burst("burst-prayer", preferences: indonesianNames, elapsed: 3.2, setup: { CatalogSamples.prayer(arrived: true) },
+                  prayer),
+            burst("burst-prayer-capsule", preferences: indonesianNames.merging([
+                DefaultsKey.notchSilhouette: NotchSilhouette.capsule.rawValue]) { $1 },
+                  geometry: capsule, elapsed: 3.2, setup: { CatalogSamples.prayer(arrived: true) }, prayer),
+            burst("burst-charging") { charge(.charging, percent: 82, minutes: 70) },
+            burst("burst-charging-estimating") { charge(.charging, percent: 46, minutes: nil) },
+            burst("burst-charge-limit") { charge(.charging, percent: 80, minutes: nil,
+                                                 hint: ZenithStrings.notices(.enUS).chargeHint) },
+            burst("burst-charge-held") { charge(.held, percent: 80, minutes: nil) },
+            burst("burst-unplugged") { charge(.onBattery, percent: 76, minutes: 260) },
+            burst("burst-unplugged-low") { charge(.onBattery, percent: 18, minutes: nil) },
+            burst("burst-charging-capsule", preferences: [DefaultsKey.notchSilhouette: NotchSilhouette.capsule.rawValue],
+                  geometry: capsule) { charge(.charging, percent: 82, minutes: 70) },
+        ]
+    }
+
+    /// A charger moment as the notice center builds it.
+    static func charge(_ state: ZenithChargeState, percent: Int, minutes: Int?, hint: String? = nil) -> ZenithIslandBurst.Content {
+        .charge(ZenithChargeBurst.make(state, percent: percent, minutes: minutes, hint: hint,
+                                       island: ZenithStrings.island(.enUS), notices: ZenithStrings.notices(.enUS),
+                                       locale: Locale(identifier: "en_US")))
+    }
+
+    /// A low battery notice as the notice center builds it.
+    static func battery(_ kind: ZenithNotice.Kind, percent: Int, lowPowerOn: Bool, minutesLeft: Int?) -> ZenithNotice {
+        let notice = ZenithNotice(kind: kind, key: ZenithNoticeKey.batteryLow, title: "", subtitle: "",
+                                  glyph: .battery(percent: percent, tone: .red), accessory: .lowPower(on: lowPowerOn),
+                                  action: .batterySettings, minutesLeft: minutesLeft)
+        return ZenithBatteryNoticeLook.refreshed(notice, lowPowerOn: lowPowerOn, island: ZenithStrings.island(.enUS),
+                                                 notices: ZenithStrings.notices(.enUS), locale: Locale(identifier: "en_US"))
+    }
+
     static var capsules: [CatalogShot] {
         let text = ZenithStrings.notices(.enUS)
         return [
             capsuleNotice("capsule-battery-low") {
-                ZenithNotice(kind: .batteryLow, key: ZenithNoticeKey.batteryLow,
-                             title: ZenithNoticeFormat.filling(text.batteryTitle, percent: 20),
-                             subtitle: text.lowPowerAction, accessory: .lowPower(on: false), action: .batterySettings)
+                battery(.batteryLow, percent: 20, lowPowerOn: false, minutesLeft: 70)
             },
             capsuleNotice("capsule-battery-critical") {
-                ZenithNotice(kind: .batteryCritical, key: ZenithNoticeKey.batteryLow,
-                             title: ZenithNoticeFormat.filling(text.batteryTitle, percent: 10),
-                             subtitle: text.lowPowerOn, accessory: .lowPower(on: true), action: .batterySettings)
+                battery(.batteryCritical, percent: 10, lowPowerOn: true, minutesLeft: 25)
             },
-            capsuleNotice("capsule-charging") {
-                ZenithNotice(kind: .charging, key: ZenithNoticeKey.power,
-                             title: ZenithNoticeFormat.titled(text.charging, percent: 54), subtitle: text.chargerConnected,
-                             glyph: .symbol("bolt.fill", .green), accessory: .ring(percent: 54, tone: .green))
-            },
-            capsuleNotice("capsule-charge-limit") {
-                ZenithNotice(kind: .chargeLimit, key: ZenithNoticeKey.chargeLimit,
-                             title: ZenithNoticeFormat.titled(text.charging, percent: 80), subtitle: text.chargeHint,
-                             glyph: .symbol("leaf.fill", .green), accessory: .ring(percent: 80, tone: .green))
-            },
-            capsuleNotice("capsule-unplugged") {
-                ZenithNotice(kind: .unplugged, key: ZenithNoticeKey.power,
-                             title: ZenithNoticeFormat.titled(text.onBattery, percent: 76), subtitle: text.chargerRemoved,
-                             glyph: .symbol("powerplug", .white), accessory: .ring(percent: 76, tone: ZenithNoticeFormat.batteryTone(76)))
+            capsuleNotice("capsule-battery-critical-unknown") {
+                battery(.batteryCritical, percent: 9, lowPowerOn: true, minutesLeft: nil)
             },
             capsuleNotice("capsule-audio") {
                 ZenithNotice(kind: .audio, key: ZenithNoticeKey.audio("AirPods Pro"), title: "AirPods Pro",
@@ -153,13 +196,6 @@ extension CatalogShots {
                              subtitle: "5h 12m coded · 14 commits · 3 deploys",
                              glyph: .symbol(NotchModule.recap.zenithIconSymbol, .tint(NotchModule.recap)),
                              accessory: .action(ZenithStrings.recap(.enUS).open), action: .openRecap)
-            },
-            capsuleNotice("capsule-prayer") {
-                let sky = ZenithStrings.sky(.enUS)
-                return ZenithNotice(kind: .prayer, key: ZenithNoticeKey.prayer("asr"),
-                                    title: sky.arrival(.asr, indonesian: true),
-                                    subtitle: "15:04 · Jakarta · " + PrayerConfiguration().method.title,
-                                    glyph: .symbol(Prayer.asr.symbol, .tint(NotchModule.sky)))
             },
             capsuleNotice("capsule-workspace") {
                 ZenithNotice(kind: .workspace, key: ZenithNoticeKey.workspace("catalog"), title: "Coding workspace ready",

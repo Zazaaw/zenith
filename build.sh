@@ -309,6 +309,10 @@ if (( TEST )); then
         Sources/Vorssaint/Services/ExportTracker/ExportTrackerSupport.swift
         Sources/Vorssaint/Services/ExportTracker/ExportWriterProbe.swift
         Sources/Vorssaint/Services/Notch/ZenithNoticeSupport.swift
+        Sources/Vorssaint/Services/Notch/ZenithIslandRoom.swift
+        Sources/Vorssaint/Services/Notch/ZenithCalendarSupport.swift
+        Sources/Vorssaint/Services/Notch/ZenithIslandBurstSupport.swift
+        Sources/Vorssaint/Core/ZenithIslandStrings.swift
         Sources/Vorssaint/Services/Notch/ZenithHomeLayoutSupport.swift
         Sources/Vorssaint/Services/Notch/ZenithHomeShortcutsSupport.swift
         Sources/Vorssaint/Services/Notch/ZenithTabBarSupport.swift

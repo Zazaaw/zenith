@@ -20,8 +20,7 @@ struct ZenithNotice: Equatable {
         case devServer
         /// The day's recap at the chosen time, offering its page (RecapService).
         case recap
-        /// A prayer's time came (SkyService).
-        case prayer
+        // A prayer's time is no capsule: the island's pill grows (ZenithIslandBurst).
         /// A workspace the person ran finished, ready or with problems (WorkspaceService).
         case workspace
 
@@ -30,7 +29,7 @@ struct ZenithNotice: Equatable {
             switch self {
             case .batteryCritical: return 5
             case .batteryLow: return 4
-            case .audio, .card, .prayer, .workspace: return 3
+            case .audio, .card, .workspace: return 3
             case .charging, .unplugged: return 2
             case .chargeLimit, .download, .export, .devServer, .recap: return 1
             }
@@ -51,13 +50,16 @@ struct ZenithNotice: Equatable {
         case symbol(String, Tone)
         /// A QuickLook thumbnail of the file, its icon until one is ready.
         case file(URL)
+        /// Zenith fork: a battery filled to the percentage in the tone, the
+        /// percentage large beside it.
+        case battery(percent: Int, tone: Tone)
     }
 
     enum Accessory: Equatable {
         case none
         /// A ring filled to the percentage, the number inside.
         case ring(percent: Int, tone: Tone)
-        /// A switch-like pill with a battery: Low Power Mode, on or off.
+        /// Low Power Mode: a pill that offers it while off, a filled chip once on.
         case lowPower(on: Bool)
         /// A checkmark that draws itself.
         case checkmark
@@ -87,10 +89,16 @@ struct ZenithNotice: Equatable {
     var glyph: Glyph = .none
     var accessory: Accessory = .none
     var action: Action = .none
+    /// Zenith fork: the battery's time left in minutes, when macOS has one.
+    var minutesLeft: Int? = nil
 
     var priority: Int { kind.priority }
     var duration: TimeInterval { ZenithNoticeTiming.duration(kind) }
-    var accessibilityText: String { [title, subtitle].filter { !$0.isEmpty }.joined(separator: ", ") }
+    var accessibilityText: String {
+        var parts = [title, subtitle]
+        if case let .battery(percent, _) = glyph { parts.insert("\(ZenithNoticeFormat.clamped(percent))%", at: 0) }
+        return parts.filter { !$0.isEmpty }.joined(separator: ", ")
+    }
 }
 
 // MARK: - Queue
@@ -132,8 +140,6 @@ struct ZenithNoticeQueue {
         case .devServer: return 20
         // Once a day and in no hurry: it waits out a full screen app or an open island.
         case .recap: return 10 * 60
-        // A prayer's time is worth waiting a little for, not long.
-        case .prayer: return 120
         // Asked for a moment ago; after half a minute it is no longer news.
         case .workspace: return 30
         }
@@ -220,7 +226,6 @@ enum ZenithNoticeKey {
     static func devServer(_ key: String) -> String { "devserver." + key }
     /// The recap of one day, so the same day never queues twice.
     static func recap(_ day: String) -> String { "recap." + day }
-    static func prayer(_ name: String) -> String { "prayer." + name }
     /// One workspace's run, so running it again updates the notice in place.
     static func workspace(_ id: String) -> String { "workspace." + id }
 }
@@ -271,6 +276,10 @@ enum ZenithBatteryEvent: Equatable {
     case charging(percent: Int?)
     case unplugged(percent: Int?)
     case chargeLimit(percent: Int)
+    /// Zenith fork: still plugged in, the charge stopped short of full:
+    /// Optimized Battery Charging or the charge limit holds it. Once per
+    /// time the charger is plugged in.
+    case held(percent: Int)
 }
 
 /// Turns power readings into notices. The first reading is a baseline: a
@@ -281,6 +290,7 @@ struct ZenithBatteryNoticeState {
     private var lowArmed = true
     private var criticalArmed = true
     private var highArmed = true
+    private var heldArmed = true
 
     /// `previous` is the reading before this one when the caller knows it,
     /// which serves as the baseline if this state has none yet.
@@ -294,8 +304,15 @@ struct ZenithBatteryNoticeState {
         last = reading
         var events: [ZenithBatteryEvent] = []
         let percent = reading.percent.map { min(100, max(0, $0)) }
-        if before.external != reading.external, settings.chargerOn {
-            events.append(reading.external ? .charging(percent: percent) : .unplugged(percent: percent))
+        if before.external != reading.external {
+            heldArmed = true
+            if settings.chargerOn {
+                events.append(reading.external ? .charging(percent: percent) : .unplugged(percent: percent))
+            }
+        } else if reading.external, before.charging, !reading.charging, heldArmed, let percent, percent < 100 {
+            // Zenith fork: the charge paused short of full.
+            heldArmed = false
+            if settings.chargerOn { events.append(.held(percent: percent)) }
         }
         guard let percent else { return events }
         let margin = ZenithBatterySettings.hysteresis
@@ -395,6 +412,69 @@ enum ZenithNoticeFormat {
     }
 }
 
+/// Zenith fork: a time to full or to empty, in the language's own words:
+/// “25 min” under an hour, “1h 10m” from there.
+enum ZenithPowerFormat {
+    static func duration(minutes: Int, locale: Locale) -> String {
+        let minutes = max(1, minutes)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = locale
+        let formatter = DateComponentsFormatter()
+        formatter.calendar = calendar
+        formatter.allowedUnits = [.hour, .minute]
+        formatter.unitsStyle = minutes < 60 ? .short : .abbreviated
+        return formatter.string(from: TimeInterval(minutes * 60)) ?? "\(minutes) min"
+    }
+
+    /// A time estimate in seconds as whole minutes, nil when macOS has none
+    /// worth showing (still calculating, or more than a day).
+    static func minutes(_ seconds: TimeInterval?) -> Int? {
+        guard let seconds, seconds.isFinite, seconds >= 60, seconds <= 24 * 3600 else { return nil }
+        return Int((seconds / 60).rounded())
+    }
+
+    /// `%@` in a localized template becomes the duration.
+    static func filling(_ template: String, minutes: Int, locale: Locale) -> String {
+        template.replacingOccurrences(of: "%@", with: duration(minutes: minutes, locale: locale))
+    }
+}
+
+/// Zenith fork: what a low battery notice says. Red with a Low Power pill
+/// while the mode is off; amber with an On chip once it is on, as macOS
+/// paints the battery amber in that mode, and the time left when known.
+enum ZenithBatteryNoticeLook {
+    struct Content: Equatable {
+        let title: String
+        let subtitle: String
+        let tone: ZenithNotice.Tone
+    }
+
+    static func content(lowPowerOn: Bool, minutesLeft: Int?, island: ZenithIslandStrings,
+                        notices: ZenithNoticeStrings, locale: Locale) -> Content {
+        guard lowPowerOn else {
+            return Content(title: island.batteryLow, subtitle: island.batteryLowHint, tone: .red)
+        }
+        var subtitle = island.plugInSoon
+        if let minutesLeft {
+            subtitle += " · " + ZenithPowerFormat.filling(island.aboutLeft, minutes: minutesLeft, locale: locale)
+        }
+        return Content(title: notices.lowPowerOn, subtitle: subtitle, tone: .amber)
+    }
+
+    /// `notice` with Low Power Mode as it is now: words, tone and accessory.
+    static func refreshed(_ notice: ZenithNotice, lowPowerOn: Bool, island: ZenithIslandStrings,
+                          notices: ZenithNoticeStrings, locale: Locale) -> ZenithNotice {
+        var notice = notice
+        let look = content(lowPowerOn: lowPowerOn, minutesLeft: notice.minutesLeft, island: island,
+                           notices: notices, locale: locale)
+        notice.title = look.title
+        notice.subtitle = look.subtitle
+        notice.accessory = .lowPower(on: lowPowerOn)
+        if case let .battery(percent, _) = notice.glyph { notice.glyph = .battery(percent: percent, tone: look.tone) }
+        return notice
+    }
+}
+
 // MARK: - Timing and sizes
 
 enum ZenithNoticeTiming {
@@ -408,7 +488,6 @@ enum ZenithNoticeTiming {
         case .devServer: return 5
         // A line of figures to read, with a choice to open it.
         case .recap: return 8
-        case .prayer: return 6
         // Long enough to read what did not work.
         case .workspace: return 6
         default: return 4
@@ -437,36 +516,57 @@ enum ZenithNoticeTiming {
 
 /// Measured from the reference frames: the capsule is about five times as
 /// wide as tall (824 × 162 px), and its 13 pt title puts it near 400 × 79 pt.
-/// Zenith keeps the brief's 360–420 × 56–64 range: 380 × 62, one row.
+/// One row is 380 × 62; the capsule grows from there by the island's
+/// room rule (ZenithIslandRoom): wider for what it shows, at least as wide
+/// as the island it covers, then a second line once it is as wide as it gets.
 enum ZenithNoticeLayout {
-    static let width: CGFloat = 380
-    static let maximumWidth: CGFloat = 420
+    static let width: CGFloat = ZenithIslandRoom.minimumWidth
+    static let maximumWidth: CGFloat = ZenithIslandRoom.maximumWidth
     static let rowHeight: CGFloat = 62
+    /// What a second line of subtitle adds to the row.
+    static let lineHeight: CGFloat = 15
     static let glyph: CGFloat = 30
     static let ring: CGFloat = 30
-    static let lowPowerWidth: CGFloat = 50
-    static let lowPowerHeight: CGFloat = 28
-    static let inset: CGFloat = 16
     static let spacing: CGFloat = 12
     static let titleSize: CGFloat = 13
     static let subtitleSize: CGFloat = 11.5
-    /// A pill's ends need this much more room inside than a square edge.
-    static let endInset: CGFloat = 6
+    /// A battery notice's percentage beside its glyph.
+    static let figureSize: CGFloat = 24
+    /// The battery glyph's body, its nub outside it.
+    static let batteryWidth: CGFloat = 38
+    static let batteryHeight: CGFloat = 19
+    /// The Low Power pill and the On chip.
+    static let pillHeight: CGFloat = 30
 
-    /// As wide as the island already is, if wider, within the range and the display.
-    static func width(closedWidth: CGFloat, screenWidth: CGFloat) -> CGFloat {
-        let wanted = min(maximumWidth, max(width, closedWidth.isFinite ? closedWidth : 0))
-        return max(0, min(wanted, screenWidth - 24))
+    static func rowHeight(lines: Int) -> CGFloat { rowHeight + CGFloat(max(1, lines) - 1) * lineHeight }
+
+    /// The shoulders a capsule's content clears: a hanging one's, or none
+    /// for a floating pill, whose round ends the edge already clears.
+    static func shoulder(floats: Bool) -> CGFloat { floats ? 0 : NotchLayout.shoulder }
+
+    /// Width and lines for content of `fixed` points (glyph, figure,
+    /// accessory and the gaps between) beside a title and a subtitle of the
+    /// widths given: as wide as the longer needs within the room rule and at
+    /// least the closed island it covers, then a second subtitle line if it
+    /// still does not fit. The title keeps one line.
+    static func fit(fixed: CGFloat, title: CGFloat, subtitle: CGFloat, closedWidth: CGFloat, screenWidth: CGFloat,
+                    floats: Bool) -> (width: CGFloat, lines: Int) {
+        let shoulder = shoulder(floats: floats)
+        let width = ZenithIslandRoom.width(content: fixed + max(title, subtitle), shoulder: shoulder,
+                                           covering: closedWidth, screenWidth: screenWidth)
+        return (width, ZenithIslandRoom.lines(text: subtitle, fixed: fixed, width: width, shoulder: shoulder))
     }
 
     /// The capsule in screen coordinates (origin at the bottom left). A
     /// floating island's capsule floats where its own top is; one hanging
     /// from the top edge hangs there too, with the row below the camera.
-    static func frame(screen: CGRect, centerX: CGFloat, closedWidth: CGFloat, floats: Bool,
+    static func frame(screen: CGRect, centerX: CGFloat, width: CGFloat, lines: Int = 1, floats: Bool,
                       top: CGFloat, stripHeight: CGFloat) -> CGRect {
-        let width = width(closedWidth: closedWidth, screenWidth: screen.width)
-        let height = floats ? rowHeight : stripHeight + rowHeight - 6
-        let x = min(max(screen.minX + 12, centerX - width / 2), screen.maxX - 12 - width)
+        let margin = ZenithIslandRoom.screenMargin
+        let width = max(0, min(width, screen.width - margin * 2))
+        let row = rowHeight(lines: lines)
+        let height = floats ? row : stripHeight + row - 6
+        let x = min(max(screen.minX + margin, centerX - width / 2), screen.maxX - margin - width)
         return CGRect(x: x, y: screen.maxY - top - height, width: width, height: height)
     }
 

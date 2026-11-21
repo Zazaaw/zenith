@@ -385,12 +385,19 @@ enum CatalogSamples {
                                start: day.addingTimeInterval(hour * 3600), end: day.addingTimeInterval((hour + length) * 3600),
                                allDay: false, location: location, color: NotchCalendarColor(red: red, green: green, blue: blue))
         }
+        // Days around today, so the month grid carries dots in both calendars' colours.
+        let around: [NotchCalendarEvent] = [(-18, true), (-9, true), (-9, false), (-4, true), (3, false), (7, true)]
+            .enumerated().map { index, entry in
+                let (offset, blue) = entry
+                return event("around-\(index)", blue ? "Client call" : "Shoot", hour: 24 * Double(offset) + 10, length: 1,
+                             red: blue ? 0.33 : 0.95, green: blue ? 0.55 : 0.55, blue: blue ? 0.98 : 0.2)
+            }
         let events = [
             event("standup", "Stand-up", hour: 9, length: 0.25, red: 0.33, green: 0.55, blue: 0.98),
             meeting,
             event("shoot", "Shooting company profile", hour: 19, length: 2, red: 0.95, green: 0.55, blue: 0.2,
                   location: "Studio Kemang"),
-        ]
+        ] + around
         NotchCalendarService.shared.catalogPose(events: events.sorted { $0.start < $1.start },
                                                 countdown: NotchCalendarCountdown(event: meeting, ongoing: false))
     }

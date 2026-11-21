@@ -22,6 +22,9 @@ struct NotchNotice: Equatable {
     /// A banner that replaces one still on screen keeps at least its wings,
     /// so a burst of messages does not resize the island with each one.
     var minimumWings = NotchNoticeWings.zero
+    /// Zenith fork: the island grown for a moment (a prayer's time, the
+    /// charger), drawn and sized by ZenithIslandBurst in place of the strip.
+    var zenith: ZenithIslandBurst? = nil
 
     enum ClickTarget: Hashable {
         case event(NotchEvent, title: String, detail: String?)
@@ -89,7 +92,8 @@ struct NotchNotice: Equatable {
     var cameraGap: CGFloat { event == .battery ? 16 : readsFromEnds ? 6 : 0 }
 
     var accessibilityText: String {
-        notification?.accessibilityText ?? [title, detail].filter { !$0.isEmpty }.joined(separator: ", ")
+        zenith?.accessibilityText // Zenith fork
+            ?? notification?.accessibilityText ?? [title, detail].filter { !$0.isEmpty }.joined(separator: ", ")
     }
 
     /// Room a closed notice keeps inside its curved ends, which a side as
@@ -1106,14 +1110,15 @@ final class NotchService: ObservableObject {
         if let capsule = capsuleSurfaceSize { return capsule }
         if fullscreenCompact { return geometry.bareCutout }
         if captureControls != nil {
-            if captureControlsCollapsed {
-                return CGSize(width: geometry.cameraWidth + 56, height: geometry.stripHeight)
+            if captureControlsCollapsed { // Zenith fork: a row below the camera
+                return ZenithCaptureStripLayout.size(language: L10n.shared.language, geometry: geometry)
             }
             return captureControlsLayout.size
         }
         if expanded { return showingCommandBar ? commandBarSurfaceSize : expandedSize }
         if dragPlaceholder { return NotchLayout.flared(CGSize(width: geometry.peekWidth, height: geometry.safeContentTop + 66)) } // Zenith fork
         if let notice {
+            if let burst = notice.zenith { return ZenithIslandBurstLayout.size(burst, geometry: geometry) } // Zenith fork
             guard noticeExpanded else { return geometry.noticeSize(wings: notice.wings(in: geometry)) }
             return geometry.notificationPreviewSize(
                 contentHeight: notice.previewContentHeight(width: geometry.notificationPreviewContentWidth)
@@ -1141,7 +1146,7 @@ final class NotchService: ObservableObject {
     /// further toward its wider side. A capsule runs its strips end to end.
     var surfaceShift: CGFloat {
         guard !geometry.floats, !fullscreenCompact, captureControls == nil, !expanded, !dragPlaceholder else { return 0 }
-        if let notice { return noticeExpanded ? 0 : geometry.noticeShift(notice.wings(in: geometry)) }
+        if let notice { return noticeExpanded || notice.zenith != nil ? 0 : geometry.noticeShift(notice.wings(in: geometry)) } // Zenith fork: a burst is centred
         return namedMusicWings.map { ($0.trailing - $0.leading) / 2 } ?? 0
     }
 
@@ -1181,6 +1186,7 @@ final class NotchService: ObservableObject {
 
     /// A notice's own capsule, which it keeps while the island closes around it.
     func capsuleNoticeSurface(_ notice: NotchNotice) -> CGSize {
+        if let burst = notice.zenith { return ZenithIslandBurstLayout.size(burst, geometry: geometry) } // Zenith fork
         let layout = NotchCapsuleLayout.self
         guard let content = notice.notification else {
             return layout.surface(content: layout.noticeContent(title: notice.title, detail: notice.detail,
@@ -2629,7 +2635,8 @@ final class NotchService: ObservableObject {
 
     @discardableResult
     func show(_ incoming: NotchNotice) -> Bool {
-        guard showsSystemFeedback, NotchSupport.routes(incoming.event),
+        // Zenith fork: a burst's own switches decided it before it got here.
+        guard showsSystemFeedback, incoming.zenith != nil || NotchSupport.routes(incoming.event),
               NotchSupport.shouldReplace(notice?.event, with: incoming.event, held: noticeExpanded) else { return false }
         noticeWork?.cancel(); noticeWork = nil
         var incoming = incoming
@@ -2657,7 +2664,7 @@ final class NotchService: ObservableObject {
             inside = true
             holdNotification(id)
         } else {
-            scheduleNoticeDismissal(after: incoming.event.duration)
+            scheduleNoticeDismissal(after: incoming.zenith?.duration ?? incoming.event.duration) // Zenith fork
         }
         return true
     }
@@ -2668,10 +2675,17 @@ final class NotchService: ObservableObject {
     }
 
     func activateNotice(_ selectedNotice: NotchNotice, fromEdgePress: Bool = false) {
-        guard acceptsSystemFeedback, noticeCanPresent, NotchSupport.routes(selectedNotice.event) else { return }
+        guard acceptsSystemFeedback, noticeCanPresent,
+              selectedNotice.zenith != nil || NotchSupport.routes(selectedNotice.event) else { return } // Zenith fork
         let shown = stripNotice
         guard shown?.clickTarget == selectedNotice.clickTarget
             || (fromEdgePress && shown == nil) else { return }
+        // Zenith fork: a burst opens its page, if it has one, or just goes.
+        if let burst = selectedNotice.zenith {
+            if let module = burst.module { open(module) } else { dismissNotice() }
+            if expanded, (notice ?? departingNotice)?.clickTarget == selectedNotice.clickTarget { dismissNotice() }
+            return
+        }
         if let id = selectedNotice.notificationID {
             guard NotchNotificationService.shared.openingID == nil else { return }
             // The pointer stays where the banner was; like a click on the

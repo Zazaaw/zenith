@@ -72,7 +72,9 @@ extension CatalogShots {
             page(.controls, id: "page-home") { S.music(); S.timer(); S.calendarCountdown() },
             page(.music, preferences: [DefaultsKey.notchIdleContent: NotchIdleContent.music.rawValue]) { S.music() },
             page(.timer) { S.timer() },
-            page(.calendar) { S.calendar() },
+            page(.calendar, preferences: [DefaultsKey.zenithCalendarMode: ZenithCalendarMode.week.rawValue]) { S.calendar() },
+            page(.calendar, id: "page-calendar-month",
+                 preferences: [DefaultsKey.zenithCalendarMode: ZenithCalendarMode.month.rawValue]) { S.calendar() },
             page(.downloads) { S.downloads() },
             page(.files) { S.shelf() },
             page(.clipboard, preferences: [DefaultsKey.clipboardHistoryEnabled: true]) { S.clipboard() },
@@ -193,8 +195,7 @@ extension CatalogShots {
 
     static var lockScreens: [CatalogShot] {
         [
-            // The jobs beside the row overlap it when drawn offscreen; the row keeps the weather alone.
-            lockScreen("lock-minimal", mode: .minimal, preferences: [DefaultsKey.zenithLockJobs: false]),
+            lockScreen("lock-minimal", mode: .minimal, preferences: [:]),
             lockScreen("lock-full", mode: .full, preferences: [:]),
         ]
     }
