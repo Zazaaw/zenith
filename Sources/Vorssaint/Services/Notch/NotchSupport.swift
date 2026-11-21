@@ -384,6 +384,10 @@ enum NotchLayout {
     /// beside it, the timeline and one row of buttons across the island,
     /// which is no wider than that: about 380 points between its sides.
     static let musicContentWidth: CGFloat = 344
+    /// Zenith fork: the player page itself is wider than upstream's, so the
+    /// song, the timeline and the buttons have room; the home page's music
+    /// card keeps `musicContentWidth`, and a narrower preset still caps it.
+    static let zenithPlayerContentWidth: CGFloat = 460
     /// Beside a camera each side keeps the cover, or the lyrics and queue
     /// toggles, clear of it.
     static let musicBandSide: CGFloat = 70
@@ -637,7 +641,7 @@ enum NotchLayout {
     /// shortcuts. Lists, grids and a rail that wraps take it all (nil).
     static func naturalContentWidth(_ module: NotchModule, controls: [NotchControlItem], within width: CGFloat) -> CGFloat? {
         switch module {
-        case .music: return musicContentWidth
+        case .music: return zenithPlayerContentWidth // Zenith fork
         case .timer: return timerContentWidth
         case .controls:
             let shortcuts = controls.filter { !$0.isLevel && $0 != .music }.count

@@ -460,9 +460,10 @@ enum NotchTests {
                 let chosen = player.expandedWidth
                 player.pageTop = NotchModule.music.pageTop
                 player.pageContentWidth = NotchLayout.naturalContentWidth(.music, controls: [], within: player.contentWidth)
-                let expected = max(NotchLayout.musicContentWidth, camera > 0 ? camera + NotchLayout.musicBandSide * 2 : 0)
+                let expected = max(NotchLayout.zenithPlayerContentWidth, camera > 0 ? camera + NotchLayout.musicBandSide * 2 : 0)
                     + NotchLayout.horizontalInset * 2
-                suite.expect(player.expandedWidth == min(chosen, expected) && player.expandedWidth < chosen
+                // Zenith fork: the wider player can fill a compact island, so it may reach the chosen width.
+                suite.expect(player.expandedWidth == min(chosen, expected) && player.expandedWidth <= chosen
                              && (camera == 0 || player.headerCameraGap == camera),
                              "the player is no wider than it needs, around a \(Int(camera))-point camera in \(layout)")
                 var list = player
@@ -638,8 +639,8 @@ enum NotchTests {
                     // meter: a preset's player is only as wide as it needs, and
                     // only a wider width set by hand leaves room for the percentage.
                     narrowestPlayer = min(narrowestPlayer, musicBand.side)
-                    player = player && (size == .custom || musicBand.side < NotchLayout.levelReadingDetailWidth)
-                        && musicBand.side - 18 - 8 >= 36
+                    // Zenith fork: the wider player may also leave a preset room for the percentage.
+                    player = player && musicBand.side - 18 - 8 >= 36
                 }
             }
         }
