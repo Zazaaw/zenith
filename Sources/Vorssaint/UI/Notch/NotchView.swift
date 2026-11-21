@@ -86,14 +86,9 @@ struct NotchView: View {
                 NotchCapsuleCaptureStrip(symbol: options.selectedTool.systemImageName, geometry: service.geometry,
                                          size: service.surfaceSize)
             } else if service.captureControlsCollapsed {
-                HStack(spacing: 0) {
-                    Image(systemName: options.selectedTool.systemImageName).frame(width: 28)
-                    Color.clear.frame(width: service.geometry.cameraWidth)
-                    Image(systemName: "chevron.down").frame(width: 28)
-                }
-                .font(.system(size: 10, weight: .semibold))
-                .frame(maxHeight: .infinity)
-                .accessibilityHidden(true)
+                // Zenith fork: a row below the camera, clear of the shoulders.
+                ZenithCaptureStrip(tool: options.selectedTool, geometry: service.geometry, size: service.surfaceSize,
+                                   expand: service.expandCaptureControls)
             } else {
                 NotchCaptureControlsView(options: options, service: service, layout: service.captureControlsLayout)
             }

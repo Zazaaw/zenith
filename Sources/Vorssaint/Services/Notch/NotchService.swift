@@ -1106,8 +1106,8 @@ final class NotchService: ObservableObject {
         if let capsule = capsuleSurfaceSize { return capsule }
         if fullscreenCompact { return geometry.bareCutout }
         if captureControls != nil {
-            if captureControlsCollapsed {
-                return CGSize(width: geometry.cameraWidth + 56, height: geometry.stripHeight)
+            if captureControlsCollapsed { // Zenith fork: a row below the camera
+                return ZenithCaptureStripLayout.size(language: L10n.shared.language, geometry: geometry)
             }
             return captureControlsLayout.size
         }

@@ -36,6 +36,8 @@ final class ZenithNoticeCenter: ObservableObject {
     @Published private(set) var contentShown = false
     @Published private(set) var surfaceOpacity = 1.0
     @Published private(set) var panelSize = CGSize.zero
+    /// The subtitle's lines: two once the capsule is as wide as it gets.
+    @Published private(set) var lines = 1
     @Published private(set) var lowPowerOn = ProcessInfo.processInfo.isLowPowerModeEnabled
     @Published private(set) var thumbnails: [URL: NSImage] = [:]
 
@@ -332,10 +334,7 @@ final class ZenithNoticeCenter: ObservableObject {
         let island = NotchService.shared
         let geometry = island.geometry
         let closed = closedIslandFrame()
-        let capsule = ZenithNoticeLayout.frame(screen: geometry.screen, centerX: geometry.screen.midX,
-                                               closedWidth: closed.width, floats: geometry.floats,
-                                               top: geometry.floats ? geometry.floatingDrop + (geometry.floatingGap ?? 0) : 0,
-                                               stripHeight: geometry.stripHeight)
+        let (capsule, lines) = capsuleLayout(next, covering: closed)
         capsuleFrame = capsule
         panelFrame = capsule.union(closed).integral
         let panel = panel ?? makePanel()
@@ -346,7 +345,8 @@ final class ZenithNoticeCenter: ObservableObject {
         let end = outline(closedFrame: capsule, closed: false)
         let rowTop = ZenithNoticeLayout.rowTop(floats: geometry.floats, stripHeight: geometry.stripHeight)
         row = CGRect(x: end.rect.minX + end.shoulder, y: end.rect.minY + rowTop,
-                     width: end.rect.width - end.shoulder * 2, height: ZenithNoticeLayout.rowHeight)
+                     width: end.rect.width - end.shoulder * 2, height: ZenithNoticeLayout.rowHeight(lines: lines))
+        self.lines = lines
         lowPowerOn = ProcessInfo.processInfo.isLowPowerModeEnabled
         var transaction = Transaction()
         transaction.disablesAnimations = true
@@ -398,6 +398,25 @@ final class ZenithNoticeCenter: ObservableObject {
         // Flipped to the layout's top-left space and back, as the capsule is drawn.
         let body = NotchLayout.capsuleBody(in: CGRect(origin: .zero, size: size), gap: gap)
         return CGRect(x: frame.minX + body.minX, y: frame.maxY - body.maxY, width: body.width, height: body.height)
+    }
+
+    /// The capsule on screen for `notice`, and its lines: as wide as its
+    /// content needs by the island's room rule, and wide enough to cover the
+    /// closed island it grows from, even one reaching further to one side,
+    /// so no wing of it shows past the capsule.
+    private func capsuleLayout(_ notice: ZenithNotice, covering closed: CGRect) -> (frame: CGRect, lines: Int) {
+        let geometry = NotchService.shared.geometry
+        let centre = geometry.screen.midX
+        let covering = closed.isEmpty ? 0 : 2 * max(centre - closed.minX, closed.maxX - centre)
+        let measured = ZenithNoticeMeasure.content(notice)
+        let fit = ZenithNoticeLayout.fit(fixed: measured.fixed, title: measured.title, subtitle: measured.subtitle,
+                                         closedWidth: covering, screenWidth: geometry.screen.width,
+                                         floats: geometry.floats)
+        let frame = ZenithNoticeLayout.frame(screen: geometry.screen, centerX: centre, width: fit.width, lines: fit.lines,
+                                             floats: geometry.floats,
+                                             top: geometry.floats ? geometry.floatingDrop + (geometry.floatingGap ?? 0) : 0,
+                                             stripHeight: geometry.stripHeight)
+        return (frame, fit.lines)
     }
 
     /// An outline in the window for a frame on screen. Closed, it keeps the
@@ -668,18 +687,15 @@ extension ZenithNoticeCenter {
     /// `next` fully shown, laid out as `present` lays it out, in a panel just the capsule's size.
     func catalogPose(_ next: ZenithNotice?) {
         guard let next else { notice = nil; return }
-        let island = NotchService.shared
-        let geometry = island.geometry
-        let capsule = ZenithNoticeLayout.frame(screen: geometry.screen, centerX: geometry.screen.midX,
-                                               closedWidth: island.surfaceSize.width, floats: geometry.floats,
-                                               top: geometry.floats ? geometry.floatingDrop + (geometry.floatingGap ?? 0) : 0,
-                                               stripHeight: geometry.stripHeight)
+        let geometry = NotchService.shared.geometry
+        let (capsule, lines) = capsuleLayout(next, covering: closedIslandFrame())
         panelFrame = capsule
         panelSize = capsule.size
         let end = outline(closedFrame: capsule, closed: false)
         let rowTop = ZenithNoticeLayout.rowTop(floats: geometry.floats, stripHeight: geometry.stripHeight)
         row = CGRect(x: end.rect.minX + end.shoulder, y: end.rect.minY + rowTop,
-                     width: end.rect.width - end.shoulder * 2, height: ZenithNoticeLayout.rowHeight)
+                     width: end.rect.width - end.shoulder * 2, height: ZenithNoticeLayout.rowHeight(lines: lines))
+        self.lines = lines
         lowPowerOn = false
         notice = next
         contentShown = true

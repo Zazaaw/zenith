@@ -28,7 +28,7 @@ struct ZenithNoticeRoot: View {
                         .frame(width: outline.rect.width, height: outline.rect.height)
                         .offset(x: outline.rect.minX, y: outline.rect.minY)
                     ZenithNoticeContent(notice: notice, shown: center.contentShown, reduceMotion: reduceMotion,
-                                        thumbnail: thumbnail(for: notice))
+                                        thumbnail: thumbnail(for: notice), lines: center.lines)
                         .id(center.revision)
                         .transition(reduceMotion ? AnyTransition.opacity : AnyTransition(.blurReplace))
                         .frame(width: center.row.width, height: center.row.height)
@@ -137,6 +137,7 @@ private struct ZenithNoticeContent: View {
     let shown: Bool
     let reduceMotion: Bool
     let thumbnail: NSImage?
+    var lines = 1
 
     private typealias Layout = ZenithNoticeLayout
 
@@ -158,10 +159,11 @@ private struct ZenithNoticeContent: View {
                 Text(notice.subtitle)
                     .font(.system(size: Layout.subtitleSize))
                     .foregroundStyle(.white.opacity(0.55))
-                    .lineLimit(1)
+                    // Zenith fork: a capsule as wide as it gets wraps to a second line.
+                    .lineLimit(lines)
+                    .fixedSize(horizontal: false, vertical: lines > 1)
                     // An export's subtitle starts with the file's name.
                     .truncationMode(notice.kind == .export ? .middle : .tail)
-                    .minimumScaleFactor(0.85)
                     .zenithNoticeReveal(shown, index: pieces - 2, count: pieces, reduceMotion: reduceMotion)
             }
             .monospacedDigit()
@@ -169,8 +171,8 @@ private struct ZenithNoticeContent: View {
             accessory
                 .zenithNoticeReveal(shown, index: pieces - 1, count: pieces, reduceMotion: reduceMotion)
         }
-        .padding(.leading, Layout.inset + (notice.glyph == .none ? Layout.endInset : 0))
-        .padding(.trailing, Layout.inset)
+        // Zenith fork: the island's room rule, the same at both ends.
+        .padding(.horizontal, ZenithIslandRoom.edge)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -285,7 +287,7 @@ private struct ZenithNoticeLowPowerSwitch: View {
 
     var body: some View {
         let color = on ? ZenithStatus.warning : ZenithStatus.error
-        let width = ZenithNoticeLayout.lowPowerWidth, height = ZenithNoticeLayout.lowPowerHeight
+        let width: CGFloat = 50, height: CGFloat = 28
         let knob = height - 6
         ZStack(alignment: on ? .trailing : .leading) {
             Capsule().fill(color.opacity(0.28))
@@ -364,5 +366,33 @@ private struct ZenithNoticeCheckShape: Shape {
         path.addLine(to: CGPoint(x: rect.minX + rect.width * 0.36, y: rect.maxY - rect.height * 0.12))
         path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + rect.height * 0.12))
         return path
+    }
+}
+
+/// Zenith fork: what a notice's row needs, measured with the fonts the row
+/// draws with, for the capsule's width (ZenithNoticeLayout.fit).
+enum ZenithNoticeMeasure {
+    /// `fixed` is everything but the text, with the gaps between the pieces.
+    static func content(_ notice: ZenithNotice) -> (fixed: CGFloat, title: CGFloat, subtitle: CGFloat) {
+        let layout = ZenithNoticeLayout.self
+        var pieces: [CGFloat] = []
+        if notice.glyph != .none { pieces.append(layout.glyph) }
+        let accessory = accessoryWidth(notice.accessory)
+        if accessory > 0 { pieces.append(accessory) }
+        let fixed = pieces.reduce(0, +) + CGFloat(pieces.count) * layout.spacing
+        // Digits are drawn monospaced; a little slack covers the difference.
+        let title = ZenithIslandRoom.measure(notice.title, font: .systemFont(ofSize: layout.titleSize, weight: .semibold))
+        let subtitle = ZenithIslandRoom.measure(notice.subtitle, font: .systemFont(ofSize: layout.subtitleSize))
+        return (fixed, title == 0 ? 0 : title + 4, subtitle == 0 ? 0 : subtitle + 4)
+    }
+
+    private static func accessoryWidth(_ accessory: ZenithNotice.Accessory) -> CGFloat {
+        switch accessory {
+        case .none: return 0
+        case .ring, .checkmark: return ZenithNoticeLayout.ring
+        case .lowPower: return 50
+        case .action(let title):
+            return ZenithIslandRoom.measure(title, font: .systemFont(ofSize: 12, weight: .semibold)) + 26
+        }
     }
 }

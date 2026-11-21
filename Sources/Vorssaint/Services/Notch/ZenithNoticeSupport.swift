@@ -437,36 +437,57 @@ enum ZenithNoticeTiming {
 
 /// Measured from the reference frames: the capsule is about five times as
 /// wide as tall (824 × 162 px), and its 13 pt title puts it near 400 × 79 pt.
-/// Zenith keeps the brief's 360–420 × 56–64 range: 380 × 62, one row.
+/// One row is 380 × 62; the capsule grows from there by the island's
+/// room rule (ZenithIslandRoom): wider for what it shows, at least as wide
+/// as the island it covers, then a second line once it is as wide as it gets.
 enum ZenithNoticeLayout {
-    static let width: CGFloat = 380
-    static let maximumWidth: CGFloat = 420
+    static let width: CGFloat = ZenithIslandRoom.minimumWidth
+    static let maximumWidth: CGFloat = ZenithIslandRoom.maximumWidth
     static let rowHeight: CGFloat = 62
+    /// What a second line of subtitle adds to the row.
+    static let lineHeight: CGFloat = 15
     static let glyph: CGFloat = 30
     static let ring: CGFloat = 30
-    static let lowPowerWidth: CGFloat = 50
-    static let lowPowerHeight: CGFloat = 28
-    static let inset: CGFloat = 16
     static let spacing: CGFloat = 12
     static let titleSize: CGFloat = 13
     static let subtitleSize: CGFloat = 11.5
-    /// A pill's ends need this much more room inside than a square edge.
-    static let endInset: CGFloat = 6
+    /// A battery notice's percentage beside its glyph.
+    static let figureSize: CGFloat = 24
+    /// The battery glyph's body, its nub outside it.
+    static let batteryWidth: CGFloat = 38
+    static let batteryHeight: CGFloat = 19
+    /// The Low Power pill and the On chip.
+    static let pillHeight: CGFloat = 30
 
-    /// As wide as the island already is, if wider, within the range and the display.
-    static func width(closedWidth: CGFloat, screenWidth: CGFloat) -> CGFloat {
-        let wanted = min(maximumWidth, max(width, closedWidth.isFinite ? closedWidth : 0))
-        return max(0, min(wanted, screenWidth - 24))
+    static func rowHeight(lines: Int) -> CGFloat { rowHeight + CGFloat(max(1, lines) - 1) * lineHeight }
+
+    /// The shoulders a capsule's content clears: a hanging one's, or none
+    /// for a floating pill, whose round ends the edge already clears.
+    static func shoulder(floats: Bool) -> CGFloat { floats ? 0 : NotchLayout.shoulder }
+
+    /// Width and lines for content of `fixed` points (glyph, figure,
+    /// accessory and the gaps between) beside a title and a subtitle of the
+    /// widths given: as wide as the longer needs within the room rule and at
+    /// least the closed island it covers, then a second subtitle line if it
+    /// still does not fit. The title keeps one line.
+    static func fit(fixed: CGFloat, title: CGFloat, subtitle: CGFloat, closedWidth: CGFloat, screenWidth: CGFloat,
+                    floats: Bool) -> (width: CGFloat, lines: Int) {
+        let shoulder = shoulder(floats: floats)
+        let width = ZenithIslandRoom.width(content: fixed + max(title, subtitle), shoulder: shoulder,
+                                           covering: closedWidth, screenWidth: screenWidth)
+        return (width, ZenithIslandRoom.lines(text: subtitle, fixed: fixed, width: width, shoulder: shoulder))
     }
 
     /// The capsule in screen coordinates (origin at the bottom left). A
     /// floating island's capsule floats where its own top is; one hanging
     /// from the top edge hangs there too, with the row below the camera.
-    static func frame(screen: CGRect, centerX: CGFloat, closedWidth: CGFloat, floats: Bool,
+    static func frame(screen: CGRect, centerX: CGFloat, width: CGFloat, lines: Int = 1, floats: Bool,
                       top: CGFloat, stripHeight: CGFloat) -> CGRect {
-        let width = width(closedWidth: closedWidth, screenWidth: screen.width)
-        let height = floats ? rowHeight : stripHeight + rowHeight - 6
-        let x = min(max(screen.minX + 12, centerX - width / 2), screen.maxX - 12 - width)
+        let margin = ZenithIslandRoom.screenMargin
+        let width = max(0, min(width, screen.width - margin * 2))
+        let row = rowHeight(lines: lines)
+        let height = floats ? row : stripHeight + row - 6
+        let x = min(max(screen.minX + margin, centerX - width / 2), screen.maxX - margin - width)
         return CGRect(x: x, y: screen.maxY - top - height, width: width, height: height)
     }
 

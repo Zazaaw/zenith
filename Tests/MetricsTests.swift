@@ -276,6 +276,7 @@ struct MetricsTests {
             ("screenshot-beautify", { ScreenshotBeautifyTests.run(suite) }),
             ("menubar-hider", { MenuBarHiderTests.run(suite) }),
             ("notices", { ZenithNoticeTests.run(suite) }),
+            ("island-room", { IslandRoundThreeTests.run(suite) }),
             ("reply", { ReplyTests.run(suite) }),
             ("home-layout", { HomeLayoutTests.run(suite) }),
             ("tab-bar", { TabBarTests.run(suite) }),
