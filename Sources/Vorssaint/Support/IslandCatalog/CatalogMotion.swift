@@ -230,7 +230,7 @@ enum CatalogMotion {
             let column = position % columns, row = position / columns
             let origin = CGPoint(x: CGFloat(column) * cell.width, y: size.height - CGFloat(row + 1) * (cell.height + label))
             context.draw(entry.element, in: CGRect(origin: origin, size: cell))
-            let text = NSAttributedString(string: String(format: "%.0f ms", Double(entry.offset) / fps * 1_000),
+            let text = NSAttributedString(string: "\(Int((Double(entry.offset) / fps * 1_000).rounded())) ms",
                                           attributes: [.font: NSFont.monospacedSystemFont(ofSize: 16, weight: .semibold),
                                                        .foregroundColor: NSColor.white])
             let line = CTLineCreateWithAttributedString(text)

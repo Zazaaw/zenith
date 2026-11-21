@@ -47,6 +47,7 @@ enum ZenithSettingsSearch {
         let reply = ZenithStrings.reply(language)
         let lockScreen = ZenithStrings.lockScreenSettings(language)
         let lockPage = ZenithStrings.lockScreenPage(language)
+        let lockIsland = ZenithStrings.lockIsland(language) // the padlock island's switches
         let widgets = ZenithStrings.lockScreenWidgets(language)
         let terminal = ZenithStrings.lockScreenTerminal(language)
         let terminalTitle = ZenithStrings.lockScreenTerminalTitle(language)
@@ -113,9 +114,10 @@ enum ZenithSettingsSearch {
                  keywords: [lockPage.activityRow, widgets.weather, widgets.reminders, sky.lockPrayer, sky.lockGolden,
                             lockScreen.jobs, lockScreen.jobExport, lockScreen.jobCardImport, lockScreen.jobBackup,
                             lockScreen.jobCommand, lockScreen.jobVercel, lockPage.jobExport, lockPage.jobCardImport,
-                            lockPage.jobCommand],
+                            lockPage.jobCommand, lockIsland.section, lockIsland.charging, lockIsland.focus,
+                            lockIsland.farewell, lockIsland.welcome],
                  aliases: ["activity row", "baris aktivitas", "cuaca", "pengingat", "progress", "progres",
-                           "progres pekerjaan"]),
+                           "progres pekerjaan", "gembok", "padlock", "see you", "welcome back", "selamat datang"]),
             page(.zenithLockScreenMusic, title: lockPage.tabMusic, icon: "music.note",
                  keywords: [lockPage.music, lockScreen.nowPlaying, lockScreen.titleControls, lockScreen.lyrics,
                             lockScreen.karaoke, lockPage.lyricShade, lockPage.lyricTiming],

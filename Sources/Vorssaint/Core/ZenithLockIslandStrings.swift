@@ -73,7 +73,7 @@ extension ZenithStrings {
                          charging: "Şarj", chargingCaption: "Şarj aleti takılıyken yeşil şimşek ve şarj düzeyi",
                          focus: "Odak", focusCaption: "Açık olan Odak, mor renkte, macOS uygulamalarla paylaştığında",
                          farewell: "Görüşürüz", farewellCaption: "Mac kilitlenirken ada el sallar",
-                         welcome: "Tekrar hoş geldin", welcomeCaption: "Kilidi açınca Mac'in ne kadar kilitli kaldığıyla bir selam",
+                         welcome: "Tekrar hoş geldin", welcomeCaption: "Kilidi açınca Mac’in ne kadar kilitli kaldığıyla bir selam",
                          seeYou: "Görüşürüz, {name} 👋", seeYouNameless: "Görüşürüz 👋",
                          welcomeBack: "Tekrar hoş geldin, {name}", welcomeBackNameless: "Tekrar hoş geldin",
                          lockedFor: "{duration} kilitli kaldı", notifications: "bildirim: {count}")

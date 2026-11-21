@@ -108,8 +108,8 @@ enum LockIslandTests {
     }
 
     private static func switches(_ suite: TestSuite) {
-        let defaults = UserDefaults(suiteName: "LockIslandTests")!
-        defaults.removePersistentDomain(forName: "LockIslandTests")
+        let defaults = UserDefaults(suiteName: "com.vorssaint.tests.lock-island")!
+        defaults.removePersistentDomain(forName: "com.vorssaint.tests.lock-island")
         let options: [ZenithLockScreenOption] = [.islandCharging, .islandFocus, .islandFarewell, .islandWelcome]
         suite.expect(options.allSatisfy { $0.isOnByDefault && $0.isOn(in: defaults) && !$0.isFullLayer },
                      "each of the island's switches starts on")
@@ -119,6 +119,6 @@ enum LockIslandTests {
         defaults.set(false, forKey: ZenithLockScreenOption.islandWelcome.defaultsKey)
         suite.expect(!ZenithLockScreenOption.islandWelcome.isOn(in: defaults) && ZenithLockScreenOption.islandFarewell.isOn(in: defaults),
                      "each turns off on its own")
-        defaults.removePersistentDomain(forName: "LockIslandTests")
+        defaults.removePersistentDomain(forName: "com.vorssaint.tests.lock-island")
     }
 }
