@@ -271,6 +271,13 @@ final class NotchLockScreenService {
             space.close()
             return
         }
+        // Zenith fork: the welcome is the desktop island's own burst, once the
+        // padlock over it has gone; an open page lets it wait a moment or drop it.
+        if let welcome = zenithIsland.unlocking() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + ZenithLockIsland.welcomeDelay) {
+                NotchService.shared.showZenithBurst(.welcome(welcome))
+            }
+        }
         // The lock screen is gone about 0.3 s after the unlock is announced;
         // the player leaves with it rather than lingering over the desktop.
         // The padlock opens first, then the island underneath takes over.
@@ -280,15 +287,10 @@ final class NotchLockScreenService {
         leaving.forEach { Self.fadeOut($0, after: 0, completion: finished) }
         if let island {
             model.padlockOpen = true
-            // Zenith fork: the welcome holds the island over the desktop, which
-            // takes no clicks, then it shrinks back and fades.
-            let stay = zenithIsland.unlocking() ?? 0.55
             // The island comes back on this turn and holds the main thread, so
             // the padlock is first seen opening once that is done. Its time
             // starts there, or the island would fade while the padlock opens.
-            DispatchQueue.main.async { Self.fadeOut(island, after: stay, completion: finished) }
-        } else {
-            zenithIsland.end() // Zenith fork
+            DispatchQueue.main.async { Self.fadeOut(island, after: 0.55, completion: finished) }
         }
     }
 

@@ -8,8 +8,8 @@ import SwiftUI
 /// island does (NotchMotionTimeline, the same springs, lags and squash) and
 /// drawn at 120 Hz while it moves. At rest: a bigger padlock beside the
 /// camera and, across it, the music's bars, the charge or the Focus. It
-/// widens to wave goodbye as the Mac locks and grows into two lines that
-/// welcome the person back as it unlocks.
+/// widens to wave goodbye as the Mac locks; the welcome back is the desktop
+/// island's own burst.
 struct ZenithLockScreenIsland: View {
     @ObservedObject var model: NotchLockScreenModel
     @ObservedObject var island: ZenithLockIslandModel
@@ -62,10 +62,6 @@ struct ZenithLockScreenIsland: View {
         case .farewell:
             let width = Self.textWidth(text.seeYou(island.firstName), size: 13, weight: .semibold)
             return ZenithLockIsland.size(camera: camera, wing: ZenithLockIsland.wing(for: width, resting: restingWing))
-        case .welcome:
-            let title = Self.textWidth(text.welcomeBack(island.firstName), size: 14, weight: .semibold)
-            let detail = Self.textWidth(island.detail, size: 11.5, weight: .medium)
-            return ZenithLockIsland.welcomeSize(camera: camera, resting: size, textWidth: max(title, detail))
         }
     }
 
@@ -74,7 +70,11 @@ struct ZenithLockScreenIsland: View {
     private func retarget(from old: CGSize, to new: CGSize) {
         guard !reduceMotion else { motion = nil; return }
         let now = Date().timeIntervalSinceReferenceDate
-        let next = motion?.continued(to: new, at: now) ?? NotchMotionTimeline(from: old, to: new, begin: now)
+        // Never narrower or shorter than the camera; back at rest it settles from above.
+        let floor = NotchMotionFloor.floor(camera: CGSize(width: cameraWidth, height: size.height), target: new,
+                                           closedHeight: size.height)
+        let next = motion?.continued(to: new, at: now, floor: floor)
+            ?? NotchMotionTimeline(from: old, to: new, begin: now, floor: floor)
         motion = next
         settleAt = next.begin + next.frames().duration
     }
@@ -102,26 +102,10 @@ struct ZenithLockScreenIsland: View {
         let outline = NotchShape(attached: true, radius: NotchLayout.surfaceRadius(height: shape.height))
         return ZStack(alignment: .top) {
             outline.fill(.black)
-            ZStack(alignment: .top) {
-                if island.moment == .welcome {
-                    welcome(goal: goal)
-                        .scaleEffect(ride(shape.width, over: goal.width), anchor: .top)
-                        .transition(.zenithMorph(reduceMotion: reduceMotion))
-                } else {
-                    wings(width: shape.width)
-                        .transition(.zenithMorph(reduceMotion: reduceMotion))
-                }
-            }
-            .frame(width: shape.width, height: shape.height, alignment: .top)
-            .animation(ZenithMorph.animation(reduceMotion: reduceMotion), value: island.moment == .welcome)
-            .clipShape(outline)
+            wings(width: shape.width)
+                .frame(width: shape.width, height: shape.height, alignment: .top)
+                .clipShape(outline)
         }
-    }
-
-    /// The arriving content's share of its own width, as the island's pages ride it.
-    private func ride(_ width: CGFloat, over goal: CGFloat) -> CGFloat {
-        guard goal > 0 else { return 1 }
-        return min(ZenithContentRide.incomingScale.upperBound, max(ZenithContentRide.incomingScale.lowerBound, width / goal))
     }
 
     /// The padlock beside the camera and, across it, the slot or the farewell,
@@ -201,52 +185,6 @@ struct ZenithLockScreenIsland: View {
             }
             .foregroundStyle(violet)
             .lineLimit(1)
-        }
-    }
-
-    /// Two lines under the camera: the open padlock in green, the greeting
-    /// and how long the Mac was locked, and the account's photo.
-    private func welcome(goal: CGSize) -> some View {
-        let green = ZenithIslandPalette.color(hex: ZenithLockIsland.chargingHex)
-        return VStack(spacing: 0) {
-            Color.clear.frame(height: size.height)
-            HStack(spacing: ZenithLockIsland.welcomeGap) {
-                Image(systemName: "lock.open.fill")
-                    .font(.system(size: ZenithLockIsland.padlockSize, weight: .semibold))
-                    .foregroundStyle(green)
-                    .frame(width: ZenithLockIsland.padlockSize + 6)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(text.welcomeBack(island.firstName))
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
-                    Text(island.detail)
-                        .font(.system(size: 11.5, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
-                }
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                photo
-            }
-            .padding(.horizontal, ZenithLockIsland.welcomePadding)
-            .frame(height: ZenithLockIsland.welcomeBlock - 6, alignment: .center)
-        }
-        .frame(width: goal.width, height: goal.height, alignment: .top)
-    }
-
-    @ViewBuilder private var photo: some View {
-        let side = ZenithLockIsland.welcomePhoto
-        if let image = island.photo {
-            Image(nsImage: image)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: side, height: side)
-                .clipShape(Circle())
-        } else {
-            Text(ZenithLockScreenInitials.of(NSFullUserName()))
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: side, height: side)
-                .background(Circle().fill(.white.opacity(0.16)))
         }
     }
 }

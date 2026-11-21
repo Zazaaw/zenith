@@ -18,8 +18,11 @@ extension NotchService {
     func showZenithBurst(_ content: ZenithIslandBurst.Content) -> Bool {
         let burst = ZenithIslandBurst(content, start: Date())
         guard ZenithIslandBurstTiming.replaces(notice?.zenith, with: burst, at: burst.start) else { return false }
+        // A burst never stacks over an open page: it waits for the island to
+        // close, as long as it is worth waiting for, or is dropped.
         guard !expanded, !dragPlaceholder, captureControls == nil else {
-            if case .prayer = content { ZenithBurstWaiter.shared.wait(content) }
+            let patience = ZenithIslandBurstTiming.patience(content)
+            if patience > 0 { ZenithBurstWaiter.shared.wait(content, patience: patience) }
             return false
         }
         ZenithBurstWaiter.shared.cancel()
@@ -27,6 +30,8 @@ extension NotchService {
         switch content {
         case .prayer(let prayer): symbol = prayer.symbol
         case .charge(let charge): symbol = charge.bolt ? "battery.100percent.bolt" : "battery.50percent"
+        case .welcome: symbol = "lock.open.fill"
+        case .agent: symbol = "exclamationmark.bubble.fill"
         }
         return show(NotchNotice(event: burst.event, title: burst.title, detail: burst.subtitle, symbol: symbol,
                                 zenith: burst))
@@ -42,8 +47,8 @@ final class ZenithBurstWaiter {
     private var waiting: (content: ZenithIslandBurst.Content, deadline: Date)?
     private var timer: Timer?
 
-    func wait(_ content: ZenithIslandBurst.Content) {
-        waiting = (content, Date().addingTimeInterval(Self.prayerPatience))
+    func wait(_ content: ZenithIslandBurst.Content, patience: TimeInterval = prayerPatience) {
+        waiting = (content, Date().addingTimeInterval(patience))
         guard timer == nil else { return }
         let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in self?.retry() }
         timer.tolerance = 0.3

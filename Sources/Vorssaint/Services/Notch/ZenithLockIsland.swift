@@ -30,8 +30,7 @@ final class ZenithLockIslandModel: ObservableObject {
     @Published var recentlyPlugged = false
     @Published var focus: String?
     @Published var firstName = ""
-    /// "Locked for 2h 14m", settled as the Mac unlocks.
-    @Published var detail = ""
+    /// The account's picture for the welcome, read as the Mac locks.
     @Published var photo: NSImage?
 
     func slot(playing: Bool) -> ZenithLockIslandSlot {
@@ -84,22 +83,25 @@ final class ZenithLockIslandController {
         return ZenithLockIsland.farewellHold
     }
 
-    /// The Mac unlocked. Returns how long the island stays before it fades,
-    /// or nil to fade as it always has.
-    func unlocking(at date: Date = Date()) -> TimeInterval? {
+    /// The Mac unlocked: the welcome the desktop island shows, when it is on.
+    /// The padlock island itself fades as it always has, so the greeting is
+    /// the one island's own and never stacks over a page.
+    func unlocking(at date: Date = Date()) -> ZenithWelcomeBurst? {
         cancelWork()
         stopPower()
+        model.moment = .rest
+        let since = lockedAt
+        lockedAt = nil
         guard model.options.welcome else { return nil }
         let language = L10n.shared.language
-        let seconds = lockedAt.map { date.timeIntervalSince($0) } ?? 0
+        let text = ZenithStrings.lockIsland(language)
+        let seconds = since.map { date.timeIntervalSince($0) } ?? 0
         // The island cannot count notifications while locked; it keeps only
         // those received in an unlocked session.
-        model.detail = ZenithStrings.lockIsland(language)
-            .detail(duration: ZenithLockIsland.duration(seconds, locale: language.formattingLocale()), notifications: nil)
-        lockedAt = nil
-        model.moment = .welcome
-        schedule(after: ZenithLockIsland.welcomeHold) { [weak self] in self?.model.moment = .rest }
-        return ZenithLockIsland.welcomeHold + ZenithLockIsland.settleAfterGreeting
+        let detail = text.detail(duration: ZenithLockIsland.duration(seconds, locale: language.formattingLocale()),
+                                 notifications: nil)
+        return ZenithWelcomeBurst(title: text.welcomeBack(model.firstName), subtitle: detail, photo: model.photo,
+                                  initials: ZenithLockScreenInitials.of(NSFullUserName()))
     }
 
     /// The lock screen went away without an unlock to greet.

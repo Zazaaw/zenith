@@ -85,25 +85,23 @@ enum LockIslandTests {
                      && ZenithLockIsland.wing(for: 100, resting: 40) == 124
                      && ZenithLockIsland.wing(for: 900, resting: 40) == ZenithLockIsland.maximumWing,
                      "a wing grows for its content, up to its widest")
-        let welcome = ZenithLockIsland.welcomeSize(camera: camera, resting: rest, textWidth: 150)
-        suite.expect(welcome.height == camera.height + ZenithLockIsland.welcomeBlock
-                     && welcome.width >= ZenithLockIsland.welcomeMinimumWidth && welcome.width <= ZenithLockIsland.welcomeMaximumWidth,
-                     "the welcome grows two lines below the camera")
-        suite.expect(ZenithLockIsland.welcomeSize(camera: camera, resting: rest, textWidth: 2_000).width == ZenithLockIsland.welcomeMaximumWidth,
-                     "a long greeting truncates rather than widening past its bounds")
         let screen = CGRect(x: 0, y: 0, width: 1512, height: 982)
         let surface = CGRect(x: 1512 / 2 - 132.5, y: 982 - 32, width: 265, height: 32)
         let window = ZenithLockIsland.windowFrame(around: surface, in: screen)
         let widest = ZenithLockIsland.size(camera: camera, wing: ZenithLockIsland.maximumWing)
-        // The welcome's swing and squash fit inside the window, which stays on the screen.
-        let motion = NotchMotion.frames(from: rest, to: welcome)
+        // The farewell's swing and squash fit inside the window, which stays on the screen.
+        let floor = NotchMotionFloor.floor(camera: CGSize(width: camera.width, height: rest.height), target: rest,
+                                           closedHeight: rest.height)
         let farewell = NotchMotion.frames(from: rest, to: widest)
-        let reach = (motion.sizes + farewell.sizes).reduce(CGSize.zero) {
+        let back = NotchMotion.frames(from: widest, to: rest, floor: floor)
+        suite.expect(back.sizes.allSatisfy { $0.width >= rest.width - 0.001 && $0.height >= rest.height - 0.001 },
+                     "back at rest after the farewell, the island settles from above, never inside the camera")
+        let reach = (farewell.sizes + back.sizes).reduce(CGSize.zero) {
             CGSize(width: max($0.width, $1.width), height: max($0.height, $1.height))
         }
         suite.expect(window.width >= reach.width && window.height >= reach.height && screen.contains(window)
                      && window.maxY == screen.maxY && abs(window.midX - surface.midX) <= 0.5,
-                     "the island's window holds every frame of its greetings, centred on the camera")
+                     "the island's window holds every frame of its farewell, centred on the camera")
         suite.expect(ZenithLockIsland.padlockSize == 17, "the padlock is about 17 points")
     }
 

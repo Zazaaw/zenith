@@ -19,6 +19,8 @@ struct ZenithIslandBurstView: View {
             switch burst.content {
             case .prayer(let prayer): ZenithPrayerBurstRow(prayer: prayer, burst: burst)
             case .charge(let charge): ZenithChargeBurstRow(charge: charge)
+            case .welcome(let welcome): ZenithWelcomeBurstRow(welcome: welcome)
+            case .agent(let agent): ZenithAgentBurstRow(agent: agent)
             }
         }
         .padding(.horizontal, ZenithIslandRoom.edge(floats: geometry.floats) + shoulder)
@@ -113,6 +115,74 @@ private struct ZenithChargeBurstRow: View {
                     .monospacedDigit()
             }
             .lineLimit(1)
+        }
+        .frame(height: Layout.chargeRow)
+    }
+}
+
+/// The green open padlock, "Welcome back, Faiz" over how long the Mac was
+/// locked, and the account's picture.
+private struct ZenithWelcomeBurstRow: View {
+    let welcome: ZenithWelcomeBurst
+
+    private typealias Layout = ZenithIslandBurstLayout
+
+    var body: some View {
+        HStack(spacing: Layout.tileGap) {
+            Image(systemName: "lock.open.fill")
+                .font(.system(size: 19, weight: .semibold))
+                .foregroundStyle(ZenithIslandPalette.color(hex: ZenithLockIsland.chargingHex))
+                .frame(width: Layout.markSide, height: Layout.markSide)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(welcome.title)
+                    .font(Font(Layout.chargeTitleFont))
+                    .foregroundStyle(ZenithIsland.primary)
+                Text(welcome.subtitle)
+                    .font(Font(Layout.chargeSubtitleFont))
+                    .foregroundStyle(.white.opacity(0.55))
+                    .monospacedDigit()
+            }
+            .lineLimit(1)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Group {
+                if let photo = welcome.photo {
+                    Image(nsImage: photo).resizable().aspectRatio(contentMode: .fill)
+                } else {
+                    Text(welcome.initials)
+                        .font(.system(size: 13, weight: .semibold))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.white.opacity(0.16))
+                }
+            }
+            .frame(width: Layout.photoSide, height: Layout.photoSide)
+            .clipShape(Circle())
+        }
+        .frame(height: Layout.welcomeRow)
+    }
+}
+
+/// The agent's mark, "Claude needs you" and the project's folder.
+private struct ZenithAgentBurstRow: View {
+    let agent: ZenithAgentBurst
+
+    private typealias Layout = ZenithIslandBurstLayout
+
+    var body: some View {
+        HStack(spacing: Layout.tileGap) {
+            NotchAgentGlyph(provider: agent.provider, size: 20, working: false)
+                .frame(width: Layout.markSide, height: Layout.markSide)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(agent.title)
+                    .font(Font(Layout.chargeTitleFont))
+                    .foregroundStyle(ZenithIsland.primary)
+                if !agent.subtitle.isEmpty {
+                    Text(agent.subtitle)
+                        .font(Font(Layout.chargeSubtitleFont))
+                        .foregroundStyle(.white.opacity(0.55))
+                }
+            }
+            .lineLimit(1)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(height: Layout.chargeRow)
     }
