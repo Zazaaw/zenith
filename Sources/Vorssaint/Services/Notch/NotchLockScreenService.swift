@@ -160,7 +160,8 @@ final class NotchLockScreenService {
         }
         if let terminal {
             scene.append(Self.makePanel(frame: terminal.frame, content: NotchLockScreenTerminalView(
-                configuration: terminal.configuration, size: terminal.frame.size)))
+                configuration: terminal.configuration, size: terminal.frame.size,
+                anchorsBottom: ZenithLockScreenMinimalLayout.terminalAnchorsBottom(ZenithLockScreenTerminalPlacement.current()))))
         }
         let island = frames.island.flatMap { frame in
             frames.islandSurface.map { surface in
@@ -183,7 +184,7 @@ final class NotchLockScreenService {
             Self.makePanel(frame: screen, interactive: true, content: ZenithLockScreenFullView(zenith: zenith.model, size: screen.size))
         } : nil
         if let full { space.add(full) }
-        zenith.begin(v2, full: full, island: island)
+        zenith.begin(v2, full: full, island: island, rowWeather: gates.weather)
         self.space = space
         self.scene = scene
         self.island = island
