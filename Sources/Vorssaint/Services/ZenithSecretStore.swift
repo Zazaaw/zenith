@@ -19,6 +19,10 @@ enum ZenithSecretStore {
     }
 
     static func read(_ name: String, container: URL? = PrivateFileStore.containerURL) -> String? {
+#if VORSSAINT_DEVELOPMENT
+        // Zenith fork: the island catalog draws sample data only.
+        if IslandCatalog.isRendering { return nil }
+#endif
         guard let url = url(for: name, container: container),
               let value = try? String(contentsOf: url, encoding: .utf8)
                 .trimmingCharacters(in: .whitespacesAndNewlines),

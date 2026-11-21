@@ -5720,3 +5720,88 @@ extension NSScreen {
         (deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value ?? 0
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: the island catalog (`--render-island-catalog`, IslandCatalog)
+// poses the island here to draw it offscreen with sample data. Nothing else
+// calls it, and the release build does not have it.
+extension NotchService {
+    struct CatalogPose {
+        var geometry: NotchGeometry
+        var modules: [NotchModule] = NotchModule.allCases
+        var expanded = false
+        var selected: NotchModule = .controls
+        var showingSections = false
+        var showingCommandBar = false
+        var commandBarHeight: CGFloat?
+        var notice: NotchNotice?
+        var noticeExpanded = false
+        var dragPlaceholder = false
+        var peeking = false
+        var pinned = false
+        var choosingFileDropDestination = false
+        var offersFilesDrop = false
+        var offersAirDrop = false
+        var offersMediaDrop = false
+        var airDropAvailable = false
+        var captureControls: ScreenCaptureSelectionOptions?
+        var captureControlsCollapsed = false
+        var power = PowerReading()
+        var mascot = false
+        var mascotSide: NotchMascotSide = .left
+        /// The pointer is over the closed island: several activities offer their picker.
+        var inside = false
+        var hoverEmphasized = false
+        var activity: NotchCompactActivity?
+        var companion: NotchCompactActivity?
+    }
+
+    func catalogPose(_ pose: CatalogPose) {
+        geometry = pose.geometry
+        modules = pose.modules
+        expanded = pose.expanded
+        selected = pose.selected
+        showingSections = pose.showingSections
+        showingAppPanel = false
+        selectedMetric = nil
+        showingCommandBar = pose.showingCommandBar
+        commandBarHeight = pose.commandBarHeight
+        notice = pose.notice
+        departingNotice = nil
+        noticeExpanded = pose.noticeExpanded
+        dragPlaceholder = pose.dragPlaceholder
+        peeking = pose.peeking
+        pinned = pose.pinned
+        choosingFileDropDestination = pose.choosingFileDropDestination
+        offersFilesDrop = pose.offersFilesDrop
+        offersAirDrop = pose.offersAirDrop
+        offersMediaDrop = pose.offersMediaDrop
+        airDropAvailable = pose.airDropAvailable
+        offersPhotoTargets = []
+        captureControls = pose.captureControls
+        captureControlsCollapsed = pose.captureControlsCollapsed
+        power = pose.power
+        mascotWasEnabled = pose.mascot
+        mascotSideAtSync = pose.mascotSide
+        mascotVisit = nil
+        mascotReaction = nil
+        mascotInBar = false
+        mascotTucked = false
+        mascotBridging = false
+        mascotStepsAside = false
+        departingMusic = nil
+        presentedMusic = nil
+        heldMusic = nil
+        awaitsTrackNotice = false
+        inside = pose.inside
+        hoverEmphasized = pose.hoverEmphasized
+        activitySelection = NotchActivitySelection()
+        if let activity = pose.activity {
+            activitySelection.select(activity, companion: pose.companion, available: compactActivities,
+                                     companions: compactCompanions(of: activity))
+        }
+        homeControls = NotchSupport.controls()
+        objectWillChange.send()
+    }
+}
+#endif

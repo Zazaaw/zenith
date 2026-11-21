@@ -10,6 +10,13 @@ if let command = SettingsBackupSupport.command(in: CommandLine.arguments) {
 }
 
 SuperKeyMappingGuard.runIfRequestedAndExit()
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: the island catalog renders offscreen and exits before the
+// defaults migrations below, which write to the app's preferences.
+if IslandCatalog.isRequested(by: CommandLine.arguments) {
+    MainActor.assumeIsolated { IslandCatalog.runAndExit() }
+}
+#endif
 Defaults.register()
 let configuredFeatureKeys = SettingsBackup.applyConfigFileAtLaunch()
 NotchControlItem.keyboardLightIsSupported = { BrightnessService.keyboardLightIsSupported }

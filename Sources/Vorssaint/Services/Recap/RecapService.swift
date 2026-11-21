@@ -135,6 +135,10 @@ final class RecapService: ObservableObject {
     /// The page or the home widget appeared: WakaTime refreshes while it
     /// shows, and the rest is read as for a recap.
     func viewAppeared() {
+#if VORSSAINT_DEVELOPMENT
+        // Zenith fork: the island catalog draws sample data only.
+        if IslandCatalog.isRendering { return }
+#endif
         viewers += 1
         if !watchesWakaTime, RecapSettings.current().sources.contains(.coding) {
             watchesWakaTime = MainActor.assumeIsolated {
@@ -253,3 +257,15 @@ final class RecapService: ObservableObject {
         ZenithNoticeCenter.shared.recapReady(day: day, title: text.yourDay, subtitle: headline.joined(separator: " · "))
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension RecapService {
+    func catalogPose(tally: RecapTally, commits: Int?) {
+        self.tally = tally
+        self.commits = commits
+    }
+}
+#endif

@@ -15,6 +15,10 @@ enum WakaTimeTokenStore {
     private static let legacyAccount = "personal-token"
 
     static func read() -> String? {
+#if VORSSAINT_DEVELOPMENT
+        // Zenith fork: the island catalog draws sample data only.
+        if IslandCatalog.isRendering { return nil }
+#endif
         if let token = ZenithSecretStore.read(name) { return token }
         guard let legacy = readLegacyKeychain() else { return nil }
         if ZenithSecretStore.save(legacy, as: name) { deleteLegacyKeychain() }

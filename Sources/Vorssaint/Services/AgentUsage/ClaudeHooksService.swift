@@ -250,3 +250,15 @@ final class ClaudeHooksService: ObservableObject {
         writeScript()
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension ClaudeHooksService {
+    func catalogPose(sessions: [ClaudeHooksSupport.Session], strip: ClaudeHooksSupport.Strip?) {
+        self.sessions = sessions
+        self.strip = strip
+    }
+}
+#endif

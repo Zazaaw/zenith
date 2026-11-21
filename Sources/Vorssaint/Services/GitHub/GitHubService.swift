@@ -79,6 +79,10 @@ final class GitHubService: ObservableObject {
     }
 
     func viewAppeared() {
+#if VORSSAINT_DEVELOPMENT
+        // Zenith fork: the island catalog draws sample data only.
+        if IslandCatalog.isRendering { return }
+#endif
         if state == .ready, let lastFetch, Date().timeIntervalSince(lastFetch) < GitHubSupport.staleAfter { return }
         refresh()
     }
@@ -145,3 +149,16 @@ final class GitHubService: ObservableObject {
         }.value
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension GitHubService {
+    func catalogPose(_ inbox: GitHubSupport.Inbox?) {
+        state = inbox == nil ? .idle : .ready
+        self.inbox = inbox
+        lookingAgain = false
+    }
+}
+#endif

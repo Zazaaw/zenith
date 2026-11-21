@@ -227,3 +227,16 @@ final class NotchCalendarService: NSObject, ObservableObject {
         events = []; countdown = nil; loading = false
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension NotchCalendarService {
+    func catalogPose(events: [NotchCalendarEvent], countdown: NotchCalendarCountdown?) {
+        self.events = events
+        self.countdown = countdown
+        loading = false
+    }
+}
+#endif

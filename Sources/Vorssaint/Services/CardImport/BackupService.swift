@@ -568,3 +568,12 @@ final class CardBackupService: ObservableObject {
         NSWorkspace.shared.activateFileViewerSelecting([folder])
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension CardBackupService {
+    func catalogPose(progress: CardImportProgress) { meter.progress = progress }
+}
+#endif
