@@ -2917,6 +2917,48 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     island hanya seluas siluet, bayangan butuh ruang tambahan di sekitar jendela), island gembok di Mac terkunci
     (salam, colok charger, foto akun, fade setelah unlock), dan droplet Command Bar (sistem gerak sendiri, tidak
     diubah).
+- **Kunci dan cek status dari iPhone (branch `feat/remote-lock`):** Shortcut iPhone ("Run Script over SSH")
+  masuk ke Mac lewat Tailscale + Remote Login, dan kuncinya hanya boleh menjalankan skrip kecil Zenith.
+  Kode di `Services/Remote/` (`RemoteControlSupport.swift` murni dan ikut test, `RemoteControlService.swift`),
+  `UI/Settings/RemoteControlSettings.swift`, teks Settings di `Core/ZenithRemoteStrings.swift` (15 bahasa);
+  teks island dan jawaban ke iPhone bahasa Inggris (`RemoteText`). Test: suite `remote-lock`.
+  - **Skrip** `<container>/remote/zenith-remote` (POSIX sh, 0600, dijalankan `/bin/sh '<path>'`): baca
+    `$SSH_ORIGINAL_COMMAND` (baris pertama; verb `lock`/`status`, huruf besar boleh; tanda kutip lurus atau
+    lengkung di sekitar nama dibuang; karakter kontrol dibuang; maks 40 karakter; default "iPhone"). Lainnya:
+    usage, exit 2. Cek `remote/zenith.pid` (`kill -0`) dan folder `requests/`; kalau tidak ada: "Zenith isn't
+    running". Tulis `requests/<epoch>-<pid>-<acak>.req` (umask 077, lewat `.tmp` lalu `mv`), tunggu
+    `responses/<id>` maks 4 dtk (baris 1 = exit status, sisanya dicetak), hapus keduanya; habis waktu: "Zenith
+    didn't answer". Tanpa jaringan, tanpa `eval`. Ditulis saat fitur dinyalakan atau device ditambah, dan
+    diperbarui saat launch kalau sudah ada (seperti hook Claude).
+  - **Service:** jalan hanya kalau `zenithRemoteEnabled` nyala (default mati; sengaja **tidak** didaftarkan di
+    `registeredDefaults`, jadi tidak ikut backup ke Mac lain). DispatchSource di `requests/` (tanpa polling).
+    Validasi: nama id `[A-Za-z0-9-]`, ≤ 1 KB, header `zenith-remote 1`, verb dikenal, umur teks dan mtime < 10 dtk
+    (toleransi masa depan 2 dtk). Batas 10 request per menit (semua device). `lock` = `SACLockScreenImmediate`
+    yang sama dengan Quick Toggles (`QuickTogglesService.lockScreenForRemote()`, tanpa gerbang fitur Quick
+    Toggles; fallback screen saver), jawab "MacBook locked ✓" (atau "already locked"). `status` = baris yang ada
+    datanya saja: `Unlocked · in use 3h 12m` (sejak unlock terakhir yang dilihat, wake, atau boot) / `Locked ·
+    1h 20m`, `Battery 82% · charging`, job dari `ZenithLockScreenJobs` (maks 3), lagu yang sedang diputar dari
+    `NotchMusicService`, `WakaTime today 4h 56m` dari data WakaTime yang sudah ada (tanpa jaringan). Log 20 request
+    terakhir di memori. Mati: pid dan folder request/response dihapus.
+  - **Island:** `ZenithIslandBurst.remote` ("Faiz’s iPhone checked status", ikon iPhone + mata, 2 dtk, satu baris)
+    hanya kalau Mac tidak terkunci. Lock: `ZenithRemoteLockMark` dipasang tepat sebelum mengunci, diambil
+    `ZenithLockIslandController.locked()`; island gembok menampilkan `ZenithLockIslandMoment.remoteLock` ("Locked
+    from Faiz’s iPhone" / "just now" + iPhone, 3 dtk, gembok sudah tertutup) sebagai pengganti "See you". Unlock
+    berikutnya: subtitle welcome "Locked from iPhone · 1h 20m ago". Catalog: `burst-remote-status`,
+    `burst-welcome-remote`, `lock-island-remote`, gerak `motion-remote-status` dan `motion-lock-remote`.
+  - **Settings → iPhone Remote** (halaman sendiri, tidak digerbang fitur hub): saklar, checklist read-only (port 22
+    di 127.0.0.1; `/Applications/Tailscale.app` + `Tailscale status --json` untuk nama MagicDNS), device (tempel
+    public key + nama → satu baris `restrict,no-pty,no-port-forwarding,no-agent-forwarding,no-X11-forwarding,
+    command="/bin/sh '<skrip>'" <key> zenith-remote:<nama>`; `~/.ssh` 0700 dan file 0600 kalau belum ada; backup
+    ke `authorized_keys.zenith-backup` sebelum tiap perubahan; idempoten; hanya baris bertanda Zenith yang
+    diubah/dihapus; key yang sudah ada tanpa batasan = konflik, file berupa link = ditolak), nilai untuk Shortcut
+    (host Tailscale atau `<hostname>.local`, user, port 22, `lock "…"`/`status "…"`), tombol Test (menjalankan skrip
+    lokal dengan `status Test`), perintah hardening yang hanya ditampilkan
+    (`/etc/ssh/sshd_config.d/050-zenith.conf`, urut sebelum `100-macos.conf`), dan request terakhir. Alias
+    pencarian: "kunci dari iphone", "tailscale", "remote", "ssh", dst.
+  - **Belum diverifikasi:** SSH sungguhan dari iPhone (Shortcuts mengirim perintah sebagai exec, kutip pintar iOS,
+    izin TCC untuk proses sshd membaca Application Support), kunci layar sungguhan, island di layar, dan
+    pemeriksaan Tailscale CLI dari app.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
