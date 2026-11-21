@@ -140,35 +140,60 @@ enum IslandMotionTests {
     private static func contentSequence(_ suite: TestSuite) {
         typealias Ride = ZenithContentRide
         let start = Ride.outgoing(at: 0, islandWidth: 300, pageWidth: 300)
-        let gone = Ride.outgoing(at: 0.12, islandWidth: 300, pageWidth: 300)
+        let gone = Ride.outgoing(at: 0.1, islandWidth: 300, pageWidth: 300)
         suite.expect(start.opacity == 1 && start.blur == 0 && gone.opacity == 0 && gone.blur == 8,
-                     "the leaving page fades over 0.12 s, blurring up to 8 points")
-        suite.expect(Ride.outgoing(at: 0.05, islandWidth: 600, pageWidth: 300).scale == 1.3
+                     "opening, the leaving strip fades fast, over 0.1 s, blurring up to 8 points")
+        suite.expect(Ride.outgoing(at: 0.05, islandWidth: 600, pageWidth: 300).scale == 1.1
                      && Ride.outgoing(at: 0.05, islandWidth: 60, pageWidth: 300).scale == 0.35
-                     && abs(Ride.outgoing(at: 0.05, islandWidth: 330, pageWidth: 300).scale - 1.1) < 1e-9,
-                     "the leaving page scales with the island, within 0.35 to 1.3")
-        let before = Ride.incoming(at: 0.05, islandWidth: 680, pageWidth: 680)
-        let arrived = Ride.incoming(at: 0.35, islandWidth: 680, pageWidth: 680)
-        suite.expect(before.opacity == 0 && before.blur == 12 && before.offset == -8
+                     && abs(Ride.outgoing(at: 0.05, islandWidth: 315, pageWidth: 300).scale - 1.05) < 1e-9,
+                     "the leaving strip grows with the island by at most 10%")
+        let closing = Ride.Timing.closing
+        suite.expect(Ride.outgoing(at: 0.05, islandWidth: 600, pageWidth: 300, timing: closing).scale == 1
+                     && abs(Ride.outgoing(at: 0.05, islandWidth: 150, pageWidth: 300, timing: closing).scale - 0.5) < 1e-9
+                     && Ride.outgoing(at: 0.1, islandWidth: 300, pageWidth: 300, timing: closing).opacity > 0.3
+                     && Ride.outgoing(at: 0.17, islandWidth: 300, pageWidth: 300, timing: closing).opacity == 0,
+                     "closing, the leaving page rides the shrink down, never past its size, over its first 60%")
+        let before = Ride.incoming(at: 0.03, islandWidth: 680, pageWidth: 680)
+        let arrived = Ride.incoming(at: 0.23, islandWidth: 680, pageWidth: 680)
+        suite.expect(before.opacity == 0 && before.blur == 6 && before.offset == -8
                      && arrived.opacity == 1 && arrived.blur == 0 && arrived.offset == 0,
-                     "the arriving page starts at 0.05 s and eases in over 0.3 s: blur 12 to 0, 8 points up to its place")
-        suite.expect(Ride.incoming(at: 0.2, islandWidth: 900, pageWidth: 680).scale == 1.04
-                     && Ride.incoming(at: 0.2, islandWidth: 100, pageWidth: 680).scale == 0.35,
-                     "the arriving page rides the island's width, within 0.35 to 1.04")
-        let eased = stride(from: 0.05, through: 0.35, by: 0.01).map { Ride.incoming(at: $0, islandWidth: 1, pageWidth: 1).opacity }
+                     "the arriving page starts at 0.03 s and is sharp and whole by 0.23 s: blur 6 to 0, 8 points up to its place")
+        suite.expect(Ride.incoming(at: 0.2, islandWidth: 900, pageWidth: 680).scale == 1
+                     && Ride.incoming(at: 0.2, islandWidth: 100, pageWidth: 680).scale == 0.35
+                     && Ride.incoming(at: 0.2, islandWidth: 340, pageWidth: 680, scaleFloor: 0.9).scale == 0.9,
+                     "the arriving page rides the island's width up to its own size, never shrinking back")
+        // Frame by frame through an opening's swing, the page only grows, to
+        // exactly its size, while the island passes it and settles.
+        let open = CGSize(width: 680, height: 360), shut = CGSize(width: 200, height: 32)
+        let times = stride(from: 0.0, through: 1.2, by: 1.0 / 120).map { $0 }
+        let ride = Ride.frames(at: times, islandWidths: times.map { NotchMotion.shape(at: $0, from: shut, to: open).width },
+                               from: nil, to: open.width)
+        let scales = ride.map(\.incomingScale)
+        suite.expect(zip(scales, scales.dropFirst()).allSatisfy { $1 >= $0 } && scales.allSatisfy { $0 <= 1 }
+                     && scales.last == 1 && ride.last == Ride.Composite(opacity: 1, crossfade: 1, blur: 0, scale: 1, offset: 0),
+                     "an opening page's scale never passes 100% or falls back, and ends exactly at rest")
+        let eased = stride(from: 0.03, through: 0.23, by: 0.01).map { Ride.incoming(at: $0, islandWidth: 1, pageWidth: 1).opacity }
         suite.expect(zip(eased, eased.dropFirst()).allSatisfy { $1 >= $0 }, "the arriving page only grows clearer")
         // Sequenced: never two blurred pages on top of each other.
-        let sequenced = stride(from: 0.0, through: 0.4, by: 0.005).allSatisfy { time in
-            let leaving = Ride.outgoing(at: time, islandWidth: 300, pageWidth: 300).opacity
-            let arriving = Ride.incoming(at: time, islandWidth: 300, pageWidth: 300).opacity
-            return min(leaving, arriving) < 0.12
+        for timing in [Ride.Timing.opening, .closing] {
+            let sequenced = stride(from: 0.0, through: 0.5, by: 0.005).allSatisfy { time in
+                let leaving = Ride.outgoing(at: time, islandWidth: 300, pageWidth: 300, timing: timing).opacity
+                let arriving = Ride.incoming(at: time, islandWidth: 300, pageWidth: 300, timing: timing).opacity
+                return min(leaving, arriving) < 0.3
+            }
+            suite.expect(sequenced, "the arriving page only shows as the leaving one is mostly gone")
+            // Never an empty island for more than a couple of frames between them.
+            let empty = stride(from: 0.0, through: timing.duration, by: 1.0 / 120).filter { time in
+                Ride.outgoing(at: time, islandWidth: 300, pageWidth: 300, timing: timing).opacity
+                    + Ride.incoming(at: time, islandWidth: 300, pageWidth: 300, timing: timing).opacity < 0.05
+            }.count
+            suite.expect(empty <= 2, "the island is never empty between the pages for more than two frames: \(empty)")
         }
-        suite.expect(sequenced, "the arriving page only shows as the leaving one is all but gone")
-        let early = Ride.composite(at: 0.04, islandWidth: 300, from: 300, to: 300)
-        let late = Ride.composite(at: 0.13, islandWidth: 300, from: 300, to: 300)
-        suite.expect(early.crossfade == 0 && late.crossfade == 1 && early.opacity > 0.6,
+        let early = Ride.composite(at: 0.02, islandWidth: 300, from: 300, to: 300)
+        let late = Ride.composite(at: 0.11, islandWidth: 300, from: 300, to: 300)
+        suite.expect(early.crossfade == 0 && late.crossfade == 1 && early.opacity > 0.75,
                      "the folded layer shows only the old page first and only the new one after it")
-        suite.expect(Ride.composite(at: 0.35, islandWidth: 300, from: 300, to: 300)
+        suite.expect(Ride.composite(at: 0.23, islandWidth: 300, from: 300, to: 300)
                      == Ride.Composite(opacity: 1, crossfade: 1, blur: 0, scale: 1, offset: 0),
                      "the folded layer ends exactly at rest")
         let nothingLeaving = Ride.composite(at: 0, islandWidth: 300, from: nil, to: 300)

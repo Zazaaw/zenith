@@ -120,22 +120,34 @@ enum IslandFloorTests {
             return abs((after.height - before.height) / (2 * step) - speed.height) < 0.5
         }
         suite.expect(speeds, "a landing's speed matches its motion")
-        // Closing eases in over its first 80 ms, then lands softly; opening
-        // still leaves at once and swings past its size.
+        // Closing eases in over its first 40 ms, then lands softly on the
+        // closed size within a point by about 0.3 s; opening still leaves at
+        // once and swings past its size.
         let closingSpeeds = stride(from: 0.0, through: 1.0, by: 1.0 / 480).map {
             abs(NotchMotion.velocity(at: $0, from: open, to: camera, floor: camera).height)
         }
         let peak = closingSpeeds.max() ?? 1
-        let early = abs(NotchMotion.velocity(at: 0.02, from: open, to: camera, floor: camera).height)
-        let unhurried = abs(NotchMotion.size(at: 0.04, from: open, to: camera, floor: camera).height - open.height)
+        let early = abs(NotchMotion.velocity(at: 0.01, from: open, to: camera, floor: camera).height)
+        let unhurried = abs(NotchMotion.size(at: 0.02, from: open, to: camera, floor: camera).height - open.height)
+        let landed = stride(from: 0.0, through: 0.6, by: 1.0 / 480).first { time in
+            let size = NotchMotion.shape(at: time, from: open, to: camera, floor: camera)
+            return abs(size.width - camera.width) <= 1 && abs(size.height - camera.height) <= 1
+        } ?? 1
+        suite.expect(landed >= 0.2 && landed <= 0.32, "closing reaches the closed size within a point at about 0.3 s: \(landed)")
         suite.expect(early < peak * 0.2 && unhurried < (open.height - camera.height) * 0.06,
                      "closing gathers speed gently instead of starting at full speed: \(early) of \(peak) pt/s")
         let rising = zip(closingSpeeds.prefix(30), closingSpeeds.prefix(30).dropFirst()).allSatisfy { $1 >= $0 - 0.001 }
         suite.expect(rising, "its first frames only speed up")
         let warp = ZenithIslandMotion.warp
-        suite.expect(warp(0.04, 0.08).rate == 0.5 && warp(0.08, 0.08).time == 0.04 && warp(0.2, 0.08).time == 0.16
-                     && warp(0.2, 0.08).rate == 1 && warp(0.1, 0).time == 0.1,
-                     "the ease-in's clock runs slowly, then with the clock, a constant 40 ms behind")
+        suite.expect(warp(0.02, 0.04).rate == 0.5 && abs(warp(0.04, 0.04).time - 0.02) < 1e-12 && abs(warp(0.2, 0.04).time - 0.18) < 1e-12
+                     && warp(0.2, 0.04).rate == 1 && warp(0.1, 0).time == 0.1 && ZenithIslandMotion.closingEaseIn == 0.04,
+                     "the ease-in's clock runs slowly over 40 ms, then with the clock, 20 ms behind")
+        // Glass reads almost solid while the island moves, and eases back.
+        let surface = NotchMotionSurface.solidity
+        suite.expect(surface(0, 1) == 0 && surface(0.5, 1) == NotchMotionSurface.moving && surface(1, 1) == 0
+                     && surface(0.85, 1) < NotchMotionSurface.moving && surface(0.85, 1) > 0 && surface(0.02, 1) < 0.5
+                     && NotchMotionSurface.moving >= 0.85,
+                     "a moving glass island turns nearly solid, gently, and eases back as it settles")
         let opening = stride(from: 0.0, through: 1.2, by: 1.0 / 480).map {
             NotchMotion.shape(at: $0, from: camera, to: open, floor: NotchMotionFloor.floor(for: open, geometry: geometry))
         }
