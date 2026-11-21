@@ -252,7 +252,7 @@ struct NotchClipboardView: View {
             card(entry, lifted: true) { expandedCard(entry, place: place) }
                 .frame(height: height)
                 .background {
-                    let backing = RoundedRectangle(cornerRadius: ZenithIsland.radius(14), style: .continuous).inset(by: -1) // Zenith fork
+                    let backing = RoundedRectangle(cornerRadius: ZenithIsland.cardRadius, style: .continuous).inset(by: -1) // Zenith fork: concentric
                     Group {
                         if glassSurface { backing.fill(.ultraThickMaterial) } else { backing.fill(.black) }
                     }
@@ -357,9 +357,9 @@ struct NotchClipboardView: View {
     /// Liquid Glass instead, as an opaque gray would stand out of the glass.
     private func card<Content: View>(_ entry: ClipboardHistoryEntry, lifted: Bool = false,
                                      @ViewBuilder content: () -> Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: ZenithIsland.radius(14), style: .continuous) // Zenith fork
+        let shape = RoundedRectangle(cornerRadius: ZenithIsland.cardRadius, style: .continuous) // Zenith fork: concentric with the island
         return content()
-            .modifier(NotchControlSurface(cornerRadius: 14, selected: entry.isPinned))
+            .modifier(NotchControlSurface(cornerRadius: ZenithIsland.cardRadius, selected: entry.isPinned))
             .background {
                 if lifted {
                     if glassSurface { shape.fill(.ultraThickMaterial) } else { shape.fill(Color(white: 0.09)) }
