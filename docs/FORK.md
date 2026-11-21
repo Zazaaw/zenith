@@ -353,6 +353,40 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   - **Belum diverifikasi visual:** tampilan di lock screen sungguhan, efek ketik, kedip
     kursor, dan tata letak bersama player musik belum dilihat di Mac (app UI tidak dijalankan
     saat pengerjaan).
+- **Lock screen v2, bagian visual (branch `feat/lockscreen-v2`):** lapisan minimal di atas
+  wallpaper dan lapisan penuh (lirik) yang dibuka dengan klik lirik. Saklar per bagian ada di
+  `ZenithLockScreenOption` (`Services/Notch/ZenithLockScreenOptions.swift`), dibaca sekali saat
+  lock screen muncul lewat `ZenithLockScreenV2Gates.resolve` (lirik butuh now-playing dan lirik
+  island nyala; title controls butuh now-playing; lapisan penuh butuh lirik; tiap sudut lapisan
+  penuh butuh lapisan penuh). Kode: `Services/Notch/ZenithLockScreenV2Support.swift` (logika
+  murni: saklar, warna, karaoke, jendela lirik, job, layout), `Services/Notch/ZenithLockScreenV2.swift`
+  (buka/tutup lapisan penuh, foto akun, warna cover), `UI/Notch/ZenithLockScreenMinimalView.swift`,
+  `UI/Notch/ZenithLockScreenFullView.swift`; teks di `Core/ZenithStrings.swift` (15 bahasa). Test di
+  `Tests/LockScreenV2Tests.swift` (suite `lockscreen-v2`).
+  - **Minimal:** job (dari `ZenithLockScreenJobs.shared`) di baris aktivitas, pertama di kiri item,
+    kedua di kanan, sisanya `+N`, jadi item tetap di tengah; ring 12 pt (export #C4B5FD, import dan
+    backup #FDBA74, command #86EFAC, vercel putih; tanpa fraksi = ring berputar; selesai = centang).
+    Baris judul + artis tanpa cover 38 pt di bawah frame baris aktivitas, lirik 33 pt di bawahnya
+    (baris aktif 23 bold dengan karaoke per karakter, baris berikut 17 semibold 32%). Panel minimal
+    selebar baris aktivitas, menggantikan player lama hanya kalau now-playing nyala. Klik judul =
+    kartu kaca (cover 32, tombol, timeline) yang terlipat lagi 4 detik tanpa interaksi. Hover lirik
+    = chip "Click for full lyrics", hanya di 3 lock screen pertama (`zenithLockLyricHintCount`,
+    tidak di-backup). Terminal `.low` = bawah readout 10 pt di atas garis login (260 pt dari bawah),
+    `.normal` = posisi sekarang (250 pt).
+  - **Lirik:** memakai `NotchLyricsService` yang sama dengan island: online hanya kalau
+    `notchLyricsOnline` sudah diizinkan, selain itu lirik yang tersimpan di memori saja; tanpa lirik
+    bertimestamp tidak ada yang tampil dan lapisan penuh tidak ditawarkan. lrclib hanya memberi waktu
+    per baris, jadi karaoke dibagi rata per karakter (paling lama 0,18 dtk per karakter, minimal 1,5 dtk).
+  - **Penuh:** panel layar penuh di Space lock screen yang sama, dibuat saat lock screen muncul tapi
+    baru di-order saat dibuka; island gembok tetap di atasnya; fade 0,35 dtk. Latar dari warna dominan
+    cover (saturasi maks 0,42, kecerahan 0,16–0,80), mati = #1C1C1E; tinta #1C1917 kalau luminans > 0,4,
+    selain itu putih; kalau kontras < 4,5:1 latar digeser lebih gelap/terang. Keluar saat pointer
+    bergerak > 8 pt (dicek 4×/detik), klik di luar tombol, musik berhenti > 1,2 dtk, atau tombol
+    keyboard kalau event-nya sampai. Panel tidak pernah jadi key, jadi password tetap ke loginwindow.
+    Foto akun dari Open Directory (`JPEGPhoto`, atau path `Picture`), fallback inisial; nama dari
+    `NSFullUserName()`, nama Mac dari `SCDynamicStoreCopyComputerName`. Semua lokal.
+  - **Belum diverifikasi di Mac terkunci:** tampilan, hover di panel non-key, urutan panel penuh di
+    bawah island, event keyboard saat terkunci, dan klik pada lapisan penuh.
 - **Panel menu bar, bahasa desain Settings (branch `feat/panel-redesign`):** panel memakai
   bahasa p441z.my.id yang sama dengan Settings, diperkecil untuk panel 332 pt. Hanya
   visual; perilaku, layout, dan daftar section tidak berubah. Komponen baru di
