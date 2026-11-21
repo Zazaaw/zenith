@@ -328,6 +328,9 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Notifications/ZenithReplySupport.swift
         Sources/Vorssaint/Services/GitHub/GitHubSupport.swift
         Sources/Vorssaint/Core/ZenithStrings.swift
+        Sources/Vorssaint/Core/ZenithLockScreenSettingsStrings.swift
+        Sources/Vorssaint/Services/Notch/ZenithLockScreenOptions.swift
+        Sources/Vorssaint/Services/Notch/ZenithLockScreenJobFeedSupport.swift
         Sources/Vorssaint/UI/Settings/ZenithAboutSupport.swift
         Sources/Vorssaint/UI/Settings/ZenithSettingsSearch.swift
         Sources/Vorssaint/UI/ZenithTokens.swift
@@ -349,7 +352,6 @@ if (( TEST )); then
         Sources/Vorssaint/Core/NotchLockScreenStrings.swift
         Sources/Vorssaint/Services/Notch/NotchLockScreenSupport.swift
         Sources/Vorssaint/Services/Notch/NotchLockScreenTerminalSupport.swift
-        Sources/Vorssaint/Services/Notch/ZenithLockScreenOptions.swift
         Sources/Vorssaint/Services/Notch/ZenithLockScreenV2Support.swift
         Sources/Vorssaint/Services/AgentUsage/AgentUsageModels.swift
         Sources/Vorssaint/Services/AgentUsage/AgentPricing.swift

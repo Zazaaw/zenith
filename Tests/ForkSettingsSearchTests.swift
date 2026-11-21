@@ -57,7 +57,10 @@ enum ForkSettingsSearchTests {
         let prayer = FeatureSettingsDestination(notch: .module(.sky), sectionAnchor: .zenithPrayerTimes)
         let golden = FeatureSettingsDestination(notch: .module(.sky), sectionAnchor: .zenithGoldenHour)
         let backup = FeatureSettingsDestination(notch: .module(.cardImport), sectionAnchor: .zenithCardBackup)
-        let lockScreen = FeatureSettingsDestination(notch: .activity, sectionAnchor: .zenithLockScreen)
+        let lockScreenPage = FeatureSettingsDestination(.lockScreen)
+        let lockScreen = FeatureSettingsDestination(.lockScreen, sectionAnchor: .zenithLockScreen)
+        let lockTerminal = FeatureSettingsDestination(.lockScreen, sectionAnchor: .zenithLockScreenTerminal)
+        let lockLyrics = FeatureSettingsDestination(.lockScreen, sectionAnchor: .zenithLockScreenLyrics)
         let commands = FeatureSettingsDestination(notch: .activity, sectionAnchor: .zenithCommandActivity)
         let exports = FeatureSettingsDestination(notch: .activity, sectionAnchor: .zenithExportTracker)
         let notices = FeatureSettingsDestination(notch: .activity, sectionAnchor: .zenithNotices)
@@ -77,7 +80,9 @@ enum ForkSettingsSearchTests {
             ("drop zones", anchored(.zenithDropZones)), ("beautify", anchored(.zenithBeautify)),
             ("design overlay", anchored(.zenithDesignOverlay)), ("backup", backup), ("dev server", module(.devServers)),
             ("recap", module(.recap)), ("today", module(.recap)), ("card import", module(.cardImport)),
-            ("lock screen", lockScreen), ("weather", lockScreen), ("terminal readout", lockScreen),
+            ("lock screen", lockScreenPage), ("weather", lockScreen), ("terminal readout", lockTerminal),
+            ("job progress", lockScreen), ("karaoke", lockScreen), ("full-screen lyrics", lockLyrics),
+            ("cover color", lockLyrics),
             ("terminal commands", commands), ("exports", exports), ("notices", notices), ("tab bar", tabBar),
             ("claude code", hooks), ("whatsapp", reply), ("start the mirror", camera),
             ("menu bar hiding", menuBar), ("about", FeatureSettingsDestination(.about)),
@@ -89,7 +94,8 @@ enum ForkSettingsSearchTests {
             ("teleprompter", module(.prompter)), ("naskah", module(.prompter)), ("kartu SD", module(.cardImport)),
             ("rekap", module(.recap)), ("hari ini", module(.recap)), ("menu bar", menuBar),
             ("sembunyikan ikon", menuBar), ("ruang kerja", FeatureSettingsDestination(.workspaces)),
-            ("layar kunci", lockScreen), ("cuaca", lockScreen), ("zona drop", anchored(.zenithDropZones)),
+            ("layar kunci", lockScreenPage), ("cuaca", lockScreen), ("lirik layar penuh", lockLyrics),
+            ("progres", lockScreen), ("terminal layar kunci", lockTerminal), ("zona drop", anchored(.zenithDropZones)),
             ("percantik", anchored(.zenithBeautify)), ("perintah terminal", commands), ("ekspor", exports),
             ("balas", reply), ("tentang", FeatureSettingsDestination(.about)),
         ]
@@ -210,6 +216,7 @@ enum ForkSettingsSearchTests {
         "Sources/Vorssaint/UI/Settings/NotchAgentsClaudeHooksSettings.swift",
         "Sources/Vorssaint/UI/Settings/NotchLockScreenTerminalSettings.swift",
         "Sources/Vorssaint/UI/Settings/NotchWatermarkSettings.swift", "Sources/Vorssaint/UI/Settings/ZenithNoticeSettings.swift",
+        "Sources/Vorssaint/UI/Settings/ZenithLockScreenSettings.swift",
         "Sources/Vorssaint/UI/Settings/ZenithReplySettings.swift", "Sources/Vorssaint/UI/Settings/ZenithTabBarSettings.swift",
     ]
 

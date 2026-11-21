@@ -1333,6 +1333,8 @@ final class NotchService: ObservableObject {
         // Paused while the island is away, the section still stops at once
         // when it is turned off.
         if !NotchAgentSupport.isEnabled() { AgentUsageService.shared.stop() }
+        // Zenith fork: the lock screen's job rings follow the fork's jobs, locked or not.
+        ZenithLockScreenJobFeed.shared.syncWithPreferences()
         guard !suspended else {
             if session.canRunTimer { NotchTimerService.shared.syncWithPreferences() }
             else { NotchTimerService.shared.suspend() }
@@ -1452,6 +1454,7 @@ final class NotchService: ObservableObject {
         NotchPhotoActionsService.shared.stop() // Zenith fork
         AgentUsageService.shared.stop()
         ClaudeHooksService.shared.stop() // Zenith fork
+        ZenithLockScreenJobFeed.shared.stop() // Zenith fork
         guard running else { return }
         running = false
         NotchTimerService.shared.stop()

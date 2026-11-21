@@ -53,6 +53,50 @@ enum ZenithLockScreenOption: String, CaseIterable, Identifiable {
     }
 }
 
+/// The full layer's background: one solid colour, or the cover itself blurred
+/// to fill the screen. With `solid`, `ZenithLockScreenOption.fullCoverColor`
+/// picks the colour's source: on = the cover's dominant colour, off = the
+/// colour chosen in Settings (`ZenithLockScreenCustomColor`).
+enum ZenithLockScreenFullBackground: String, CaseIterable, Identifiable {
+    case solid, blurredCover
+
+    var id: String { rawValue }
+    static let fallback: Self = .solid
+
+    static func current(in defaults: UserDefaults = .standard) -> Self {
+        defaults.string(forKey: DefaultsKey.zenithLockFullBackground).flatMap(Self.init(rawValue:)) ?? fallback
+    }
+}
+
+/// How strongly the cover is blurred behind the full layer, in points.
+enum ZenithLockScreenFullBlur {
+    static let range: ClosedRange<Double> = 10...80
+    static let fallback: Double = 40
+
+    static func radius(in defaults: UserDefaults = .standard) -> Double {
+        let stored = defaults.object(forKey: DefaultsKey.zenithLockFullBlurRadius) as? Double ?? fallback
+        return min(max(stored, range.lowerBound), range.upperBound)
+    }
+}
+
+/// The solid colour picked in Settings, as "RRGGBB".
+enum ZenithLockScreenCustomColor {
+    static let fallback: UInt32 = 0x1C1C1E
+
+    static func rgb(in defaults: UserDefaults = .standard) -> UInt32 {
+        parse(defaults.string(forKey: DefaultsKey.zenithLockFullCustomColor)) ?? fallback
+    }
+
+    static func parse(_ text: String?) -> UInt32? {
+        guard var hex = text?.trimmingCharacters(in: .whitespaces) else { return nil }
+        if hex.hasPrefix("#") { hex.removeFirst() }
+        guard hex.count == 6, let value = UInt32(hex, radix: 16) else { return nil }
+        return value
+    }
+
+    static func string(_ rgb: UInt32) -> String { String(format: "%06X", rgb & 0xFFFFFF) }
+}
+
 /// Where the terminal readout sits: under the centre column as before, or low,
 /// its bottom 10 pt above the login controls.
 enum ZenithLockScreenTerminalPlacement: String, CaseIterable, Identifiable {

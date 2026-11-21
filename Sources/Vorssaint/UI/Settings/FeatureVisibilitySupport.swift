@@ -11,6 +11,7 @@ enum SettingsPage: Hashable {
     case mouse, switcher, dock, keyDebounce, superKey, cutPaste, autoQuit, quitProtection, cleaner, uninstaller, urlCleaner, homebrew, appUpdates, media, clipboard, windowLayout, shelf, quickTools, textSnippets, screenshot, radialMenu, commandBar, killProcess, portManager, notch, notchMascot
     case shortcuts, advanced, about, releaseNotes, support
     case workspaces // Zenith fork: part of the app, no hub feature gates it
+    case lockScreen // Zenith fork: the island's lock screen, a page of its own
 }
 
 /// Stable, non-localized identities for destinations inside shared Settings
@@ -68,6 +69,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
     case zenithClaudeHooks, zenithCardBackup, zenithPrayerTimes, zenithGoldenHour, zenithCameraAutoStart, zenithReply
     case zenithLockScreen, zenithCommandActivity, zenithExportTracker, zenithNotices, zenithTabBar
     case zenithDropZones, zenithWatermark, zenithDesignOverlay, zenithBeautify, zenithQR, zenithMenuBarHider
+    case zenithLockScreenTerminal, zenithLockScreenLyrics
 
     var page: SettingsPage {
         switch self {
@@ -94,8 +96,9 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
         case .zenithWakaTime, .zenithVercel, .zenithGitHub, .zenithCardImport, .zenithDevServers, .zenithGit, .zenithSky,
              .zenithRecap, .zenithPrompter,
              .zenithClaudeHooks, .zenithCardBackup, .zenithPrayerTimes, .zenithGoldenHour, .zenithCameraAutoStart,
-             .zenithReply, .zenithLockScreen, .zenithCommandActivity, .zenithExportTracker, .zenithNotices, .zenithTabBar:
+             .zenithReply, .zenithCommandActivity, .zenithExportTracker, .zenithNotices, .zenithTabBar:
             return .notch
+        case .zenithLockScreen, .zenithLockScreenTerminal, .zenithLockScreenLyrics: return .lockScreen
         case .zenithDropZones, .zenithWatermark: return .shelf
         case .zenithDesignOverlay, .zenithBeautify: return .screenshot
         case .zenithQR: return .clipboard
@@ -508,6 +511,7 @@ enum FeatureVisibilitySupport {
         case .screenshot: return [.screenshot, .screenRecorder, .screenOCR, .colorPicker]
         case .notch: return [.notch, .notchCalendar, .notchNotifications, .notchGestures, .notchTimer, .notchAccessories, .notchLyrics, .notchQueue, .notchLiveEqualizer, .notchDownloads, .notchAgents, .notchWatch, .notchMascot]
         case .notchMascot: return [.notchMascot]
+        case .lockScreen: return [.notch] // Zenith fork: the island draws the lock screen
         case .radialMenu: return [.radialMenu]
         case .commandBar: return [.commandBar]
         case .general, .features, .shortcuts, .advanced, .about, .releaseNotes, .support,

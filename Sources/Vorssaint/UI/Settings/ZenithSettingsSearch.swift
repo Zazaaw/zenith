@@ -25,6 +25,7 @@ enum ZenithSettingsSearch {
     /// Pages that are fork pages already, or that the fork rewrote.
     static let pageAliases: [SettingsSearchItem.ID: [String]] = [
         .page(.workspaces): ["workspace", "ruang kerja", "mode kerja", "preset kerja", "profil kerja"],
+        .page(.lockScreen): ["lock screen", "lockscreen", "layar kunci", "kunci layar", "layar terkunci"],
         .page(.about): ["tentang", "tentang aplikasi", "versi", "version", "Satu Visual", "Zenith"],
     ]
 
@@ -44,7 +45,7 @@ enum ZenithSettingsSearch {
         let prompter = ZenithStrings.prompter(language)
         let camera = ZenithStrings.camera(language)
         let reply = ZenithStrings.reply(language)
-        let lockScreen = FeatureStrings.notchLockScreen(language)
+        let lockScreen = ZenithStrings.lockScreenSettings(language)
         let widgets = ZenithStrings.lockScreenWidgets(language)
         let terminal = ZenithStrings.lockScreenTerminal(language)
         let terminalTitle = ZenithStrings.lockScreenTerminalTitle(language)
@@ -106,12 +107,24 @@ enum ZenithSettingsSearch {
             section(.zenithReply, in: .module(.notifications), title: reply.autoWhatsApp,
                     icon: "arrowshape.turn.up.left", keywords: [],
                     aliases: ["reply", "balas", "balas pesan", "WhatsApp", "iMessage"], feature: .notchNotifications),
-            // Dynamic Island › Activity: the lock screen card and the fork's cards under it.
-            section(.zenithLockScreen, in: .activity, title: lockScreen.title, icon: "lock.display",
-                    keywords: [widgets.weather, widgets.reminders, sky.lockPrayer, sky.lockGolden, terminal.title,
-                               terminal.lines, terminal.showProjects, terminalTitle.windowTitle,
-                               terminalTitle.useComputerName],
-                    aliases: ["lock screen", "layar kunci", "cuaca", "pengingat", "terminal readout"]),
+            // Lock Screen: what shows over the wallpaper, the terminal readout and full-screen lyrics.
+            page(.zenithLockScreen, title: lockScreen.overWallpaper, icon: "lock.display",
+                 keywords: [widgets.weather, widgets.reminders, sky.lockPrayer, sky.lockGolden, lockScreen.jobs,
+                            lockScreen.jobExport, lockScreen.jobCardImport, lockScreen.jobBackup, lockScreen.jobCommand,
+                            lockScreen.jobVercel, lockScreen.nowPlaying, lockScreen.lyrics, lockScreen.karaoke,
+                            lockScreen.titleControls],
+                 aliases: ["cuaca", "pengingat", "progress", "progres", "progres pekerjaan", "lirik", "lyrics",
+                           "karaoke", "lagu", "now playing", "sedang diputar"]),
+            page(.zenithLockScreenTerminal, title: terminal.title, icon: "terminal",
+                 keywords: [lockScreen.terminal, terminal.lines, terminal.showProjects, terminalTitle.windowTitle,
+                            terminalTitle.useComputerName, lockScreen.placement],
+                 aliases: ["terminal readout", "terminal layar kunci", "posisi terminal"]),
+            page(.zenithLockScreenLyrics, title: lockScreen.fullSection, icon: "music.note.list",
+                 keywords: [lockScreen.full, lockScreen.fullDisc, lockScreen.fullAccount, lockScreen.fullDevice,
+                            lockScreen.fullClock, lockScreen.fullCoverColor, lockScreen.fullLoginHint],
+                 aliases: ["full lyrics", "full-screen lyrics", "lirik layar penuh", "lirik penuh", "piringan hitam",
+                           "vinyl"]),
+            // Dynamic Island › Activity: the fork's cards.
             section(.zenithCommandActivity, in: .activity, title: commands.section, icon: "terminal",
                     keywords: [commands.toggle, commands.showAfter, commands.showFolder, commands.ignore, commands.hook],
                     aliases: ["terminal", "zsh", "perintah terminal", "long command", "shell hook"]),
