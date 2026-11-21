@@ -195,8 +195,7 @@ extension CatalogShots {
 
     static var lockScreens: [CatalogShot] {
         [
-            // The jobs beside the row overlap it when drawn offscreen; the row keeps the weather alone.
-            lockScreen("lock-minimal", mode: .minimal, preferences: [DefaultsKey.zenithLockJobs: false]),
+            lockScreen("lock-minimal", mode: .minimal, preferences: [:]),
             lockScreen("lock-full", mode: .full, preferences: [:]),
         ]
     }

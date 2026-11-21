@@ -448,31 +448,39 @@ struct ZenithLockScreenJobsBeside: ViewModifier {
     static let reserve: CGFloat = 210
     static let gap: CGFloat = 26
 
+    /// Each side's slot: the reserve less the gap to the row's items.
+    static var slot: CGFloat { reserve - gap }
+
+    // The jobs used to sit in overlays placed by alignment guides, which
+    // the overlay did not honour when drawn offscreen: both jobs landed on
+    // the row's own items. Slots of their own beside the items, as wide on
+    // both sides, keep the items in the middle with nothing on top of them.
     func body(content: Content) -> some View {
         let arrangement = enabled ? ZenithLockScreenJobLine.arrange(sample ?? jobs.items) : .init()
-        content
-            .overlay(alignment: .leading) {
-                if let job = arrangement.leading {
-                    ZenithLockScreenJobItem(job: job)
-                        .fixedSize()
-                        .alignmentGuide(.leading) { $0[.trailing] + Self.gap }
+        if arrangement.isEmpty {
+            content
+        } else {
+            HStack(spacing: Self.gap) {
+                // Each job at its own width (its label capped), against the
+                // items; one wider than its slot reaches outward, never inward.
+                Group {
+                    if let job = arrangement.leading { ZenithLockScreenJobItem(job: job).fixedSize() }
                 }
-            }
-            .overlay(alignment: .trailing) {
-                if let job = arrangement.trailing {
-                    HStack(spacing: 12) {
-                        ZenithLockScreenJobItem(job: job)
-                        if arrangement.overflow > 0 {
-                            Text("+\(arrangement.overflow)")
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(.white.opacity(0.5))
-                        }
+                .frame(width: Self.slot, alignment: .trailing)
+                content
+                HStack(spacing: 12) {
+                    if let job = arrangement.trailing { ZenithLockScreenJobItem(job: job).fixedSize() }
+                    if arrangement.overflow > 0 {
+                        Text("+\(arrangement.overflow)")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.5))
+                            .fixedSize()
                     }
-                    .fixedSize()
-                    .alignmentGuide(.trailing) { $0[.leading] - Self.gap }
                 }
+                .frame(width: Self.slot, alignment: .leading)
             }
-            .padding(.horizontal, arrangement.isEmpty ? 0 : Self.reserve)
+            .lineLimit(1)
+        }
     }
 }
 

@@ -169,7 +169,7 @@ let sections: [Section] = [
         pair("capsule-workspace", "Kapsul: workspace siap", "Workspace yang baru dijalankan sudah siap.", "Workspace selesai dibuka.", "Settings › Workspaces"),
     ]),
     Section(title: "Lock screen", intro: "Island dan layer Zenith di lock screen (v2), digambar lewat preview Settings dengan wallpaper contoh.", items: [
-        Item(id: "lock-minimal", title: "Lock screen: minimal", what: "Gembok di island, cuaca di bawah jam, lagu dan lirik karaoke.", when: "Mac dikunci, mode Minimal.", setting: "Settings › Lock Screen › Minimal", layout: .screen, note: "Job di samping baris cuaca dimatikan di render ini karena saling menumpuk saat digambar offscreen."),
+        Item(id: "lock-minimal", title: "Lock screen: minimal", what: "Gembok di island, cuaca di bawah jam dengan job di kiri-kanannya (export DaVinci, import kartu), lagu dan lirik karaoke.", when: "Mac dikunci, mode Minimal.", setting: "Settings › Lock Screen › Minimal", layout: .screen, note: "Job tidak lagi menumpuk di atas cuaca: tiap job punya slot sendiri di samping baris."),
         Item(id: "lock-full", title: "Lock screen: full", what: "Layer penuh: piringan lagu, lirik besar, info di kanan atas.", when: "Mac dikunci, mode Full.", setting: "Settings › Lock Screen › Full", layout: .screen),
     ]),
     Section(title: "Planned", intro: "Rencana yang sudah disetujui, belum dibuat. Ini mockup, bukan render aplikasi.", items: [
