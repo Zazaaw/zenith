@@ -2794,6 +2794,42 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   - **Belum diverifikasi di Mac:** app UI tidak dijalankan. Perlu dicek: gulir dan outline di tab Activity/Layout dan di
     opsi modul (ScrollView bersarang), Form Shelf/Screen capture/Clipboard, outline di dalam kartu (light/dark), Reduce
     Motion, dan command bar.
+- **Island ronde tiga (branch `feat/island-round3`):** enam perubahan yang disetujui, dicek lewat render katalog
+  (`Tools/IslandCatalog/render.sh`). Teks baru di `Core/ZenithIslandStrings.swift` (15 bahasa); test di
+  `Tests/IslandRoundThreeTests.swift` (suite `island-room`).
+  - **Aturan ruang** (`Services/Notch/ZenithIslandRoom.swift`): isi island yang tumbuh (kapsul notice, burst, kontrol
+    capture ciut) berjarak 30 pt dari sisi lurus body, di luar bahu. Island melebar mengikuti isinya (min 380, maks
+    580, tidak melewati layar), minimal selebar island yang ditutupinya; lewat lebar maksimum, subtitle pindah ke
+    baris kedua dan baris tumbuh 15 pt. Strip kompak di samping kamera sengaja tetap ukuran upstream: sayapnya ada di
+    menu bar, ruangnya milik menu (`compactSideRoom`) dan dikunci test upstream.
+  - **Kontrol capture ciut:** baris di bawah kamera (ikon tool, nama, hint redup per tool, tombol chevron bulat yang
+    membuka kontrol). Lebarnya mengikuti baris tool terlebar, jadi ganti tool tidak mengubah island.
+  - **Notice baterai 20%/10%:** glyph baterai sungguhan terisi sesuai level, persen besar, judul dan subtitle, pil di
+    kanan. Low Power Mode mati: merah, "Battery low", pil "Low Power" (klik tetap membuka pengaturan Battery, karena
+    menyalakannya butuh admin). Nyala: amber, "Low Power Mode is on", "Plug in soon · about N min left" kalau macOS
+    punya perkiraan, chip "✓ On". Kapsul diukur untuk dua keadaan, jadi menyalakan mode saat tampil tidak terpotong.
+  - **Calendar:** segmented Week/Month (`zenithCalendarMode`, kenyamanan, tidak di-backup). Di samping kamera
+    segmented-nya menjadi kepala agenda karena baris atas tidak muat. Month: grid bulan itu saja (hari ini merah,
+    hari lewat redup, maks 3 titik warna kalender), event hari terpilih di kanan; halaman sempit = grid saja (Escape
+    atau pilih hari kembali ke Week). Baris event tanpa nama kalender (cukup batang warnanya), agenda memudar di tepi
+    dan bisa di-scroll sampai event terakhir (dulu terpotong).
+  - **Adzan:** penyebab bug: notice adzan adalah kapsul `ZenithNoticeCenter` di window sendiri di atas island,
+    sementara island tetap menggambar pill salat; kapsul dibatasi 420 pt dan pill bersayap lebih lebar, jadi ujung
+    pill ("ar") kelihatan di luar kapsul. Sekarang waktu salat adalah *burst* di notice island sendiri
+    (`NotchNotice.zenith`, `ZenithIslandBurst*`): pill di-morph oleh window host jadi satu island besar (tile simbol
+    biru #93C5FD, "Waktunya Ashar", jam · metode, "Next · Maghrib 18.02", garis yang menyusut 8 detik), lalu mengecil
+    lagi ke pill. Island terbuka = menunggu sampai ditutup, maks 2 menit. Jenis kapsul `prayer` dihapus; kapsul lain
+    yang sedang tampil mundur saat burst tumbuh.
+  - **Charging:** colok = burst ±3,2 dtk (baterai + petir, persen hijau, "Charging", "Full in 1h 10m" dari
+    `kIOPSTimeToFullChargeKey`), ditahan sebelum penuh (sekali per colokan) = amber "On hold" / "Optimized Battery
+    Charging", cabut = ±2,6 dtk "On Battery" + sisa waktu. Kapsul charging/80%/unplugged diganti burst; event baterai
+    baru `.held`. Lock screen tidak ikut: kapsul lama juga tidak pernah tampil di sana.
+  - **Lock screen jobs:** job di samping baris aktivitas lapisan minimal dulu di overlay dengan alignment guide yang
+    tidak dipatuhi saat digambar offscreen (keduanya jatuh di atas cuaca). Sekarang tiap job punya slot sendiri,
+    sama lebar di kiri dan kanan; job panjang meluber ke luar, tidak ke dalam.
+  - **Belum diverifikasi di Mac:** colok/cabut charger sungguhan, Optimized Battery Charging, perkiraan waktu dari
+    macOS, menyalakan Low Power Mode saat notice tampil, morph adzan di waktu salat sungguhan, island di layar tanpa
+    notch, dan job lock screen di Mac terkunci.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
