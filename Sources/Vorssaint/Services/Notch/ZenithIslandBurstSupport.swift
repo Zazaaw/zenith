@@ -19,6 +19,8 @@ struct ZenithIslandBurst: Equatable {
         case welcome(ZenithWelcomeBurst)
         /// An agent waiting on the person: "Claude needs you".
         case agent(ZenithAgentBurst)
+        /// An iPhone asked how the Mac is (RemoteControlService): "Faiz’s iPhone checked status".
+        case remote(ZenithRemoteBurst)
     }
 
     let content: Content
@@ -35,6 +37,7 @@ struct ZenithIslandBurst: Equatable {
             : ZenithIslandBurstTiming.charge
         case .welcome: duration = ZenithIslandBurstTiming.welcome
         case .agent: duration = ZenithIslandBurstTiming.agent
+        case .remote: duration = ZenithIslandBurstTiming.remote
         }
     }
 
@@ -43,7 +46,7 @@ struct ZenithIslandBurst: Equatable {
     /// person moves (volume, brightness) still takes its place.
     var event: NotchEvent {
         switch content {
-        case .prayer, .welcome: return .timer
+        case .prayer, .welcome, .remote: return .timer
         case .charge: return .battery
         case .agent: return .agents
         }
@@ -53,7 +56,7 @@ struct ZenithIslandBurst: Equatable {
     var module: NotchModule? {
         switch content {
         case .prayer: return .sky
-        case .charge, .welcome: return nil
+        case .charge, .welcome, .remote: return nil
         case .agent: return .agents
         }
     }
@@ -64,6 +67,7 @@ struct ZenithIslandBurst: Equatable {
         case .charge(let charge): return charge.title
         case .welcome(let welcome): return welcome.title
         case .agent(let agent): return agent.title
+        case .remote(let remote): return remote.device
         }
     }
 
@@ -73,6 +77,7 @@ struct ZenithIslandBurst: Equatable {
         case .charge(let charge): return charge.subtitle
         case .welcome(let welcome): return welcome.subtitle
         case .agent(let agent): return agent.subtitle
+        case .remote(let remote): return remote.subtitle
         }
     }
 
@@ -84,7 +89,7 @@ struct ZenithIslandBurst: Equatable {
         case .charge(let charge):
             return [charge.percent.map { "\($0)%" } ?? "", charge.title, charge.subtitle]
                 .filter { !$0.isEmpty }.joined(separator: ", ")
-        case .welcome, .agent:
+        case .welcome, .agent, .remote:
             return [title, subtitle].filter { !$0.isEmpty }.joined(separator: ", ")
         }
     }
@@ -122,6 +127,13 @@ struct ZenithAgentBurst: Equatable {
     let provider: AgentProvider
     let title: String
     let subtitle: String
+}
+
+/// "Faiz’s iPhone checked status": the iPhone's glyph, the device's name, what
+/// it did, and an eye at the end. English, like the answer the iPhone reads.
+struct ZenithRemoteBurst: Equatable {
+    let device: String
+    var subtitle: String = RemoteText.checkedStatus
 }
 
 /// What the charger is doing, from the battery's reading.
@@ -190,6 +202,8 @@ enum ZenithIslandBurstTiming {
     /// Back from the lock screen, and an agent asking for the person.
     static let welcome: TimeInterval = 3
     static let agent: TimeInterval = 2.6
+    /// An iPhone checking on the Mac: a glance.
+    static let remote: TimeInterval = 2
 
     /// How long a burst waits for an open or busy island to close before it
     /// is dropped: a prayer's time is worth waiting for, a greeting only a
@@ -197,7 +211,7 @@ enum ZenithIslandBurstTiming {
     static func patience(_ content: ZenithIslandBurst.Content) -> TimeInterval {
         switch content {
         case .prayer: return 120
-        case .welcome, .agent: return 5
+        case .welcome, .agent, .remote: return 5
         case .charge: return 0
         }
     }
@@ -219,7 +233,7 @@ enum ZenithIslandBurstTiming {
         guard let current, phase(current, at: now) != .settled else { return true }
         if case .prayer = current.content {
             switch incoming.content {
-            case .charge, .welcome, .agent: return false
+            case .charge, .welcome, .agent, .remote: return false
             case .prayer: break
             }
         }
@@ -252,6 +266,11 @@ enum ZenithIslandBurstLayout {
     static let welcomeRow: CGFloat = 38
     static let markSide: CGFloat = 30
     static let photoSide: CGFloat = 34
+    // Remote: one line, the iPhone, the name, what it did and the eye.
+    static let remoteRow: CGFloat = 26
+    static let remoteGlyph: CGFloat = 18
+    static let remoteGap: CGFloat = 10
+    static let remoteDetailFont = NSFont.systemFont(ofSize: 15, weight: .regular)
 
     /// The rows' height, without the strip above them or the room below.
     static func contentHeight(_ burst: ZenithIslandBurst) -> CGFloat {
@@ -259,6 +278,7 @@ enum ZenithIslandBurstLayout {
         case .prayer: return prayerRow + progressGap + progressHeight
         case .charge, .agent: return chargeRow
         case .welcome: return welcomeRow
+        case .remote: return remoteRow
         }
     }
 
@@ -287,6 +307,9 @@ enum ZenithIslandBurstLayout {
         case .agent(let agent):
             let words = max(measure(agent.title, chargeTitleFont), measure(agent.subtitle, chargeSubtitleFont)) + 2
             return markSide + tileGap + words
+        case .remote(let remote):
+            let words = measure(remote.device, chargeTitleFont) + 2 + remoteGap + measure(remote.subtitle, remoteDetailFont) + 2
+            return remoteGlyph + remoteGap + words + columnGap + remoteGlyph
         }
     }
 
@@ -311,6 +334,7 @@ enum ZenithIslandBurstLayout {
     static func minimumWidth(_ burst: ZenithIslandBurst) -> CGFloat {
         switch burst.content {
         case .charge, .welcome, .agent: return 360
+        case .remote: return 320
         case .prayer: return ZenithIslandRoom.minimumWidth
         }
     }

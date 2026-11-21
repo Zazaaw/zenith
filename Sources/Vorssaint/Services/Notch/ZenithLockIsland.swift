@@ -55,6 +55,8 @@ enum ZenithLockIslandFocus {
 final class ZenithLockIslandController {
     let model = ZenithLockIslandModel()
     private var lockedAt: Date?
+    /// Zenith fork (remote lock): the iPhone that locked the Mac, if one did.
+    private var lockedFrom: String?
     private var work: [DispatchWorkItem] = []
     private var plugWork: DispatchWorkItem?
     private var sampler: PowerSampler?
@@ -62,7 +64,10 @@ final class ZenithLockIslandController {
     private var photoRequest = 0
 
     /// The Mac locked at this moment: the welcome counts from here.
-    func locked(at date: Date = Date()) { lockedAt = date }
+    func locked(at date: Date = Date()) {
+        lockedAt = date
+        lockedFrom = ZenithRemoteLockMark.take(at: date) // Zenith fork: an iPhone asked for this lock
+    }
 
     /// The lock screen appeared. Returns how long the padlock waits before it
     /// closes: as the Mac locks, the farewell holds it open.
@@ -76,6 +81,13 @@ final class ZenithLockIslandController {
         model.focus = options.focus ? ZenithLockIslandFocus.current() : nil
         if options.charging { startPower() } else { stopPower() }
         if options.welcome { loadPhoto() }
+        // Zenith fork: locked from an iPhone, the island says so in the farewell's
+        // place, its padlock already closed (nobody is at the Mac to wave to).
+        if locking, let device = lockedFrom {
+            schedule(after: 0.05) { [weak self] in self?.model.moment = .remoteLock(device: device) }
+            schedule(after: ZenithLockIsland.remoteHold) { [weak self] in self?.model.moment = .rest }
+            return 0.35
+        }
         guard locking, options.farewell else { return 0.35 }
         // Shown first at rest, the island then widens on the next turn.
         schedule(after: 0.05) { [weak self] in self?.model.moment = .farewell }
@@ -91,15 +103,18 @@ final class ZenithLockIslandController {
         stopPower()
         model.moment = .rest
         let since = lockedAt
+        let remote = lockedFrom // Zenith fork
         lockedAt = nil
+        lockedFrom = nil
         guard model.options.welcome else { return nil }
         let language = L10n.shared.language
         let text = ZenithStrings.lockIsland(language)
         let seconds = since.map { date.timeIntervalSince($0) } ?? 0
         // The island cannot count notifications while locked; it keeps only
         // those received in an unlocked session.
-        let detail = text.detail(duration: ZenithLockIsland.duration(seconds, locale: language.formattingLocale()),
-                                 notifications: nil)
+        let detail = remote.map { RemoteText.welcomeDetail(device: $0, seconds: seconds) } // Zenith fork
+            ?? text.detail(duration: ZenithLockIsland.duration(seconds, locale: language.formattingLocale()),
+                           notifications: nil)
         return ZenithWelcomeBurst(title: text.welcomeBack(model.firstName), subtitle: detail, photo: model.photo,
                                   initials: ZenithLockScreenInitials.of(NSFullUserName()))
     }

@@ -62,6 +62,9 @@ struct ZenithLockScreenIsland: View {
         case .farewell:
             let width = Self.textWidth(text.seeYou(island.firstName), size: 13, weight: .semibold)
             return ZenithLockIsland.size(camera: camera, wing: ZenithLockIsland.wing(for: width, resting: restingWing))
+        case .remoteLock(let device): // Zenith fork: locked from an iPhone
+            return ZenithLockIsland.size(camera: camera, wing: ZenithLockIsland.wing(for: Self.remoteWidth(device),
+                                                                                       resting: restingWing))
         }
     }
 
@@ -125,6 +128,9 @@ struct ZenithLockScreenIsland: View {
                         .foregroundStyle(.white)
                         .lineLimit(1)
                         .transition(.zenithMorph(reduceMotion: reduceMotion))
+                } else if case .remoteLock(let device) = island.moment { // Zenith fork
+                    Self.remoteLock(device)
+                        .transition(.zenithMorph(reduceMotion: reduceMotion))
                 } else {
                     slotView(slot)
                         .id(slotKey(slot))
@@ -137,6 +143,31 @@ struct ZenithLockScreenIsland: View {
             .animation(ZenithMorph.animation(reduceMotion: reduceMotion), value: slotKey(slot))
         }
         .frame(width: width, height: size.height)
+    }
+
+    /// Zenith fork (remote lock): "Locked from Faiz’s iPhone" over "just now",
+    /// and the iPhone at the outer edge.
+    static func remoteLock(_ device: String) -> some View {
+        HStack(spacing: 7) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(RemoteText.lockedFrom(device))
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .truncationMode(.middle)
+                Text(RemoteText.justNow)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.55))
+            }
+            Image(systemName: "iphone")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.85))
+        }
+        .lineLimit(1)
+    }
+
+    static func remoteWidth(_ device: String) -> CGFloat {
+        max(textWidth(RemoteText.lockedFrom(device), size: 12, weight: .semibold),
+            textWidth(RemoteText.justNow, size: 10, weight: .medium)) + 7 + 12
     }
 
     private func padlock(tint: Color) -> some View {

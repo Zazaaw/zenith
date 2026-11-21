@@ -21,6 +21,7 @@ struct ZenithIslandBurstView: View {
             case .charge(let charge): ZenithChargeBurstRow(charge: charge)
             case .welcome(let welcome): ZenithWelcomeBurstRow(welcome: welcome)
             case .agent(let agent): ZenithAgentBurstRow(agent: agent)
+            case .remote(let remote): ZenithRemoteBurstRow(remote: remote)
             }
         }
         .padding(.horizontal, ZenithIslandRoom.edge(floats: geometry.floats) + shoulder)
@@ -185,5 +186,36 @@ private struct ZenithAgentBurstRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(height: Layout.chargeRow)
+    }
+}
+
+/// Zenith fork: the iPhone, "Faiz’s iPhone checked status" on one line, and an
+/// eye at the end.
+private struct ZenithRemoteBurstRow: View {
+    let remote: ZenithRemoteBurst
+
+    private typealias Layout = ZenithIslandBurstLayout
+
+    var body: some View {
+        HStack(spacing: Layout.remoteGap) {
+            Image(systemName: "iphone")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(ZenithIsland.primary)
+                .frame(width: Layout.remoteGlyph, height: Layout.remoteRow)
+            Text(remote.device)
+                .font(Font(Layout.chargeTitleFont))
+                .foregroundStyle(ZenithIsland.primary)
+                .layoutPriority(1)
+            Text(remote.subtitle)
+                .font(Font(Layout.remoteDetailFont))
+                .foregroundStyle(.white.opacity(0.55))
+            Spacer(minLength: Layout.columnGap)
+            Image(systemName: "eye")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.55))
+                .frame(width: Layout.remoteGlyph, height: Layout.remoteRow)
+        }
+        .lineLimit(1)
+        .frame(height: Layout.remoteRow)
     }
 }

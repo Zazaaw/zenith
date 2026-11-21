@@ -123,6 +123,12 @@ extension CatalogShots {
                                           notifications: nil),
                     photo: nil, initials: "FH"))
             },
+            burst("burst-remote-status") { .remote(ZenithRemoteBurst(device: "Faiz’s iPhone")) },
+            burst("burst-welcome-remote") {
+                .welcome(ZenithWelcomeBurst(title: ZenithStrings.lockIsland(.enUS).welcomeBack("Faiz"),
+                                            subtitle: RemoteText.welcomeDetail(device: "Faiz’s iPhone", seconds: 80 * 60),
+                                            photo: nil, initials: "FH"))
+            },
             burst("burst-claude") {
                 .agent(ZenithAgentBurst(provider: .claude, title: ZenithStrings.claudeChime(.enUS).needsYou, subtitle: "zenith"))
             },
