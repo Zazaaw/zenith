@@ -13,9 +13,13 @@ import Foundation
 /// at full size, and the corners (clock, jobs, account, login hint).
 enum ZenithLockScreenOption: String, CaseIterable, Identifiable {
     // Minimal layer.
-    case jobs, nowPlaying, lyrics, karaoke, titleControls
+    case jobs, nowPlaying, lyrics, karaoke, titleControls, lyricShade
     // Full layer.
     case full, fullDisc, fullAccount, fullDevice, fullClock, fullJobs, fullCoverColor, fullLoginHint
+    /// The record turns slowly while the song plays (off: it stays still).
+    case fullDiscSpin
+    /// What sits at the top right beside the close button, with `fullJobs`.
+    case fullTopPrayer, fullTopWeather, fullTopTimer, fullTopCalendar, fullTopWakaTime
 
     var id: String { rawValue }
 
@@ -34,16 +38,29 @@ enum ZenithLockScreenOption: String, CaseIterable, Identifiable {
         case .fullJobs: return DefaultsKey.zenithLockFullJobs
         case .fullCoverColor: return DefaultsKey.zenithLockFullCoverColor
         case .fullLoginHint: return DefaultsKey.zenithLockFullLoginHint
+        case .lyricShade: return DefaultsKey.zenithLockLyricShade
+        case .fullDiscSpin: return DefaultsKey.zenithLockFullDiscSpin
+        case .fullTopPrayer: return DefaultsKey.zenithLockFullTopPrayer
+        case .fullTopWeather: return DefaultsKey.zenithLockFullTopWeather
+        case .fullTopTimer: return DefaultsKey.zenithLockFullTopTimer
+        case .fullTopCalendar: return DefaultsKey.zenithLockFullTopCalendar
+        case .fullTopWakaTime: return DefaultsKey.zenithLockFullTopWakaTime
         }
     }
 
-    /// Every part starts on; each can be turned off on its own.
-    var isOnByDefault: Bool { true }
+    /// Most parts start on; each can be turned off on its own.
+    var isOnByDefault: Bool {
+        switch self {
+        case .fullDiscSpin, .fullTopTimer, .fullTopCalendar, .fullTopWakaTime: return false
+        default: return true
+        }
+    }
 
     /// Parts of the full layer only matter while the full layer itself is on.
     var isFullLayer: Bool {
         switch self {
-        case .full, .fullDisc, .fullAccount, .fullDevice, .fullClock, .fullJobs, .fullCoverColor, .fullLoginHint: return true
+        case .full, .fullDisc, .fullAccount, .fullDevice, .fullClock, .fullJobs, .fullCoverColor, .fullLoginHint,
+             .fullDiscSpin, .fullTopPrayer, .fullTopWeather, .fullTopTimer, .fullTopCalendar, .fullTopWakaTime: return true
         default: return false
         }
     }
@@ -65,6 +82,32 @@ enum ZenithLockScreenFullBackground: String, CaseIterable, Identifiable {
 
     static func current(in defaults: UserDefaults = .standard) -> Self {
         defaults.string(forKey: DefaultsKey.zenithLockFullBackground).flatMap(Self.init(rawValue:)) ?? fallback
+    }
+}
+
+/// The solid colour taken from the cover: exactly the cover's dominant colour,
+/// or a calmer version of it.
+enum ZenithLockScreenFullTone: String, CaseIterable, Identifiable {
+    case vivid, muted
+
+    var id: String { rawValue }
+    static let fallback: Self = .vivid
+
+    static func current(in defaults: UserDefaults = .standard) -> Self {
+        defaults.string(forKey: DefaultsKey.zenithLockFullTone).flatMap(Self.init(rawValue:)) ?? fallback
+    }
+}
+
+/// Moves the lyrics earlier (negative) or later (positive) than the song's
+/// reported position, in seconds, for players whose position runs behind.
+enum ZenithLockScreenLyricOffset {
+    static let range: ClosedRange<Double> = -3...3
+    static let step: Double = 0.1
+
+    static func seconds(in defaults: UserDefaults = .standard) -> Double {
+        let stored = defaults.object(forKey: DefaultsKey.zenithLockLyricOffset) as? Double ?? 0
+        let clamped = min(max(stored.isFinite ? stored : 0, range.lowerBound), range.upperBound)
+        return (clamped / step).rounded() * step
     }
 }
 

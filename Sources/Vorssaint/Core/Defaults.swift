@@ -1193,6 +1193,15 @@ enum DefaultsKey {
     static let zenithLockFullBackground = "zenithLockFullBackground" // ZenithLockScreenFullBackground
     static let zenithLockFullBlurRadius = "zenithLockFullBlurRadius" // points, ZenithLockScreenFullBlur.range
     static let zenithLockFullCustomColor = "zenithLockFullCustomColor" // "RRGGBB", used when the solid colour is not the cover's
+    static let zenithLockLyricShade = "zenithLockLyricShade"
+    static let zenithLockLyricOffset = "zenithLockLyricOffset" // seconds, ZenithLockScreenLyricOffset.range
+    static let zenithLockFullDiscSpin = "zenithLockFullDiscSpin"
+    static let zenithLockFullTone = "zenithLockFullTone" // ZenithLockScreenFullTone
+    static let zenithLockFullTopPrayer = "zenithLockFullTopPrayer"
+    static let zenithLockFullTopWeather = "zenithLockFullTopWeather"
+    static let zenithLockFullTopTimer = "zenithLockFullTopTimer"
+    static let zenithLockFullTopCalendar = "zenithLockFullTopCalendar"
+    static let zenithLockFullTopWakaTime = "zenithLockFullTopWakaTime"
     static let wakaTimeDailyGoalMinutes = "wakaTimeDailyGoalMinutes" // Zenith fork, 0 = off
     // Companion: a small friend who rests in the closed island and is the Command Bar's face.
     static let notchMascotEnabled = "notchMascotEnabled"
@@ -1929,6 +1938,15 @@ enum Defaults {
         DefaultsKey.zenithLockFullBackground: "solid",
         DefaultsKey.zenithLockFullBlurRadius: 40.0,
         DefaultsKey.zenithLockFullCustomColor: "1C1C1E",
+        DefaultsKey.zenithLockLyricShade: true,
+        DefaultsKey.zenithLockLyricOffset: 0.0,
+        DefaultsKey.zenithLockFullDiscSpin: false,
+        DefaultsKey.zenithLockFullTone: "vivid",
+        DefaultsKey.zenithLockFullTopPrayer: true,
+        DefaultsKey.zenithLockFullTopWeather: true,
+        DefaultsKey.zenithLockFullTopTimer: false,
+        DefaultsKey.zenithLockFullTopCalendar: false,
+        DefaultsKey.zenithLockFullTopWakaTime: false,
         DefaultsKey.wakaTimeDailyGoalMinutes: 0,
         DefaultsKey.notchMascotEnabled: false,
         DefaultsKey.notchMascotVisits: true,
