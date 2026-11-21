@@ -123,7 +123,7 @@ enum CatalogShots {
             CatalogShot(id: "closed-battery-early",
                         preferences: [DefaultsKey.notchIdleContent: NotchIdleContent.battery.rawValue,
                                       DefaultsKey.notchLowBatteryTint: true, DefaultsKey.notchLowBatteryEarly: true]) {
-                island(pose { $0.power = power(28) })
+                island(pose { $0.power = power(18) })
             },
             CatalogShot(id: "closed-battery-low",
                         preferences: [DefaultsKey.notchIdleContent: NotchIdleContent.battery.rawValue,
