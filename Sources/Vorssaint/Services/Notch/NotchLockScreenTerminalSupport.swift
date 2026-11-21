@@ -434,13 +434,15 @@ enum NotchLockScreenTerminalLayout {
     }
 
     /// The readout's frame and the player's, given the line of activities and
-    /// the player's own frame. `music` says whether the player may show.
+    /// the player's own frame. `music` says whether the player may show;
+    /// `lift` raises the readout's bottom over the login controls (lock
+    /// screen v2's low placement).
     static func arrange(row: CGRect?, player: CGRect?, screen: CGRect, lines: Int,
-                        music: Bool) -> (terminal: CGRect?, player: CGRect?) {
+                        music: Bool, lift: CGFloat = 0) -> (terminal: CGRect?, player: CGRect?) {
         guard lines > 0, let row, [screen.minX, screen.minY, screen.width, screen.height].allSatisfy(\.isFinite),
               screen.width >= width + 32 else { return (nil, player) }
         let height = height(lines: lines)
-        let bottom = screen.minY + NotchLockScreenLayout.loginClearance
+        let bottom = screen.minY + NotchLockScreenLayout.loginClearance + max(0, lift.isFinite ? lift : 0)
         guard bottom + height <= row.minY - gap else { return (nil, player) }
         let terminal = CGRect(x: (screen.midX - width / 2).rounded(), y: bottom, width: width, height: height)
         guard music, let player else { return (terminal, player) }

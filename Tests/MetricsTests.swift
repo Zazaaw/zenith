@@ -262,6 +262,7 @@ struct MetricsTests {
             ("wakatime", { WakaTimeTests.run(suite) }),
             ("lockscreen-widgets", { LockScreenWidgetsTests.run(suite) }),
             ("lockscreen-terminal", { LockScreenTerminalTests.run(suite) }),
+            ("lockscreen-v2", { LockScreenV2Tests.run(suite) }),
             ("vercel", { VercelTests.run(suite) }),
             ("gh", { GitHubTests.run(suite) }),
             ("command-activity", { CommandActivityTests.run(suite) }),
