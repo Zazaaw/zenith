@@ -30,6 +30,54 @@ enum ZenithIslandMotion {
         width ? (growing ? growingWidth : shrinkingWidth) : (growing ? growingHeight : shrinkingHeight)
     }
 
+    // MARK: The floor
+
+    /// A side landing on the closed island settles from above: a softer
+    /// spring whose small swing past the floor rebounds outward instead, like
+    /// a ball on the ground. The island never shows narrower or shorter than
+    /// the camera cutout it covers, which would bare the cutout beside it.
+    static let landingWidth = Spring(duration: 0.48, bounce: 0.15)
+    static let landingHeight = Spring(duration: 0.44, bounce: 0.12)
+
+    /// Whether a side heading from `from` to `to` lands on `floor`: it
+    /// shrinks, and its target is the floor (or below it, as a hidden island).
+    static func lands(from: CGFloat, to: CGFloat, floor: CGFloat) -> Bool {
+        floor > 0 && to < from && to <= floor + 0.5
+    }
+
+    /// The least a side may show while moving between `from` and `to`: the
+    /// floor, unless an end is already below it (an island hiding or
+    /// revealing from hidden).
+    static func bottom(floor: CGFloat, from: CGFloat, to: CGFloat) -> CGFloat {
+        max(0, min(floor, from, to))
+    }
+
+    /// A closing side eases in over its first 80 ms instead of setting off at
+    /// the spring's own pace; an opening one leaves at once.
+    static let closingEaseIn: TimeInterval = 0.08
+
+    static func easeIn(from: CGFloat, to: CGFloat) -> TimeInterval { to < from ? closingEaseIn : 0 }
+
+    /// Time as the spring sees it, and how fast it runs: slowly at first over
+    /// `easeIn`, gathering pace until it runs with the clock, which it then
+    /// keeps (`easeIn / 2` behind it). Its rate is continuous throughout.
+    static func warp(_ time: TimeInterval, easeIn: TimeInterval) -> (time: TimeInterval, rate: Double) {
+        guard easeIn > 0, time > 0 else { return (time, 1) }
+        guard time < easeIn else { return (time - easeIn / 2, 1) }
+        return (time * time / (2 * easeIn), time / easeIn)
+    }
+
+    /// A spring's progress and rate `time` after it starts, `lag` later,
+    /// eased in over `easeIn`; a landing reflects its swing past the target
+    /// back to the side it came from.
+    static func progress(_ spring: Spring, lag: TimeInterval, easeIn: TimeInterval = 0, landing: Bool,
+                         at time: TimeInterval) -> (progress: Double, rate: Double) {
+        let warped = warp(time - lag, easeIn: easeIn)
+        let progress = spring.progress(at: warped.time), rate = spring.velocity(at: warped.time) * warped.rate
+        guard landing, progress > 1 else { return (progress, rate) }
+        return (2 - progress, -rate)
+    }
+
     /// How long a side waits before it moves.
     static func lag(width: Bool, growing: Bool) -> TimeInterval {
         width ? (growing ? 0 : shrinkingWidthLag) : (growing ? growingHeightLag : 0)
@@ -56,6 +104,22 @@ enum ZenithIslandMotion {
         let narrowing = min(narrowingLimit, max(-narrowingLimit, velocity.height * narrowingPerSpeed))
         let flattening = min(flatteningLimit, max(-flatteningLimit, velocity.width * flatteningPerSpeed))
         return CGSize(width: max(0, size.width - narrowing), height: max(0, size.height - flattening))
+    }
+}
+
+/// The floor an island's motion keeps above: on a display with a camera
+/// cutout, the bare cutout, and when closing onto a strip, that strip, which
+/// it then settles onto from above. A floating capsule has no cutout to bare.
+enum NotchMotionFloor {
+    static func floor(camera: CGSize, target: CGSize, closedHeight: CGFloat) -> CGSize {
+        guard camera.width > 0, camera.height > 0 else { return .zero }
+        guard target.height <= closedHeight + 0.5 else { return camera }
+        return CGSize(width: max(camera.width, target.width), height: max(camera.height, target.height))
+    }
+
+    static func floor(for target: CGSize, geometry: NotchGeometry) -> CGSize {
+        guard geometry.isNotched, !geometry.floats else { return .zero }
+        return floor(camera: geometry.restingSize(showsContent: false), target: target, closedHeight: geometry.collapsed.height)
     }
 }
 

@@ -382,14 +382,20 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         // stalled; and asked for while SwiftUI drew new content, it reached the
         // screen only with that content and began from where it had been.
         let carried = isAnimating && !revealing && !steady && !withdrawing && startOffset == 0
-            ? canvas.carriedMotion(to: size, at: CACurrentMediaTime()) : nil
+            ? canvas.carriedMotion(to: size, at: CACurrentMediaTime(),
+                                   floor: NotchMotionFloor.floor(for: size, geometry: geometry)) : nil // Zenith fork
         let start = carried?.start ?? drawn
-        let motion = carried?.frames() ?? NotchMotion.frames(from: start, to: size, steady: steady, offset: startOffset)
+        // Zenith fork: no frame shows narrower or shorter than the camera
+        // cutout, and closing onto the strip settles from above.
+        let floor = carried?.floor ?? NotchMotionFloor.floor(for: size, geometry: geometry)
+        let motion = carried?.frames()
+            ?? NotchMotion.frames(from: start, to: size, steady: steady, offset: startOffset, floor: floor)
         let offsets = motion.keyTimes.map {
-            $0 == 1 ? 0 : NotchMotion.offset(at: motion.duration * $0, from: start, to: size, start: startOffset, steady: steady)
+            $0 == 1 ? 0 : NotchMotion.offset(at: motion.duration * $0, from: start, to: size, start: startOffset,
+                                             steady: steady, floor: floor)
         }
         // Room for the swing past a larger target, and for everything already reserved.
-        var envelope = NotchMotion.envelope(from: start, to: size)
+        var envelope = NotchMotion.envelope(from: start, to: size, floor: floor)
         let reach = zip(motion.sizes, offsets).map { $0.width + 2 * abs($1) }.max() ?? 0
         envelope.width = max(envelope.width, reach.rounded(.up))
         let tallest = motion.sizes.map(\.height).max() ?? 0
@@ -456,7 +462,7 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         isAnimating = true
         canvas.animate(animation, from: paths.first, motion: carried ?? NotchMotionTimeline(
             from: start, to: size, begin: animation.beginTime > 0 ? animation.beginTime : CACurrentMediaTime(),
-            steady: steady, offset: startOffset))
+            steady: steady, offset: startOffset, floor: floor))
         CATransaction.commit()
         // The window already has its new frame; its layers go out at once,
         // not at the end of this turn of the run loop, so the screen never
@@ -1538,11 +1544,11 @@ private final class NotchCanvas: NSView {
 
     /// The running resize headed for `size` from `time` on, as Core Animation
     /// times it, or nil when it has not reached the screen or cannot carry on.
-    func carriedMotion(to size: CGSize, at time: CFTimeInterval) -> NotchMotionTimeline? {
+    func carriedMotion(to size: CGSize, at time: CFTimeInterval, floor: CGSize? = nil) -> NotchMotionTimeline? {
         // The motion is stamped with the moment it reached the screen.
         guard let timeline = motionTimeline, let began = silhouette.animation(forKey: Self.motionKey)?.beginTime,
               began > 0, began <= time else { return nil }
-        return timeline.rebased(to: began).continued(to: size, at: time)
+        return timeline.rebased(to: began).continued(to: size, at: time, floor: floor) // Zenith fork: floor
     }
 
     func animate(_ animation: CAAnimation, from: CGPath?, motion: NotchMotionTimeline? = nil) {
@@ -1564,6 +1570,18 @@ private final class NotchCanvas: NSView {
             edge.add(borderAnimation, forKey: Self.motionKey)
         }
         rideMotionChanged() // Zenith fork: the content rides this motion
+#if VORSSAINT_DEVELOPMENT
+        if ZenithMotionTrace.enabled, let motion {
+            let frames = motion.frames()
+            func text(_ size: CGSize) -> String { ZenithMotionTrace.text("%.1fx%.1f", size.width, size.height) }
+            let sizes = stride(from: 0, to: frames.sizes.count, by: 2).map { text(frames.sizes[$0]) }.joined(separator: " ")
+            ZenithMotionTrace.log("install start=\(text(motion.start)) target=\(text(motion.target)) floor=\(text(motion.floor))"
+                                  + " steady=\(motion.steady) offset=\(motion.offset) duration=\(ZenithMotionTrace.text("%.3f", frames.duration))"
+                                  + " keyframes=\(frames.sizes.count) widest=\(ZenithMotionTrace.text("%.1f", frames.sizes.map(\.width).max() ?? 0))"
+                                  + " tallest=\(ZenithMotionTrace.text("%.1f", frames.sizes.map(\.height).max() ?? 0))"
+                                  + " window=\(text(bounds.size)) sizes@60=[\(sizes)]")
+        }
+#endif
     }
     func stopMotion() {
         motionTimeline = nil
@@ -1605,6 +1623,15 @@ private final class NotchCanvas: NSView {
         guard let timeline = motionTimeline else { synchronizeBackdrop(); return }
         let time = max(target, timeline.begin)
         setBackdropContour(inCanvas(silhouettePath(for: timeline.shape(at: time), offset: timeline.offset(at: time)))) // Zenith fork
+#if VORSSAINT_DEVELOPMENT
+        if ZenithMotionTrace.enabled {
+            let shown = visibleSize ?? .zero, expected = timeline.shape(at: CACurrentMediaTime())
+            ZenithMotionTrace.log(ZenithMotionTrace.text("frame t=%.3f onScreen=%.1fx%.1f expected=%.1fx%.1f opacity=%.2f",
+                                         CACurrentMediaTime() - timeline.begin, shown.width, shown.height,
+                                         expected.width, expected.height,
+                                         contentVisibility.presentation()?.opacity ?? contentVisibility.opacity))
+        }
+#endif
     }
 
     /// The size shown while a resize is being prepared, before its motion.
@@ -1821,7 +1848,9 @@ private final class NotchCanvas: NSView {
             blur.values = frames.map(\.blur)
             blur.keyTimes = keyTimes
             blur.calculationMode = .linear
-            blur.beginTime = begin
+            // Started by Core Animation as it commits, with the page laid out
+            // later in this same pass; timed from the request, the page's own
+            // layout had used up the blur and growth before it ever showed.
             blur.duration = length
             if !arrives {
                 blur.fillMode = .forwards
@@ -1831,18 +1860,30 @@ private final class NotchCanvas: NSView {
         }
         installRideTransform()
         CATransaction.commit()
+#if VORSSAINT_DEVELOPMENT
+        ZenithMotionTrace.log("ride \(kind) leaves=\(leaves) arrives=\(arrives) skipped=\(ZenithMotionTrace.text("%.3f", skipped))"
+                              + " from=\(ride?.fromWidth.map { ZenithMotionTrace.text("%.1f", $0) } ?? "-") to=\(ZenithMotionTrace.text("%.1f", contentSize.width))")
+#endif
         guard arrives else { return }
         scheduleRideEnd(generation: generation)
+    }
+
+    /// When the ride reached the screen: Core Animation stamps its opacity's
+    /// start as it commits. Nil until then.
+    private var rideStart: CFTimeInterval? {
+        guard let began = contentVisibility.animation(forKey: "notch.opacity")?.beginTime, began > 0 else { return nil }
+        return began
     }
 
     /// A filter left in place, even at no radius, keeps an extra render pass.
     /// The transform keeps riding while the island still swings.
     private func scheduleRideEnd(generation: Int) {
-        guard let ride, let layer = host.layer else { return }
-        let elapsed = layer.convertTime(CACurrentMediaTime(), from: nil) - ride.begin
-        let motionEnd = motionTimeline.map { $0.begin + $0.frames().duration - ride.begin } ?? 0
-        let remaining = max(ZenithContentRide.duration - ride.skipped, motionEnd) - elapsed
-        DispatchQueue.main.asyncAfter(deadline: .now() + max(0, remaining) + 0.02) { [weak self] in
+        guard let ride else { return }
+        let now = CACurrentMediaTime()
+        let start = rideStart ?? now
+        let motionEnd = motionTimeline.map { $0.begin + $0.frames().duration - start } ?? 0
+        let remaining = max(ZenithContentRide.duration - ride.skipped, motionEnd) - (now - start)
+        DispatchQueue.main.asyncAfter(deadline: .now() + max(0, remaining) + 0.05) { [weak self] in
             guard let self, self.arrivalGeneration == generation else { return }
             self.endArrival()
         }
@@ -1867,17 +1908,20 @@ private final class NotchCanvas: NSView {
         guard var ride, let layer = host.layer else { return }
         ride.width = layer.bounds.width
         self.ride = ride
-        let now = layer.convertTime(CACurrentMediaTime(), from: nil)
+        // On the media clock, from when the ride reached the screen, or from
+        // now when it has yet to: it then starts as it commits.
+        let started = rideStart
+        let origin = started ?? CACurrentMediaTime()
+        let now = CACurrentMediaTime()
         let rideLength = ride.arrives ? ZenithContentRide.duration - ride.skipped : ZenithContentRide.outgoingFade
         let motionEnd = motionTimeline.map { $0.begin + $0.frames().duration } ?? 0
-        let length = max(rideLength, motionEnd - ride.begin, now - ride.begin + 1 / Self.rideRate)
+        let length = max(rideLength, motionEnd - origin, now - origin + 1 / Self.rideRate)
         let count = max(1, Int((length * Self.rideRate).rounded(.up)))
         let times = (0...count).map { length * Double($0) / Double(count) }
         let flipped = layer.contentsAreFlipped()
         let timeline = motionTimeline
         let values = times.map { time -> NSValue in
-            // Host layer time runs with the media clock the motion is timed on.
-            let width = timeline?.shape(at: ride.begin + time).width ?? contentSize.width
+            let width = timeline?.shape(at: origin + time).width ?? contentSize.width
             let frame = rideFrame(at: time, islandWidth: width)
             let scaled = arrivalTransform(scale: frame.scale, in: layer)
             let rise = CATransform3DMakeTranslation(0, flipped ? frame.offset : -frame.offset, 0)
@@ -1887,7 +1931,7 @@ private final class NotchCanvas: NSView {
         transform.values = values
         transform.keyTimes = times.map { NSNumber(value: $0 / length) }
         transform.calculationMode = .linear
-        transform.beginTime = ride.begin
+        transform.beginTime = started.map { layer.convertTime($0, from: nil) } ?? 0
         transform.duration = length
         if !ride.arrives {
             transform.fillMode = .forwards
@@ -2087,3 +2131,40 @@ final class NotchActivationButton: NSButton {
 private final class NotchHostingView: NSHostingView<AnyView> {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
+
+#if VORSSAINT_DEVELOPMENT
+/// Zenith fork, Developer builds only: a log of each island motion the host
+/// installs (its keyframe sizes) and of every frame the display link sees
+/// while it runs (the size on screen against the expected one, and the
+/// content's opacity), to check the live motion against the approved reel.
+/// Off unless `defaults write id.satuvisual.zenith.dev zenithMotionTrace -bool
+/// true`; written to ~/Library/Logs/ZenithDeveloper/island-motion.log.
+enum ZenithMotionTrace {
+    static var enabled: Bool { UserDefaults.standard.bool(forKey: "zenithMotionTrace") }
+
+    /// Numbers for the log, the same in every region.
+    static func text(_ format: String, _ arguments: CVarArg...) -> String {
+        String(format: format, locale: Locale(identifier: "en_US_POSIX"), arguments: arguments)
+    }
+
+    private static let url: URL = {
+        let folder = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Logs/ZenithDeveloper", isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        return folder.appendingPathComponent("island-motion.log")
+    }()
+
+    static func log(_ line: @autoclosure () -> String) {
+        guard enabled else { return }
+        let text = Self.text("%.4f ", CACurrentMediaTime()) + line() + "\n"
+        guard let data = text.data(using: .utf8) else { return }
+        if let handle = try? FileHandle(forWritingTo: url) {
+            handle.seekToEndOfFile()
+            handle.write(data)
+            try? handle.close()
+        } else {
+            try? data.write(to: url)
+        }
+    }
+}
+#endif

@@ -3133,10 +3133,27 @@ enum NotchMotion {
     /// Sides closer than this to their targets read as settled.
     static let settledDistance: CGFloat = 0.5
 
-    static func spring(from: CGFloat, to: CGFloat, width: Bool, steady: Bool = false) -> Spring {
+    static func spring(from: CGFloat, to: CGFloat, width: Bool, steady: Bool = false, landing: Bool = false) -> Spring {
         if steady && width { return steadyWidth }
-        let spring = to > from ? (width ? growingWidth : growingHeight) : (width ? shrinkingWidth : shrinkingHeight)
+        // Zenith fork: a side landing on the closed island takes the softer landing spring.
+        let spring = landing ? (width ? ZenithIslandMotion.landingWidth : ZenithIslandMotion.landingHeight)
+            : to > from ? (width ? growingWidth : growingHeight) : (width ? shrinkingWidth : shrinkingHeight)
         return spring.limited(travel: abs(to - from), limit: ZenithIslandMotion.swingLimit(width: width)) // Zenith fork
+    }
+
+    /// Zenith fork: one side at `time`, and its speed. A side landing on
+    /// `floor` (the closed island at the camera) never shows below it.
+    static func side(_ start: CGFloat, _ end: CGFloat, width: Bool, steady: Bool = false, floor: CGFloat = 0,
+                     at time: TimeInterval) -> (value: CGFloat, speed: CGFloat) {
+        guard start != end else { return (end, 0) }
+        let landing = !(steady && width) && ZenithIslandMotion.lands(from: start, to: end, floor: floor)
+        let spring = spring(from: start, to: end, width: width, steady: steady, landing: landing)
+        let moved = ZenithIslandMotion.progress(spring, lag: lag(from: start, to: end, width: width, steady: steady),
+                                                easeIn: steady && width ? 0 : ZenithIslandMotion.easeIn(from: start, to: end),
+                                                landing: landing, at: time)
+        let value = start + (end - start) * CGFloat(moved.progress)
+        let bottom = ZenithIslandMotion.bottom(floor: floor, from: start, to: end)
+        return value < bottom ? (bottom, 0) : (value, (end - start) * CGFloat(moved.rate))
     }
 
     /// Zenith fork: how long a side waits before it moves; a steady width does not.
@@ -3158,33 +3175,26 @@ enum NotchMotion {
         return durations.max() ?? growingWidth.duration
     }
 
-    static func size(at time: TimeInterval, from: CGSize, to: CGSize, steady: Bool = false) -> CGSize {
-        func side(_ start: CGFloat, _ end: CGFloat, width: Bool) -> CGFloat {
-            guard start != end else { return end }
-            let spring = spring(from: start, to: end, width: width, steady: steady)
-            let lag = lag(from: start, to: end, width: width, steady: steady) // Zenith fork
-            return max(0, start + (end - start) * CGFloat(spring.progress(at: time - lag)))
-        }
-        return CGSize(width: side(from.width, to.width, width: true), height: side(from.height, to.height, width: false))
+    static func size(at time: TimeInterval, from: CGSize, to: CGSize, steady: Bool = false, floor: CGSize = .zero) -> CGSize {
+        // Zenith fork: lags, landings and the floor (NotchMotion.side).
+        CGSize(width: side(from.width, to.width, width: true, steady: steady, floor: floor.width, at: time).value,
+               height: side(from.height, to.height, width: false, steady: steady, floor: floor.height, at: time).value)
     }
 
     /// Zenith fork: each side's speed in points per second, from its spring's equation.
-    static func velocity(at time: TimeInterval, from: CGSize, to: CGSize, steady: Bool = false) -> CGSize {
-        func side(_ start: CGFloat, _ end: CGFloat, width: Bool) -> CGFloat {
-            guard start != end else { return 0 }
-            let spring = spring(from: start, to: end, width: width, steady: steady)
-            let lag = lag(from: start, to: end, width: width, steady: steady)
-            return (end - start) * CGFloat(spring.velocity(at: time - lag))
-        }
-        return CGSize(width: side(from.width, to.width, width: true), height: side(from.height, to.height, width: false))
+    static func velocity(at time: TimeInterval, from: CGSize, to: CGSize, steady: Bool = false, floor: CGSize = .zero) -> CGSize {
+        CGSize(width: side(from.width, to.width, width: true, steady: steady, floor: floor.width, at: time).speed,
+               height: side(from.height, to.height, width: false, steady: steady, floor: floor.height, at: time).speed)
     }
 
-    /// Zenith fork: the body as drawn, squashed by its own speed. A steady
-    /// width only eases, so it keeps its shape.
-    static func shape(at time: TimeInterval, from: CGSize, to: CGSize, steady: Bool = false) -> CGSize {
-        let size = size(at: time, from: from, to: to, steady: steady)
+    /// Zenith fork: the body as drawn, squashed by its own speed and never
+    /// below the floor. A steady width only eases, so it keeps its shape.
+    static func shape(at time: TimeInterval, from: CGSize, to: CGSize, steady: Bool = false, floor: CGSize = .zero) -> CGSize {
+        let size = size(at: time, from: from, to: to, steady: steady, floor: floor)
         guard !steady else { return size }
-        return ZenithIslandMotion.squash(size, velocity: velocity(at: time, from: from, to: to))
+        let squashed = ZenithIslandMotion.squash(size, velocity: velocity(at: time, from: from, to: to, floor: floor))
+        return CGSize(width: max(squashed.width, ZenithIslandMotion.bottom(floor: floor.width, from: from.width, to: to.width)),
+                      height: max(squashed.height, ZenithIslandMotion.bottom(floor: floor.height, from: from.height, to: to.height)))
     }
 
     /// When every side that moves first comes within 1% of its travel from
@@ -3202,13 +3212,14 @@ enum NotchMotion {
     }
 
     /// When the size and centre stay within `settledDistance` of their targets for good.
-    static func settlingTime(from: CGSize, to: CGSize, steady: Bool = false, offset startOffset: CGFloat = 0) -> TimeInterval {
+    static func settlingTime(from: CGSize, to: CGSize, steady: Bool = false, offset startOffset: CGFloat = 0,
+                             floor: CGSize = .zero) -> TimeInterval {
         let step = 1.0 / 240
         var settled = step
         var time = step
         while time < 2 {
-            let size = shape(at: time, from: from, to: to, steady: steady) // Zenith fork: as drawn
-            let offset = offset(at: time, from: from, to: to, start: startOffset, steady: steady)
+            let size = shape(at: time, from: from, to: to, steady: steady, floor: floor) // Zenith fork: as drawn
+            let offset = offset(at: time, from: from, to: to, start: startOffset, steady: steady, floor: floor)
             if abs(size.width - to.width) > settledDistance || abs(size.height - to.height) > settledDistance
                 || abs(offset) > settledDistance {
                 settled = time + step
@@ -3221,21 +3232,27 @@ enum NotchMotion {
     /// How far a moving island's centre still sits from its new one. It
     /// travels with the width's spring, or eases on its own when two notices
     /// have the same total width but different sides.
-    static func offset(at time: TimeInterval, from: CGSize, to: CGSize, start: CGFloat, steady: Bool = false) -> CGFloat {
+    static func offset(at time: TimeInterval, from: CGSize, to: CGSize, start: CGFloat, steady: Bool = false,
+                       floor: CGSize = .zero) -> CGFloat {
         guard start != 0 else { return 0 }
-        let spring = from.width == to.width ? steadyWidth : spring(from: from.width, to: to.width, width: true, steady: steady)
-        let lag = from.width == to.width ? 0 : lag(from: from.width, to: to.width, width: true, steady: steady) // Zenith fork
-        return start * CGFloat(1 - spring.progress(at: time - lag))
+        guard from.width != to.width else { return start * CGFloat(1 - steadyWidth.progress(at: time)) }
+        // Zenith fork: with the width's own lag and landing.
+        let landing = !steady && ZenithIslandMotion.lands(from: from.width, to: to.width, floor: floor.width)
+        let spring = spring(from: from.width, to: to.width, width: true, steady: steady, landing: landing)
+        let moved = ZenithIslandMotion.progress(spring, lag: lag(from: from.width, to: to.width, width: true, steady: steady),
+                                                easeIn: steady ? 0 : ZenithIslandMotion.easeIn(from: from.width, to: to.width),
+                                                landing: landing, at: time)
+        return start * CGFloat(1 - moved.progress)
     }
 
     /// Sizes at a steady rate, ending exactly at `to`, and where each falls
     /// within the duration, including a centre still on its way there.
-    static func frames(from: CGSize, to: CGSize,
-                       steady: Bool = false, offset: CGFloat = 0) -> (sizes: [CGSize], keyTimes: [Double], duration: TimeInterval) {
-        let duration = settlingTime(from: from, to: to, steady: steady, offset: offset)
+    static func frames(from: CGSize, to: CGSize, steady: Bool = false, offset: CGFloat = 0,
+                       floor: CGSize = .zero) -> (sizes: [CGSize], keyTimes: [Double], duration: TimeInterval) {
+        let duration = settlingTime(from: from, to: to, steady: steady, offset: offset, floor: floor)
         let count = max(1, Int((duration * 120).rounded(.up)))
         let keyTimes = (0...count).map { Double($0) / Double(count) }
-        let sizes = keyTimes.map { $0 == 1 ? to : shape(at: duration * $0, from: from, to: to, steady: steady) } // Zenith fork
+        let sizes = keyTimes.map { $0 == 1 ? to : shape(at: duration * $0, from: from, to: to, steady: steady, floor: floor) } // Zenith fork
         return (sizes, keyTimes, duration)
     }
 
@@ -3247,10 +3264,10 @@ enum NotchMotion {
                height: max(reserved.height, size.height))
     }
 
-    static func envelope(from: CGSize, to: CGSize) -> CGSize {
+    static func envelope(from: CGSize, to: CGSize, floor: CGSize = .zero) -> CGSize {
         // Zenith fork: every frame as drawn, squash included.
         guard from != to else { return CGSize(width: max(from.width, to.width), height: max(from.height, to.height)) }
-        let sizes = frames(from: from, to: to).sizes
+        let sizes = frames(from: from, to: to, floor: floor).sizes
         return CGSize(width: max(from.width, to.width, sizes.map(\.width).max() ?? 0).rounded(.up),
                       height: max(from.height, to.height, sizes.map(\.height).max() ?? 0).rounded(.up))
     }
@@ -3279,14 +3296,17 @@ struct NotchMotionTimeline: Equatable {
     /// its new one. A motion with either is never carried on.
     let steady: Bool
     let offset: CGFloat
+    /// Zenith fork: the closed island at the camera, which no frame shows below.
+    private(set) var floor: CGSize
 
-    init(from: CGSize, to: CGSize, begin: CFTimeInterval, steady: Bool = false, offset: CGFloat = 0) {
+    init(from: CGSize, to: CGSize, begin: CFTimeInterval, steady: Bool = false, offset: CGFloat = 0, floor: CGSize = .zero) {
         width = [Leg(begin: begin, from: from.width, to: to.width)]
         height = [Leg(begin: begin, from: from.height, to: to.height)]
         self.begin = begin
         start = from
         self.steady = steady
         self.offset = offset
+        self.floor = floor
     }
 
     var target: CGSize { CGSize(width: width.last?.to ?? start.width, height: height.last?.to ?? start.height) }
@@ -3300,13 +3320,25 @@ struct NotchMotionTimeline: Equatable {
         CGSize(width: speed(of: width, at: time, width: true), height: speed(of: height, at: time, width: false))
     }
 
-    /// Zenith fork: the body as drawn, squashed by its own speed.
+    /// Zenith fork: the body as drawn, squashed by its own speed, never below the floor.
     func shape(at time: CFTimeInterval) -> CGSize {
-        steady ? size(at: time) : ZenithIslandMotion.squash(size(at: time), velocity: velocity(at: time))
+        guard !steady else { return size(at: time) }
+        let squashed = ZenithIslandMotion.squash(size(at: time), velocity: velocity(at: time))
+        return CGSize(width: max(squashed.width, bottom(of: width, floor: floor.width)),
+                      height: max(squashed.height, bottom(of: height, floor: floor.height)))
+    }
+
+    /// Zenith fork: the least a side shows: the floor, unless one of its ends lies below it.
+    private func bottom(of legs: [Leg], floor: CGFloat) -> CGFloat {
+        max(0, min(floor, legs.flatMap { [$0.from, $0.to] }.min() ?? floor))
+    }
+
+    private func landing(_ leg: Leg, width: Bool) -> Bool {
+        !(steady && width) && ZenithIslandMotion.lands(from: leg.from, to: leg.to, floor: width ? floor.width : floor.height)
     }
 
     func offset(at time: CFTimeInterval) -> CGFloat {
-        NotchMotion.offset(at: time - begin, from: start, to: target, start: offset, steady: steady)
+        NotchMotion.offset(at: time - begin, from: start, to: target, start: offset, steady: steady, floor: floor)
     }
 
     /// The same motion with its latest move beginning at `time`: Core
@@ -3325,7 +3357,7 @@ struct NotchMotionTimeline: Equatable {
     /// This motion headed for `size` from `time` on, or nil when the motion
     /// eases without a swing or moves its centre. Zenith fork: a side turning
     /// back carries on too.
-    func continued(to size: CGSize, at time: CFTimeInterval) -> NotchMotionTimeline? {
+    func continued(to size: CGSize, at time: CFTimeInterval, floor: CGSize? = nil) -> NotchMotionTimeline? {
         guard !steady, offset == 0, let width = continued(width, to: size.width, at: time),
               let height = continued(height, to: size.height, at: time) else { return nil }
         var next = self
@@ -3333,6 +3365,7 @@ struct NotchMotionTimeline: Equatable {
         next.height = height
         next.begin = time
         next.start = self.size(at: time)
+        if let floor { next.floor = floor } // Zenith fork: the floor of the new target
         return next
     }
 
@@ -3361,24 +3394,33 @@ struct NotchMotionTimeline: Equatable {
         guard let first = legs.first else { return 0 }
         let value = legs.reduce(first.from) { value, leg in
             guard leg.from != leg.to else { return value }
-            let spring = NotchMotion.spring(from: leg.from, to: leg.to, width: width, steady: steady)
-            let lag = NotchMotion.lag(from: leg.from, to: leg.to, width: width, steady: steady) // Zenith fork
-            return value + (leg.to - leg.from) * CGFloat(spring.progress(at: time - leg.begin - lag))
+            // Zenith fork: each leg with its lag, and a landing on the floor settling from above.
+            let landing = landing(leg, width: width)
+            let spring = NotchMotion.spring(from: leg.from, to: leg.to, width: width, steady: steady, landing: landing)
+            let lag = NotchMotion.lag(from: leg.from, to: leg.to, width: width, steady: steady)
+            let easeIn = steady && width ? 0 : ZenithIslandMotion.easeIn(from: leg.from, to: leg.to)
+            return value + (leg.to - leg.from) * CGFloat(ZenithIslandMotion.progress(spring, lag: lag, easeIn: easeIn,
+                                                                                     landing: landing, at: time - leg.begin).progress)
         }
         // Swings that happen to coincide still pass the ends no further than
-        // the sanity cap, so a long travel stays on the display.
+        // the sanity cap, so a long travel stays on the display, and never
+        // below the floor at the camera.
         let limit = ZenithIslandMotion.swingLimit(width: width) // Zenith fork
         let ends = legs.flatMap { [$0.from, $0.to] }
-        return max(0, (ends.min() ?? 0) - limit, min(value, (ends.max() ?? 0) + limit))
+        return max(bottom(of: legs, floor: width ? floor.width : floor.height), (ends.min() ?? 0) - limit,
+                   min(value, (ends.max() ?? 0) + limit))
     }
 
     /// Zenith fork: the derivative of `value`, from the springs' equations.
     private func speed(of legs: [Leg], at time: CFTimeInterval, width: Bool) -> CGFloat {
         legs.reduce(0) { speed, leg in
             guard leg.from != leg.to else { return speed }
-            let spring = NotchMotion.spring(from: leg.from, to: leg.to, width: width, steady: steady)
+            let landing = landing(leg, width: width)
+            let spring = NotchMotion.spring(from: leg.from, to: leg.to, width: width, steady: steady, landing: landing)
             let lag = NotchMotion.lag(from: leg.from, to: leg.to, width: width, steady: steady)
-            return speed + (leg.to - leg.from) * CGFloat(spring.velocity(at: time - leg.begin - lag))
+            let easeIn = steady && width ? 0 : ZenithIslandMotion.easeIn(from: leg.from, to: leg.to)
+            return speed + (leg.to - leg.from) * CGFloat(ZenithIslandMotion.progress(spring, lag: lag, easeIn: easeIn,
+                                                                                     landing: landing, at: time - leg.begin).rate)
         }
     }
 
