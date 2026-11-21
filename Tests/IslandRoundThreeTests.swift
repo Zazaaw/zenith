@@ -12,7 +12,53 @@ enum IslandRoundThreeTests {
         captureStrip(suite)
         batteryNotice(suite)
         calendarGrid(suite)
+        prayerBurst(suite)
         strings(suite)
+    }
+
+    // MARK: Bursts
+
+    static let geometry = NotchGeometry(screen: CGRect(x: 0, y: 0, width: 1512, height: 982), safeAreaTop: 32,
+                                        cameraWidth: 185, layout: .spacious, menuBarHeight: 32)
+
+    static let asr = ZenithPrayerBurst(symbol: "sun.max", title: "Waktunya Ashar", subtitle: "15.04 · Kemenag RI",
+                                       nextLabel: "Next", next: "Maghrib 18.02")
+
+    private static func prayerBurst(_ suite: TestSuite) {
+        let start = Date(timeIntervalSince1970: 1_000_000)
+        let burst = ZenithIslandBurst(.prayer(asr), start: start)
+        suite.expect(burst.duration == ZenithIslandBurstTiming.prayer && burst.event == .timer && burst.module == .sky,
+                     "a prayer's time grows the island through its own notice and opens the Sky page")
+        suite.expect(burst.remaining(at: start) == 1 && burst.remaining(at: start.addingTimeInterval(burst.duration / 2)) == 0.5
+                        && burst.remaining(at: start.addingTimeInterval(burst.duration + 5)) == 0
+                        && burst.remaining(at: start.addingTimeInterval(-3)) == 1,
+                     "its line empties from full to nothing over its stay")
+        suite.expect(ZenithIslandBurstTiming.phase(burst, at: start.addingTimeInterval(2)) == .shown(remaining: 0.75)
+                        && ZenithIslandBurstTiming.phase(burst, at: start.addingTimeInterval(burst.duration)) == .settled,
+                     "grown for its stay, then settled back into the pill")
+        let charge = ZenithIslandBurst(.charge(.make(.charging, percent: 50, minutes: nil, island: ZenithStrings.island(.enUS),
+                                                     notices: ZenithStrings.notices(.enUS), locale: Locale(identifier: "en_US"))),
+                                       start: start)
+        suite.expect(!ZenithIslandBurstTiming.replaces(burst, with: charge, at: start.addingTimeInterval(1))
+                        && ZenithIslandBurstTiming.replaces(burst, with: charge, at: start.addingTimeInterval(burst.duration + 1))
+                        && ZenithIslandBurstTiming.replaces(charge, with: burst, at: start.addingTimeInterval(1))
+                        && ZenithIslandBurstTiming.replaces(nil, with: charge, at: start),
+                     "a charger never cuts a prayer's time short; a prayer takes the island from a charger")
+        suite.expect(burst.accessibilityText == "Waktunya Ashar, 15.04 · Kemenag RI, Next Maghrib 18.02",
+                     "VoiceOver reads the time, the method and the next prayer")
+
+        let size = ZenithIslandBurstLayout.size(burst, geometry: geometry)
+        let shoulder = NotchLayout.shoulder(height: size.height)
+        suite.expect(ZenithIslandRoom.contentWidth(width: size.width, shoulder: shoulder) >= ZenithIslandBurstLayout.contentWidth(burst)
+                        && size.width >= ZenithIslandRoom.minimumWidth,
+                     "the prayer's row fits inside the room rule")
+        suite.expect(size.height == geometry.stripHeight - ZenithIslandBurstLayout.rowOverlap
+                        + ZenithIslandBurstLayout.contentHeight(burst) && size.height > geometry.stripHeight + 60,
+                     "the row and its line sit below the camera, the island taller than the pill")
+        let alone = ZenithIslandBurst(.prayer(ZenithPrayerBurst(symbol: "moon", title: "Waktunya Isya", subtitle: "19.07 · Kemenag RI",
+                                                                nextLabel: "Next", next: nil)), start: start)
+        suite.expect(ZenithIslandBurstLayout.contentWidth(alone) < ZenithIslandBurstLayout.contentWidth(burst),
+                     "without a next prayer the end column is left out")
     }
 
     // MARK: Calendar

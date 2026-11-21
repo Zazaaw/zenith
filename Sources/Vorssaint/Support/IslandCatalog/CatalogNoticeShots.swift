@@ -69,7 +69,7 @@ extension CatalogShots {
                                                            detail: sampleNotification.body, symbol: "bell.fill",
                                                            notification: sampleNotification, notificationID: notificationID),
                    expanded: true),
-        ] + capsules
+        ] + bursts + capsules
     }
 
     // MARK: Capsules (ZenithNotice)
@@ -81,6 +81,40 @@ extension CatalogShots {
             center.catalogPose(make())
             return (AnyView(ZenithNoticeRoot(center: center)), center.panelSize)
         }
+    }
+
+    // MARK: Bursts (the island grown for a moment)
+
+    /// The island grown for `content`, `elapsed` seconds into its stay.
+    static func burst(_ id: String, preferences: [String: Any] = [:], geometry: NotchGeometry? = nil,
+                      elapsed: TimeInterval = 0, setup: @escaping @MainActor () -> Void = {},
+                      _ content: @escaping @MainActor () -> ZenithIslandBurst.Content) -> CatalogShot {
+        CatalogShot(id: id, preferences: preferences, setup: setup) {
+            let burst = ZenithIslandBurst(content(), start: Date().addingTimeInterval(-elapsed))
+            return island(pose {
+                if let geometry { $0.geometry = geometry }
+                $0.notice = NotchNotice(event: burst.event, title: burst.title, detail: burst.subtitle,
+                                        symbol: "circle", zenith: burst)
+            })
+        }
+    }
+
+    static let indonesianNames: [String: Any] = [DefaultsKey.notchSkyNames: PrayerTimesSupport.NameStyle.indonesian.rawValue]
+
+    static var bursts: [CatalogShot] {
+        // Today's own Asr in Jakarta, so the next prayer is its Maghrib.
+        let prayer: @MainActor () -> ZenithIslandBurst.Content = {
+            let asr = CatalogSamples.skyDay.moments.first { $0.prayer == .asr && Calendar.current.isDateInToday($0.time) }
+                ?? PrayerMoment(prayer: .asr, time: CatalogSamples.now)
+            return .prayer(SkyService.shared.prayerBurst(asr))
+        }
+        return [
+            burst("burst-prayer", preferences: indonesianNames, elapsed: 3.2, setup: { CatalogSamples.prayer(arrived: true) },
+                  prayer),
+            burst("burst-prayer-capsule", preferences: indonesianNames.merging([
+                DefaultsKey.notchSilhouette: NotchSilhouette.capsule.rawValue]) { $1 },
+                  geometry: capsule, elapsed: 3.2, setup: { CatalogSamples.prayer(arrived: true) }, prayer),
+        ]
     }
 
     /// A low battery notice as the notice center builds it.
@@ -161,13 +195,6 @@ extension CatalogShots {
                              subtitle: "5h 12m coded · 14 commits · 3 deploys",
                              glyph: .symbol(NotchModule.recap.zenithIconSymbol, .tint(NotchModule.recap)),
                              accessory: .action(ZenithStrings.recap(.enUS).open), action: .openRecap)
-            },
-            capsuleNotice("capsule-prayer") {
-                let sky = ZenithStrings.sky(.enUS)
-                return ZenithNotice(kind: .prayer, key: ZenithNoticeKey.prayer("asr"),
-                                    title: sky.arrival(.asr, indonesian: true),
-                                    subtitle: "15:04 · Jakarta · " + PrayerConfiguration().method.title,
-                                    glyph: .symbol(Prayer.asr.symbol, .tint(NotchModule.sky)))
             },
             capsuleNotice("capsule-workspace") {
                 ZenithNotice(kind: .workspace, key: ZenithNoticeKey.workspace("catalog"), title: "Coding workspace ready",

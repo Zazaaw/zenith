@@ -84,7 +84,7 @@ let sections: [Section] = [
         pair("compact-export-done", "Export selesai", "Centang, ukuran akhir dan durasi.", "Sesaat setelah export selesai.", "\(di) › tab Content › Activity › Export tracker"),
         pair("compact-dev-servers", "Dev servers", "Jumlah dev server yang jalan.", "Ada localhost (Next, Vite, dll) yang aktif.", "\(di) › tab Content › Dev servers › Show the count in the closed island"),
         pair("compact-prayer", "Waktu salat mendekat", "Hitung mundur ke salat berikutnya.", "Masuk lead time sebelum waktu salat.", "\(di) › tab Content › Sky › Prayer times"),
-        pair("compact-prayer-arrived", "Waktunya salat", "“Waktunya Ashar” dan jamnya.", "Tepat saat waktu salat tiba.", "\(di) › tab Content › Sky › Prayer times", note: "Bug yang diketahui: kapsul notice adzan sekarang digambar di atas pill ini, keduanya tumpang tindih. Lihat Rencana di akhir."),
+        pair("compact-prayer-arrived", "Waktunya salat (sesudah membesar)", "“Waktunya Ashar” dan jamnya, sampai 2 menit setelah waktunya.", "Setelah island adzan (Notices › “Adzan: pill membesar”) mengecil lagi.", "\(di) › tab Content › Sky › Prayer times"),
         pair("compact-golden-hour", "Golden hour", "“Golden hour in 20 min”.", "Golden hour sore mendekat atau sedang berlangsung.", "\(di) › tab Content › Sky › Golden hour in the closed island"),
         pair("compact-git", "Branch Git", "Nama branch dan titik oranye kalau ada perubahan.", "Repo aktif terdeteksi dari editor atau terminal.", "\(di) › tab Content › Git › Show the branch in the closed island"),
         pair("compact-picker", "Pemilih aktivitas", "Daftar aktivitas yang sedang jalan, plus Combine.", "Hover island waktu ada lebih dari satu aktivitas.", "Otomatis, nggak ada setelan"),
@@ -147,6 +147,8 @@ let sections: [Section] = [
         pair("notice-input-source", "Input source", "Layout keyboard yang baru aktif.", "Ganti input source.", "\(di) › tab Activity › More options › Input source"),
         pair("notice-notification", "Banner notifikasi", "Notifikasi macOS di sayap island.", "Ada notifikasi baru.", "\(di) › tab Content › Notifications"),
         pair("notice-notification-open", "Notifikasi dibuka", "Banner yang membesar dengan isi lengkap.", "Klik banner notifikasi.", "\(di) › tab Content › Notifications; tab Layout › Reply", note: "Baris balasan (Reply) nggak ikut tergambar di render ini."),
+        pair("burst-prayer", "Adzan: pill membesar", "Pill salat sendiri yang membesar jadi satu island: tile simbol salat biru langit, “Waktunya Ashar”, jam · metode, “Next · Maghrib” di kanan, dan garis tipis yang menyusut selama tampil (8 detik). Lalu mengecil lagi ke pill. Tidak ada lapisan kedua di atas pill.", "Tepat waktu salat (yang diingatkan). Kalau island sedang terbuka, menunggu sampai ditutup, maksimal 2 menit.", "\(di) › tab Content › Sky › Prayer times"),
+        pair("burst-prayer-capsule", "Adzan di layar tanpa notch", "Island adzan yang sama sebagai kapsul melayang.", "Tepat waktu salat, island di layar tanpa kamera.", "\(di) › tab Layout › Displays without a notch", capsule: true),
         pair("capsule-battery-low", "Kapsul: baterai 20%", "Baterai merah terisi sesuai level, persen besar, “Battery low” dan pil Low Power. Klik membuka pengaturan Battery untuk menyalakan Low Power Mode.", "Baterai turun ke batas Low battery, Low Power Mode mati.", "\(di) › tab Activity › Notices › Low battery"),
         pair("capsule-battery-critical", "Kapsul: baterai 10%, Low Power nyala", "Baterai amber, “Low Power Mode is on”, sisa waktu dari macOS, dan chip “✓ On”.", "Baterai turun ke batas Very low battery, Low Power Mode sudah nyala.", "\(di) › tab Activity › Notices › Very low battery"),
         pair("capsule-battery-critical-unknown", "Kapsul: baterai 9%, tanpa perkiraan", "Sama, tapi macOS belum punya perkiraan sisa waktu: cukup “Plug in soon”.", "Sesaat setelah dicabut, saat macOS masih menghitung.", "\(di) › tab Activity › Notices › Very low battery"),
@@ -160,7 +162,6 @@ let sections: [Section] = [
         pair("capsule-export", "Kapsul: export selesai", "Nama file export dan ukurannya.", "Export selesai.", "\(di) › tab Content › Activity › Export tracker"),
         pair("capsule-dev-server", "Kapsul: dev server jalan", "Framework, project, localhost, tombol Open.", "Dev server baru mulai.", "\(di) › tab Content › Dev servers"),
         pair("capsule-recap", "Kapsul: recap harian", "“Your day” dan angka terbesar hari ini.", "Pada jam recap yang dipilih.", "\(di) › tab Content › Today"),
-        pair("capsule-prayer", "Kapsul: adzan", "“Waktunya Ashar”, jam, kota, metode.", "Tepat waktu salat.", "\(di) › tab Content › Sky › Prayer times", note: "Bug yang diketahui: kapsul ini muncul di atas pill salat, tumpang tindih. Rencananya pill-nya yang membesar (lihat Rencana)."),
         pair("capsule-workspace", "Kapsul: workspace siap", "Workspace yang baru dijalankan sudah siap.", "Workspace selesai dibuka.", "Settings › Workspaces"),
     ]),
     Section(title: "Lock screen", intro: "Island dan layer Zenith di lock screen (v2), digambar lewat preview Settings dengan wallpaper contoh.", items: [
@@ -168,7 +169,6 @@ let sections: [Section] = [
         Item(id: "lock-full", title: "Lock screen: full", what: "Layer penuh: piringan lagu, lirik besar, info di kanan atas.", when: "Mac dikunci, mode Full.", setting: "Settings › Lock Screen › Full", layout: .screen),
     ]),
     Section(title: "Planned", intro: "Rencana yang sudah disetujui, belum dibuat. Ini mockup, bukan render aplikasi.", items: [
-        Item(id: "planned/isl_prayer", title: "Rencana: adzan membesar dari pill", what: "Pill salat langsung tumbuh jadi island besar “Waktunya Ashar” dengan salat berikutnya dan progress.", when: "Tepat waktu salat. Menggantikan kapsul yang sekarang digambar di atas pill (bug tumpang tindih).", setting: "Nanti di \(di) › tab Content › Sky", layout: .mockup),
         Item(id: "planned/isl_charge", title: "Rencana: mengisi daya", what: "Island membesar saat charger dicolok, dengan persen dan status.", when: "Charger dicolok.", setting: "Nanti di \(di) › tab Activity › Notices", layout: .mockup),
         Item(id: "planned/isl_charge_hold", title: "Rencana: ditahan di 80%", what: "Status saat pengisian ditahan di batas 80%.", when: "Charge mencapai batas.", setting: "Nanti di \(di) › tab Activity › Notices", layout: .mockup),
         Item(id: "planned/isl_locked", title: "Rencana: “Locked from Faiz’s iPhone”", what: "Island memberi tahu Mac dikunci dari iPhone.", when: "Shortcut iPhone mengunci Mac lewat SSH.", setting: "Nanti di Settings › Lock Screen", layout: .mockup),

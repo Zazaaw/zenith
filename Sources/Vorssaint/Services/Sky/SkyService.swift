@@ -201,16 +201,24 @@ final class SkyService: ObservableObject {
         guard announced != moment else { return }
         announced = moment
         guard now.timeIntervalSince(moment.time) < Self.announcementGrace else { return }
-        let language = L10n.shared.language
-        let text = ZenithStrings.sky(language)
-        let indonesian = usesIndonesianNames
-        var subtitle = PrayerTimesSupport.clock(moment.time, locale: language.formattingLocale())
-        if let name = day?.place.name { subtitle += " · " + name }
-        subtitle += " · " + settings.configuration.method.title
-        ZenithNoticeCenter.shared.prayerTime(key: moment.prayer.rawValue,
-                                             title: text.arrival(moment.prayer, indonesian: indonesian),
-                                             subtitle: subtitle, symbol: moment.prayer.symbol)
+        // The pill beside the camera grows into the bigger island and shrinks
+        // back (ZenithIslandBurst): one surface, never a capsule over the pill.
+        NotchService.shared.showZenithBurst(.prayer(prayerBurst(moment)))
         if settings.sound { playSound() }
+    }
+
+    /// “Waktunya Ashar”, its time and the method, and the prayer after it.
+    func prayerBurst(_ moment: PrayerMoment) -> ZenithPrayerBurst {
+        let language = L10n.shared.language
+        let locale = language.formattingLocale()
+        let text = ZenithStrings.sky(language)
+        let subtitle = PrayerTimesSupport.clock(moment.time, locale: locale) + " · " + settings.configuration.method.title
+        let next = (day?.moments).flatMap { PrayerTimesSupport.next(after: moment.time, in: $0) }
+        return ZenithPrayerBurst(symbol: moment.prayer.symbol,
+                                 title: text.arrival(moment.prayer, indonesian: usesIndonesianNames),
+                                 subtitle: subtitle, nextLabel: ZenithStrings.island(language).next,
+                                 next: next.map { name($0.prayer, language: language) + " "
+                                     + PrayerTimesSupport.clock($0.time, locale: locale) })
     }
 
     // MARK: Sound

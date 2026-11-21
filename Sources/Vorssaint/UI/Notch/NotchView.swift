@@ -123,7 +123,20 @@ struct NotchView: View {
                 .padding(.horizontal, 18 + NotchLayout.shoulderFlare(height: service.surfaceSize.height)) // Zenith fork
                 .padding(.top, service.geometry.safeContentTop)
         } else if let notice = service.stripNotice {
-            if service.noticeExpanded, let content = notice.notification {
+            if let burst = notice.zenith { // Zenith fork: the island grown for a moment
+                Button {
+                    service.activateNotice(notice)
+                } label: {
+                    ZenithIslandBurstView(burst: burst, geometry: service.geometry)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(notice.accessibilityText)
+                .accessibilityAddTraits(.isButton)
+                .id(notice.clickTarget)
+                .transition(.opacity)
+            } else if service.noticeExpanded, let content = notice.notification {
                 NotchNotificationPreviewView(notice: notice, content: content, service: service)
                     .padding(.horizontal, NotchLayout.horizontalInset)
                     .padding(.top, service.geometry.safeContentTop)

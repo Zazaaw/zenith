@@ -20,8 +20,7 @@ struct ZenithNotice: Equatable {
         case devServer
         /// The day's recap at the chosen time, offering its page (RecapService).
         case recap
-        /// A prayer's time came (SkyService).
-        case prayer
+        // A prayer's time is no capsule: the island's pill grows (ZenithIslandBurst).
         /// A workspace the person ran finished, ready or with problems (WorkspaceService).
         case workspace
 
@@ -30,7 +29,7 @@ struct ZenithNotice: Equatable {
             switch self {
             case .batteryCritical: return 5
             case .batteryLow: return 4
-            case .audio, .card, .prayer, .workspace: return 3
+            case .audio, .card, .workspace: return 3
             case .charging, .unplugged: return 2
             case .chargeLimit, .download, .export, .devServer, .recap: return 1
             }
@@ -141,8 +140,6 @@ struct ZenithNoticeQueue {
         case .devServer: return 20
         // Once a day and in no hurry: it waits out a full screen app or an open island.
         case .recap: return 10 * 60
-        // A prayer's time is worth waiting a little for, not long.
-        case .prayer: return 120
         // Asked for a moment ago; after half a minute it is no longer news.
         case .workspace: return 30
         }
@@ -229,7 +226,6 @@ enum ZenithNoticeKey {
     static func devServer(_ key: String) -> String { "devserver." + key }
     /// The recap of one day, so the same day never queues twice.
     static func recap(_ day: String) -> String { "recap." + day }
-    static func prayer(_ name: String) -> String { "prayer." + name }
     /// One workspace's run, so running it again updates the notice in place.
     static func workspace(_ id: String) -> String { "workspace." + id }
 }
@@ -480,7 +476,6 @@ enum ZenithNoticeTiming {
         case .devServer: return 5
         // A line of figures to read, with a choice to open it.
         case .recap: return 8
-        case .prayer: return 6
         // Long enough to read what did not work.
         case .workspace: return 6
         default: return 4

@@ -193,13 +193,6 @@ final class ZenithNoticeCenter: ObservableObject {
         return true
     }
 
-    /// Zenith fork: a prayer's time came (SkyService): "Waktunya Dzuhur", the
-    /// time and the method below, its sun or moon in the Sky section's colour.
-    func prayerTime(key: String, title: String, subtitle: String, symbol: String) {
-        enqueue(ZenithNotice(kind: .prayer, key: ZenithNoticeKey.prayer(key), title: title, subtitle: subtitle,
-                             glyph: .symbol(symbol, .tint(NotchModule.sky))))
-    }
-
     /// Zenith fork: a workspace finished (WorkspaceService): "Coding workspace
     /// ready" in its colour with a checkmark, or what did not work below.
     func workspaceFinished(id: String, title: String, subtitle: String, symbol: String, hex: UInt32, succeeded: Bool) {
@@ -519,7 +512,8 @@ final class ZenithNoticeCenter: ObservableObject {
             }.store(in: &islandSubscriptions)
         island.$notice.dropFirst().receive(on: DispatchQueue.main)
             .sink { [weak self] shown in
-                guard let shown, shown.event.priority >= 3 else { return }
+                // A burst grows the island itself; the capsule never stays over it.
+                guard let shown, shown.event.priority >= 3 || shown.zenith != nil else { return }
                 self?.dismiss(quickly: true)
             }.store(in: &islandSubscriptions)
         if case .lowPower = notice?.accessory { startLowPowerObserver() }
@@ -668,7 +662,6 @@ final class ZenithNoticeCenter: ObservableObject {
                 let options = DevServersOptions.current(in: defaults)
                 return !options.enabled || !options.announces
             case .recap: return !RecapSettings.current(in: defaults).enabled
-            case .prayer: return !NotchSupport.modules(in: defaults).contains(.sky)
             case .workspace: return false
             }
         }
