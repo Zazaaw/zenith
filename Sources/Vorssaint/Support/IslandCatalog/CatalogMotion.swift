@@ -20,6 +20,7 @@ extension CatalogShots {
             lockIsland("lock-island-charging") { $0.charging = true; $0.percent = 82 },
             lockIsland("lock-island-focus") { $0.charging = true; $0.percent = 82; $0.focus = "Work" },
             lockIsland("lock-island-farewell", open: true) { $0.moment = .farewell },
+            lockIsland("lock-island-remote") { $0.moment = .remoteLock(device: "Faiz’s iPhone") }, // Zenith fork: remote lock
         ]
     }
 
@@ -67,6 +68,8 @@ enum CatalogMotion {
         Sequence(id: "motion-welcome", from: "closed-idle", to: "burst-welcome"),
         Sequence(id: "motion-welcome-close", from: "burst-welcome", to: "closed-idle"),
         Sequence(id: "motion-claude", from: "closed-idle", to: "burst-claude"),
+        Sequence(id: "motion-remote-status", from: "closed-idle", to: "burst-remote-status"),
+        Sequence(id: "motion-lock-remote", from: "lock-island-rest", to: "lock-island-remote"),
     ]
 
     /// Frames per second and seconds drawn; `ZENITH_MOTION_FPS` and

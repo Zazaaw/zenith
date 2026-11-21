@@ -26,6 +26,7 @@ enum ZenithSettingsSearch {
     static let pageAliases: [SettingsSearchItem.ID: [String]] = [
         .page(.workspaces): ["workspace", "ruang kerja", "mode kerja", "preset kerja", "profil kerja"],
         .page(.lockScreen): ["lock screen", "lockscreen", "layar kunci", "kunci layar", "layar terkunci"],
+        .page(.remote): ZenithRemoteSearch.aliases,
         .page(.about): ["tentang", "tentang aplikasi", "versi", "version", "Satu Visual", "Zenith"],
     ]
 
@@ -49,6 +50,7 @@ enum ZenithSettingsSearch {
         let lockScreen = ZenithStrings.lockScreenSettings(language)
         let lockPage = ZenithStrings.lockScreenPage(language)
         let lockIsland = ZenithStrings.lockIsland(language) // the padlock island's switches
+        let remote = ZenithStrings.remote(language) // iPhone Remote
         let widgets = ZenithStrings.lockScreenWidgets(language)
         let terminal = ZenithStrings.lockScreenTerminal(language)
         let terminalTitle = ZenithStrings.lockScreenTerminalTitle(language)
@@ -139,6 +141,11 @@ enum ZenithSettingsSearch {
                            "piringan muter", "spin the record", "vinyl", "pojok kanan atas", "top right corner",
                            "cover color", "background color", "latar", "latar belakang", "blur", "warna latar",
                            "warna sendiri", "warna sampul", "sampul blur", "nada warna", "redam", "muted color"]),
+            // iPhone Remote: lock and check status from an iPhone.
+            page(.zenithRemote, title: remote.enable, icon: "iphone.radiowaves.left.and.right",
+                 keywords: [remote.title, remote.checklist, remote.remoteLogin, remote.tailscale, remote.devices,
+                            remote.shortcut, remote.test, remote.hardening, remote.recent],
+                 aliases: ZenithRemoteSearch.aliases),
             // Dynamic Island › Activity: the fork's cards.
             section(.zenithCommandActivity, in: .activity, title: commands.section, icon: "terminal",
                     keywords: [commands.toggle, commands.showAfter, commands.showFolder, commands.ignore, commands.hook],

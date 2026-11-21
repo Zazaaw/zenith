@@ -17,6 +17,9 @@ enum ZenithLockIslandMoment: Equatable {
     case rest
     /// "See you, Faiz 👋", one line beside the padlock.
     case farewell
+    /// Zenith fork (remote lock): "Locked from Faiz’s iPhone" over "just now",
+    /// with the iPhone, in place of the farewell when an iPhone locked the Mac.
+    case remoteLock(device: String)
 }
 
 /// What the right side of the resting island shows.
@@ -47,6 +50,8 @@ enum ZenithLockIsland {
     /// How long the closed desktop island stays drawn under the lock
     /// screen's padlock island as the Mac locks.
     static let handoffOverlap: TimeInterval = 0.6
+    /// How long "Locked from Faiz’s iPhone" holds before the island draws back.
+    static let remoteHold: TimeInterval = 3
 
     /// The right slot: a charger just plugged in first, for its first five
     /// seconds; then a song playing; then a Focus; then the charge while the

@@ -294,6 +294,7 @@ struct MetricsTests {
             ("repo-status", { GitTests.run(suite) }), // the Git page
             ("prompter", { PrompterTests.run(suite) }),
             ("fork-settings-search", { ForkSettingsSearchTests.run(suite) }),
+            ("remote-lock", { RemoteControlTests.run(suite) }), // Zenith fork: lock and status from an iPhone
         ]
         var selected = Set<String>()
         var listOnly = false

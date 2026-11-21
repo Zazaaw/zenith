@@ -972,6 +972,9 @@ enum DefaultsKey {
     static let notchVercelEnabled = "notchVercelEnabled"
     static let notchVercelActivity = "notchVercelActivity"
     static let notchVercelFailureAlerts = "notchVercelFailureAlerts" // Zenith fork: notify when a build fails
+    /// Zenith fork: lock and check status from an iPhone (RemoteControlService). Off by default and
+    /// deliberately not registered, so it never travels in a settings backup to another Mac.
+    static let zenithRemoteEnabled = "zenithRemoteEnabled"
     // Zenith fork: long-running terminal commands in the closed island (CommandActivityService).
     static let notchCommandActivity = "notchCommandActivity"
     static let notchCommandThreshold = "notchCommandThreshold" // seconds before a command shows: 5, 8, 15 or 30
