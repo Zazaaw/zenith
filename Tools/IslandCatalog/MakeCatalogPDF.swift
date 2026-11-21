@@ -96,7 +96,8 @@ let sections: [Section] = [
     Section(title: "Expanded pages", intro: "Island waktu dibuka: satu halaman per section, baris atasnya membungkus kamera.", items: [
         wide("page-music", "Now Playing", "Pemutar musik: cover, judul, progress, kontrol dan output.", "Buka island lalu pilih Now Playing.", "\(di) › tab Content › Now Playing"),
         wide("page-timer", "Timer", "Timer besar dengan tombol pause dan tutup.", "Buka section Timer, apalagi saat timer jalan.", "\(di) › tab Content › Timer"),
-        wide("page-calendar", "Calendar", "Minggu ini plus event hari ini, yang berikutnya diberi tanda.", "Buka section Calendar (butuh izin Calendar).", "\(di) › tab Content › Calendar"),
+        wide("page-calendar", "Calendar: Week", "Strip minggu ini plus event 7 hari ke depan, yang berikutnya diberi tanda. Baris lebih ringkas (nama kalender cukup dari warna batangnya) dan daftar memudar di tepi bawah, bisa di-scroll sampai event terakhir.", "Buka section Calendar (butuh izin Calendar), pilih Week.", "\(di) › tab Content › Calendar"),
+        wide("page-calendar-month", "Calendar: Month", "Grid satu bulan di kiri: hari ini lingkaran merah, hari lewat redup, titik warna kalender (maks 3). Kanan: event hari yang dipilih. Klik hari untuk memilih, ‹ › ganti bulan, tombol today kembali ke hari ini.", "Pilih Month di segmented Week/Month; pilihan terakhir diingat.", "\(di) › tab Content › Calendar"),
         wide("page-downloads", "Downloads", "Unduhan terbaru dan progresnya.", "Buka section Downloads.", "\(di) › tab Content › Downloads"),
         wide("page-files", "Files (shelf)", "Rak file sementara: gambar, PDF, zip, link.", "Buka section Files atau drop file ke island.", "\(di) › tab Content › Files; Settings › Shelf"),
         wide("drop-zones", "Zona drop", "Saat drag, island menawarkan zona: Files, AirDrop, Optimize media.", "Drag file ke island.", "Settings › Shelf › Drop zones"),

@@ -11,7 +11,58 @@ enum IslandRoundThreeTests {
         room(suite)
         captureStrip(suite)
         batteryNotice(suite)
+        calendarGrid(suite)
         strings(suite)
+    }
+
+    // MARK: Calendar
+
+    private static func calendar(_ identifier: String) -> Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = Locale(identifier: identifier)
+        calendar.timeZone = TimeZone(identifier: "Asia/Jakarta")!
+        return calendar
+    }
+
+    private static func calendarGrid(_ suite: TestSuite) {
+        let us = calendar("en_US"), de = calendar("de_DE"), gb = calendar("en_GB")
+        let november = us.date(from: DateComponents(year: 2026, month: 11, day: 21))!
+        let cells = ZenithCalendarGrid.cells(month: november, calendar: us)
+        // 1 November 2026 is a Sunday: no lead with Sunday first, six with Monday first.
+        suite.expect(us.firstWeekday == 1 && cells.count == 35 && cells.first??.timeIntervalSince(us.date(from: DateComponents(year: 2026, month: 11, day: 1))!) == 0,
+                     "with Sunday first, November 2026 starts in the first cell and fills five weeks")
+        suite.expect(cells.compactMap { $0 }.count == 30 && cells.suffix(5).allSatisfy { $0 == nil },
+                     "the grid holds only the month's 30 days, the rest of the last row empty")
+        let monday = ZenithCalendarGrid.cells(month: november, calendar: de)
+        suite.expect(de.firstWeekday == 2 && monday.prefix(6).allSatisfy { $0 == nil } && monday[6] != nil
+                        && monday.count == 42 && monday.count % 7 == 0,
+                     "with Monday first (Germany) the 1st sits under Sunday and the month takes six rows")
+        suite.expect(ZenithCalendarGrid.weekdaySymbols(calendar: us) == ["S", "M", "T", "W", "T", "F", "S"]
+                        && ZenithCalendarGrid.weekdaySymbols(calendar: gb) == ["M", "T", "W", "T", "F", "S", "S"],
+                     "the weekday line starts on the locale's first weekday")
+        let february = us.date(from: DateComponents(year: 2026, month: 2, day: 10))!
+        suite.expect(ZenithCalendarGrid.cells(month: february, calendar: us).count == 28,
+                     "a February starting on Sunday fills exactly four rows")
+        let leap = ZenithCalendarGrid.cells(month: us.date(from: DateComponents(year: 2028, month: 2, day: 1))!, calendar: us)
+        suite.expect(leap.compactMap { $0 }.count == 29, "a leap February has 29 days")
+
+        let now = us.date(from: DateComponents(year: 2026, month: 11, day: 21, hour: 15))!
+        suite.expect(ZenithCalendarGrid.tone(us.date(from: DateComponents(year: 2026, month: 11, day: 21))!, now: now, calendar: us) == .today
+                        && ZenithCalendarGrid.tone(us.date(from: DateComponents(year: 2026, month: 11, day: 20))!, now: now, calendar: us) == .past
+                        && ZenithCalendarGrid.tone(us.date(from: DateComponents(year: 2026, month: 11, day: 22))!, now: now, calendar: us) == .future,
+                     "today is filled, days gone by dimmed, the rest plain")
+        suite.expect(ZenithCalendarGrid.dots([1, 1, 2, 3, 2, 4]) == [1, 2, 3] && ZenithCalendarGrid.dots([Int]()).isEmpty,
+                     "a day shows at most three dots, one per calendar")
+        suite.expect(ZenithCalendarMode.stored(nil) == .week && ZenithCalendarMode.stored("month") == .month
+                        && ZenithCalendarMode.stored("year") == .week,
+                     "the page opens on the last choice, Week by default")
+        suite.expect(ZenithCalendarGrid.fitsBesideAgenda(CGSize(width: 500, height: 250))
+                        && !ZenithCalendarGrid.fitsBesideAgenda(CGSize(width: 380, height: 250))
+                        && ZenithCalendarGrid.gridWidth(500) + 18 + 1 < 500 - 150,
+                     "a page wide enough holds the grid beside the day's events, with room for them")
+        suite.expect(ZenithCalendarGrid.rowHeight(height: 250, rows: 6) * 6 + ZenithCalendarGrid.weekdayHeight <= 250
+                        && ZenithCalendarGrid.rowHeight(height: 1000, rows: 5) == 40,
+                     "six rows fit the page's height, and rows stop growing in a tall one")
     }
 
     // MARK: Battery notices

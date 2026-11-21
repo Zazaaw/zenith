@@ -1172,6 +1172,8 @@ enum DefaultsKey {
     static let zenithLockLyricHintCount = "zenithLockLyricHintCount"
     // Zenith fork: the tab Settings → Lock Screen last showed; a convenience, not registered or backed up.
     static let zenithLockSettingsTab = "zenithLockSettingsTab"
+    // Zenith fork: the island Calendar page's last Week or Month (ZenithCalendarMode); a convenience, not backed up.
+    static let zenithCalendarMode = "zenithCalendarMode"
     // Zenith fork: the lock screen v2 (ZenithLockScreenOption), one switch each.
     static let zenithLockJobs = "zenithLockJobs"
     static let zenithLockJobExport = "zenithLockJobExport"
