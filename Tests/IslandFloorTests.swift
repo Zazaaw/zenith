@@ -133,7 +133,7 @@ enum IslandFloorTests {
             let size = NotchMotion.shape(at: time, from: open, to: camera, floor: camera)
             return abs(size.width - camera.width) <= 1 && abs(size.height - camera.height) <= 1
         } ?? 1
-        suite.expect(landed >= 0.2 && landed <= 0.32, "closing reaches the closed size within a point at about 0.3 s: \(landed)")
+        suite.expect(landed >= 0.35 && landed <= 0.55, "closing reaches the closed size within a point at about 0.45 s: \(landed)")
         suite.expect(early < peak * 0.2 && unhurried < (open.height - camera.height) * 0.06,
                      "closing gathers speed gently instead of starting at full speed: \(early) of \(peak) pt/s")
         let rising = zip(closingSpeeds.prefix(30), closingSpeeds.prefix(30).dropFirst()).allSatisfy { $1 >= $0 - 0.001 }
@@ -142,12 +142,10 @@ enum IslandFloorTests {
         suite.expect(warp(0.02, 0.04).rate == 0.5 && abs(warp(0.04, 0.04).time - 0.02) < 1e-12 && abs(warp(0.2, 0.04).time - 0.18) < 1e-12
                      && warp(0.2, 0.04).rate == 1 && warp(0.1, 0).time == 0.1 && ZenithIslandMotion.closingEaseIn == 0.04,
                      "the ease-in's clock runs slowly over 40 ms, then with the clock, 20 ms behind")
-        // Glass reads almost solid while the island moves, and eases back.
+        // Glass stays glass while the island moves: no darkening, no blink.
         let surface = NotchMotionSurface.solidity
-        suite.expect(surface(0, 1) == 0 && surface(0.5, 1) == NotchMotionSurface.moving && surface(1, 1) == 0
-                     && surface(0.85, 1) < NotchMotionSurface.moving && surface(0.85, 1) > 0 && surface(0.02, 1) < 0.5
-                     && NotchMotionSurface.moving >= 0.85,
-                     "a moving glass island turns nearly solid, gently, and eases back as it settles")
+        suite.expect([0, 0.02, 0.5, 0.85, 1].allSatisfy { surface($0, 1) == 0 },
+                     "a moving glass island stays glass")
         let opening = stride(from: 0.0, through: 1.2, by: 1.0 / 480).map {
             NotchMotion.shape(at: $0, from: camera, to: open, floor: NotchMotionFloor.floor(for: open, geometry: geometry))
         }

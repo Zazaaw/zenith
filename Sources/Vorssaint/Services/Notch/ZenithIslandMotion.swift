@@ -36,9 +36,10 @@ enum ZenithIslandMotion {
     /// spring whose small swing past the floor rebounds outward instead, like
     /// a ball on the ground. The island never shows narrower or shorter than
     /// the camera cutout it covers, which would bare the cutout beside it.
-    /// Tuned so the closed size is reached within a point at about 0.3 s.
-    static let landingWidth = Spring(duration: 0.24, bounce: 0.1)
-    static let landingHeight = Spring(duration: 0.28, bounce: 0.1)
+    /// Tuned so the closed size is reached within a point at about 0.45 s:
+    /// as unhurried as the opening, at the owner's request.
+    static let landingWidth = Spring(duration: 0.4, bounce: 0.1)
+    static let landingHeight = Spring(duration: 0.44, bounce: 0.1)
 
     /// Whether a side heading from `from` to `to` lands on `floor`: it
     /// shrinks, and its target is the floor (or below it, as a hidden island).
@@ -124,11 +125,12 @@ enum NotchMotionFloor {
     }
 }
 
-/// How solid a glass island is while it moves: close to black, so the swing
-/// reads against the wallpaper. It darkens over the first 80 ms, so glass at
-/// rest never flashes, and eases back to the glass over the last 0.3 s.
+/// How solid a glass island is while it moves. The owner preferred the glass
+/// to stay glass through the motion (darkening and clearing read as a blink),
+/// so `moving` is 0 and the island never darkens; the curve stays for a later
+/// choice.
 enum NotchMotionSurface {
-    static let moving: Double = 0.9
+    static let moving: Double = 0
     static let easeIn: TimeInterval = 0.08
     static let easeBack: TimeInterval = 0.3
 
