@@ -62,10 +62,10 @@ struct ZenithSidebarFooter: View {
 // MARK: - Switch row
 
 /// A label at the leading edge and a switch at the trailing one, for rows that
-/// carry their own label. The switch is drawn in SwiftUI: AppKit's NSSwitch,
-/// when its value changed from elsewhere (another row, the defaults), redrew
-/// and laid out the whole window in the middle of SwiftUI's update, which spun
-/// Settings in an AttributeGraph cycle.
+/// carry their own label, so the title shows once. The switch is drawn in
+/// SwiftUI: AppKit's NSSwitch, when its value changed from elsewhere (another
+/// row, the defaults), redrew and laid out the whole window in the middle of
+/// SwiftUI's update, which spun Settings in an AttributeGraph cycle.
 struct ZenithSwitchRow<Label: View>: View {
     let title: String
     @Binding var isOn: Bool
@@ -81,9 +81,10 @@ struct ZenithSwitchRow<Label: View>: View {
         HStack(spacing: 12) {
             label
             Spacer(minLength: 12)
-            Toggle(title, isOn: $isOn)
-                .labelsHidden()
-                .toggleStyle(ZenithSwitchStyle())
+            // The switch alone: the label beside it already shows the title, and
+            // VoiceOver still reads the switch by it.
+            ZenithSwitch(isOn: $isOn)
+                .accessibilityRepresentation { Toggle(title, isOn: $isOn) }
         }
     }
 }
