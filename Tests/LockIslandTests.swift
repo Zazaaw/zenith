@@ -14,6 +14,41 @@ enum LockIslandTests {
         strings(suite)
         sizes(suite)
         switches(suite)
+        opening(suite)
+    }
+
+    /// Zenith fork: as the Mac locks, the island's first frame is already its
+    /// greeting, growing out of the desktop island; the resting padlock and
+    /// bars are never drawn first.
+    private static func opening(_ suite: TestSuite) {
+        typealias I = ZenithLockIsland
+        suite.expect(I.openingMoment(locking: true, farewell: true, remoteDevice: nil) == .farewell,
+                     "locking with the farewell on, the first moment shown is the farewell, not the padlock at rest")
+        suite.expect(I.openingMoment(locking: true, farewell: false, remoteDevice: nil) == .rest,
+                     "with the farewell off it opens at rest")
+        suite.expect(I.openingMoment(locking: true, farewell: true, remoteDevice: "Faiz’s iPhone")
+                        == .remoteLock(device: "Faiz’s iPhone")
+                        && I.openingMoment(locking: true, farewell: false, remoteDevice: "Faiz’s iPhone")
+                        == .remoteLock(device: "Faiz’s iPhone"),
+                     "locked from an iPhone, the first moment shown says so, farewell or not")
+        suite.expect(I.openingMoment(locking: false, farewell: true, remoteDevice: "Faiz’s iPhone") == .rest,
+                     "back from a dark display nobody locked it just now: it opens at rest")
+        suite.expect(I.openingHold(.farewell) == I.farewellHold && I.openingHold(.remoteLock(device: "a")) == I.remoteHold
+                        && I.openingHold(.rest) == nil,
+                     "the greeting holds for its time, then the island draws back into the pill")
+        suite.expect(I.padlockHold(.farewell) == I.farewellHold && I.padlockHold(.rest) < I.farewellHold
+                        && I.padlockHold(.remoteLock(device: "a")) < I.farewellHold,
+                     "the padlock stays open while the farewell waves, and closes at once otherwise")
+        // The entrance runs from the desktop island's shape into the greeting, never through the resting pill.
+        let camera = CGSize(width: 185, height: 32)
+        let desktop = CGSize(width: 285, height: 32)
+        let farewell = I.size(camera: camera, wing: 120)
+        let floor = NotchMotionFloor.floor(camera: camera, target: farewell, closedHeight: camera.height)
+        let entrance = NotchMotionTimeline(from: desktop, to: farewell, begin: 0, floor: floor)
+        let frames = stride(from: 0.0, through: 1.2, by: 1.0 / 120).map { entrance.shape(at: $0) }
+        suite.expect(frames.first == desktop && abs((frames.last?.width ?? 0) - farewell.width) < 0.5
+                        && frames.allSatisfy { $0.width >= desktop.width - 0.5 && $0.height >= camera.height - 0.5 },
+                     "the farewell grows from the desktop island's own frame, never smaller than it or the camera")
     }
 
     private static func slot(_ suite: TestSuite) {

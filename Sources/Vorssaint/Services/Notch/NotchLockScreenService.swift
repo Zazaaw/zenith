@@ -166,6 +166,12 @@ final class NotchLockScreenService {
                 configuration: terminal.configuration, size: terminal.frame.size,
                 anchorsBottom: ZenithLockScreenMinimalLayout.terminalAnchorsBottom(ZenithLockScreenTerminalPlacement.current()))))
         }
+        // Zenith fork: settled before the island is drawn, so its first frame
+        // is already the farewell (or "Locked from …"), growing out of the
+        // closed island it covers; as the Mac locks, the farewell holds the
+        // padlock open.
+        let padlockHold = frames.island == nil || frames.islandSurface == nil ? 0.35
+            : zenithIsland.begin(locking: closingPadlock, from: closingPadlock ? Self.entrance(frames) : nil)
         let island = frames.island.flatMap { frame in
             frames.islandSurface.map { surface in
                 Self.makePanel(frame: frame, content: ZenithLockScreenIsland( // Zenith fork
@@ -193,8 +199,6 @@ final class NotchLockScreenService {
         self.scene = scene
         self.island = island
         shownFrames = frames
-        // Zenith fork: as the Mac locks, the farewell holds the padlock open.
-        let padlockHold = island == nil ? 0.35 : zenithIsland.begin(locking: closingPadlock)
         if closingPadlock {
             let work = DispatchWorkItem { [weak self] in self?.model.padlockOpen = false }
             padlockWork = work
@@ -271,32 +275,47 @@ final class NotchLockScreenService {
             space.close()
             return
         }
-        let pill = zenithIsland.model.restSize // Zenith fork: before the moment resets
+        // Zenith fork: the padlock island keeps what it shows until it has
+        // gone (the welcome is read without resetting it), then rests.
+        let pill = zenithIsland.model.shownSize
         let welcome = zenithIsland.unlocking()
+        let lockIsland = zenithIsland, frames = shownFrames
         // The lock screen is gone about 0.3 s after the unlock is announced;
         // the player leaves with it rather than lingering over the desktop.
         // The padlock opens first, then the island underneath takes over.
         let leaving = scene + [full].compactMap { $0 } // Zenith fork: the full layer fades with the scene.
         var remaining = leaving.count + (island == nil ? 0 : 1)
-        let finished = { remaining -= 1; if remaining == 0 { space.close() } }
+        let finished = {
+            remaining -= 1
+            guard remaining == 0 else { return }
+            space.close()
+            // Zenith fork: unless the lock screen came back meanwhile.
+            if !NotchLockScreenService.shared.isShowing { lockIsland.end() }
+        }
         leaving.forEach { Self.fadeOut($0, after: 0, completion: finished) }
-        if island != nil { model.padlockOpen = true }
+        if remaining == 0 { // Zenith fork: nothing to wait for
+            space.close()
+            lockIsland.end()
+        }
         // Zenith fork: the welcome is the desktop island's own burst. With the
-        // padlock pill up, the island comes back at the pill's frame and grows
-        // out of it, and the pill goes the moment the island is under it:
-        // one island, never two.
+        // padlock pill up, the island comes back at the pill's frame, showing
+        // the pill as it looks, and grows out of it; the pill goes the moment
+        // the island is under it: one island, never two. The padlock stays as
+        // it is for that frame; the welcome's own green padlock is the unlock.
         if let island, let welcome, let pill, ZenithLockIsland.handsOver(pill: pill) {
             // Whichever comes first ends it: the island on screen, or giving up.
             var ended = false
-            let handoff = ZenithLockHandoff(size: pill, welcome: welcome, handedOver: {
+            let look = Self.look(of: island, size: pill, frames: frames)
+            let handoff = ZenithLockHandoff(size: pill, look: look, welcome: welcome, handedOver: {
                 guard !ended else { return }
                 ended = true
                 island.alphaValue = 0
                 island.orderOut(nil)
                 finished()
-            }, declined: {
+            }, declined: { [weak self] in
                 guard !ended else { return }
                 ended = true
+                self?.model.padlockOpen = true
                 DispatchQueue.main.async { Self.fadeOutOverIsland(island, completion: finished) }
                 DispatchQueue.main.asyncAfter(deadline: .now() + ZenithLockIsland.welcomeDelay) {
                     NotchService.shared.showZenithBurst(.welcome(welcome))
@@ -317,6 +336,7 @@ final class NotchLockScreenService {
             }
         }
         if let island {
+            model.padlockOpen = true
             // The island comes back on this turn and holds the main thread, so
             // the padlock is first seen opening once that is done. Its time
             // starts there, or the island would fade while the padlock opens.
@@ -324,6 +344,31 @@ final class NotchLockScreenService {
             // screen beneath it, with some overlap, so the camera never shows bare.
             DispatchQueue.main.async { Self.fadeOutOverIsland(island, completion: finished) }
         }
+    }
+
+    /// Zenith fork: where the padlock island first appears as the Mac locks:
+    /// at the closed island it covers, as that one shows, or at the bare
+    /// camera when none shows.
+    private static func entrance(_ frames: Frames) -> CGSize? {
+        guard let surface = frames.islandSurface else { return nil }
+        return NotchService.shared.retiringIslandSize
+            ?? CGSize(width: NotchService.shared.geometry.bareCutout.width, height: surface.height)
+    }
+
+    /// Zenith fork: what the padlock island shows now, drawn at `size` from
+    /// its window as it stands: the desktop island shows it in its first
+    /// frame as it takes over.
+    private static func look(of panel: NSPanel, size: CGSize, frames: Frames) -> NSImage? {
+        guard let view = panel.contentView, let window = frames.island, let surface = frames.islandSurface,
+              size.width > 0, size.height > 0 else { return nil }
+        let x = surface.midX - window.minX - size.width / 2
+        let rect = CGRect(x: x, y: view.isFlipped ? 0 : view.bounds.height - size.height, width: size.width, height: size.height)
+            .intersection(view.bounds)
+        guard !rect.isEmpty, let bitmap = view.bitmapImageRepForCachingDisplay(in: rect) else { return nil }
+        view.cacheDisplay(in: rect, to: bitmap)
+        let image = NSImage(size: rect.size)
+        image.addRepresentation(bitmap)
+        return image
     }
 
     /// Zenith fork: the padlock island fades over the desktop island once

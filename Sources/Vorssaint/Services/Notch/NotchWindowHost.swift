@@ -116,7 +116,7 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
     private var isPresented: Bool { panel.isVisible || concealedForFrameChange || relocationHidden }
     /// Zenith fork: the shape the next presentation takes over from, and
     /// what to do once it is on screen (takeOver(from:onScreen:)).
-    private var pendingHandoff: (size: CGSize, onScreen: () -> Void)?
+    private var pendingHandoff: (size: CGSize, look: NSImage?, onScreen: () -> Void)?
     private var handoffOnScreen: (() -> Void)?
     var isConcealedForMissionControl: Bool {
         // Media-key taps can ask from a worker thread. Never touch AppKit or
@@ -256,9 +256,12 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
     /// screen, starts from `size` (another window's island at the camera,
     /// as the lock screen's padlock pill) and grows from there; `onScreen`
     /// runs once the island is shown at that frame, to take the other away.
-    func takeOver(from size: CGSize, onScreen: @escaping () -> Void) {
-        pendingHandoff = (size, onScreen)
+    func takeOver(from size: CGSize, look: NSImage? = nil, onScreen: @escaping () -> Void) {
+        pendingHandoff = (size, look, onScreen)
     }
+
+    /// Zenith fork: the island's size as drawn now.
+    var shownSize: CGSize { canvas.visibleSize ?? targetSize }
 
     private func handOverIfShown() {
         guard panel.isVisible, let onScreen = handoffOnScreen else { return }
@@ -308,6 +311,7 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         // Zenith fork: brought back to take over from another window's island
         // (the lock screen's padlock pill), it starts from that shape exactly.
         let handoff = isPresented || hideWhenSettled ? nil : pendingHandoff?.size
+        let handoffLook = handoff == nil ? nil : pendingHandoff?.look
         if handoff != nil { handoffOnScreen = pendingHandoff?.onScreen }
         if handoff != nil || isPresented { pendingHandoff = nil }
         if isPresented || revealing || handoff != nil {
@@ -496,6 +500,8 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         canvas.animate(animation, from: paths.first, motion: carried ?? NotchMotionTimeline(
             from: start, to: size, begin: animation.beginTime > 0 ? animation.beginTime : CACurrentMediaTime(),
             steady: steady, offset: startOffset, floor: floor))
+        // Zenith fork: the pill it takes over from, as it looked, leaving as a page does.
+        if let handoff, let handoffLook { canvas.showLeavingLook(handoffLook, size: handoff) }
         CATransaction.commit()
         // The window already has its new frame; its layers go out at once,
         // not at the end of this turn of the run loop, so the screen never
@@ -1583,6 +1589,43 @@ private final class NotchCanvas: NSView {
               began > 0, began <= time else { return nil }
         return timeline.rebased(to: began).continued(to: size, at: time, floor: floor) // Zenith fork: floor
     }
+
+    /// Zenith fork: another island's look at `size` (the lock screen's
+    /// padlock pill), over the content where that island stood, leaving as a
+    /// page does (ZenithContentRide.outgoing) while the island grows from it.
+    func showLeavingLook(_ image: NSImage, size: CGSize) {
+        leavingLook?.removeFromSuperview()
+        let view = NSImageView(frame: CGRect(x: islandX(size), y: 0, width: size.width, height: size.height))
+        view.image = image
+        view.imageScaling = .scaleAxesIndependently
+        view.wantsLayer = true
+        addSubview(view, positioned: .above, relativeTo: host)
+        leavingLook = view
+        guard let layer = view.layer else { return }
+        let timing = ZenithContentRide.Timing.opening
+        let count = max(1, Int((timing.outgoingFade * Self.rideRate).rounded(.up)))
+        let times = (0...count).map { timing.outgoingFade * Double($0) / Double(count) }
+        let timeline = motionTimeline
+        let start = timeline?.begin ?? CACurrentMediaTime()
+        let layers = times.map {
+            ZenithContentRide.outgoing(at: $0, islandWidth: timeline?.shape(at: start + $0).width ?? size.width,
+                                       pageWidth: size.width, timing: timing)
+        }
+        let opacity = CAKeyframeAnimation(keyPath: "opacity")
+        opacity.values = layers.map(\.opacity)
+        opacity.keyTimes = times.map { NSNumber(value: $0 / timing.outgoingFade) }
+        opacity.duration = timing.outgoingFade
+        opacity.fillMode = .forwards
+        opacity.isRemovedOnCompletion = false
+        layer.add(opacity, forKey: "notch.leaving.opacity")
+        DispatchQueue.main.asyncAfter(deadline: .now() + timing.outgoingFade + 0.1) { [weak self, weak view] in
+            guard let self, let view, self.leavingLook === view else { return }
+            view.removeFromSuperview()
+            self.leavingLook = nil
+        }
+    }
+
+    private var leavingLook: NSImageView?
 
     func animate(_ animation: CAAnimation, from: CGPath?, motion: NotchMotionTimeline? = nil) {
         motionStart = nil

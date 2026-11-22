@@ -20,6 +20,9 @@ struct ZenithLockScreenIsland: View {
     /// The window, and the resting island's top left corner inside it.
     var window: CGSize? = nil
     var origin: CGPoint = .zero
+    /// Drawn at this many seconds into its entrance, still, for the
+    /// catalog's frame sequences; nil on the lock screen.
+    var frozen: TimeInterval? = nil
     @ObservedObject private var music = NotchMusicService.shared
     @ObservedObject private var l10n = L10n.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -34,8 +37,11 @@ struct ZenithLockScreenIsland: View {
 
     var body: some View {
         let goal = goal
-        TimelineView(.animation(minimumInterval: nil, paused: motion == nil)) { context in
-            let shape = motion?.shape(at: context.date.timeIntervalSinceReferenceDate) ?? goal
+        TimelineView(.animation(minimumInterval: nil, paused: motion == nil || frozen != nil)) { context in
+            let shape = frozen.map { entranceMotion(to: goal, begin: 0)?.shape(at: $0) ?? goal }
+                ?? motion?.shape(at: context.date.timeIntervalSinceReferenceDate)
+                // Zenith fork: until its entrance starts, the island stands where it grows from.
+                ?? island.entrance ?? goal
             surface(shape: shape, goal: goal)
                 .frame(width: shape.width, height: shape.height, alignment: .top)
                 .frame(width: window?.width ?? size.width, height: window?.height ?? size.height, alignment: .top)
@@ -43,9 +49,12 @@ struct ZenithLockScreenIsland: View {
         }
         .frame(width: window?.width ?? size.width, height: window?.height ?? size.height, alignment: .topLeading)
         .onChange(of: goal) { old, new in retarget(from: old, to: new) }
-        // Zenith fork: the pill the desktop island takes over from as the Mac unlocks.
-        .onAppear { island.restSize = restGoal }
-        .onChange(of: restGoal) { _, new in island.restSize = new }
+        // Zenith fork: the shape the desktop island takes over from as the Mac unlocks.
+        .onAppear {
+            island.shownSize = goal
+            startEntrance()
+        }
+        .onChange(of: goal) { _, new in island.shownSize = new }
         .task(id: settleAt) {
             let wait = settleAt - Date().timeIntervalSinceReferenceDate
             guard motion != nil else { return }
@@ -84,14 +93,46 @@ struct ZenithLockScreenIsland: View {
     /// The farewell beside the camera, as wide as its wing must be.
     static func farewellWidth(_ text: String) -> CGFloat { textWidth(text, size: 13, weight: .semibold) + 2 }
 
+    /// Never narrower or shorter than the camera; back at rest it settles from above.
+    private func floor(to target: CGSize) -> CGSize {
+        NotchMotionFloor.floor(camera: CGSize(width: cameraWidth, height: size.height), target: target,
+                               closedHeight: size.height)
+    }
+
+    /// Zenith fork: as the Mac locks, the island grows out of the desktop
+    /// island it covers (`ZenithLockIslandModel.entrance`) into what it shows
+    /// first, the farewell or "Locked from …", with that content from frame one.
+    private func entranceMotion(to goal: CGSize, begin: TimeInterval) -> NotchMotionTimeline? {
+        guard let start = island.entrance, start != goal else { return nil }
+        return NotchMotionTimeline(from: start, to: goal, begin: begin, floor: floor(to: goal))
+    }
+
+    /// The entrance's clock starts on the turn after the island's first
+    /// frame: until then it stands at the shape it grows from, so the first
+    /// frame on screen is that shape however long the lock screen takes to
+    /// come in. Reduce Motion shows the goal at once.
+    private func startEntrance() {
+        guard frozen == nil, island.entrance != nil else { return }
+        guard !reduceMotion else { island.entrance = nil; return }
+        DispatchQueue.main.async {
+            guard island.entrance != nil, let next = entranceMotion(to: goal, begin: Date().timeIntervalSinceReferenceDate)
+            else { island.entrance = nil; return }
+            island.entrance = nil
+            motion = next
+            settleAt = next.begin + next.frames().duration
+        }
+    }
+
     /// A new goal carries the running motion on from where it is, at its
-    /// speed; at rest it starts from the last goal. Reduce Motion snaps.
+    /// speed; at rest it starts from the last goal (or, before its entrance
+    /// has started, from where it grows). Reduce Motion snaps.
     private func retarget(from old: CGSize, to new: CGSize) {
+        guard frozen == nil else { return }
         guard !reduceMotion else { motion = nil; return }
+        let old = motion == nil ? island.entrance ?? old : old
+        island.entrance = nil
         let now = Date().timeIntervalSinceReferenceDate
-        // Never narrower or shorter than the camera; back at rest it settles from above.
-        let floor = NotchMotionFloor.floor(camera: CGSize(width: cameraWidth, height: size.height), target: new,
-                                           closedHeight: size.height)
+        let floor = floor(to: new)
         let next = motion?.continued(to: new, at: now, floor: floor)
             ?? NotchMotionTimeline(from: old, to: new, begin: now, floor: floor)
         motion = next
@@ -163,6 +204,8 @@ struct ZenithLockScreenIsland: View {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.white)
                         .lineLimit(1)
+                        // Zenith fork: whole while its wing grows, coming out from behind the camera.
+                        .fixedSize()
                         .transition(.zenithMorph(reduceMotion: reduceMotion))
                 } else {
                     slotView(slot)
@@ -172,6 +215,7 @@ struct ZenithLockScreenIsland: View {
             }
             .padding(.trailing, inset)
             .frame(width: wing, height: size.height, alignment: .trailing)
+            .clipped()
             .animation(ZenithMorph.animation(reduceMotion: reduceMotion), value: island.moment)
             .animation(ZenithMorph.animation(reduceMotion: reduceMotion), value: slotKey(slot))
         }

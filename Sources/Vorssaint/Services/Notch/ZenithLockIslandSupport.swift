@@ -53,6 +53,33 @@ enum ZenithLockIsland {
     /// How long "Locked from Faiz’s iPhone" holds before the island draws back.
     static let remoteHold: TimeInterval = 3
 
+    /// Zenith fork: what the padlock island shows from its very first frame.
+    /// As the Mac locks, the farewell (or, locked from an iPhone, "Locked
+    /// from …"), never the resting padlock first and the greeting after:
+    /// the island grows out of the desktop island straight into it. Back
+    /// from a dark display, at rest.
+    static func openingMoment(locking: Bool, farewell: Bool, remoteDevice: String?) -> ZenithLockIslandMoment {
+        guard locking else { return .rest }
+        if let remoteDevice { return .remoteLock(device: remoteDevice) }
+        return farewell ? .farewell : .rest
+    }
+
+    /// How long the opening moment holds before the island draws back into
+    /// the resting pill; nil at rest.
+    static func openingHold(_ moment: ZenithLockIslandMoment) -> TimeInterval? {
+        switch moment {
+        case .rest: return nil
+        case .farewell: return farewellHold
+        case .remoteLock: return remoteHold
+        }
+    }
+
+    /// When the padlock closes as the Mac locks: once the farewell has waved,
+    /// or after a beat; locked from an iPhone it is closed from the start.
+    static func padlockHold(_ moment: ZenithLockIslandMoment) -> TimeInterval {
+        moment == .farewell ? farewellHold : 0.35
+    }
+
     /// Zenith fork: whether the desktop island can take over from a padlock
     /// pill of `pill` as the Mac unlocks: one with a size to start from.
     static func handsOver(pill: CGSize) -> Bool {

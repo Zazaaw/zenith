@@ -25,9 +25,11 @@ extension CatalogShots {
         ]
     }
 
-    private static func lockIsland(_ id: String, open: Bool = false, setup: @escaping @MainActor () -> Void = {},
-                                   pose: @escaping @MainActor (ZenithLockIslandModel) -> Void) -> CatalogShot {
-        CatalogShot(id: id, setup: setup, settle: 0.4) {
+    /// `frozen` draws the island that far into its entrance from `entrance`, still.
+    fileprivate static func lockIsland(_ id: String, open: Bool = false, frozen: TimeInterval? = nil,
+                                       entrance: CGSize? = nil, setup: @escaping @MainActor () -> Void = {},
+                                       pose: @escaping @MainActor (ZenithLockIslandModel) -> Void) -> CatalogShot {
+        CatalogShot(id: id, setup: setup, settle: frozen == nil ? 0.4 : 0.02) {
             let geometry = notched
             let camera = geometry.bareCutout
             let surface = NotchLockScreenLayout.islandSurface(
@@ -41,9 +43,11 @@ extension CatalogShots {
             let island = ZenithLockIslandModel()
             island.firstName = "Faiz"
             pose(island)
+            island.entrance = entrance
             let view = ZenithLockScreenIsland(model: model, island: island, size: surface.size, cameraWidth: camera.width,
                                               geometry: geometry.lockScreenMusicGeometry, window: window.size,
-                                              origin: CGPoint(x: surface.minX - window.minX, y: window.maxY - surface.maxY))
+                                              origin: CGPoint(x: surface.minX - window.minX, y: window.maxY - surface.maxY),
+                                              frozen: frozen)
             return (AnyView(view), window.size)
         }
     }
@@ -76,6 +80,23 @@ enum CatalogMotion {
         Sequence(id: "motion-unlock-welcome", from: "lock-island-music", to: "burst-welcome-remote"),
     ]
 
+    /// Zenith fork: the padlock island's own entrance as the Mac locks, drawn
+    /// frame by frame by its real view: growing out of the desktop island
+    /// (`from`, a closed island shot) straight into its opening moment, whose
+    /// content shows from the first frame.
+    struct Entrance {
+        let id: String
+        let from: String
+        var open = false
+        let pose: @MainActor (ZenithLockIslandModel) -> Void
+    }
+
+    static let entrances: [Entrance] = [
+        Entrance(id: "motion-lock-entrance-farewell", from: "compact-music", open: true) { $0.moment = .farewell },
+        Entrance(id: "motion-lock-entrance-remote", from: "compact-music") { $0.moment = .remoteLock(device: "Faiz’s iPhone") },
+        Entrance(id: "motion-lock-entrance-rest", from: "compact-music") { _ in },
+    ]
+
     /// Frames per second and seconds drawn; `ZENITH_MOTION_FPS` and
     /// `ZENITH_MOTION_LENGTH` override them, as for a 120 fps check.
     static let fps = ProcessInfo.processInfo.environment["ZENITH_MOTION_FPS"].flatMap(Double.init) ?? 30
@@ -87,6 +108,33 @@ enum CatalogMotion {
         let shots = Dictionary(CatalogShots.all.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let sources = folder.appendingPathComponent("motion-sources", isDirectory: true)
         try? FileManager.default.createDirectory(at: sources, withIntermediateDirectories: true)
+        for entrance in entrances where entrance.id.hasPrefix(prefix) {
+            guard let from = shots[entrance.from], let start = end(from, in: sources) else {
+                failures.append(entrance.id)
+                continue
+            }
+            print("entrance \(entrance.id) from \(Int(start.size.width))x\(Int(start.size.height))")
+            let count = Int(length * fps)
+            let frames = (0...count).compactMap { index -> CGImage? in
+                let shot = CatalogShots.lockIsland(entrance.id, open: entrance.open, frozen: Double(index) / fps,
+                                                   entrance: start.size, pose: entrance.pose)
+                let url = sources.appendingPathComponent(String(format: "%@-%03d.png", entrance.id, index))
+                guard CatalogRenderer.render(shot, to: url) != nil,
+                      let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+                return CGImageSourceCreateImageAtIndex(source, 0, nil)
+            }
+            var written = 0
+            for (index, frame) in frames.enumerated() {
+                let url = folder.appendingPathComponent(String(format: "%@-%02d.png", entrance.id, index))
+                if write(frame, to: url) { written += 1 }
+            }
+            if frames.count == count + 1, let sheet = sheet(frames),
+               write(sheet, to: folder.appendingPathComponent(entrance.id + "-sheet.png")) {
+                print("rendered \(entrance.id): \(written) frames and a sheet")
+            } else {
+                failures.append(entrance.id)
+            }
+        }
         for sequence in sequences where sequence.id.hasPrefix(prefix) {
             guard let from = shots[sequence.from], let to = shots[sequence.to],
                   let start = end(from, in: sources), let finish = end(to, in: sources) else {

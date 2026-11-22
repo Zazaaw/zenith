@@ -44,8 +44,12 @@ extension NotchService {
 /// the pill's frame and shape and grows into the welcome from there, and the
 /// pill's window goes the moment the island is on screen beneath it.
 struct ZenithLockHandoff {
-    /// The pill as it rests, centred on the camera.
+    /// The pill as it stands, centred on the camera.
     let size: CGSize
+    /// What the pill shows, drawn at `size`: the island's first frame shows
+    /// it too, then lets it go as the welcome rides in, so the cross-over
+    /// changes nothing on screen.
+    var look: NSImage?
     let welcome: ZenithWelcomeBurst
     /// The island is on screen at the pill's frame: the pill goes now.
     let handedOver: () -> Void

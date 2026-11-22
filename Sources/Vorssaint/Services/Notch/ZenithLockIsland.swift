@@ -32,9 +32,13 @@ final class ZenithLockIslandModel: ObservableObject {
     @Published var firstName = ""
     /// The account's picture for the welcome, read as the Mac locks.
     @Published var photo: NSImage?
-    /// Zenith fork: the padlock pill as it rests now, set by its view: the
-    /// shape the desktop island takes over from as the Mac unlocks.
-    var restSize: CGSize?
+    /// Zenith fork: the padlock island's shape as it stands, set by its view:
+    /// the shape the desktop island takes over from as the Mac unlocks.
+    var shownSize: CGSize?
+    /// Zenith fork: as the Mac locks, the shape the island first appears at
+    /// (the desktop island it covers) and grows from into its opening
+    /// moment. Taken by the view as it starts that motion.
+    var entrance: CGSize?
 
     func slot(playing: Bool) -> ZenithLockIslandSlot {
         ZenithLockIsland.slot(playing: playing, charging: options.charging && charging, percent: percent,
@@ -72,39 +76,37 @@ final class ZenithLockIslandController {
         lockedFrom = ZenithRemoteLockMark.take(at: date) // Zenith fork: an iPhone asked for this lock
     }
 
-    /// The lock screen appeared. Returns how long the padlock waits before it
-    /// closes: as the Mac locks, the farewell holds it open.
+    /// The lock screen appeared, before its island is drawn. Returns how long
+    /// the padlock waits before it closes: as the Mac locks, the farewell
+    /// holds it open. Locking, the island's first frame is already its
+    /// opening moment, at `start` (the desktop island it covers), growing
+    /// from there; nothing at rest is drawn first.
     @discardableResult
-    func begin(locking: Bool) -> TimeInterval {
+    func begin(locking: Bool, from start: CGSize? = nil) -> TimeInterval {
         cancelWork()
         let options = ZenithLockIslandModel.Options.current()
         model.options = options
-        model.moment = .rest
         model.firstName = ZenithLockIsland.firstName(fullName: NSFullUserName(), userName: NSUserName())
         model.focus = options.focus ? ZenithLockIslandFocus.current() : nil
         if options.charging { startPower() } else { stopPower() }
         if options.welcome { loadPhoto() }
         // Zenith fork: locked from an iPhone, the island says so in the farewell's
         // place, its padlock already closed (nobody is at the Mac to wave to).
-        if locking, let device = lockedFrom {
-            schedule(after: 0.05) { [weak self] in self?.model.moment = .remoteLock(device: device) }
-            schedule(after: ZenithLockIsland.remoteHold) { [weak self] in self?.model.moment = .rest }
-            return 0.35
+        let moment = ZenithLockIsland.openingMoment(locking: locking, farewell: options.farewell,
+                                                    remoteDevice: locking ? lockedFrom : nil)
+        model.moment = moment
+        model.entrance = locking ? start : nil
+        if let hold = ZenithLockIsland.openingHold(moment) {
+            schedule(after: hold) { [weak self] in self?.model.moment = .rest }
         }
-        guard locking, options.farewell else { return 0.35 }
-        // Shown first at rest, the island then widens on the next turn.
-        schedule(after: 0.05) { [weak self] in self?.model.moment = .farewell }
-        schedule(after: ZenithLockIsland.farewellHold) { [weak self] in self?.model.moment = .rest }
-        return ZenithLockIsland.farewellHold
+        return ZenithLockIsland.padlockHold(moment)
     }
 
     /// The Mac unlocked: the welcome the desktop island shows, when it is on.
-    /// The padlock island itself fades as it always has, so the greeting is
-    /// the one island's own and never stacks over a page.
+    /// The padlock island keeps what it shows, so the desktop island can take
+    /// over from exactly that; `end()` resets it once it has gone.
     func unlocking(at date: Date = Date()) -> ZenithWelcomeBurst? {
         cancelWork()
-        stopPower()
-        model.moment = .rest
         let since = lockedAt
         let remote = lockedFrom // Zenith fork
         lockedAt = nil
@@ -122,11 +124,12 @@ final class ZenithLockIslandController {
                                   initials: ZenithLockScreenInitials.of(NSFullUserName()))
     }
 
-    /// The lock screen went away without an unlock to greet.
+    /// The lock screen went away, or its island has gone after an unlock.
     func end() {
         cancelWork()
         stopPower()
         model.moment = .rest
+        model.entrance = nil
     }
 
     private func schedule(after delay: TimeInterval, _ block: @escaping () -> Void) {

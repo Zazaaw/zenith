@@ -205,6 +205,14 @@ final class NotchService: ObservableObject {
     /// lock screen's padlock island; the island's window stays drawn under
     /// it for a moment instead of baring the camera while that one comes in.
     private var retiringHost: NotchWindowHost?
+    /// Zenith fork: the closed island left drawn under the lock screen's
+    /// padlock island as the Mac locks, as it shows: the shape that island
+    /// first appears at and grows from. Nil when none is on screen.
+    var retiringIslandSize: CGSize? {
+        guard let host = retiringHost, host.panel.isVisible else { return nil }
+        let size = host.shownSize
+        return size.width > 0 && size.height > 0 ? size : nil
+    }
     /// Zenith fork: unlocking, the lock screen's padlock pill waiting for the
     /// island to come back and take over from it (ZenithLockHandoff).
     private var lockHandoff: ZenithLockHandoff?
@@ -2021,7 +2029,7 @@ final class NotchService: ObservableObject {
                                  zenith: burst)
             noticeExpanded = false
         }
-        windowHost.takeOver(from: handoff.size, onScreen: handoff.handedOver)
+        windowHost.takeOver(from: handoff.size, look: handoff.look, onScreen: handoff.handedOver)
         scheduleNoticeDismissal(after: burst.duration)
     }
 
