@@ -2975,6 +2975,42 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   - **Belum diverifikasi:** SSH sungguhan dari iPhone (Shortcuts mengirim perintah sebagai exec, kutip pintar iOS,
     izin TCC untuk proses sshd membaca Application Support), kunci layar sungguhan, island di layar, dan
     pemeriksaan Tailscale CLI dari app.
+- **Island pas isinya (branch `feat/island-fit`, dari 67/68/69.png):**
+  - *"checked st…" (67.png):* `contentWidth(.remote)` mengukur dua jarak lebih sedikit daripada yang digambar
+    `ZenithRemoteBurstRow` (HStack spacing 10 di antara lima elemen + Spacer), jadi island 20 pt terlalu sempit.
+    Sekarang semua burst diukur dari satu `ZenithIslandBurstLayout.row(_:)` (potongan tetap + jarak + lebar teks,
+    konstanta yang sama dipakai view dengan `HStack(spacing: 0)` dan padding eksplisit), dan `fit(_:geometry:)`
+    memberi ukuran + jumlah baris: satu baris di bawah kamera selebar perlu (padding 20 samping/bawah), lewat
+    580 pt subtitle turun ke baris kedua (+16 pt). Baris yang memuat angka diukur dengan font monospaced digit,
+    seperti yang digambar. Tile bersama `ZenithBurstTile`, teks dua baris `ZenithBurstWords`.
+  - *"Locked from …" di lock screen (68.png):* island gembok tidak lagi melebar tipis di samping kamera; ia turun
+    jadi island dua baris (`ZenithLockIsland.remoteFit`, `ZenithLockRemoteRow`): tile gembok putih di atas 12%
+    putih, "Locked from Faiz’s iPhone" semibold di atas "just now", iPhone di kanan, padding 20, teks di bawah
+    kamera; nama device panjang membungkus judul ke baris kedua. 3 dtk, lalu kembali ke pil gembok dengan pegas
+    iOS dan lantai notch. Jendela island gembok dibesarkan untuk island tumbuh (maks 580 + ayunan).
+  - *Unlock jadi satu island (69.png):* `ZenithLockHandoff`. Saat unlock, layanan lock screen menitipkan ukuran
+    pil gembok (`ZenithLockIslandModel.restSize`) + welcome ke `NotchService.awaitLockHandoff`. Saat island desktop
+    kembali (`syncWithPreferences` setelah `updateScreen`), welcome jadi notice pertamanya dan
+    `NotchWindowHost.takeOver(from:onScreen:)` membuat presentasi pertama mulai dari bentuk pil itu (path awal =
+    siluet ukuran pil, tanpa shift) lalu tumbuh jadi welcome (tile gembok hijau). Begitu panel island desktop
+    tampil (`visibilityDidChange`, setelah `CATransaction.flush`), jendela pil langsung di-`orderOut` tanpa fade.
+    Kalau island tidak bisa mengambil alih (tersembunyi, full screen, terbuka, capsule, tanpa notch) atau tidak
+    tampil dalam 1,5 dtk, pil memudar seperti dulu dan welcome jadi burst biasa. Farewell dan remote lock tetap
+    tumbuh dari dan kembali ke pil yang sama (motion island gembok sendiri).
+  - *Ikut diperbaiki:* `syncNoticeWithPreferences` tidak lagi membuang burst (welcome/remote/adzan menumpang event
+    `.timer`) saat notice timer dimatikan; `show(_:)` sudah mengecualikan burst.
+  - *Pemeriksaan:* suite `island-fit` (semua jenis burst × 15 bahasa × notch/notch kecil/capsule dengan teks
+    terpanjang dari `ZenithIslandFitSamples`: device 40 karakter, nama "Maximiliano", folder panjang, semua salat
+    dan metode; remote lock; farewell muat di sayap; jendela island gembok). `--selftest` kini juga mengukur view
+    sungguhan offscreen (`IslandFitCheck`, `NSHostingView.fittingSize`): burst, baris remote lock, dan capsule
+    notice dengan teks panjang. Catalog: `burst-remote-status-long`, `burst-claude-long`, `burst-welcome-long`,
+    `burst-charge-long`, `lock-island-remote-long`, gerak `motion-lock-remote-close` dan `motion-unlock-welcome`.
+  - *Sengaja tidak diubah:* notice kecil upstream di sayap (volume, AirPods, track, download, dst.) tetap ukuran
+    upstream di samping kamera (ruangnya milik menu, dikunci test upstream); teks yang terlalu panjang di sana
+    masih dipotong.
+  - **Belum diverifikasi di Mac:** hand-off pil → welcome di layar sungguhan (urutan window server antara
+    jendela lock screen dan panel island, satu frame tumpang tindih), island gembok tumbuh saat dikunci dari
+    iPhone, dan pop glyph gembok/musik saat jendela pil hilang.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
