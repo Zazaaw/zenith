@@ -22,7 +22,26 @@ extension CatalogShots {
             lockIsland("lock-island-farewell", open: true) { $0.moment = .farewell },
             lockIsland("lock-island-remote") { $0.moment = .remoteLock(device: "Faiz’s iPhone") }, // Zenith fork: remote lock
             lockIsland("lock-island-remote-long") { $0.moment = .remoteLock(device: CatalogShots.longDevice) },
+            // Zenith fork: unlocked, the welcome grown in the padlock island before the
+            // desktop island takes it over, and the bare notch it leaves into.
+            lockIsland("lock-island-welcome", open: true) { $0.moment = .welcome(CatalogShots.lockWelcome) },
+            lockIsland("lock-island-bare") { $0.moment = .bare },
+            // Zenith fork: face unlock (FaceUnlockIslandStage), Glance's animations drawn as stills.
+            lockIsland("lock-island-face-armed") { $0.face = .armed },
+            lockIsland("lock-island-face-armed-music", setup: { CatalogSamples.music() }) { $0.face = .armed },
+            lockIsland("lock-island-face-scanning") { $0.face = .scanning },
+            lockIsland("lock-island-face-success") { $0.face = .success },
+            lockIsland("lock-island-face-failure") { $0.face = .failure(.wrongFace) },
+            lockIsland("lock-island-face-touchid") { $0.face = .needsTouchID },
+            lockIsland("lock-island-face-minimal-scanning") { $0.faceStyle = .minimal; $0.face = .scanning },
+            lockIsland("lock-island-face-minimal-success") { $0.faceStyle = .minimal; $0.face = .success },
+            lockIsland("lock-island-face-none-failure") { $0.faceStyle = .none; $0.face = .failure(.timedOut) },
         ]
+    }
+
+    /// Zenith fork: the welcome as the padlock island grows it on unlocking.
+    static var lockWelcome: ZenithWelcomeBurst {
+        ZenithWelcomeBurst(title: "Welcome back, Faiz", subtitle: "Locked for 2h 14m", photo: nil, initials: "FA")
     }
 
     /// `frozen` draws the island that far into its entrance from `entrance`, still.
@@ -47,7 +66,7 @@ extension CatalogShots {
             let view = ZenithLockScreenIsland(model: model, island: island, size: surface.size, cameraWidth: camera.width,
                                               geometry: geometry.lockScreenMusicGeometry, window: window.size,
                                               origin: CGPoint(x: surface.minX - window.minX, y: window.maxY - surface.maxY),
-                                              frozen: frozen)
+                                              frozen: frozen, stillMedia: true) // Zenith fork: no video layer offscreen
             return (AnyView(view), window.size)
         }
     }
@@ -78,6 +97,10 @@ enum CatalogMotion {
         // Zenith fork: back into the padlock pill, and the pill growing into the welcome as the Mac unlocks.
         Sequence(id: "motion-lock-remote-close", from: "lock-island-remote", to: "lock-island-rest"),
         Sequence(id: "motion-unlock-welcome", from: "lock-island-music", to: "burst-welcome-remote"),
+        // Zenith fork: unlocking, the welcome grows in the padlock island itself; face unlock's scan.
+        Sequence(id: "motion-unlock-padlock-welcome", from: "lock-island-music", to: "lock-island-welcome"),
+        Sequence(id: "motion-face-scan", from: "lock-island-face-armed", to: "lock-island-face-scanning"),
+        Sequence(id: "motion-face-success-welcome", from: "lock-island-face-success", to: "lock-island-welcome"),
     ]
 
     /// Zenith fork: the padlock island's own entrance as the Mac locks, drawn

@@ -181,6 +181,15 @@ let sections: [Section] = [
         wide("lock-island-focus", "Island gembok: Focus", "Bulan + nama Focus ungu (#A78BFA).", "Focus aktif (setelah 5 detik pertama colok charger).", "Settings › Lock Screen › Over the wallpaper › Island › Focus", note: "macOS tidak memberi cara tanpa izin untuk membaca Focus; render ini memakai data contoh, di app slot ini kosong sampai ada pembaca."),
         wide("lock-island-farewell", "“See you, Faiz 👋”", "Island melebar dengan gembok terbuka dan salam, sekitar 2,2 detik, lalu gembok menutup dan island menyusut.", "Mac dikunci di depan Mac.", "Settings › Lock Screen › Over the wallpaper › Island › See you"),
         wide("lock-island-remote", "“Locked from Faiz’s iPhone”", "Pengganti “See you”: island melebar dengan gembok, “Locked from Faiz’s iPhone” di atas “just now” dan ikon iPhone, sekitar 3 detik, lalu menyusut.", "Mac dikunci dari Shortcut iPhone (`lock`).", "Settings › iPhone Remote"),
+        wide("lock-island-welcome", "Unlock: welcome di island gembok", "Welcome tumbuh di island gembok sendiri (di atas shield macOS), lalu island desktop mengambil alih di bentuk yang sama tanpa gerak.", "Mac dibuka; hand-off setelah zoom desktop selesai (±1 dtk).", "Settings › Lock Screen › Over the wallpaper › Island › Welcome back"),
+        wide("lock-island-face-armed", "Face unlock: siap", "Pil gembok seperti biasa, glyph Face ID kecil di ujung sayap kanan.", "Face unlock aktif di lock screen, menunggu pemicu.", "Settings › Face Unlock"),
+        wide("lock-island-face-armed-music", "Face unlock: siap + musik", "Bar musik lalu glyph Face ID di sayap kanan.", "Lagu diputar saat face unlock siap.", "Settings › Face Unlock"),
+        wide("lock-island-face-scanning", "Face unlock: memindai", "Panel scanning Glance (252 × 200), idleanimation.mp4 berulang.", "Mencari wajah (hover, spasi, wake, atau lock).", "Settings › Face Unlock › Animation"),
+        wide("lock-island-face-success", "Face unlock: cocok", "unlockanimation.mp4 sekali, frame terakhir ditahan, lalu berubah jadi welcome.", "Wajah cocok; password diketik.", "Settings › Face Unlock › Animation"),
+        wide("lock-island-face-failure", "Face unlock: gagal", "unsuccessfulunlockanimation.mp4 sekali lalu ditahan; hover mencoba lagi.", "Wajah tidak cocok, dicurigai palsu, atau habis waktu.", "Settings › Face Unlock › Animation"),
+        wide("lock-island-face-touchid", "Face unlock: butuh Touch ID", "“Unlock with Touch ID once to use Face ID” dengan glyph Touch ID, satu baris di bawah kamera.", "Sesi Touch ID terkunci, password belum bisa diketik.", "Settings › Face Unlock"),
+        wide("lock-island-face-minimal-scanning", "Face unlock minimal: memindai", "Gaya minimal: gembok di sayap kiri, animasi kecil di sayap kanan, island turun 12 pt.", "Gaya animasi Minimal.", "Settings › Face Unlock › Animation › Minimal"),
+        wide("lock-island-face-none-failure", "Face unlock tanpa animasi: gagal", "Panel tetap terbuka dengan gambar diam (unlockstatic.png), tanpa video hasil.", "Gaya animasi None.", "Settings › Face Unlock › Animation › None"),
     ]),
 ]
 

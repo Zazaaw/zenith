@@ -16,6 +16,7 @@ enum LockIslandTests {
         switches(suite)
         opening(suite)
         desktopZoom(suite)
+        FaceUnlockIslandTests.run(suite) // Zenith fork: the lock screen Space, the unlock hand-off, face unlock
     }
 
     /// Zenith fork: unlocking, the island waits out macOS's zoom of the

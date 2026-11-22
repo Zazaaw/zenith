@@ -51,6 +51,9 @@ struct ZenithLockHandoff {
     /// changes nothing on screen.
     var look: NSImage?
     let welcome: ZenithWelcomeBurst
+    /// How long the welcome has already shown in the padlock island, so the
+    /// island ends it when it would have ended there.
+    var shownFor: TimeInterval = 0
     /// The island is on screen at the pill's frame: the pill goes now.
     let handedOver: () -> Void
     /// The island cannot take over (hidden, in full screen, open, or not
