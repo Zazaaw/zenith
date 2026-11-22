@@ -3032,7 +3032,34 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     (welcome/bare) menang atas semua; scan/sukses/gagal menang atas salam; baris Touch ID dan glyph Face ID hanya
     menggantikan pil saat rest. Kode: `Services/FaceUnlock/Island/FaceUnlockIslandSupport.swift`,
     `UI/FaceUnlock/Island/FaceUnlockMediaView.swift`, view di `ZenithLockScreenIsland`.
-    - `.armed`: pil gembok seperti biasa + glyph `faceid` 14 pt di ujung sayap kanan (setelah slot, jarak 6).
+    - `.armed`: pil gembok seperti biasa + glyph `faceid` 18 pt (medium, lebih tipis dari gembok 17 pt semibold)
+      di sayap kanan, setelah slot (jarak 8). Kotaknya selebar kotak gembok (23 pt) dan jaraknya dari tepi kanan
+      sama dengan jarak gembok dari tepi kiri (`ZenithLockScreenIsland.padlockLead`, diukur dari lebar simbol
+      `lock.fill`); pil melebar seperlunya. Keduanya di tengah tinggi strip.
+    - *Sudut Glance (setelah video IMG_9851):* hanya untuk bentuk face unlock (pil armed dengan glyph, scan, sukses,
+      gagal, baris Touch ID; `FaceUnlockIslandStage.usesGlanceCorners`): sudut bawah squircle Apple (reach 1,528),
+      radius 12 (tertutup) → 60 (terbuka, `(h − 38) / 140`), dibatasi `(h − bahu) / 1,528` dan `(lebar badan / 2) /
+      1,528`; bahu Zenith tetap (`FaceUnlockIslandSilhouette`, `UI/FaceUnlock/Island/FaceUnlockIslandShape.swift`).
+      Elemen di dalam konsentris (radius − 20, tile Touch ID). Kedua sudut tiga cubic per sudut dan dicampur titik
+      per titik (`continuous` 0 = sudut Zenith persis, 1 = Glance); saat scan jadi welcome campurannya berjalan
+      0,35 dtk (`FaceUnlockCornerBlend`) bersama pegas bentuk. Island lain (desktop, welcome, farewell, notice)
+      tidak berubah.
+    - *Kedip unlock (IMG_9851, setelah ✓ island menyusut ±4 frame lalu welcome tumbuh):* coordinator mematikan face
+      unlock (`presence.state = .hidden`) begitu sesi terbuka, sering ±70 ms sebelum lock screen mendengar
+      `screenIsUnlocked`. Island menerima `.hidden` itu: stage kembali ke pil rest (tinggi kamera, tanpa isi) dan
+      `faceSuccessAt` terhapus, lalu unlock menumbuhkan welcome dari pil itu tanpa menunggu video sukses. Sekarang
+      `FaceUnlockIslandStage.next` menahan `.success` saat `.hidden` datang dan sesi sudah tidak terkunci
+      (`CGSSessionScreenIsLocked`); welcome lalu morph langsung dari bentuk sukses (isi ✓ pudar 0,1 dtk seperti
+      ganti halaman, bentuk pegas ke ukuran welcome, lantai notch tetap).
+    - *Kedip lock (IMG_9851, pil muncul langsung selebar penuh):* jam entrance dulu mulai saat view island muncul
+      (+0,6 dtk), sedangkan jendelanya baru di-order setelah sesi benar-benar terkunci (delegasi), dan perubahan
+      state (armed +0,25 dtk, lalu scanning) langsung memulai pegas dari notch. Pegasnya habis sebelum jendela
+      tampil. Sekarang entrance menunggu dilepas (`ZenithLockIslandModel.entranceReleased`): service melepasnya
+      setelah jendela island di-order dan digambar, sisa fade shield (`ZenithLockHandover.entranceWait`, minimal
+      1/30 dtk), jadi frame pertama selalu notch telanjang (`bareCutout`, tanpa bayangan) dan pegas terlihat utuh.
+      Perubahan state sebelum dilepas tidak memotong: entrance tumbuh ke tujuan terbaru; sesudahnya menumpang
+      pegas yang berjalan. Hold farewell dan gembok dihitung dari saat dilepas. Dua frame tepi notch lebih tebal
+      sebelum pil (island desktop yang menutup) dibiarkan: Glance sama.
     - `.scanning`: panel Glance 252 × 200 (220 × 200 + flare 16), tidak lebih sempit dari pil, video 144 pt di
       top 26, `idleanimation.mp4` berulang (`AVPlayerLooper`). Minimal: kamera + 2 × 54, tinggi + 12, gembok kiri,
       video 27 pt kanan. Gaya dibaca dari `faceUnlockAnimationStyle` saat scan dimulai (default `original`,
@@ -3050,7 +3077,9 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     - *Catalog:* `lock-island-welcome`, `-bare`, `-face-armed`, `-face-armed-music`, `-face-scanning`, `-face-success`,
       `-face-failure`, `-face-touchid`, `-face-minimal-scanning`, `-face-minimal-success`, `-face-none-failure`
       (video digambar sebagai still lewat `AVAssetImageGenerator`, `stillMedia`), gerak
-      `motion-unlock-padlock-welcome`, `motion-face-scan`, `motion-face-success-welcome`.
+      `motion-unlock-padlock-welcome`, `motion-face-scan`, `motion-face-success-welcome`,
+      `motion-face-minimal-success-welcome`, dan entrance dari notch `motion-lock-entrance-notch-farewell`,
+      `-face-armed`, `-face-minimal-scanning`.
     - *Test:* `Tests/FaceUnlockIslandTests.swift`, dijalankan suite `lock-island` (level/behavior, timing hand-off,
       rencana hand-off, stage, ukuran, hover rect, gaya).
     - **Belum diverifikasi:** video di lock screen sungguhan, hover di jendela non-key saat terkunci, dan semua yang
@@ -3208,7 +3237,7 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
       ada sebagai mekanisme supaya island desktop baru tampil saat hand-off.
     - *Lock:* island desktop menutup ke notch kosong saat lock dimulai (`retireIsland(animated:)`, motion hide
       biasa, ditutup 0,5 dtk kemudian). Island gembok berdiri di ukuran kamera telanjang selama shield memudar masuk
-      (`ZenithLockHandover.shieldFadeIn` 0,6 dtk, `ZenithLockIslandModel.entranceDelay`), lalu farewell / "Locked
+      (`ZenithLockHandover.shieldFadeIn` 0,6 dtk; kini dilepas lewat `entranceReleased`, lihat Kedip lock), lalu farewell / "Locked
       from …" tumbuh dari notch dengan pegas iOS yang sama; timer farewell dan gembok dihitung dari situ.
     - *Log* (`zenithLockTrace`, `~/Library/Logs/Zenith/lock.log`): Space dibuat/ditampilkan (id, level, hasil),
       delegate/undelegate per jendela (nomor, level, hasil, atau ditunda karena belum terkunci), level dan alpha
