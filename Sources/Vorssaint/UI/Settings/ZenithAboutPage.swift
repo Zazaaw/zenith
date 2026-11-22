@@ -72,6 +72,11 @@ struct ZenithAboutPage: View {
                     ZenithAboutClosing()
                 }
                 .padding(.top, 36)
+                // Zenith fork: face unlock's credits (Glance, MIT; ArcFace, non-commercial).
+                ZenithAboutReveal(order: 7, waitsForScroll: true) { _ in
+                    FaceUnlockCredits()
+                }
+                .padding(.top, 36)
             }
             .frame(maxWidth: 640, alignment: .leading)
             .padding(.horizontal, 28)
