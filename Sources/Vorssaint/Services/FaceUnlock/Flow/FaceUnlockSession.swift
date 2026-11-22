@@ -244,12 +244,6 @@ final class FaceUnlockSession: ObservableObject, FaceUnlockCredentials, FaceUnlo
     }
 }
 
-extension Notification.Name {
-    /// Posted on the main thread when the session opens or locks, so what is
-    /// sealed under its key (the face store) reloads or forgets.
-    static let faceUnlockSessionDidChange = Notification.Name("ZenithFaceUnlockSessionDidChange")
-}
-
 enum FaceUnlockSecurityError: Error, Equatable {
     case authenticationFailed
     case sessionLocked

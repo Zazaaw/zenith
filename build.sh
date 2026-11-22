@@ -674,11 +674,24 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Uninstall/UninstallerSupport.swift
         Sources/Vorssaint/Services/ManagedDownloads/WhatsAppDownloadSupport.swift
         Sources/Vorssaint/Core/SecureInputSupport.swift
-        Sources/Vorssaint/Services/FaceUnlock/FaceUnlockContract.swift
+        # Zenith fork: face unlock's recognition logic (no camera, model or store).
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/Liveness/LandmarkGeometry.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/Liveness/GeometryLiveness.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/Liveness/GlareCue.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/Liveness/LivenessCues.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/Liveness/LivenessScoring.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/Liveness/LivenessAnalyzer.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceUnlockRecognitionSupport.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceEmbedder.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceEnrollmentModel.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceDetector.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceEnrollmentPose.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceScanWindow.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceModelCache.swift
+        Sources/Vorssaint/UI/FaceUnlock/Lab/FaceLabCalibration.swift
         Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockPreferences.swift
         Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockSession.swift
         Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockSeams.swift
-        Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockIntegrationShim.swift
         Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockCoordinator.swift
         Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockOnboardingFlow.swift
         Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockSystem.swift
@@ -854,11 +867,12 @@ if [[ -d Resources/Images ]]; then
     mkdir -p "$STAGE/Contents/Resources/Images"
     cp Resources/Images/* "$STAGE/Contents/Resources/Images/"
 fi
-# Zenith fork: face unlock's animations and still, from Glance (MIT).
-if [[ -d Resources/FaceUnlock ]]; then
-    mkdir -p "$STAGE/Contents/Resources/FaceUnlock"
-    cp Resources/FaceUnlock/*.mp4 Resources/FaceUnlock/*.png "$STAGE/Contents/Resources/FaceUnlock/"
-fi
+# Zenith fork: face unlock's animations and still (Glance, MIT), its ArcFace model,
+# compiled on the Mac at first use (no Xcode here to precompile it), and its notices.
+mkdir -p "$STAGE/Contents/Resources/FaceUnlock"
+cp Resources/FaceUnlock/*.mp4 Resources/FaceUnlock/*.png "$STAGE/Contents/Resources/FaceUnlock/"
+ditto Resources/FaceUnlock/ArcFace.mlpackage "$STAGE/Contents/Resources/FaceUnlock/ArcFace.mlpackage"
+cp Resources/FaceUnlock/NOTICE.txt "$STAGE/Contents/Resources/FaceUnlock/NOTICE.txt"
 xattr -c -r "$STAGE" 2>/dev/null || true
 
 # Signing, in order of preference:

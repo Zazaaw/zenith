@@ -1,0 +1,329 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Satu Visual
+// Adapted from Glance by Jonathan Zhou (MIT), https://github.com/jonnyoo/glance (glance/FaceLabController.swift).
+//
+// Orchestrates the Face Lab debug window. Deliberately never unlocks anything or types
+// the password — that's the unlock flow's job (off by default).
+
+import Combine
+import CoreGraphics
+import Foundation
+
+struct FaceLabRecognitionResult: Identifiable {
+    let id = UUID()
+    let name: String
+    /// Similarity against the identity's averaged template.
+    let centroidSimilarity: Float
+    /// Similarity against the single closest sample. A match must clear the threshold on *both* measures.
+    let maxSampleSimilarity: Float
+    let isStale: Bool
+}
+
+/// Zenith fork: Glance's `@Observable FaceLabController` as an `ObservableObject`.
+@MainActor
+final class FaceLabController: ObservableObject {
+    let camera = FaceCameraManager()
+    let store = FaceEnrollmentStore.shared
+    @Published private(set) var pipeline: FaceRecognitionPipeline?
+
+    @Published private(set) var detectedFaces: [DetectedFace] = []
+    @Published private(set) var currentResult: FaceRecognitionResult?
+    @Published private(set) var cameraRunning = false
+    @Published private(set) var cameraError: String?
+
+    /// Fed live, same as the unlock scan loop — this is exactly what the real unlock path would see.
+    private let livenessAnalyzer = LivenessAnalyzer()
+    @Published private(set) var currentLiveness = LivenessSnapshot.empty
+    /// Diagnostics behind the flat-vs-3D cue, explaining *why* it reads what it reads beyond the cue's own 0...1 level.
+    @Published private(set) var currentGeometry = GeometryLivenessResult.empty
+    /// Lets the debug view show raw measurements live (not just derived cue levels), to tell a wrong threshold from
+    /// a measurement that isn't moving at all.
+    @Published private(set) var lastLivenessFrame: LivenessFrame?
+
+    /// Drives mode/tuning locally rather than reading the settings, so experimenting here can't change what
+    /// actually unlocks the Mac. Heavy by default since the point of this window is watching the confirm cues.
+    @Published var livenessMode: LivenessMode = .heavy
+    @Published var livenessTuning = LivenessTuning.default
+    @Published var enabledLivenessCues: Set<LivenessCue> = Set(LivenessCue.allCases)
+
+    func isLivenessCueEnabled(_ cue: LivenessCue) -> Bool {
+        enabledLivenessCues.contains(cue)
+    }
+
+    func setLivenessCue(_ cue: LivenessCue, enabled: Bool) {
+        if enabled {
+            enabledLivenessCues.insert(cue)
+        } else {
+            enabledLivenessCues.remove(cue)
+        }
+    }
+
+    /// Cue firing latches for a whole scan by design, so re-testing a spoof after one's been caught needs an explicit clear.
+    func resetLiveness() {
+        livenessAnalyzer.reset()
+        currentLiveness = .empty
+        currentGeometry = .empty
+        log("Liveness cues reset.")
+    }
+
+    @Published var enrollName: String = ""
+    /// Raw cosine similarity cutoff (-1...1); typical ArcFace verification cutoffs sit around 0.28-0.40.
+    /// Kept apart from the unlock threshold so tuning here never silently changes the real gate.
+    @Published var threshold: Double = 0.6
+
+    @Published private(set) var recognitionResults: [FaceLabRecognitionResult] = []
+    @Published private(set) var bestMatch: FaceLabRecognitionResult?
+
+    @Published private(set) var logLines: [String] = []
+    @Published private(set) var sessionError: String?
+
+    private var isProcessingFrame = false
+    private var subscriptions: Set<AnyCancellable> = []
+
+    init() {
+        livenessAnalyzer.modeProvider = { [weak self] in self?.livenessMode ?? .heavy }
+        livenessAnalyzer.tuningProvider = { [weak self] in self?.livenessTuning ?? .default }
+        livenessAnalyzer.enabledCuesProvider = { [weak self] in
+            self?.enabledLivenessCues ?? Set(LivenessCue.allCases)
+        }
+        camera.$currentFrame
+            .compactMap { $0 }
+            .sink { [weak self] frame in
+                Task { @MainActor [weak self] in await self?.processLatestFrame(frame) }
+            }
+            .store(in: &subscriptions)
+        camera.$isRunning.sink { [weak self] in self?.cameraRunning = $0 }.store(in: &subscriptions)
+        camera.$errorMessage.sink { [weak self] in self?.cameraError = $0 }.store(in: &subscriptions)
+        store.reloadIfUnlocked()
+        Task { @MainActor [weak self] in await self?.loadPipeline() }
+    }
+
+    private func loadPipeline() async {
+        let pipeline = await FaceRecognitionPipeline.shared()
+        self.pipeline = pipeline
+        if pipeline.usingFallbackEmbedder {
+            log("ArcFace unavailable (\(pipeline.fallbackReason ?? "unknown reason")) — using Vision Feature Print instead.")
+        } else {
+            log("Using \(pipeline.embedder.name).")
+        }
+    }
+
+    func start() async {
+        await camera.start()
+        if let error = camera.errorMessage {
+            log(error)
+        } else {
+            log("Camera started.")
+        }
+    }
+
+    func stop() {
+        camera.stop()
+        detectedFaces = []
+        currentResult = nil
+        livenessAnalyzer.reset()
+        currentLiveness = .empty
+        currentGeometry = .empty
+        lastLivenessFrame = nil
+        log("Camera stopped.")
+    }
+
+    /// Unlocks the session through the security side, so Face Lab can read and save faces without leaving the window.
+    func unlockSession() {
+        sessionError = nil
+        guard let credentials = FaceUnlock.credentials else {
+            sessionError = "Face unlock's security part isn't available."
+            return
+        }
+        credentials.unlockSession(reason: "Authenticate to use Face Lab") { [weak self] success in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.store.reloadIfUnlocked()
+                if success {
+                    self.log("Session unlocked.")
+                } else {
+                    self.sessionError = "Authentication failed or was cancelled."
+                }
+            }
+        }
+    }
+
+    /// Skips frames that arrive mid-processing — an "always work on the latest frame" throttle instead of a timer.
+    private func processLatestFrame(_ cameraFrame: FaceCameraFrame) async {
+        guard !isProcessingFrame, camera.isRunning, let pipeline else { return }
+        isProcessingFrame = true
+        defer { isProcessingFrame = false }
+
+        do {
+            let (result, livenessFrame) = try await Task.detached(priority: .userInitiated) {
+                let result = try pipeline.recognize(in: cameraFrame.image)
+                let faceCrop = FaceCameraManager.renderCrop(from: cameraFrame, imageRect: result.face.boundingBox)
+                return (result, LivenessFeatureExtractor.extract(from: result, frame: cameraFrame.image, faceCrop: faceCrop))
+            }.value
+            guard camera.isRunning else { return }
+            detectedFaces = [result.face]
+            currentResult = result
+            lastLivenessFrame = livenessFrame
+            currentLiveness = livenessAnalyzer.observe(livenessFrame)
+            currentGeometry = livenessAnalyzer.lastGeometry
+        } catch FaceRecognitionPipelineError.noFaceDetected {
+            detectedFaces = []
+            currentResult = nil
+        } catch {
+            detectedFaces = []
+            currentResult = nil
+            log("Detection error: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Enrollment
+
+    func captureSample() {
+        guard let result = currentResult, let pipeline else {
+            log("No face detected — can't capture a sample.")
+            return
+        }
+        let trimmedName = enrollName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else {
+            log("Enter a name before capturing a sample.")
+            return
+        }
+        do {
+            try store.addSample(
+                name: trimmedName,
+                embedding: result.embedding,
+                embedder: pipeline.embedder,
+                quality: result.quality
+            )
+            log("Captured sample for \"\(trimmedName)\" (\(result.embedding.count)-dim, \(result.alignmentTier.rawValue), quality \(Self.qualityLabel(result.quality))).")
+        } catch {
+            log("Couldn't save sample: \(error.localizedDescription)")
+        }
+    }
+
+    func deleteIdentity(_ identity: FaceIdentity) {
+        do {
+            try store.delete(identity)
+            log("Deleted \"\(identity.name)\".")
+        } catch {
+            log("Couldn't delete: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Multi-identity enrollment
+
+    /// Counts only the red band of `FaceSample.qualityTier`, so this debug list and the settings tick strip always
+    /// agree about what "low" means. Samples with no score count as unrated, never as low.
+    func lowQualityCount(in identity: FaceIdentity) -> Int {
+        identity.samples.filter { $0.qualityTier == .poor }.count
+    }
+
+    /// Whether the onboarding has registered a guided enrollment flow to start from here.
+    var canStartGuidedEnrollment: Bool { FaceUnlockLab.enrollmentHandler != nil }
+
+    /// Face Lab and the onboarding each own a separate camera on the same device — stop ours first to avoid
+    /// two live sessions with different configurations.
+    func startFullOnboarding() {
+        startGuidedEnrollment(.fullOnboarding, message: "Starting the full onboarding flow.")
+    }
+
+    func startAddIdentity() {
+        startGuidedEnrollment(.addIdentity, message: "Starting guided enrollment for a new identity.")
+    }
+
+    func startRecapture(of identity: FaceIdentity) {
+        startGuidedEnrollment(.recapture(identity.id, name: identity.name), message: "Starting guided re-capture of \"\(identity.name)\".")
+    }
+
+    private func startGuidedEnrollment(_ request: FaceUnlockLab.EnrollmentRequest, message: String) {
+        guard let handler = FaceUnlockLab.enrollmentHandler else {
+            log("Guided enrollment isn't available.")
+            return
+        }
+        stop()
+        log(message)
+        handler(request)
+    }
+
+    static func qualityLabel(_ quality: Float?) -> String {
+        guard let quality else { return "—" }
+        return String(format: "%.0f%%", locale: .current, quality * 100)
+    }
+
+    // MARK: - Recognition
+
+    func recognize() {
+        guard let result = currentResult, let pipeline else {
+            log("No face detected — can't recognize.")
+            recognitionResults = []
+            bestMatch = nil
+            return
+        }
+        guard !store.identities.isEmpty else {
+            log("No enrolled identities yet — capture a sample first.")
+            recognitionResults = []
+            bestMatch = nil
+            return
+        }
+
+        let embedder = pipeline.embedder
+        let scored = pipeline.score(result.embedding, against: store.identities)
+        recognitionResults = scored.map { s in
+            FaceLabRecognitionResult(
+                name: s.identity.name,
+                centroidSimilarity: s.centroidSimilarity,
+                maxSampleSimilarity: s.maxSampleSimilarity,
+                isStale: s.identity.isStale(comparedTo: embedder)
+            )
+        }
+
+        let matched = pipeline.bestMatch(in: scored, threshold: Float(threshold))
+        bestMatch = matched.map {
+            FaceLabRecognitionResult(name: $0.identity.name, centroidSimilarity: $0.centroidSimilarity, maxSampleSimilarity: $0.maxSampleSimilarity, isStale: false)
+        }
+
+        if let best = scored.first {
+            let verdict = (bestMatch != nil) ? "MATCH" : "no match"
+            let staleNote = best.identity.isStale(comparedTo: embedder) ? " [STALE — re-enroll under current model]" : ""
+            log("Recognize: best = \(best.identity.name) centroid=\(String(format: "%.3f", locale: .current, best.centroidSimilarity)) max=\(String(format: "%.3f", locale: .current, best.maxSampleSimilarity)) -> \(verdict)\(staleNote)")
+        }
+    }
+
+    // MARK: - Threshold calibration
+
+    /// Tagged similarity scores collected this session — the actual data a threshold should be picked from, not guessed.
+    @Published private(set) var calibrationSamples: [FaceLabCalibrationSample] = []
+
+    /// Tags the most recent `recognize()` top score as genuine or impostor, using centroid similarity (what the
+    /// threshold slider actually gates on).
+    func recordCalibrationSample(isGenuine: Bool) {
+        guard let top = recognitionResults.first else {
+            log("Nothing to record — run Identify first.")
+            return
+        }
+        calibrationSamples.append(FaceLabCalibrationSample(centroidSimilarity: top.centroidSimilarity, isGenuine: isGenuine))
+        log("Calibration: recorded \(isGenuine ? "genuine" : "impostor") sample at \(String(format: "%.3f", locale: .current, top.centroidSimilarity)).")
+    }
+
+    func clearCalibrationSamples() {
+        calibrationSamples.removeAll()
+    }
+
+    /// Midpoint between the lowest genuine score and the highest impostor score. Nil until at least one of each is recorded.
+    var suggestedThreshold: Float? {
+        FaceLabCalibration.suggestedThreshold(calibrationSamples)
+    }
+
+    /// True if any impostor score is >= any genuine score — no single threshold perfectly separates the two groups yet.
+    var calibrationDistributionsOverlap: Bool {
+        FaceLabCalibration.distributionsOverlap(calibrationSamples)
+    }
+
+    private func log(_ message: String) {
+        let timestamp = Date().formatted(date: .omitted, time: .standard)
+        logLines.append("[\(timestamp)] \(message)")
+        if logLines.count > 200 {
+            logLines.removeFirst(logLines.count - 200)
+        }
+    }
+}
