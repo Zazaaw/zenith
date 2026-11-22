@@ -841,6 +841,11 @@ if [[ -d Resources/Images ]]; then
     mkdir -p "$STAGE/Contents/Resources/Images"
     cp Resources/Images/* "$STAGE/Contents/Resources/Images/"
 fi
+# Zenith fork: face unlock's ArcFace model, compiled on the Mac at first use
+# (no Xcode here to precompile it), and its notices.
+mkdir -p "$STAGE/Contents/Resources/FaceUnlock"
+ditto Resources/FaceUnlock/ArcFace.mlpackage "$STAGE/Contents/Resources/FaceUnlock/ArcFace.mlpackage"
+cp Resources/FaceUnlock/NOTICE.txt "$STAGE/Contents/Resources/FaceUnlock/NOTICE.txt"
 xattr -c -r "$STAGE" 2>/dev/null || true
 
 # Signing, in order of preference:
