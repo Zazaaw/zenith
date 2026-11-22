@@ -312,6 +312,9 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Notch/ZenithIslandRoom.swift
         Sources/Vorssaint/Services/Notch/ZenithIslandMotion.swift
         Sources/Vorssaint/Services/Notch/ZenithLockIslandSupport.swift
+        Sources/Vorssaint/Services/Notch/ZenithLockHandover.swift
+        Sources/Vorssaint/Services/FaceUnlock/FaceUnlockContract.swift
+        Sources/Vorssaint/Services/FaceUnlock/Island/FaceUnlockIslandSupport.swift
         Sources/Vorssaint/Core/ZenithLockIslandStrings.swift
         Sources/Vorssaint/Core/ZenithClaudeChimeStrings.swift
         Sources/Vorssaint/Core/ZenithRemoteStrings.swift
@@ -840,6 +843,11 @@ fi
 if [[ -d Resources/Images ]]; then
     mkdir -p "$STAGE/Contents/Resources/Images"
     cp Resources/Images/* "$STAGE/Contents/Resources/Images/"
+fi
+# Zenith fork: face unlock's animations and still, from Glance (MIT).
+if [[ -d Resources/FaceUnlock ]]; then
+    mkdir -p "$STAGE/Contents/Resources/FaceUnlock"
+    cp Resources/FaceUnlock/*.mp4 Resources/FaceUnlock/*.png "$STAGE/Contents/Resources/FaceUnlock/"
 fi
 xattr -c -r "$STAGE" 2>/dev/null || true
 

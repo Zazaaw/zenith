@@ -8,9 +8,10 @@ import Foundation
 // padlock beside the camera and, on the other side, the music's bars, the
 // charge while the charger is connected, or the Focus that is on. As the Mac
 // locks it widens to wave goodbye. The welcome back is the desktop island's
-// own burst (ZenithIslandBurst.welcome), so it never stacks over an open
-// page. Pure rules and sizes; the view and the service live beside the lock
-// screen's own.
+// own burst (ZenithIslandBurst.welcome): it grows first in the padlock island,
+// above macOS's shield, and the desktop island takes it over at the same shape
+// once the desktop has settled (ZenithLockHandover). Pure rules and sizes; the
+// view and the service live beside the lock screen's own.
 
 /// Zenith fork: dev builds log the lock screen's hand-offs beside the
 /// island's motion (`defaults write … zenithMotionTrace -bool true`,
@@ -84,6 +85,13 @@ enum ZenithLockIslandMoment: Equatable {
     /// Zenith fork (remote lock): "Locked from Faiz’s iPhone" over "just now",
     /// with the iPhone, in place of the farewell when an iPhone locked the Mac.
     case remoteLock(device: String)
+    /// Zenith fork: unlocked, the welcome back grown in the padlock island
+    /// itself, the desktop island's own burst at the same shape
+    /// (ZenithIslandBurstView), until the desktop island takes it over.
+    case welcome(ZenithWelcomeBurst)
+    /// Zenith fork: drawn back into the bare notch: as the Mac locks, while
+    /// macOS fades its shield in, and as the island leaves with nothing to hand over.
+    case bare
 }
 
 /// What the right side of the resting island shows.
@@ -104,16 +112,6 @@ enum ZenithLockIsland {
     static let chargeLead: TimeInterval = 5
     /// How long the farewell holds before the island draws back.
     static let farewellHold: TimeInterval = 2.2
-    /// After unlocking, when the desktop island greets: as soon as it is back,
-    /// under the padlock island, which fades once the greeting has begun.
-    static let welcomeDelay: TimeInterval = 0.1
-    /// How long the padlock island stays over the returned desktop island.
-    static let unlockOverlap: TimeInterval = 0.35
-    /// The longest the padlock island waits for the desktop island to return.
-    static let unlockPatience: TimeInterval = 1.5
-    /// How long the closed desktop island stays drawn under the lock
-    /// screen's padlock island as the Mac locks.
-    static let handoffOverlap: TimeInterval = 0.6
     /// How long "Locked from Faiz’s iPhone" holds before the island draws back.
     static let remoteHold: TimeInterval = 3
 
@@ -132,7 +130,7 @@ enum ZenithLockIsland {
     /// the resting pill; nil at rest.
     static func openingHold(_ moment: ZenithLockIslandMoment) -> TimeInterval? {
         switch moment {
-        case .rest: return nil
+        case .rest, .welcome, .bare: return nil
         case .farewell: return farewellHold
         case .remoteLock: return remoteHold
         }
@@ -208,8 +206,9 @@ enum ZenithLockIsland {
         let swing = ZenithIslandMotion.widthSwingLimit + ZenithIslandMotion.narrowingLimit
         let widest = max(surface.width + maximumWing * 2, ZenithIslandRoom.maximumWidth)
         let width = min(screen.width, widest + swing * 2)
-        let height = grownHeight(camera: surface.height, lines: 2) + ZenithIslandMotion.heightSwingLimit
-            + ZenithIslandMotion.flatteningLimit
+        // Zenith fork: and face unlock's scanning panel, the tallest it grows.
+        let height = max(grownHeight(camera: surface.height, lines: 2), FaceUnlockIslandLayout.panel.height)
+            + ZenithIslandMotion.heightSwingLimit + ZenithIslandMotion.flatteningLimit
         let frame = CGRect(x: surface.midX - width / 2, y: surface.maxY - height, width: width, height: height)
         return frame.intersection(screen).integral
     }
