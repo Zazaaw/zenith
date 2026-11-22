@@ -501,7 +501,12 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
             from: start, to: size, begin: animation.beginTime > 0 ? animation.beginTime : CACurrentMediaTime(),
             steady: steady, offset: startOffset, floor: floor))
         // Zenith fork: the pill it takes over from, as it looked, leaving as a page does.
-        if let handoff, let handoffLook { canvas.showLeavingLook(handoffLook, size: handoff) }
+        // Zenith fork: taken over at its own shape (the welcome), the look stays whole until
+        // the same page beneath it is fully in, so nothing on screen changes.
+        if let handoff, let handoffLook {
+            canvas.showLeavingLook(handoffLook, size: handoff,
+                                   holds: abs(handoff.width - size.width) < 0.5 && abs(handoff.height - size.height) < 0.5)
+        }
         CATransaction.commit()
         // The window already has its new frame; its layers go out at once,
         // not at the end of this turn of the run loop, so the screen never
@@ -1598,7 +1603,7 @@ private final class NotchCanvas: NSView {
     /// Zenith fork: another island's look at `size` (the lock screen's
     /// padlock pill), over the content where that island stood, leaving as a
     /// page does (ZenithContentRide.outgoing) while the island grows from it.
-    func showLeavingLook(_ image: NSImage, size: CGSize) {
+    func showLeavingLook(_ image: NSImage, size: CGSize, holds: Bool = false) {
         leavingLook?.removeFromSuperview()
         let view = NSImageView(frame: CGRect(x: islandX(size), y: 0, width: size.width, height: size.height))
         view.image = image
@@ -1606,6 +1611,18 @@ private final class NotchCanvas: NSView {
         view.wantsLayer = true
         addSubview(view, positioned: .above, relativeTo: host)
         leavingLook = view
+        // Zenith fork: at the shape it takes over (the welcome over the
+        // welcome), the look stays whole over the page riding in beneath it,
+        // and goes once that page is fully in.
+        if holds {
+            DispatchQueue.main.asyncAfter(deadline: .now() + ZenithContentRide.Timing.opening.duration + 0.1) {
+                [weak self, weak view] in
+                guard let self, let view, self.leavingLook === view else { return }
+                view.removeFromSuperview()
+                self.leavingLook = nil
+            }
+            return
+        }
         guard let layer = view.layer else { return }
         let timing = ZenithContentRide.Timing.opening
         let count = max(1, Int((timing.outgoingFade * Self.rideRate).rounded(.up)))

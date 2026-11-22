@@ -8,8 +8,9 @@ import SwiftUI
 /// island does (NotchMotionTimeline, the same springs, lags and squash) and
 /// drawn at 120 Hz while it moves. At rest: a bigger padlock beside the
 /// camera and, across it, the music's bars, the charge or the Focus. It
-/// widens to wave goodbye as the Mac locks; the welcome back is the desktop
-/// island's own burst.
+/// widens to wave goodbye as the Mac locks. Unlocked, it grows the desktop
+/// island's own welcome burst, which the desktop island then takes over at
+/// the same shape. Zenith fork: it also shows face unlock (FaceUnlockIslandStage).
 struct ZenithLockScreenIsland: View {
     @ObservedObject var model: NotchLockScreenModel
     @ObservedObject var island: ZenithLockIslandModel
@@ -23,6 +24,9 @@ struct ZenithLockScreenIsland: View {
     /// Drawn at this many seconds into its entrance, still, for the
     /// catalog's frame sequences; nil on the lock screen.
     var frozen: TimeInterval? = nil
+    /// Zenith fork: face unlock's animations drawn as stills, for the
+    /// catalog, whose offscreen renders never capture a video layer.
+    var stillMedia = false
     @ObservedObject private var music = NotchMusicService.shared
     @ObservedObject private var l10n = L10n.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -34,6 +38,10 @@ struct ZenithLockScreenIsland: View {
     private var restingWing: CGFloat { max(0, (size.width - cameraWidth) / 2) }
     private var camera: CGSize { CGSize(width: cameraWidth, height: size.height) }
     private var slot: ZenithLockIslandSlot { island.slot(playing: playing) }
+    /// Zenith fork: what it shows, face unlock included, and whether its
+    /// right wing adds the face glyph (armed, at rest).
+    private var stage: FaceUnlockIslandStage { island.stage }
+    private var faceGlyph: Bool { FaceUnlockIslandStage.showsFaceGlyph(moment: island.moment, face: island.face) }
 
     var body: some View {
         let goal = goal
@@ -68,7 +76,23 @@ struct ZenithLockScreenIsland: View {
 
     /// The padlock pill at rest, with what its right wing shows.
     private var restGoal: CGSize {
-        ZenithLockIsland.size(camera: camera, wing: ZenithLockIsland.wing(for: slotWidth(slot), resting: restingWing))
+        let content = faceGlyph ? FaceUnlockIslandLayout.armedWing(slot: slotWidth(slot)) : slotWidth(slot) // Zenith fork
+        return ZenithLockIsland.size(camera: camera, wing: ZenithLockIsland.wing(for: content, resting: restingWing))
+    }
+
+    /// Zenith fork: the welcome as the desktop island draws it, at its size,
+    /// so the desktop island takes it over at the very same shape.
+    private func welcomeFit(_ welcome: ZenithWelcomeBurst) -> ZenithIslandBurstLayout.Fit {
+        ZenithIslandBurstLayout.fit(ZenithIslandBurst(.welcome(welcome), start: .distantPast), geometry: geometry)
+    }
+
+    /// Zenith fork: Glance's scanning panel, or its minimal widening.
+    private var scanGoal: CGSize {
+        FaceUnlockIslandLayout.scanSize(style: island.faceStyle, resting: restGoal, camera: camera)
+    }
+
+    private var touchIDFit: ZenithIslandBurstLayout.Fit {
+        FaceUnlockIslandLayout.touchIDFit(camera: size.height, resting: restGoal.width, screenWidth: geometry.screen.width)
     }
 
     /// Zenith fork (remote lock): the island grown below the camera, and its lines.
@@ -79,14 +103,34 @@ struct ZenithLockScreenIsland: View {
 
     /// Where the island is headed for what it shows now.
     private var goal: CGSize {
-        switch island.moment {
-        case .rest:
+        switch stage {
+        case .moment(.rest):
             return restGoal
-        case .farewell:
+        case .moment(.farewell):
             let width = Self.farewellWidth(text.seeYou(island.firstName))
             return ZenithLockIsland.size(camera: camera, wing: ZenithLockIsland.wing(for: width, resting: restingWing))
-        case .remoteLock(let device): // Zenith fork: locked from an iPhone, grown below the camera
+        case .moment(.remoteLock(let device)): // Zenith fork: locked from an iPhone, grown below the camera
             return remoteFit(device).size
+        case .moment(.welcome(let welcome)): // Zenith fork: unlocked, the welcome grows here first
+            return welcomeFit(welcome).size
+        case .moment(.bare): // Zenith fork: drawn back into the camera
+            return camera
+        case .scan: // Zenith fork: face unlock
+            return scanGoal
+        case .touchID:
+            return touchIDFit.size
+        }
+    }
+
+    /// Zenith fork: content that morphs as one page; within it, the slot and
+    /// the farewell, or the scan's animations, change in place.
+    private var stageKey: String {
+        switch stage {
+        case .moment(.rest), .moment(.farewell), .moment(.bare): return "wings"
+        case .moment(.remoteLock): return "remote"
+        case .moment(.welcome): return "welcome"
+        case .scan: return "scan"
+        case .touchID: return "touchID"
         }
     }
 
@@ -114,12 +158,17 @@ struct ZenithLockScreenIsland: View {
     private func startEntrance() {
         guard frozen == nil, island.entrance != nil else { return }
         guard !reduceMotion else { island.entrance = nil; return }
-        DispatchQueue.main.async {
+        // Zenith fork: as the Mac locks, the bare notch while macOS fades its shield in.
+        let delay = max(0, island.entranceDelay)
+        island.settlesAt = Date().timeIntervalSinceReferenceDate + delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             guard island.entrance != nil, let next = entranceMotion(to: goal, begin: Date().timeIntervalSinceReferenceDate)
             else { island.entrance = nil; return }
             island.entrance = nil
+            ZenithLockTrace.log("entrance grows after \(delay) s: \(next.start) -> \(next.target)")
             motion = next
             settleAt = next.begin + next.frames().duration
+            island.settlesAt = settleAt
         }
     }
 
@@ -128,7 +177,7 @@ struct ZenithLockScreenIsland: View {
     /// has started, from where it grows). Reduce Motion snaps.
     private func retarget(from old: CGSize, to new: CGSize) {
         guard frozen == nil else { return }
-        guard !reduceMotion else { motion = nil; return }
+        guard !reduceMotion else { motion = nil; island.settlesAt = 0; return }
         let old = motion == nil ? island.entrance ?? old : old
         island.entrance = nil
         let now = Date().timeIntervalSinceReferenceDate
@@ -137,6 +186,7 @@ struct ZenithLockScreenIsland: View {
             ?? NotchMotionTimeline(from: old, to: new, begin: now, floor: floor)
         motion = next
         settleAt = next.begin + next.frames().duration
+        island.settlesAt = settleAt // Zenith fork: the unlock hands over once it is still
     }
 
     private func slotWidth(_ slot: ZenithLockIslandSlot) -> CGFloat {
@@ -163,18 +213,80 @@ struct ZenithLockScreenIsland: View {
         return ZStack(alignment: .top) {
             outline.fill(.black)
             ZStack(alignment: .top) {
-                if case .remoteLock(let device) = island.moment { // Zenith fork: grown below the camera
-                    grownRemote(device)
-                        .transition(.zenithMorph(reduceMotion: reduceMotion))
-                } else {
-                    wings(width: shape.width)
-                        .transition(.zenithMorph(reduceMotion: reduceMotion))
-                }
+                // Zenith fork: one page per stage, morphing as the island's pages do.
+                page(width: shape.width)
+                    .id(stageKey)
+                    .transition(.zenithMorph(reduceMotion: reduceMotion))
             }
-            .animation(ZenithMorph.animation(reduceMotion: reduceMotion), value: island.moment)
+            .animation(ZenithMorph.animation(reduceMotion: reduceMotion), value: stageKey)
             .frame(width: shape.width, height: shape.height, alignment: .top)
             .clipShape(outline)
         }
+    }
+
+    @ViewBuilder private func page(width: CGFloat) -> some View {
+        switch stage {
+        case .moment(.remoteLock(let device)): // Zenith fork: grown below the camera
+            grownRemote(device)
+        case .moment(.welcome(let welcome)): // Zenith fork: the desktop island's own welcome, as it draws it
+            ZenithIslandBurstView(burst: ZenithIslandBurst(.welcome(welcome), start: .distantPast), geometry: geometry)
+        case .scan(let media): // Zenith fork: face unlock
+            scanPanel(media)
+        case .touchID:
+            touchIDRow
+        case .moment(.rest), .moment(.farewell), .moment(.bare):
+            wings(width: width)
+        }
+    }
+
+    /// Zenith fork: Glance's scanning panel: the square animation under the
+    /// camera; in the minimal style the padlock on the left wing and the
+    /// animation on the right. With the style set to none the results show
+    /// the still, as in Glance.
+    @ViewBuilder private func scanPanel(_ media: FaceUnlockIslandMedia) -> some View {
+        let goal = scanGoal
+        let plays = media == .idle || FaceUnlockIslandStyle.playsResults(island.faceStyle)
+        if island.faceStyle == .minimal {
+            let wing = max(0, (goal.width - cameraWidth) / 2)
+            let side = FaceUnlockIslandLayout.minimalVideoSide(height: goal.height)
+            HStack(spacing: 0) {
+                Image(systemName: media == .success ? "lock.open.fill" : "lock.fill")
+                    .font(.system(size: FaceUnlockIslandLayout.minimalLockSize, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .contentTransition(.symbolEffect(.replace.downUp))
+                    .animation(reduceMotion ? nil : .smooth(duration: 0.4), value: media)
+                    .frame(width: wing, height: goal.height)
+                Spacer(minLength: 0)
+                FaceUnlockMediaView(media: media, plays: plays, still: stillMedia)
+                    .frame(width: side, height: side)
+                    .frame(width: wing, height: goal.height)
+            }
+            .frame(width: goal.width, height: goal.height)
+        } else {
+            let side = FaceUnlockIslandLayout.videoSide(in: goal)
+            FaceUnlockMediaView(media: media, plays: plays, still: stillMedia)
+                .frame(width: side, height: side)
+                .padding(.top, FaceUnlockIslandLayout.videoTop)
+                .frame(width: goal.width, height: goal.height, alignment: .top)
+        }
+    }
+
+    /// Zenith fork: "Unlock with Touch ID once to use Face ID", below the
+    /// camera, with the island's padding around it.
+    private var touchIDRow: some View {
+        let fit = touchIDFit
+        let shoulder = NotchLayout.shoulder(height: fit.size.height)
+        return HStack(spacing: 0) {
+            ZenithBurstTile(symbol: "touchid", tint: .white, fill: 0.12)
+            ZenithBurstWords(title: FaceUnlockIslandText.needsTouchID, subtitle: "", titleLines: fit.lines)
+                .padding(.leading, ZenithIslandBurstLayout.tileGap)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(minHeight: ZenithIslandBurstLayout.markSide)
+        .foregroundStyle(.white)
+        .padding(.horizontal, ZenithIslandRoom.edge + shoulder)
+        .padding(.top, size.height + ZenithIslandInset.belowCamera)
+        .frame(width: fit.size.width, height: fit.size.height, alignment: .top)
     }
 
     /// Zenith fork (remote lock): the row under the camera, with the padding
@@ -207,6 +319,15 @@ struct ZenithLockScreenIsland: View {
                         // Zenith fork: whole while its wing grows, coming out from behind the camera.
                         .fixedSize()
                         .transition(.zenithMorph(reduceMotion: reduceMotion))
+                } else if faceGlyph { // Zenith fork: armed for face unlock, its glyph at the wing's end
+                    HStack(spacing: FaceUnlockIslandLayout.glyphGap) {
+                        if slot != .none { slotView(slot).id(slotKey(slot)) }
+                        Image(systemName: "faceid")
+                            .font(.system(size: FaceUnlockIslandLayout.glyphSize, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.85))
+                            .frame(width: FaceUnlockIslandLayout.glyphSize, height: FaceUnlockIslandLayout.glyphSize)
+                    }
+                    .transition(.zenithMorph(reduceMotion: reduceMotion))
                 } else {
                     slotView(slot)
                         .id(slotKey(slot))
@@ -218,6 +339,7 @@ struct ZenithLockScreenIsland: View {
             .clipped()
             .animation(ZenithMorph.animation(reduceMotion: reduceMotion), value: island.moment)
             .animation(ZenithMorph.animation(reduceMotion: reduceMotion), value: slotKey(slot))
+            .animation(ZenithMorph.animation(reduceMotion: reduceMotion), value: faceGlyph) // Zenith fork
         }
         .frame(width: width, height: size.height)
     }

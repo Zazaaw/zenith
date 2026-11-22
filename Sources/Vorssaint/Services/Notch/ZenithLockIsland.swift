@@ -39,6 +39,23 @@ final class ZenithLockIslandModel: ObservableObject {
     /// (the desktop island it covers) and grows from into its opening
     /// moment. Taken by the view as it starts that motion.
     var entrance: CGSize?
+    /// Zenith fork: how long the island stands at `entrance` before it
+    /// grows: as the Mac locks, the bare notch while macOS fades its shield in.
+    var entranceDelay: TimeInterval = 0
+    /// Zenith fork: when the island's motion comes to rest (reference date
+    /// seconds), set by its view: the unlock hands over only once it is still.
+    var settlesAt: TimeInterval = 0
+    /// Zenith fork: face unlock as the island shows it (FaceUnlockPresence),
+    /// with the animation style read as a scan begins, and when the success
+    /// animation began, so an unlock waits it out before the welcome.
+    @Published var face = FaceUnlockIslandState.hidden
+    @Published var faceStyle = FaceUnlockAnimationStyle.original
+    var faceSuccessAt: Date?
+
+    /// Zenith fork: what the island shows from its moment and face unlock.
+    var stage: FaceUnlockIslandStage { FaceUnlockIslandStage.resolve(moment: moment, face: face) }
+
+    func isMoving(at now: TimeInterval = Date().timeIntervalSinceReferenceDate) -> Bool { now < settlesAt }
 
     func slot(playing: Bool) -> ZenithLockIslandSlot {
         ZenithLockIsland.slot(playing: playing, charging: options.charging && charging, percent: percent,
@@ -81,8 +98,10 @@ final class ZenithLockIslandController {
     /// holds it open. Locking, the island's first frame is already its
     /// opening moment, at `start` (the desktop island it covers), growing
     /// from there; nothing at rest is drawn first.
+    /// Zenith fork: `delay` keeps the island at `start` that long first (the
+    /// bare notch while macOS fades its shield in); its holds count from then.
     @discardableResult
-    func begin(locking: Bool, from start: CGSize? = nil) -> TimeInterval {
+    func begin(locking: Bool, from start: CGSize? = nil, after delay: TimeInterval = 0) -> TimeInterval {
         cancelWork()
         let options = ZenithLockIslandModel.Options.current()
         model.options = options
@@ -96,20 +115,55 @@ final class ZenithLockIslandController {
                                                     remoteDevice: locking ? lockedFrom : nil)
         model.moment = moment
         model.entrance = locking ? start : nil
+        let delay = locking && start != nil ? max(0, delay) : 0 // Zenith fork
+        model.entranceDelay = delay
         if let hold = ZenithLockIsland.openingHold(moment) {
             let began = Date()
-            schedule(after: hold) { [weak self] in
-                ZenithLockTrace.log(ZenithDesktopZoom.text("opening moment over after %.2f s (hold %.2f)",
-                                                           Date().timeIntervalSince(began), hold))
+            schedule(after: delay + hold) { [weak self] in
+                ZenithLockTrace.log(ZenithDesktopZoom.text("opening moment over after %.2f s (hold %.2f + %.2f)",
+                                                           Date().timeIntervalSince(began), hold, delay))
                 self?.model.moment = .rest
             }
         }
-        return ZenithLockIsland.padlockHold(moment)
+        return delay + ZenithLockIsland.padlockHold(moment)
     }
 
-    /// The Mac unlocked: the welcome the desktop island shows, when it is on.
-    /// The padlock island keeps what it shows, so the desktop island can take
-    /// over from exactly that; `end()` resets it once it has gone.
+    /// Zenith fork: face unlock's state changed while the lock screen shows.
+    /// The animation style is read as a scan begins, as Glance snapshots it
+    /// per attempt, so a change mid-attempt never resizes the panel.
+    func show(face: FaceUnlockIslandState, style: () -> FaceUnlockAnimationStyle = { FaceUnlockIslandStyle.current() }) {
+        guard model.face != face else { return }
+        if face == .scanning || (Self.attempting(face) && !Self.attempting(model.face)) { model.faceStyle = style() }
+        model.faceSuccessAt = face == .success ? Date() : nil
+        ZenithLockTrace.log("face \(model.face) -> \(face) style=\(model.faceStyle.rawValue)")
+        model.face = face
+    }
+
+    /// A scan and its result: one attempt, one style.
+    private static func attempting(_ face: FaceUnlockIslandState) -> Bool {
+        switch face {
+        case .scanning, .success, .failure: return true
+        case .hidden, .armed, .needsTouchID: return false
+        }
+    }
+
+    /// Zenith fork: unlocked: the welcome grows in the island itself, or with
+    /// none the island draws back into the bare notch.
+    func showUnlocked(_ welcome: ZenithWelcomeBurst?) {
+        cancelWork()
+        model.entrance = nil
+        model.moment = welcome.map { .welcome($0) } ?? .bare
+    }
+
+    /// Zenith fork: the island draws back into the bare notch before it goes.
+    func collapse() {
+        cancelWork()
+        model.moment = .bare
+    }
+
+    /// The Mac unlocked: the welcome, when it is on, which the padlock island
+    /// grows (`showUnlocked`) and the desktop island then takes over at the
+    /// same shape; `end()` resets the island once it has gone.
     func unlocking(at date: Date = Date()) -> ZenithWelcomeBurst? {
         cancelWork()
         let since = lockedAt
@@ -135,6 +189,9 @@ final class ZenithLockIslandController {
         stopPower()
         model.moment = .rest
         model.entrance = nil
+        model.entranceDelay = 0 // Zenith fork
+        model.face = .hidden
+        model.faceSuccessAt = nil
     }
 
     private func schedule(after delay: TimeInterval, _ block: @escaping () -> Void) {

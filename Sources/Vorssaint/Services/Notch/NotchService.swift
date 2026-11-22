@@ -202,31 +202,35 @@ final class NotchService: ObservableObject {
     /// padlock to hand back to without a gap.
     var islandOnScreen: Bool { panel?.isVisible == true }
     /// Zenith fork: locking at the Mac hands the closed island over to the
-    /// lock screen's padlock island; the island's window stays drawn under
-    /// it for a moment instead of baring the camera while that one comes in.
+    /// lock screen's padlock island; the island's window stays a moment to
+    /// close into the notch instead of vanishing (retireIsland(animated:)).
     private var retiringHost: NotchWindowHost?
-    /// Zenith fork: the closed island left drawn under the lock screen's
-    /// padlock island as the Mac locks, as it shows: the shape that island
-    /// first appears at and grows from. Nil when none is on screen.
-    var retiringIslandSize: CGSize? {
-        guard let host = retiringHost, host.panel.isVisible else { return nil }
-        let size = host.shownSize
-        return size.width > 0 && size.height > 0 ? size : nil
-    }
-    /// Zenith fork: the closed island under the lock screen's padlock island
-    /// goes now, its twin on the desktop having taken its place at its size.
-    func retireIslandNow() {
+    /// Zenith fork: as the Mac locks, the closed island under the lock
+    /// screen's padlock island draws back into the bare notch (at once with
+    /// `animated` false) and goes: nothing but the notch shows while macOS
+    /// fades its shield in, and the padlock island grows out of it after.
+    func retireIsland(animated: Bool) {
         guard let host = retiringHost else { return }
         retiringHost = nil
-        host.close()
-        ZenithLockTrace.log("desktop island retired")
+        guard animated, host.panel.isVisible, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
+            host.close()
+            ZenithLockTrace.log("desktop island retired at once")
+            return
+        }
+        host.hide(animated: true)
+        ZenithLockTrace.log("desktop island closing into the notch")
+        DispatchQueue.main.asyncAfter(deadline: .now() + ZenithLockHandover.retire) {
+            host.close()
+            ZenithLockTrace.log("desktop island retired")
+        }
     }
-    /// Zenith fork: unlocking, the island stays off screen while macOS zooms
-    /// the desktop back in (ZenithDesktopZoom), the padlock pill standing in.
+    /// Zenith fork: unlocking, the island stays off screen until the lock
+    /// screen's padlock island, solid over macOS's shield, hands over to it
+    /// once the desktop has settled (ZenithLockHandover).
     private var lockHold = false
     private var lockHoldWork: DispatchWorkItem?
 
-    func holdIslandForLockScreen() {
+    func holdIslandForLockScreen(upTo limit: TimeInterval) {
         lockHold = true
         panel?.heldOffScreen = true
         ZenithLockTrace.log("desktop island held off screen")
@@ -234,11 +238,11 @@ final class NotchService: ObservableObject {
         lockHoldWork?.cancel()
         let work = DispatchWorkItem { [weak self] in self?.releaseIslandForLockScreen() }
         lockHoldWork = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + ZenithDesktopZoom.longest + 0.5, execute: work)
+        DispatchQueue.main.asyncAfter(deadline: .now() + limit, execute: work)
     }
 
-    /// The zoom is over: the island takes over from the pill if it was handed
-    /// one (awaitLockHandoff), or simply shows again.
+    /// The padlock island hands over: the island takes over from it if it was
+    /// handed its shape (awaitLockHandoff), or simply shows again.
     func releaseIslandForLockScreen() {
         lockHoldWork?.cancel()
         lockHoldWork = nil
@@ -1642,10 +1646,10 @@ final class NotchService: ObservableObject {
         musicTitleWork?.cancel(); musicTitleWork = nil
         capsuleMusicTitleShown = false
         closeMirrors()
-        if handsOff, let host = windowHost { // Zenith fork: retired once the padlock island is up
+        if handsOff, let host = windowHost { // Zenith fork: closed into the notch as the padlock island comes in
             retiringHost?.close()
             retiringHost = host
-            DispatchQueue.main.asyncAfter(deadline: .now() + ZenithLockIsland.handoffOverlap) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + ZenithLockHandover.retire + 0.1) { [weak self] in
                 guard let self, self.retiringHost === host else { return }
                 host.close()
                 self.retiringHost = nil
@@ -2058,7 +2062,8 @@ final class NotchService: ObservableObject {
     /// used to and the welcome comes as an ordinary burst, if at all.
     private func adoptLockHandoff() {
         guard let handoff = takeLockHandoff() else { return }
-        let burst = ZenithIslandBurst(.welcome(handoff.welcome), start: Date())
+        let burst = ZenithIslandBurst(.welcome(handoff.welcome),
+                                      start: ZenithLockHandover.handedOverStart(now: Date(), shownFor: handoff.shownFor))
         let refusal: String? = windowHost == nil ? "no island" : panel?.isVisible == true ? "already on screen"
             : !showsSystemFeedback ? "no system feedback (full screen or hidden)" : !noticeCanPresent ? "open or busy"
             : peeking ? "peeking" : !geometry.isNotched || geometry.floats ? "no camera" : hiddenUntilHover ? "hidden until hover"
@@ -2079,7 +2084,9 @@ final class NotchService: ObservableObject {
             noticeExpanded = false
         }
         windowHost.takeOver(from: handoff.size, look: handoff.look, onScreen: handoff.handedOver)
-        scheduleNoticeDismissal(after: burst.duration)
+        // Zenith fork: what is left of the welcome the padlock island began.
+        scheduleNoticeDismissal(after: max(ZenithLockHandover.collapse,
+                                           ZenithLockHandover.welcomeRemaining(shownFor: handoff.shownFor, duration: burst.duration)))
     }
 
     private func scheduleNoticeDismissal(after duration: TimeInterval) {
