@@ -114,5 +114,9 @@ enum IslandFitTests {
                 + ZenithLockIsland.wingInset * 2 > ZenithLockIsland.maximumWing
         }
         suite.expect(overflowing.isEmpty, "the farewell fits its wing beside the camera in every language: \(overflowing)")
+        suite.expect(ZenithLockIsland.handsOver(pill: CGSize(width: resting, height: camera))
+                        && !ZenithLockIsland.handsOver(pill: .zero)
+                        && !ZenithLockIsland.handsOver(pill: CGSize(width: CGFloat.nan, height: camera)),
+                     "the island takes over from a padlock pill with a size to start from")
     }
 }

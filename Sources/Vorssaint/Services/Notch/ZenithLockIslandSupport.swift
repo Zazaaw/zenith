@@ -53,6 +53,12 @@ enum ZenithLockIsland {
     /// How long "Locked from Faiz’s iPhone" holds before the island draws back.
     static let remoteHold: TimeInterval = 3
 
+    /// Zenith fork: whether the desktop island can take over from a padlock
+    /// pill of `pill` as the Mac unlocks: one with a size to start from.
+    static func handsOver(pill: CGSize) -> Bool {
+        pill.width.isFinite && pill.height.isFinite && pill.width > 0 && pill.height > 0
+    }
+
     /// The right slot: a charger just plugged in first, for its first five
     /// seconds; then a song playing; then a Focus; then the charge while the
     /// charger stays connected.

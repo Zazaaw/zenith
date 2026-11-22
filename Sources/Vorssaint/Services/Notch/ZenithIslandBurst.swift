@@ -39,6 +39,22 @@ extension NotchService {
     }
 }
 
+/// Zenith fork: the lock screen's padlock pill handing over to the island as
+/// the Mac unlocks, so the two read as one island: the island comes back at
+/// the pill's frame and shape and grows into the welcome from there, and the
+/// pill's window goes the moment the island is on screen beneath it.
+struct ZenithLockHandoff {
+    /// The pill as it rests, centred on the camera.
+    let size: CGSize
+    let welcome: ZenithWelcomeBurst
+    /// The island is on screen at the pill's frame: the pill goes now.
+    let handedOver: () -> Void
+    /// The island cannot take over (hidden, in full screen, open, or not
+    /// back in time): the pill fades over it as it used to, and the welcome
+    /// comes as an ordinary burst if the island can show one.
+    let declined: () -> Void
+}
+
 /// A prayer's burst waiting for the island to close.
 final class ZenithBurstWaiter {
     static let shared = ZenithBurstWaiter()

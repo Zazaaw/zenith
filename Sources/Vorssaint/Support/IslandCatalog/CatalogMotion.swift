@@ -73,6 +73,7 @@ enum CatalogMotion {
         Sequence(id: "motion-lock-remote", from: "lock-island-rest", to: "lock-island-remote"),
         // Zenith fork: back into the padlock pill, and the pill growing into the welcome as the Mac unlocks.
         Sequence(id: "motion-lock-remote-close", from: "lock-island-remote", to: "lock-island-rest"),
+        Sequence(id: "motion-unlock-welcome", from: "lock-island-music", to: "burst-welcome-remote"),
     ]
 
     /// Frames per second and seconds drawn; `ZENITH_MOTION_FPS` and

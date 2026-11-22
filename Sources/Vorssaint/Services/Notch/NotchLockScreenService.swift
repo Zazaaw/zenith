@@ -271,13 +271,8 @@ final class NotchLockScreenService {
             space.close()
             return
         }
-        // Zenith fork: the welcome is the desktop island's own burst, once the
-        // padlock over it has gone; an open page lets it wait a moment or drop it.
-        if let welcome = zenithIsland.unlocking() {
-            DispatchQueue.main.asyncAfter(deadline: .now() + ZenithLockIsland.welcomeDelay) {
-                NotchService.shared.showZenithBurst(.welcome(welcome))
-            }
-        }
+        let pill = zenithIsland.model.restSize // Zenith fork: before the moment resets
+        let welcome = zenithIsland.unlocking()
         // The lock screen is gone about 0.3 s after the unlock is announced;
         // the player leaves with it rather than lingering over the desktop.
         // The padlock opens first, then the island underneath takes over.
@@ -285,8 +280,43 @@ final class NotchLockScreenService {
         var remaining = leaving.count + (island == nil ? 0 : 1)
         let finished = { remaining -= 1; if remaining == 0 { space.close() } }
         leaving.forEach { Self.fadeOut($0, after: 0, completion: finished) }
+        if island != nil { model.padlockOpen = true }
+        // Zenith fork: the welcome is the desktop island's own burst. With the
+        // padlock pill up, the island comes back at the pill's frame and grows
+        // out of it, and the pill goes the moment the island is under it:
+        // one island, never two.
+        if let island, let welcome, let pill, ZenithLockIsland.handsOver(pill: pill) {
+            // Whichever comes first ends it: the island on screen, or giving up.
+            var ended = false
+            let handoff = ZenithLockHandoff(size: pill, welcome: welcome, handedOver: {
+                guard !ended else { return }
+                ended = true
+                island.alphaValue = 0
+                island.orderOut(nil)
+                finished()
+            }, declined: {
+                guard !ended else { return }
+                ended = true
+                DispatchQueue.main.async { Self.fadeOutOverIsland(island, completion: finished) }
+                DispatchQueue.main.asyncAfter(deadline: .now() + ZenithLockIsland.welcomeDelay) {
+                    NotchService.shared.showZenithBurst(.welcome(welcome))
+                }
+            })
+            NotchService.shared.awaitLockHandoff(handoff)
+            // Not back on screen in time, it is not coming back to take over.
+            DispatchQueue.main.asyncAfter(deadline: .now() + ZenithLockIsland.unlockPatience) {
+                _ = NotchService.shared.takeLockHandoff()
+                handoff.declined()
+            }
+            return
+        }
+        // An open page lets the welcome wait a moment or drop it.
+        if let welcome {
+            DispatchQueue.main.asyncAfter(deadline: .now() + ZenithLockIsland.welcomeDelay) {
+                NotchService.shared.showZenithBurst(.welcome(welcome))
+            }
+        }
         if let island {
-            model.padlockOpen = true
             // The island comes back on this turn and holds the main thread, so
             // the padlock is first seen opening once that is done. Its time
             // starts there, or the island would fade while the padlock opens.

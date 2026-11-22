@@ -32,6 +32,9 @@ final class ZenithLockIslandModel: ObservableObject {
     @Published var firstName = ""
     /// The account's picture for the welcome, read as the Mac locks.
     @Published var photo: NSImage?
+    /// Zenith fork: the padlock pill as it rests now, set by its view: the
+    /// shape the desktop island takes over from as the Mac unlocks.
+    var restSize: CGSize?
 
     func slot(playing: Bool) -> ZenithLockIslandSlot {
         ZenithLockIsland.slot(playing: playing, charging: options.charging && charging, percent: percent,

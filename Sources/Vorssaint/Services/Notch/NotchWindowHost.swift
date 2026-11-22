@@ -100,7 +100,10 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         canvas.layoutSubtreeIfNeeded()
         appliedFrame = panel.frame
         overlaySpace?.add(panel)
-        panel.visibilityDidChange = { [weak self] in self?.syncMissionControlMonitoring() }
+        panel.visibilityDidChange = { [weak self] in
+            self?.syncMissionControlMonitoring()
+            self?.handOverIfShown() // Zenith fork
+        }
     }
 
     /// Whether leaving content is fading out with the shape rather than hidden at once.
@@ -111,6 +114,10 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
 
     /// Temporary order-outs still belong to the current presentation.
     private var isPresented: Bool { panel.isVisible || concealedForFrameChange || relocationHidden }
+    /// Zenith fork: the shape the next presentation takes over from, and
+    /// what to do once it is on screen (takeOver(from:onScreen:)).
+    private var pendingHandoff: (size: CGSize, onScreen: () -> Void)?
+    private var handoffOnScreen: (() -> Void)?
     var isConcealedForMissionControl: Bool {
         // Media-key taps can ask from a worker thread. Never touch AppKit or
         // run the frame probe there; a panel being hidden cannot show feedback.
@@ -245,6 +252,22 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         content.adoptEqualizerHeights(pose)
     }
 
+    /// Zenith fork: the next presentation, while the island is not on
+    /// screen, starts from `size` (another window's island at the camera,
+    /// as the lock screen's padlock pill) and grows from there; `onScreen`
+    /// runs once the island is shown at that frame, to take the other away.
+    func takeOver(from size: CGSize, onScreen: @escaping () -> Void) {
+        pendingHandoff = (size, onScreen)
+    }
+
+    private func handOverIfShown() {
+        guard panel.isVisible, let onScreen = handoffOnScreen else { return }
+        handoffOnScreen = nil
+        // Its first frame reaches the screen before the other window goes.
+        CATransaction.flush()
+        onScreen()
+    }
+
     func hide(animated: Bool, transitionContent: NotchContentTransition = .dismiss) {
         guard isPresented else { return }
         let animate = animated && !relocationHidden && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
@@ -282,14 +305,19 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         if concealedForMissionControl { panel.ignoresMouseEvents = true }
         canvas.updateContrast()
         let revealing = revealFromHidden && !isPresented
-        if isPresented || revealing {
+        // Zenith fork: brought back to take over from another window's island
+        // (the lock screen's padlock pill), it starts from that shape exactly.
+        let handoff = isPresented || hideWhenSettled ? nil : pendingHandoff?.size
+        if handoff != nil { handoffOnScreen = pendingHandoff?.onScreen }
+        if handoff != nil || isPresented { pendingHandoff = nil }
+        if isPresented || revealing || handoff != nil {
             // Settle the probe on screen ahead of its first reading: a window
             // ordered in and sized in one flush has no previous bounds to animate from.
             let probe = frameProbe ?? NotchFrameProbe(collectionBehavior: panel.collectionBehavior)
             frameProbe = probe
             probe.attach(level: panel.level, screen: geometry.screen)
         }
-        let canAnimate = animated && !relocationHidden && (isPresented || revealing)
+        let canAnimate = (animated || handoff != nil) && !relocationHidden && (isPresented || revealing || handoff != nil)
             && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         let previousGutter = quickAccessConfiguration == nil ? 0 : NotchQuickAccessLayout.gutter
         let previousBottom = quickAccessBottomInset(for: targetSize, geometry: currentGeometry)
@@ -310,7 +338,8 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         let gutter = quickAccessConfiguration == nil ? 0 : NotchQuickAccessLayout.gutter
         let bottom = quickAccessBottomInset(for: size, geometry: geometry)
         let frame = geometry.frame(for: CGSize(width: size.width + gutter * 2, height: size.height + bottom))
-        let changesFrame = revealing || relocationHidden || (hideWhenSettled && !canAnimate) || size != targetSize
+        let changesFrame = revealing || handoff != nil || relocationHidden || (hideWhenSettled && !canAnimate)
+            || size != targetSize
             || frame != previousFrame || (!isAnimating && panel.frame != appliedFrame)
         targetUsesGlass = usesGlass
         if canvas.backdropPresentation.stripHeight != geometry.stripHeight {
@@ -320,7 +349,7 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
             // Glass closing into a black strip shuts as its page leaves, so the
             // empty shell never shows the windows beneath it; opening out of one
             // lets the glass in over the last stretch, as the page fades in.
-            let start = revealing ? 0 : canvas.visibleSize?.height ?? targetSize.height
+            let start = revealing ? 0 : handoff?.height ?? canvas.visibleSize?.height ?? targetSize.height
             canvas.backdropPresentation.planFade(from: start, to: size.height, endsInGlass: usesGlass)
             canvas.updateCanvasBlack()
         }
@@ -335,7 +364,10 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
             if !isAnimating { quickAccessContainer?.dock.setVisible(showsDock, animated: dockAnimates) } // Zenith fork
             return
         }
-        if canAnimate { canvas.transitionContent(revealing ? .reveal : transitionContent, leaving: !revealing) } // Zenith fork
+        if canAnimate { // Zenith fork
+            canvas.transitionContent(revealing || handoff != nil ? .reveal : transitionContent,
+                                     leaving: !revealing && handoff == nil)
+        }
         else if animated && changesFrame && (revealing || transitionContent == .reveal) {
             // Reduce Motion, or a panel that was ordered out, puts the island
             // at its new size at once. Shown at once, the page reached the
@@ -354,24 +386,25 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         let previousPath = revealing
             ? NotchShape(attached: true, radius: 0, floatingGap: geometry.floatingGap)
                 .path(in: CGRect(x: 0, y: 0, width: previousWidth, height: 0)).cgPath
-            : canvas.visiblePath
+            : handoff.map { canvas.silhouettePath(for: $0) } ?? canvas.visiblePath
         let sameScreen = geometry.screen == currentGeometry.screen
         // Where the island's centre is now, relative to the camera's; pixel
         // rounding of a centred island is not a shift.
         let previousShift = currentGeometry.surfaceShift
         let drawnShift = canvas.visibleShift.map { abs($0 - previousShift) < 1 ? previousShift : $0 } ?? previousShift
-        let startShift = revealing ? 0 : drawnShift
+        let startShift = revealing || handoff != nil ? 0 : drawnShift
         animationGeneration += 1
         let generation = animationGeneration
         targetSize = size
         currentGeometry = geometry
         resizeCount += 1
-        guard canAnimate, sameScreen || revealing, let previousPath else {
+        guard canAnimate, sameScreen || revealing || handoff != nil, let previousPath else {
             settle()
             return
         }
 
-        let drawn = revealing ? canvas.surfaceSize(of: previousPath) : canvas.visibleSize ?? canvas.surfaceSize(of: previousPath)
+        let drawn = revealing ? canvas.surfaceSize(of: previousPath)
+            : handoff ?? canvas.visibleSize ?? canvas.surfaceSize(of: previousPath)
         // Only a width change eases steadily; anything that also grows taller
         // keeps the island's usual springs.
         let steady = steady && drawn.height == size.height
@@ -381,7 +414,7 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         // carries on at its speed. Started again from where it was drawn, it
         // stalled; and asked for while SwiftUI drew new content, it reached the
         // screen only with that content and began from where it had been.
-        let carried = isAnimating && !revealing && !steady && !withdrawing && startOffset == 0
+        let carried = isAnimating && !revealing && handoff == nil && !steady && !withdrawing && startOffset == 0
             ? canvas.carriedMotion(to: size, at: CACurrentMediaTime(),
                                    floor: NotchMotionFloor.floor(for: size, geometry: geometry)) : nil // Zenith fork
         let start = carried?.start ?? drawn
@@ -400,7 +433,7 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         envelope.width = max(envelope.width, reach.rounded(.up))
         let tallest = motion.sizes.map(\.height).max() ?? 0
         envelope.height = max(envelope.height, tallest.rounded(.up))
-        if !revealing {
+        if !revealing && handoff == nil {
             envelope = CGSize(width: max(envelope.width, canvas.bounds.width), height: max(envelope.height, canvas.bounds.height))
         }
         envelope = NotchMotion.reservation(envelope, centring: size)

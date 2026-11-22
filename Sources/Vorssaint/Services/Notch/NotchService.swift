@@ -205,6 +205,9 @@ final class NotchService: ObservableObject {
     /// lock screen's padlock island; the island's window stays drawn under
     /// it for a moment instead of baring the camera while that one comes in.
     private var retiringHost: NotchWindowHost?
+    /// Zenith fork: unlocking, the lock screen's padlock pill waiting for the
+    /// island to come back and take over from it (ZenithLockHandoff).
+    private var lockHandoff: ZenithLockHandoff?
     private var captureControlsCancel: (() -> Void)?
     private var captureControlsSubscription: AnyCancellable?
     private var captureControlsWork: DispatchWorkItem?
@@ -1384,6 +1387,7 @@ final class NotchService: ObservableObject {
         showsOnAllDisplays = displayPreference == .all
         updateFullscreenDisplays()
         updateScreen()
+        adoptLockHandoff() // Zenith fork: before the island's first frame after an unlock
         syncAppFullscreenMonitoring()
         syncPointerFollowing()
         syncGestures()
@@ -1974,9 +1978,51 @@ final class NotchService: ObservableObject {
 
     private func syncNoticeWithPreferences() {
         guard let notice else { return }
-        if !NotchSupport.routes(notice.event) || (notice.notificationID != nil && hiddenUntilHover) {
+        // Zenith fork: a burst's own switches decided it, as in show(_:).
+        if notice.zenith == nil && !NotchSupport.routes(notice.event) || (notice.notificationID != nil && hiddenUntilHover) {
             dismissNotice()
         }
+    }
+
+    /// Zenith fork: the lock screen's padlock pill waits for the island to
+    /// take over from it as the Mac unlocks. Until then, or until it gives up
+    /// (`takeLockHandoff`), the island's first presentation is its welcome.
+    func awaitLockHandoff(_ handoff: ZenithLockHandoff) {
+        takeLockHandoff()?.declined()
+        lockHandoff = handoff
+    }
+
+    /// The hand-off still waiting, taken so that only one side ends it.
+    func takeLockHandoff() -> ZenithLockHandoff? {
+        let handoff = lockHandoff
+        lockHandoff = nil
+        return handoff
+    }
+
+    /// The island is back from the lock screen, not yet on screen: the
+    /// welcome becomes its first notice and its window host its first frame
+    /// the pill's, when the island can show it here and now: on a display
+    /// with a camera, closed and in view. Otherwise the pill leaves as it
+    /// used to and the welcome comes as an ordinary burst, if at all.
+    private func adoptLockHandoff() {
+        guard let handoff = takeLockHandoff() else { return }
+        let burst = ZenithIslandBurst(.welcome(handoff.welcome), start: Date())
+        guard let windowHost, panel?.isVisible != true, showsSystemFeedback, noticeCanPresent, !peeking,
+              geometry.isNotched, !geometry.floats, !hiddenUntilHover, !hiddenAtRestInFullscreen,
+              ZenithIslandBurstTiming.replaces(notice?.zenith, with: burst, at: burst.start) else {
+            handoff.declined()
+            return
+        }
+        ZenithBurstWaiter.shared.cancel()
+        var transaction = Transaction(animation: nil)
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            notice = NotchNotice(event: burst.event, title: burst.title, detail: burst.subtitle, symbol: "lock.open.fill",
+                                 zenith: burst)
+            noticeExpanded = false
+        }
+        windowHost.takeOver(from: handoff.size, onScreen: handoff.handedOver)
+        scheduleNoticeDismissal(after: burst.duration)
     }
 
     private func scheduleNoticeDismissal(after duration: TimeInterval) {

@@ -43,6 +43,9 @@ struct ZenithLockScreenIsland: View {
         }
         .frame(width: window?.width ?? size.width, height: window?.height ?? size.height, alignment: .topLeading)
         .onChange(of: goal) { old, new in retarget(from: old, to: new) }
+        // Zenith fork: the pill the desktop island takes over from as the Mac unlocks.
+        .onAppear { island.restSize = restGoal }
+        .onChange(of: restGoal) { _, new in island.restSize = new }
         .task(id: settleAt) {
             let wait = settleAt - Date().timeIntervalSinceReferenceDate
             guard motion != nil else { return }
