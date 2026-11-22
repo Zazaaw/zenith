@@ -97,7 +97,12 @@ final class ZenithLockIslandController {
         model.moment = moment
         model.entrance = locking ? start : nil
         if let hold = ZenithLockIsland.openingHold(moment) {
-            schedule(after: hold) { [weak self] in self?.model.moment = .rest }
+            let began = Date()
+            schedule(after: hold) { [weak self] in
+                ZenithLockTrace.log(ZenithDesktopZoom.text("opening moment over after %.2f s (hold %.2f)",
+                                                           Date().timeIntervalSince(began), hold))
+                self?.model.moment = .rest
+            }
         }
         return ZenithLockIsland.padlockHold(moment)
     }

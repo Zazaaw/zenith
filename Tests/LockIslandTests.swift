@@ -15,6 +15,30 @@ enum LockIslandTests {
         sizes(suite)
         switches(suite)
         opening(suite)
+        desktopZoom(suite)
+    }
+
+    /// Zenith fork: unlocking, the island waits out macOS's zoom of the
+    /// desktop (0.91 to 1 over about 0.15 s on a live unlock) before it takes
+    /// over from the padlock pill, so it never shows smaller and lower.
+    private static func desktopZoom(_ suite: TestSuite) {
+        typealias Z = ZenithDesktopZoom
+        // The scales the window server reported for the island's windows on a live unlock.
+        let live: [(TimeInterval, CGFloat)] = [(0.0, 0.913), (0.036, 0.947), (0.068, 0.963), (0.106, 0.979), (0.14, 1)]
+        var saw = false
+        let ends = live.map { time, scale -> Bool in
+            saw = saw || Z.zooming(scale)
+            return Z.settled(elapsed: time, scale: scale, sawZoom: saw)
+        }
+        suite.expect(ends == [false, false, false, false, true],
+                     "the island stays off screen while the desktop zooms back in, and comes once it is at full size")
+        suite.expect(!Z.settled(elapsed: 0.02, scale: 1, sawZoom: false) && Z.settled(elapsed: Z.noZoomWait, scale: 1, sawZoom: false),
+                     "a zoom not yet begun is waited for a moment; none by then means there is none")
+        suite.expect(!Z.settled(elapsed: 0.5, scale: 0.95, sawZoom: true) && Z.settled(elapsed: Z.longest, scale: 0.95, sawZoom: true)
+                        && Z.settled(elapsed: Z.longest, scale: nil, sawZoom: false),
+                     "it never waits longer than its limit, whatever the window server says")
+        suite.expect(!Z.zooming(nil) && !Z.zooming(.nan) && !Z.zooming(1.002) && Z.zooming(0.99),
+                     "an unknown scale is no zoom; a hair off full size is none either")
     }
 
     /// Zenith fork: as the Mac locks, the island's first frame is already its

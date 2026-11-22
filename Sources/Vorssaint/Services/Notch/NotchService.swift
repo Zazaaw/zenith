@@ -221,6 +221,36 @@ final class NotchService: ObservableObject {
         host.close()
         ZenithLockTrace.log("desktop island retired")
     }
+    /// Zenith fork: unlocking, the island stays off screen while macOS zooms
+    /// the desktop back in (ZenithDesktopZoom), the padlock pill standing in.
+    private var lockHold = false
+    private var lockHoldWork: DispatchWorkItem?
+
+    func holdIslandForLockScreen() {
+        lockHold = true
+        panel?.heldOffScreen = true
+        ZenithLockTrace.log("desktop island held off screen")
+        // Never longer than this, whatever happens to the lock screen.
+        lockHoldWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in self?.releaseIslandForLockScreen() }
+        lockHoldWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + ZenithDesktopZoom.longest + 0.5, execute: work)
+    }
+
+    /// The zoom is over: the island takes over from the pill if it was handed
+    /// one (awaitLockHandoff), or simply shows again.
+    func releaseIslandForLockScreen() {
+        lockHoldWork?.cancel()
+        lockHoldWork = nil
+        guard lockHold else { return }
+        lockHold = false
+        panel?.heldOffScreen = false
+        ZenithLockTrace.log("desktop island released")
+        guard running, session.canPresent else { return }
+        adoptLockHandoff()
+        refreshPresentation(animated: false)
+    }
+
     /// Zenith fork: unlocking, the lock screen's padlock pill waiting for the
     /// island to come back and take over from it (ZenithLockHandoff).
     private var lockHandoff: ZenithLockHandoff?
@@ -1408,7 +1438,8 @@ final class NotchService: ObservableObject {
         showsOnAllDisplays = displayPreference == .all
         updateFullscreenDisplays()
         updateScreen()
-        adoptLockHandoff() // Zenith fork: before the island's first frame after an unlock
+        panel?.heldOffScreen = lockHold // Zenith fork: a new island waits out the unlock's zoom too
+        if !lockHold { adoptLockHandoff() } // Zenith fork: before the island's first frame after an unlock
         syncAppFullscreenMonitoring()
         syncPointerFollowing()
         syncGestures()

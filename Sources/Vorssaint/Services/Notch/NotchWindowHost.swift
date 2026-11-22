@@ -1116,7 +1116,12 @@ final class NotchPanel: NSPanel, NotchWaveHold {
         visibilityDidChange?()
     }
 
+    /// Zenith fork: kept off screen while macOS zooms the desktop back in
+    /// after an unlock (ZenithDesktopZoom); the island then appears in place.
+    var heldOffScreen = false
+
     override func orderFrontRegardless() {
+        guard !heldOffScreen else { return } // Zenith fork
         super.orderFrontRegardless()
         visibilityDidChange?()
     }

@@ -32,12 +32,11 @@ final class NotchLockScreenService {
     /// The player and the line of activities.
     private var scene: [NotchLockScreenPanel] = []
     private var island: NotchLockScreenPanel?
-    /// Zenith fork: the padlock island's twin on the desktop, under the lock
-    /// shield: the same view on the same models at the same frame, so that
-    /// while macOS fades the shield (and the island in it) in or out, the
-    /// shape beneath is the same island, never the bare camera or a closed
-    /// island of another size.
-    private var twin: NotchLockScreenPanel?
+    /// Zenith fork: watches the desktop's own zoom as the Mac unlocks. macOS
+    /// scales every desktop window (the island's too) from about 0.9 back to 1
+    /// while its shield fades the lock screen out, so the island waits it out
+    /// off screen and only then takes over from the padlock pill.
+    private var zoomProbe: ZenithDesktopZoomProbe?
     private var space: NotchOverlaySpace?
     private var playbackSubscription: AnyCancellable?
     private var screenObserver: NSObjectProtocol?
@@ -190,8 +189,6 @@ final class NotchLockScreenService {
             }
         }
         let island = makeIsland()
-        // Zenith fork: its twin stays on the desktop, outside the lock screen's Space.
-        let twin = island == nil ? nil : makeIsland()
         let panels = scene + [island].compactMap { $0 }
         guard !panels.isEmpty else { space.close(); return }
         if !scene.isEmpty { startSources(gates) }
@@ -209,7 +206,6 @@ final class NotchLockScreenService {
         self.space = space
         self.scene = scene
         self.island = island
-        self.twin = twin
         shownFrames = frames
         if closingPadlock {
             let work = DispatchWorkItem { [weak self] in self?.model.padlockOpen = false }
@@ -231,16 +227,16 @@ final class NotchLockScreenService {
                 panel.animator().alphaValue = 1
             }
         }
-        // Zenith fork: the twin is on screen at the closed island's own size
-        // first, so that island goes at once: no second island of another size
-        // under the one coming in.
-        if let twin {
-            twin.alphaValue = 1
-            twin.orderFrontRegardless()
-            // Once the twin's first frame, at that island's size, is on screen.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { NotchService.shared.retireIslandNow() }
+        // Zenith fork: the closed desktop island goes at once, before macOS
+        // zooms the desktop out under its shield: a desktop window shows
+        // through the shield's fade at another size and place. The padlock
+        // island, which no zoom moves, grows from that island's own size.
+        if island != nil {
+            NotchService.shared.retireIslandNow()
+            zoomProbe?.close()
+            zoomProbe = ZenithDesktopZoomProbe(screen: frames.screen ?? NotchService.shared.geometry.screen)
         }
-        ZenithLockTrace.log("shown locking=\(closingPadlock) island=\(island != nil) twin=\(twin != nil)"
+        ZenithLockTrace.log("shown locking=\(closingPadlock) island=\(island != nil)"
                             + " moment=\(zenithIsland.model.moment) entrance=\(zenithIsland.model.entrance.map { "\($0)" } ?? "-")")
         playbackSubscription = NotchMusicService.shared.$playback
             .receive(on: DispatchQueue.main)
@@ -288,15 +284,16 @@ final class NotchLockScreenService {
         padlockWork?.cancel()
         padlockWork = nil
         guard let space else { return }
-        let scene = scene, island = island, twin = twin
+        let scene = scene, island = island, probe = zoomProbe
         self.scene = []
         self.island = nil
-        self.twin = nil
+        zoomProbe = nil
         self.space = nil
         ZenithLockTrace.log("hide unlocking=\(unlocking) pill=\(zenithIsland.model.shownSize.map { "\($0)" } ?? "-")")
         guard unlocking else {
             zenithIsland.end() // Zenith fork
-            (scene + [island, twin, full].compactMap { $0 }).forEach { $0.orderOut(nil) } // Zenith fork: full, twin
+            probe?.close()
+            (scene + [island, full].compactMap { $0 }).forEach { $0.orderOut(nil) } // Zenith fork: full
             space.close()
             return
         }
@@ -309,9 +306,7 @@ final class NotchLockScreenService {
         // the player leaves with it rather than lingering over the desktop.
         // The padlock opens first, then the island underneath takes over.
         let leaving = scene + [full].compactMap { $0 } // Zenith fork: the full layer fades with the scene.
-        // Zenith fork: the padlock island and its twin leave together.
-        let pills = [island, twin].compactMap { $0 }
-        var remaining = leaving.count + pills.count
+        var remaining = leaving.count + (island == nil ? 0 : 1)
         let finished = {
             remaining -= 1
             guard remaining == 0 else { return }
@@ -324,57 +319,74 @@ final class NotchLockScreenService {
             space.close()
             lockIsland.end()
         }
-        // Zenith fork: the welcome is the desktop island's own burst. With the
-        // padlock pill up, the island comes back at the pill's frame, showing
-        // the pill as it looks, and grows out of it; the pill goes the moment
-        // the island is under it: one island, never two. The padlock stays as
-        // it is for that frame; the welcome's own green padlock is the unlock.
-        if let island, let welcome, let pill, ZenithLockIsland.handsOver(pill: pill) {
-            // Whichever comes first ends it: the island on screen, or giving up.
-            var ended = false
-            let look = Self.look(of: twin ?? island, size: pill, frames: frames)
-            let handoff = ZenithLockHandoff(size: pill, look: look, welcome: welcome, handedOver: {
-                guard !ended else { return }
-                ended = true
-                ZenithLockTrace.log("handed over: padlock island and twin ordered out")
-                for panel in pills {
-                    panel.alphaValue = 0
-                    panel.orderOut(nil)
-                    finished()
-                }
-            }, declined: { [weak self] in
-                guard !ended else { return }
-                ended = true
-                ZenithLockTrace.log("hand-off declined: padlock island fades")
-                self?.model.padlockOpen = true
-                DispatchQueue.main.async { pills.forEach { Self.fadeOutOverIsland($0, completion: finished) } }
+        // Zenith fork: macOS zooms the desktop back in from about 0.9 as its
+        // shield fades; any desktop window shows smaller and lower meanwhile.
+        // The island stays off screen until the zoom is over, the padlock pill
+        // standing in over it, then takes over from that pill.
+        guard let island else {
+            probe?.close()
+            if let welcome {
                 DispatchQueue.main.asyncAfter(deadline: .now() + ZenithLockIsland.welcomeDelay) {
                     NotchService.shared.showZenithBurst(.welcome(welcome))
                 }
-            })
-            NotchService.shared.awaitLockHandoff(handoff)
-            // Not back on screen in time, it is not coming back to take over.
-            DispatchQueue.main.asyncAfter(deadline: .now() + ZenithLockIsland.unlockPatience) {
-                _ = NotchService.shared.takeLockHandoff()
-                handoff.declined()
             }
             return
         }
-        // An open page lets the welcome wait a moment or drop it.
-        if let welcome {
-            DispatchQueue.main.asyncAfter(deadline: .now() + ZenithLockIsland.welcomeDelay) {
-                NotchService.shared.showZenithBurst(.welcome(welcome))
+        NotchService.shared.holdIslandForLockScreen()
+        // Drawn now, before the shield takes the pill away: the island's first frame shows it.
+        let look = pill.flatMap { Self.look(of: island, size: $0, frames: frames) }
+        let takeOver = { [weak self] (waited: TimeInterval, zoomed: Bool) in
+            probe?.close()
+            ZenithLockTrace.log(ZenithDesktopZoom.text("desktop zoom over after %.3f s (zoomed=", waited) + "\(zoomed))")
+            // Zenith fork: the welcome is the desktop island's own burst. With the
+            // padlock pill up, the island comes back at the pill's frame, showing
+            // the pill as it looks, and grows out of it; the pill goes the moment
+            // the island is under it: one island, never two. The padlock stays as
+            // it is for that frame; the welcome's own green padlock is the unlock.
+            if let welcome, let pill, ZenithLockIsland.handsOver(pill: pill) {
+                // Whichever comes first ends it: the island on screen, or giving up.
+                var ended = false
+                let handoff = ZenithLockHandoff(size: pill, look: look?.image, welcome: welcome, handedOver: {
+                    guard !ended else { return }
+                    ended = true
+                    ZenithLockTrace.log("handed over: padlock island ordered out")
+                    island.alphaValue = 0
+                    island.orderOut(nil)
+                    finished()
+                }, declined: { [weak self] in
+                    guard !ended else { return }
+                    ended = true
+                    ZenithLockTrace.log("hand-off declined: padlock island fades")
+                    NotchService.shared.releaseIslandForLockScreen()
+                    self?.model.padlockOpen = true
+                    DispatchQueue.main.async { Self.fadeOutOverIsland(island, completion: finished) }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + ZenithLockIsland.welcomeDelay) {
+                        NotchService.shared.showZenithBurst(.welcome(welcome))
+                    }
+                })
+                NotchService.shared.awaitLockHandoff(handoff)
+                NotchService.shared.releaseIslandForLockScreen()
+                // Not back on screen in time, it is not coming back to take over.
+                DispatchQueue.main.asyncAfter(deadline: .now() + ZenithLockIsland.unlockPatience) {
+                    _ = NotchService.shared.takeLockHandoff()
+                    handoff.declined()
+                }
+                return
             }
-        }
-        if island != nil {
-            model.padlockOpen = true
-            // The island comes back on this turn and holds the main thread, so
-            // the padlock is first seen opening once that is done. Its time
-            // starts there, or the island would fade while the padlock opens.
+            NotchService.shared.releaseIslandForLockScreen()
+            // An open page lets the welcome wait a moment or drop it.
+            if let welcome {
+                DispatchQueue.main.asyncAfter(deadline: .now() + ZenithLockIsland.welcomeDelay) {
+                    NotchService.shared.showZenithBurst(.welcome(welcome))
+                }
+            }
+            self?.model.padlockOpen = true
             // Zenith fork: it fades only once the desktop island is back on
             // screen beneath it, with some overlap, so the camera never shows bare.
-            DispatchQueue.main.async { pills.forEach { Self.fadeOutOverIsland($0, completion: finished) } }
+            DispatchQueue.main.async { Self.fadeOutOverIsland(island, completion: finished) }
         }
+        if let look { ZenithLockTrace.log(ZenithDesktopZoom.text("pill look drawn, mean alpha %.2f", look.meanAlpha)) }
+        if let probe { probe.waitForRest(takeOver) } else { takeOver(0, false) }
     }
 
     /// Zenith fork: where the padlock island first appears as the Mac locks:
@@ -388,8 +400,8 @@ final class NotchLockScreenService {
 
     /// Zenith fork: what the padlock island shows now, drawn at `size` from
     /// its window as it stands: the desktop island shows it in its first
-    /// frame as it takes over.
-    private static func look(of panel: NSPanel, size: CGSize, frames: Frames) -> NSImage? {
+    /// frame as it takes over. With how much of it is drawn, for the log.
+    private static func look(of panel: NSPanel, size: CGSize, frames: Frames) -> (image: NSImage, meanAlpha: Double)? {
         guard let view = panel.contentView, let window = frames.island, let surface = frames.islandSurface,
               size.width > 0, size.height > 0 else { return nil }
         let x = surface.midX - window.minX - size.width / 2
@@ -399,7 +411,7 @@ final class NotchLockScreenService {
         view.cacheDisplay(in: rect, to: bitmap)
         let image = NSImage(size: rect.size)
         image.addRepresentation(bitmap)
-        return image
+        return (image, ZenithDesktopZoom.meanAlpha(bitmap))
     }
 
     /// Zenith fork: the padlock island fades over the desktop island once

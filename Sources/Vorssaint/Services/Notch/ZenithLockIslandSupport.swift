@@ -42,6 +42,40 @@ enum ZenithLockTrace {
     }
 }
 
+/// Zenith fork: macOS's own zoom of the desktop as the Mac unlocks: every
+/// desktop window (the island's too) is drawn scaled about the display's
+/// centre, from about 0.9 back to 1, while the shield fades the lock screen
+/// out. Seen on a live unlock: the window server reported the island's
+/// windows at 0.91, 0.95, 0.96, 0.98 and then 1 over about 0.15 s, so a
+/// desktop window stood in for the padlock pill showed smaller and lower,
+/// as a second island. The island waits the zoom out off screen.
+enum ZenithDesktopZoom {
+    /// Without a zoom seen by then, there is none (Reduce Motion, or it was
+    /// over before the unlock was announced).
+    static let noZoomWait: TimeInterval = 0.1
+    /// The longest the island waits, whatever the window server says.
+    static let longest: TimeInterval = 0.8
+    static let tolerance: CGFloat = 0.003
+
+    static func zooming(_ scale: CGFloat?) -> Bool {
+        guard let scale, scale.isFinite else { return false }
+        return abs(scale - 1) > tolerance
+    }
+
+    /// Whether the zoom is over at `elapsed` seconds after the unlock, with
+    /// the desktop at `scale` (nil when unknown) and a zoom seen or not.
+    static func settled(elapsed: TimeInterval, scale: CGFloat?, sawZoom: Bool) -> Bool {
+        if elapsed >= longest { return true }
+        if zooming(scale) { return false }
+        return sawZoom || elapsed >= noZoomWait
+    }
+
+    /// Numbers for the log, the same in every region.
+    static func text(_ format: String, _ arguments: CVarArg...) -> String {
+        String(format: format, locale: Locale(identifier: "en_US_POSIX"), arguments: arguments)
+    }
+}
+
 /// What the island is showing.
 enum ZenithLockIslandMoment: Equatable {
     case rest
