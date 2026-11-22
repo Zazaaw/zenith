@@ -100,21 +100,45 @@ enum FaceUnlockLivenessLevel: String, CaseIterable, Identifiable {
 }
 
 /// The three stops of Glance's "Match confidence", as cosine-similarity
-/// thresholds stored in `faceUnlockMatchThreshold`.
+/// thresholds stored in `faceUnlockMatchThreshold`. The default is the 0.66
+/// Glance stores and unlocks with (`GlanceSettings`); Glance's slider centres
+/// its stops on 0.63 instead, so a fresh install reads "More strict" there.
+/// Here the stops keep Glance's 0.05 spacing around the value in use.
 enum FaceUnlockMatchLevel: Int, CaseIterable, Identifiable {
     case lessStrict, standard, moreStrict
     var id: Int { rawValue }
 
     var threshold: Double {
         switch self {
-        case .lessStrict: return 0.58
-        case .standard: return 0.63
-        case .moreStrict: return 0.68
+        case .lessStrict: return 0.61
+        case .standard: return 0.66
+        case .moreStrict: return 0.71
         }
     }
 
     /// The stop nearest a stored value, which a slider may not have written.
     static func nearest(to threshold: Double) -> FaceUnlockMatchLevel {
         allCases.min { abs($0.threshold - threshold) < abs($1.threshold - threshold) } ?? .standard
+    }
+}
+
+/// Glance's "Detection distance": the smallest face, as a fraction of the
+/// frame's width, taken for the person at the Mac rather than a passer-by
+/// (`faceUnlockMinimumFaceWidth`). The default is the 0.21 Glance stores;
+/// the stops keep its 0.04 spacing around it.
+enum FaceUnlockDistanceLevel: Int, CaseIterable, Identifiable {
+    case close, standard, far
+    var id: Int { rawValue }
+
+    var minimumFaceWidth: Double {
+        switch self {
+        case .close: return 0.25
+        case .standard: return 0.21
+        case .far: return 0.17
+        }
+    }
+
+    static func nearest(to width: Double) -> FaceUnlockDistanceLevel {
+        allCases.min { abs($0.minimumFaceWidth - width) < abs($1.minimumFaceWidth - width) } ?? .standard
     }
 }

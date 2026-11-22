@@ -49,7 +49,7 @@ final class FaceUnlockOnboardingFlow: ObservableObject {
     struct Dependencies {
         var session: FaceUnlockSession
         var faces: () -> FaceUnlockFaceLibrary?
-        var makeEnrollment: () -> FaceUnlockEnrollmentDriver?
+        var makeEnrollment: (UUID?) -> FaceUnlockEnrollmentDriver?
         var defaults: UserDefaults
         var accessibility: () -> Bool
         var camera: () -> CameraAccess
@@ -219,7 +219,7 @@ final class FaceUnlockOnboardingFlow: ObservableObject {
     func cameraPreview() -> FaceUnlockEnrollmentDriver? { driver }
 
     private func beginEnrollment() {
-        guard let driver = driver ?? deps.makeEnrollment() else {
+        guard let driver = driver ?? deps.makeEnrollment(replacing) else {
             problem = .recognitionUnavailable
             return
         }
@@ -295,7 +295,7 @@ final class FaceUnlockOnboardingFlow: ObservableObject {
 
     private func commitFace(_ name: String) throws {
         guard let driver else { throw FaceUnlockSecurityError.sessionLocked }
-        try driver.commit(name: name, replacing: replacing)
+        try driver.commit(name: name)
         hasSamples = false
         deps.faces()?.reload()
     }

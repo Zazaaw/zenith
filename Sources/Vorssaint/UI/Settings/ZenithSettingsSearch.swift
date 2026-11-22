@@ -153,7 +153,7 @@ enum ZenithSettingsSearch {
                  keywords: [face.title, face.setUp, face.session, face.sessionOpen, face.sessionLocked, face.lockNow,
                             face.unlockWithTouchID, face.autoLock, face.triggers, face.onLock, face.onWake,
                             face.onHover, face.onSpace, face.scanning, face.scanDuration, face.retryOnHover,
-                            face.autoRetry, face.camera, face.recognition, face.matchStrictness, face.liveness,
+                            face.autoRetry, face.camera, face.recognition, face.matchStrictness, face.detectionDistance, face.liveness,
                             face.livenessLevel, face.animation, face.faces, face.addFace, face.password,
                             face.passwordStored, face.passwordMissing, face.reset, face.lab, face.openLab, face.notes],
                  aliases: FaceUnlockSearch.aliases),

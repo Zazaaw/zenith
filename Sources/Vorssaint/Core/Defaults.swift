@@ -987,6 +987,7 @@ enum DefaultsKey {
     static let faceUnlockLivenessMode = "faceUnlockLivenessMode" // "light" or "heavy"
     static let faceUnlockMatchThreshold = "faceUnlockMatchThreshold" // cosine similarity, Double
     static let faceUnlockDetectionSeconds = "faceUnlockDetectionSeconds" // 3...10
+    static let faceUnlockMinimumFaceWidth = "faceUnlockMinimumFaceWidth" // fraction of the frame width, Double
     static let faceUnlockRetryOnHover = "faceUnlockRetryOnHover"
     static let faceUnlockAutoRetry = "faceUnlockAutoRetry" // one automatic retry per lock after a failure
     static let faceUnlockAnimationStyle = "faceUnlockAnimationStyle" // FaceUnlockAnimationStyle.rawValue
@@ -1950,6 +1951,7 @@ enum Defaults {
         DefaultsKey.faceUnlockLivenessMode: FaceUnlockLivenessLevel.light.rawValue,
         DefaultsKey.faceUnlockMatchThreshold: FaceUnlockMatchLevel.standard.threshold,
         DefaultsKey.faceUnlockDetectionSeconds: FaceUnlockPreferences.defaultDetectionSeconds,
+        DefaultsKey.faceUnlockMinimumFaceWidth: FaceUnlockDistanceLevel.standard.minimumFaceWidth,
         DefaultsKey.faceUnlockRetryOnHover: true,
         DefaultsKey.faceUnlockAutoRetry: false,
         DefaultsKey.faceUnlockAnimationStyle: FaceUnlockAnimationStyle.original.rawValue,

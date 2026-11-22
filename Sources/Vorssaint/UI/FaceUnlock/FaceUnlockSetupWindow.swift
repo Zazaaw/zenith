@@ -19,13 +19,16 @@ enum FaceUnlockSetupWindow {
         present(mode: .firstRun, prefill: NSFullUserName().isEmpty ? "Owner" : NSFullUserName())
     }
 
-    /// Another face. The faces are sealed under the session key, so Touch ID
-    /// opens the session first; nothing opens if it does not pass.
-    static func startAddFace() {
+    /// Another face, or a new capture of the face `replacing` names (keeping
+    /// its id; `name` pre-fills the name). The faces are sealed under the
+    /// session key, so Touch ID opens the session first; nothing opens if it
+    /// does not pass.
+    static func startAddFace(replacing: UUID? = nil, name: String = "") {
         let session = FaceUnlockRuntime.shared.session
         session.unlockSession(reason: ZenithStrings.faceUnlock(.enUS).reasonAddFace) { opened in
             guard opened else { return }
-            present(mode: .addFace(replacing: nil), prefill: "")
+            FaceUnlockSetup.faces?.reload()
+            present(mode: .addFace(replacing: replacing), prefill: name)
         }
     }
 
@@ -44,7 +47,7 @@ enum FaceUnlockSetupWindow {
         let flow = FaceUnlockOnboardingFlow(mode: mode, prefillName: prefill, .init(
             session: FaceUnlockRuntime.shared.session,
             faces: { FaceUnlockSetup.faces },
-            makeEnrollment: { FaceUnlockSetup.makeEnrollment?() },
+            makeEnrollment: { FaceUnlockSetup.makeEnrollment?($0) },
             defaults: .standard,
             accessibility: { AXIsProcessTrusted() },
             camera: {

@@ -69,7 +69,8 @@ enum FaceUnlockFlowTests {
                      && registered[DefaultsKey.faceUnlockAutoLockDays] as? Int == 7
                      && registered[DefaultsKey.faceUnlockLivenessEnabled] as? Bool == true
                      && registered[DefaultsKey.faceUnlockLivenessMode] as? String == "light"
-                     && registered[DefaultsKey.faceUnlockMatchThreshold] as? Double == 0.63
+                     && registered[DefaultsKey.faceUnlockMatchThreshold] as? Double == 0.66
+                     && registered[DefaultsKey.faceUnlockMinimumFaceWidth] as? Double == 0.21
                      && registered[DefaultsKey.faceUnlockDetectionSeconds] as? Int == 5
                      && registered[DefaultsKey.faceUnlockRetryOnHover] as? Bool == true
                      && registered[DefaultsKey.faceUnlockAutoRetry] as? Bool == false
@@ -92,10 +93,25 @@ enum FaceUnlockFlowTests {
         suite.expect(read.isEnabled && read.detectionSeconds == 10 && read.autoLock == .sevenDays
                      && read.animationStyle == FaceUnlockAnimationStyle.none && !read.showsIsland,
                      "stored values are clamped or fall back, and no animation means no island")
-        suite.expect(FaceUnlockMatchLevel.nearest(to: 0.66) == .moreStrict
+        suite.expect(FaceUnlockMatchLevel.nearest(to: 0.70) == .moreStrict
                      && FaceUnlockMatchLevel.nearest(to: 0.6) == .lessStrict
-                     && FaceUnlockMatchLevel.nearest(to: 0.63) == .standard,
-                     "a stored threshold reads as its nearest stop")
+                     && FaceUnlockMatchLevel.nearest(to: 0.66) == .standard
+                     && FaceUnlockDistanceLevel.nearest(to: 0.21) == .standard
+                     && FaceUnlockDistanceLevel.nearest(to: 0.3) == .close,
+                     "a stored value reads as its nearest stop, and the defaults read as Default")
+        suite.expect(abs(Double(FaceUnlockRecognitionSettings.defaultMatchThreshold) - FaceUnlockMatchLevel.standard.threshold) < 1e-6
+                     && abs(Double(FaceUnlockRecognitionSettings.defaultMinimumFaceWidth)
+                            - FaceUnlockDistanceLevel.standard.minimumFaceWidth) < 1e-6
+                     && FaceUnlockRecognitionSettings.matchThresholdKey == DefaultsKey.faceUnlockMatchThreshold
+                     && FaceUnlockRecognitionSettings.minimumFaceWidthKey == DefaultsKey.faceUnlockMinimumFaceWidth
+                     && FaceUnlockRecognitionSettings.cameraIDKey == DefaultsKey.faceUnlockCameraID
+                     && FaceUnlockRecognitionSettings.livenessModeKey == DefaultsKey.faceUnlockLivenessMode
+                     && FaceUnlockRecognitionSettings.detectionSecondsKey == DefaultsKey.faceUnlockDetectionSeconds
+                     && FaceUnlockRecognitionSettings.livenessEnabledKey == DefaultsKey.faceUnlockLivenessEnabled
+                     && FaceUnlockIslandStyle.defaultsKey == DefaultsKey.faceUnlockAnimationStyle,
+                     "recognition and the island read the keys Settings writes, with one default each")
+        suite.expect(Set(FaceUnlockLivenessLevel.allCases.map(\.rawValue)) == Set(LivenessMode.allCases.map(\.rawValue)),
+                     "the liveness levels are recognition's modes")
     }
 
     // MARK: Session
@@ -322,10 +338,10 @@ enum FaceUnlockFlowTests {
         suite.expect(world.presence.onActivate != nil, "the island can call back to retry")
 
         world.recognizer.finish(.matched(name: "Faiz"))
-        suite.expect(world.credentials.typeCalls == 1 && world.presence.state == .scanning,
-                     "a match asks the credentials to type, still showing the scan")
+        suite.expect(world.credentials.typeCalls == 1 && world.presence.state == .success,
+                     "a match shows success as it asks the credentials to type, so the unlock finds it playing")
         world.credentials.finishTyping(true)
-        suite.expect(world.presence.state == .success, "typed: the island shows success")
+        suite.expect(world.presence.state == .success, "typed: the island keeps the success")
         world.presence.onActivate?()
         suite.expect(world.recognizer.scans.count == 1, "hovering a success starts nothing")
 
@@ -363,6 +379,23 @@ enum FaceUnlockFlowTests {
         refused.recognizer.finish(.matched(name: "Faiz"))
         refused.credentials.finishTyping(false)
         suite.expect(refused.presence.state == .failure(.noPassword), "a match that could not type is a failure")
+
+        // Typed, but the Mac stays locked: the stored password is out of date.
+        let stale = CoordinatorWorld()
+        stale.lock()
+        stale.recognizer.finish(.matched(name: "Faiz"))
+        stale.credentials.finishTyping(true)
+        stale.scheduler.advance(by: FaceUnlockCoordinator.Timing.unlockGrace - 0.1)
+        suite.expect(stale.presence.state == .success, "the unlock gets its moment")
+        stale.scheduler.advance(by: 0.1)
+        suite.expect(stale.presence.state == .failure(.noPassword), "still locked after it: a failure")
+        let unlocks = CoordinatorWorld()
+        unlocks.lock()
+        unlocks.recognizer.finish(.matched(name: "Faiz"))
+        unlocks.credentials.finishTyping(true)
+        unlocks.unlock()
+        unlocks.scheduler.advance(by: FaceUnlockCoordinator.Timing.unlockGrace)
+        suite.expect(unlocks.presence.state == .hidden, "an unlock in time clears the watch")
 
         // Unlocked by hand mid-scan: the scan is cancelled and nothing typed.
         let byHand = CoordinatorWorld()
@@ -507,7 +540,7 @@ enum FaceUnlockFlowTests {
         var camera = FaceUnlockOnboardingFlow.CameraAccess.notDetermined
         func flow(_ mode: FaceUnlockOnboardingFlow.Mode, prefill: String = "Faiz") -> FaceUnlockOnboardingFlow {
             FaceUnlockOnboardingFlow(mode: mode, prefillName: prefill, .init(
-                session: security.session, faces: { library }, makeEnrollment: { driver }, defaults: defaults,
+                session: security.session, faces: { library }, makeEnrollment: { driver.madeFor.append($0); return driver }, defaults: defaults,
                 accessibility: { accessibility }, camera: { camera }, requestAccessibility: { accessibility = true },
                 requestCamera: { camera = .granted }, cameras: { [.init(id: "cam-1", name: "FaceTime HD")] },
                 scheduler: scheduler, touchIDReason: "set up"))
@@ -576,7 +609,7 @@ enum FaceUnlockFlowTests {
         let addDriver = FakeEnrollment()
         func addFlow() -> FaceUnlockOnboardingFlow {
             FaceUnlockOnboardingFlow(mode: .addFace(replacing: nil), prefillName: "", .init(
-                session: security.session, faces: { library }, makeEnrollment: { addDriver }, defaults: defaults,
+                session: security.session, faces: { library }, makeEnrollment: { addDriver.madeFor.append($0); return addDriver }, defaults: defaults,
                 accessibility: { true }, camera: { .granted }, requestAccessibility: {}, requestCamera: {},
                 cameras: { [] }, scheduler: scheduler, touchIDReason: "add"))
         }
@@ -588,13 +621,21 @@ enum FaceUnlockFlowTests {
         add.advance()
         suite.expect(addDriver.commits.map(\.name) == ["Glasses"] && add.step == .complete && library.reloads > 0,
                      "and saves at the name")
+        let replaced = UUID()
+        let recapture = FaceUnlockOnboardingFlow(mode: .addFace(replacing: replaced), prefillName: "Faiz", .init(
+            session: security.session, faces: { library }, makeEnrollment: { addDriver.madeFor.append($0); return addDriver },
+            defaults: defaults, accessibility: { true }, camera: { .granted }, requestAccessibility: {},
+            requestCamera: {}, cameras: { [] }, scheduler: scheduler, touchIDReason: "recapture"))
+        suite.expect(addDriver.madeFor.last == .some(replaced) && recapture.pendingName == "Faiz",
+                     "a recapture makes its enrollment for the face it replaces, its name kept")
+        recapture.cancel()
         let cancelled = addFlow()
         cancelled.back()
         suite.expect(cancelled.isFinished && addDriver.stops >= 1, "Back on the sweep cancels adding a face")
 
         // Change password.
         let change = FaceUnlockOnboardingFlow(mode: .password, prefillName: "", .init(
-            session: security.session, faces: { library }, makeEnrollment: { nil }, defaults: defaults,
+            session: security.session, faces: { library }, makeEnrollment: { _ in nil }, defaults: defaults,
             accessibility: { true }, camera: { .granted }, requestAccessibility: {}, requestCamera: {},
             cameras: { [] }, scheduler: scheduler, touchIDReason: "pw"))
         suite.expect(change.step == .password, "changing the password is the password step alone")
@@ -604,7 +645,7 @@ enum FaceUnlockFlowTests {
         suite.expect(change.step == .complete && security.typedAfterUnlock("new one"), "the new password is the one typed")
 
         let missing = FaceUnlockOnboardingFlow(mode: .addFace(replacing: nil), prefillName: "", .init(
-            session: security.session, faces: { nil }, makeEnrollment: { nil }, defaults: defaults,
+            session: security.session, faces: { nil }, makeEnrollment: { _ in nil }, defaults: defaults,
             accessibility: { true }, camera: { .granted }, requestAccessibility: {}, requestCamera: {},
             cameras: { [] }, scheduler: scheduler, touchIDReason: "x"))
         suite.expect(missing.problem == .recognitionUnavailable, "without recognition the sweep says so")
@@ -832,6 +873,7 @@ private final class FakeEnrollment: FaceUnlockEnrollmentDriver {
     var stops = 0
     var resets = 0
     var commits: [(name: String, replacing: UUID?)] = []
+    var madeFor: [UUID?] = []
     func start() { starts += 1 }
     func stop() { stops += 1 }
     func reset() {
@@ -839,7 +881,7 @@ private final class FakeEnrollment: FaceUnlockEnrollmentDriver {
         progress = FaceUnlockEnrollmentProgress()
     }
     func cameraPreview() -> AnyView { AnyView(EmptyView()) }
-    func commit(name: String, replacing: UUID?) throws { commits.append((name, replacing)) }
+    func commit(name: String) throws { commits.append((name, madeFor.last ?? nil)) }
     func report(_ next: FaceUnlockEnrollmentProgress) {
         progress = next
         onProgress?(next)

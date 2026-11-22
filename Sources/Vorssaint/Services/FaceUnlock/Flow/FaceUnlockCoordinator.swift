@@ -47,6 +47,9 @@ final class FaceUnlockCoordinator {
         static let failureHold: TimeInterval = 5
         /// Between headless retries, so the camera does not restart in a loop.
         static let headlessRetry: TimeInterval = 1
+        /// Typed, yet still locked this long after: the stored password is
+        /// wrong (changed since it was saved), so the success turns to failure.
+        static let unlockGrace: TimeInterval = 4
     }
 
     private let deps: Dependencies
@@ -237,14 +240,22 @@ final class FaceUnlockCoordinator {
         case .matched:
             guard let credentials = deps.credentials() else { return fail(.noPassword) }
             isTyping = true
+            // Success shows as the password goes in, not after: typing it
+            // unlocks the Mac, and the lock screen's unlock must find the
+            // success animation already playing (it waits that out before the
+            // welcome) rather than race it.
+            if deps.preferences().showsIsland { presence.state = .success }
             credentials.typeStoredPassword { [weak self] typed in
                 guard let self, scan == self.generation else { return }
                 self.isTyping = false
-                if typed {
-                    if self.deps.preferences().showsIsland { self.presence.state = .success }
-                } else {
-                    // Typing refused or failed (not locked any more, no
-                    // Accessibility, the password unreadable).
+                guard typed else {
+                    // Refused or failed (not locked any more, no Accessibility,
+                    // the password unreadable).
+                    return self.fail(.noPassword)
+                }
+                self.failureWork = self.deps.scheduler.after(Timing.unlockGrace) { [weak self] in
+                    guard let self, scan == self.generation, self.deps.isScreenLocked() else { return }
+                    self.failureWork = nil
                     self.fail(.noPassword)
                 }
             }

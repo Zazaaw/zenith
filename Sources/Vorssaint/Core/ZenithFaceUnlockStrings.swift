@@ -59,6 +59,10 @@ struct ZenithFaceUnlockStrings {
     let lessStrict = "Less strict"
     let standard = "Default"
     let moreStrict = "More strict"
+    let detectionDistance = "Detection distance"
+    let distanceClose = "Close"
+    let distanceFar = "Far"
+    let detectionDistanceCaption = "How near you have to be. A smaller face in the frame is taken for someone passing by."
     let liveness = "Liveness check"
     let livenessCaption = "Checks for a live person, not a photo. May add a moment to each unlock."
     let livenessLevel = "Check"
@@ -224,6 +228,14 @@ struct ZenithFaceUnlockStrings {
         case .lessStrict: return lessStrict
         case .standard: return standard
         case .moreStrict: return moreStrict
+        }
+    }
+
+    func distance(_ value: FaceUnlockDistanceLevel) -> String {
+        switch value {
+        case .close: return distanceClose
+        case .standard: return standard
+        case .far: return distanceFar
         }
     }
 

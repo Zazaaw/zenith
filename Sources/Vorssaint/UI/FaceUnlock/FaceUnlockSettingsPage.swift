@@ -4,7 +4,6 @@
 // https://github.com/jonnyoo/glance — see the notice in About.
 
 import AppKit
-import AVFoundation
 import SwiftUI
 
 // Zenith fork: Settings → Face Unlock, a page of its own (Glance's General,
@@ -25,6 +24,7 @@ struct FaceUnlockSettingsPage: View {
     @AppStorage(DefaultsKey.faceUnlockMatchThreshold) private var matchThreshold = FaceUnlockMatchLevel.standard.threshold
     @AppStorage(DefaultsKey.faceUnlockCameraID) private var cameraID = ""
     @AppStorage(DefaultsKey.faceUnlockDetectionSeconds) private var detectionSeconds = FaceUnlockPreferences.defaultDetectionSeconds
+    @AppStorage(DefaultsKey.faceUnlockMinimumFaceWidth) private var minimumFaceWidth = FaceUnlockDistanceLevel.standard.minimumFaceWidth
     @AppStorage(DefaultsKey.faceUnlockRetryOnHover) private var retryOnHover = true
     @AppStorage(DefaultsKey.faceUnlockAutoRetry) private var autoRetry = false
     @AppStorage(DefaultsKey.faceUnlockAnimationStyle) private var animationStyle = FaceUnlockAnimationStyle.original.rawValue
@@ -243,6 +243,12 @@ struct FaceUnlockSettingsPage: View {
                 set: { matchThreshold = $0.threshold })) {
                 ForEach(FaceUnlockMatchLevel.allCases) { level in Text(text.match(level)).tag(level) }
             }
+            SettingsChoiceRow(symbol: "ruler", title: text.detectionDistance, selection: Binding(
+                get: { FaceUnlockDistanceLevel.nearest(to: minimumFaceWidth) },
+                set: { minimumFaceWidth = $0.minimumFaceWidth })) {
+                ForEach(FaceUnlockDistanceLevel.allCases) { level in Text(text.distance(level)).tag(level) }
+            }
+            caption(text.detectionDistanceCaption)
             Divider()
             ZenithSwitchRow(text.liveness, isOn: $livenessEnabled) {
                 SettingsRow(symbol: "eye", title: text.liveness, caption: text.livenessCaption) { EmptyView() }
@@ -459,12 +465,10 @@ struct FaceUnlockSettingsPage: View {
     }
 }
 
-/// The cameras the picker offers: built-in, external and Continuity, listed
-/// without turning any on or asking for camera access.
+/// The cameras the picker offers, from recognition's catalog (built-in,
+/// external and Continuity), listed without turning any on or asking for access.
 enum FaceUnlockCameraCatalog {
     static func cameras() -> [FaceUnlockOnboardingFlow.Camera] {
-        AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInWideAngleCamera, .external, .continuityCamera],
-                                         mediaType: .video, position: .unspecified)
-            .devices.map { .init(id: $0.uniqueID, name: $0.localizedName) }
+        FaceCameraCatalog.availableDevices().map { .init(id: $0.id, name: $0.name) }
     }
 }

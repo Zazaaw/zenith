@@ -16,10 +16,7 @@ final class FaceUnlockRuntime {
     static let shared = FaceUnlockRuntime()
 
     /// Recognition needs macOS 15 (Glance's floor); Settings says so below it.
-    static var isSupported: Bool {
-        if #available(macOS 15, *) { return true }
-        return false
-    }
+    static var isSupported: Bool { FaceUnlockRecognition.isSupported }
 
     let session: FaceUnlockSession
     let spaceKeys = FaceUnlockSpaceKeyMonitor()
@@ -37,6 +34,10 @@ final class FaceUnlockRuntime {
     private var autoLockTimer: Timer?
     private var wakeObserver: NSObjectProtocol?
     private var sessionWatch: AnyCancellable?
+    private var preparedModel = false
+    /// The person said no to the session's Touch ID prompt: not asked again unprompted until next launch.
+    private var sessionPromptDeclined = false
+    private var sessionPromptWork: DispatchWorkItem?
 
     private init() {
         session = FaceUnlockSession(.init(
@@ -45,20 +46,42 @@ final class FaceUnlockRuntime {
             authenticator: FaceUnlockTouchID(),
             typist: FaceUnlockKeystrokes(),
             isScreenLocked: FaceUnlockScreenLock.isLocked,
-            hasOtherSealedData: { FaceUnlockSetup.faces?.hasSealedData ?? false },
+            // The face store is sealed with the same key: never mint a new one over it.
+            hasOtherSealedData: { SecureFaceStore.exists },
             now: Date.init,
             background: { DispatchQueue.global(qos: .userInitiated).async(execute: $0) },
             main: { work in Thread.isMainThread ? work() : DispatchQueue.main.async(execute: work) }))
     }
 
-    /// At launch: plugs the session in and starts listening if face unlock is on.
+    /// At launch, after `FaceUnlockRecognition.install()`: plugs the session in
+    /// as the credentials and the key provider, recognition's enrollment and
+    /// faces in as the setup's seams, and starts listening if face unlock is on.
     func launch() {
         FaceUnlock.credentials = session
         FaceUnlockKeys.provider = session
+        if Self.isSupported {
+            FaceUnlockSetup.faces = FaceUnlockFaceStoreAdapter()
+            FaceUnlockSetup.makeEnrollment = { FaceUnlockEnrollmentAdapter(replacing: $0) }
+            MainActor.assumeIsolated {
+                // A scan also ends the moment the screen is no longer locked.
+                FaceUnlockRecognitionService.shared.shouldContinueScan = { FaceUnlockScreenLock.isLocked() }
+                // Face Lab's Start Onboarding, Add Identity and Recapture open the setup window.
+                FaceUnlockLab.enrollmentHandler = { request in
+                    switch request {
+                    case .fullOnboarding: FaceUnlockSetupWindow.startFirstRun()
+                    case .addIdentity: FaceUnlockSetupWindow.startAddFace()
+                    case .recapture(let id, let name): FaceUnlockSetupWindow.startAddFace(replacing: id, name: name)
+                    }
+                }
+            }
+        }
         sessionWatch = session.$isUnlocked.removeDuplicates().sink { [weak self] unlocked in
             self?.syncAutoLock(unlocked)
         }
         sync()
+        // Once per Zenith session, as Glance: at login the person is here, so
+        // ask for Touch ID now rather than leave the first lock unable to type.
+        askForSessionIfNeeded(after: 3)
     }
 
     /// After the switch or the triggers change.
@@ -66,6 +89,11 @@ final class FaceUnlockRuntime {
         let enabled = Self.isSupported && UserDefaults.standard.bool(forKey: DefaultsKey.faceUnlockEnabled)
         if enabled { startListening() } else { stopListening() }
         coordinator.preferencesChanged()
+        if enabled, !preparedModel {
+            // Compiles and loads ArcFace now, so the first scan on the lock screen is not the one that waits.
+            preparedModel = true
+            Task { @MainActor in _ = await FaceUnlockRecognition.prepareModel() }
+        }
     }
 
     /// On quit: the key leaves memory with the process anyway; say so first.
@@ -100,8 +128,31 @@ final class FaceUnlockRuntime {
     private func observe(_ center: NotificationCenter, _ name: String, _ event: FaceUnlockCoordinator.Event) {
         let token = center.addObserver(forName: Notification.Name(name), object: nil, queue: .main) { [weak self] _ in
             self?.coordinator.handle(event)
+            // Unlocked by hand while the session was locked (the island said
+            // so): the person is at the Mac, ask now so the next lock works.
+            if event == .screenUnlocked { self?.askForSessionIfNeeded(after: 1.5) }
         }
         observers.append((center, token))
+    }
+
+    // MARK: Session prompt
+
+    /// Asks for Touch ID to open the session when face unlock is on and set up
+    /// but cannot type the password. Never on the lock screen, never again
+    /// after a "Cancel" until Zenith starts again.
+    private func askForSessionIfNeeded(after delay: TimeInterval) {
+        sessionPromptWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, !self.sessionPromptDeclined, Self.isSupported,
+                  UserDefaults.standard.bool(forKey: DefaultsKey.faceUnlockEnabled),
+                  self.session.hasStoredPassword, !self.session.isSessionUnlocked,
+                  !self.session.isAuthenticating, !FaceUnlockScreenLock.isLocked() else { return }
+            self.session.unlockSession(reason: ZenithStrings.faceUnlock(.enUS).reasonOpen) { [weak self] opened in
+                if !opened { self?.sessionPromptDeclined = true }
+            }
+        }
+        sessionPromptWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
     }
 
     // MARK: Auto-lock

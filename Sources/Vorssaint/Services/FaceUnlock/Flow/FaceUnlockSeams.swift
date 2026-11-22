@@ -8,16 +8,17 @@ import SwiftUI
 
 // Zenith fork: what onboarding and Settings need from recognition beyond the
 // contract's `FaceUnlockRecognizer`: guided enrollment and the enrolled faces.
-// Recognition's own API (`FaceEnrollmentSession`, its camera and identities)
-// is adapted to these two protocols when the branches meet; until then the
-// tests drive them with fakes. Modelled on Glance's `OnboardingController`
+// Recognition's own API (`FaceEnrollmentSession`, `FaceEnrollmentStore`) is
+// adapted to these two protocols in FaceUnlockRecognitionAdapters; the tests
+// drive them with fakes. Modelled on Glance's `OnboardingController`
 // (the nine-pose sweep) and `FaceEnrollmentStore`.
 
 /// Where recognition plugs in at launch, beside `FaceUnlock.recognizer`.
 enum FaceUnlockSetup {
     nonisolated(unsafe) static var faces: FaceUnlockFaceLibrary?
-    /// A fresh guided enrollment for onboarding (camera off until `start()`).
-    nonisolated(unsafe) static var makeEnrollment: (() -> FaceUnlockEnrollmentDriver)?
+    /// A fresh guided enrollment for onboarding (camera off until `start()`),
+    /// for a new face or replacing the one the id names.
+    nonisolated(unsafe) static var makeEnrollment: ((UUID?) -> FaceUnlockEnrollmentDriver)?
 
     /// Recognition is there to enroll with and to unlock with.
     static var isRecognitionAvailable: Bool { faces != nil && makeEnrollment != nil && FaceUnlock.recognizer != nil }
@@ -87,9 +88,9 @@ protocol FaceUnlockEnrollmentDriver: AnyObject {
     func reset()
     /// The live, mirrored preview of the running camera.
     func cameraPreview() -> AnyView
-    /// Seals the captured samples as a face named `name`, replacing the face
-    /// `replacing` names if given. The session must be open (the key seals it).
-    func commit(name: String, replacing: UUID?) throws
+    /// Seals the captured samples as a face named `name` (replacing the face
+    /// the driver was made for, if any). The session must be open (the key seals it).
+    func commit(name: String) throws
 }
 
 /// An enrolled face, as Settings lists it.
