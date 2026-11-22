@@ -32,6 +32,9 @@ struct ZenithLockScreenIsland: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var motion: NotchMotionTimeline?
     @State private var settleAt: TimeInterval = 0
+    /// Zenith fork: the corners' style, blending between Zenith's and Glance's.
+    @State private var corners = FaceUnlockCornerBlend(from: 0, to: 0, begin: 0)
+    @State private var cornersMoving = false
 
     private var playing: Bool { model.showsMusic(music.playback) && music.playback?.isPlaying == true }
     private var text: ZenithLockIslandStrings { ZenithStrings.lockIsland(l10n.language) }
@@ -42,15 +45,19 @@ struct ZenithLockScreenIsland: View {
     /// right wing adds the face glyph (armed, at rest).
     private var stage: FaceUnlockIslandStage { island.stage }
     private var faceGlyph: Bool { FaceUnlockIslandStage.showsFaceGlyph(moment: island.moment, face: island.face) }
+    /// Zenith fork: Glance's corners for face unlock's own shapes.
+    private var glanceCorners: Bool { FaceUnlockIslandStage.usesGlanceCorners(stage, faceGlyph: faceGlyph) }
 
     var body: some View {
         let goal = goal
-        TimelineView(.animation(minimumInterval: nil, paused: motion == nil || frozen != nil)) { context in
+        TimelineView(.animation(minimumInterval: nil, paused: frozen != nil || (motion == nil && !cornersMoving))) { context in
+            let now = context.date.timeIntervalSinceReferenceDate
             let shape = frozen.map { entranceMotion(to: goal, begin: 0)?.shape(at: $0) ?? goal }
-                ?? motion?.shape(at: context.date.timeIntervalSinceReferenceDate)
+                ?? motion?.shape(at: now)
                 // Zenith fork: until its entrance starts, the island stands where it grows from.
                 ?? island.entrance ?? goal
-            surface(shape: shape, goal: goal)
+            surface(shape: shape, goal: goal,
+                    continuous: frozen != nil || reduceMotion ? (glanceCorners ? 1 : 0) : corners.value(at: now))
                 .frame(width: shape.width, height: shape.height, alignment: .top)
                 .frame(width: window?.width ?? size.width, height: window?.height ?? size.height, alignment: .top)
                 .offset(x: origin.x + size.width / 2 - (window?.width ?? size.width) / 2, y: origin.y)
@@ -60,9 +67,23 @@ struct ZenithLockScreenIsland: View {
         // Zenith fork: the shape the desktop island takes over from as the Mac unlocks.
         .onAppear {
             island.shownSize = goal
+            let target: CGFloat = glanceCorners ? 1 : 0 // Zenith fork
+            corners = FaceUnlockCornerBlend(from: target, to: target, begin: 0)
             startEntrance()
         }
+        // Zenith fork: the corners ease from one style to the other (a scan becoming the welcome).
+        .onChange(of: glanceCorners) { _, glance in
+            let now = Date().timeIntervalSinceReferenceDate
+            corners = FaceUnlockCornerBlend(from: corners.value(at: now), to: glance ? 1 : 0, begin: now)
+            cornersMoving = true
+        }
+        .task(id: corners.begin) {
+            guard cornersMoving else { return }
+            try? await Task.sleep(nanoseconds: UInt64((FaceUnlockCornerBlend.duration + 0.05) * 1_000_000_000))
+            if !Task.isCancelled { cornersMoving = false }
+        }
         .onChange(of: goal) { _, new in island.shownSize = new }
+        .onChange(of: island.entranceReleased) { _, released in if released { startEntrance() } } // Zenith fork
         .task(id: settleAt) {
             let wait = settleAt - Date().timeIntervalSinceReferenceDate
             guard motion != nil else { return }
@@ -155,17 +176,18 @@ struct ZenithLockScreenIsland: View {
     /// frame: until then it stands at the shape it grows from, so the first
     /// frame on screen is that shape however long the lock screen takes to
     /// come in. Reduce Motion shows the goal at once.
+    /// Zenith fork: the entrance waits for the lock screen to release it
+    /// (ZenithLockIslandModel.entranceReleased: the window on screen, the
+    /// shield faded in), then starts on the next turn, into whatever the
+    /// island shows by then.
     private func startEntrance() {
-        guard frozen == nil, island.entrance != nil else { return }
+        guard frozen == nil, island.entrance != nil, island.entranceReleased else { return }
         guard !reduceMotion else { island.entrance = nil; return }
-        // Zenith fork: as the Mac locks, the bare notch while macOS fades its shield in.
-        let delay = max(0, island.entranceDelay)
-        island.settlesAt = Date().timeIntervalSinceReferenceDate + delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+        DispatchQueue.main.async {
             guard island.entrance != nil, let next = entranceMotion(to: goal, begin: Date().timeIntervalSinceReferenceDate)
             else { island.entrance = nil; return }
             island.entrance = nil
-            ZenithLockTrace.log("entrance grows after \(delay) s: \(next.start) -> \(next.target)")
+            ZenithLockTrace.log("entrance grows: \(next.start) -> \(next.target)")
             motion = next
             settleAt = next.begin + next.frames().duration
             island.settlesAt = settleAt
@@ -178,6 +200,9 @@ struct ZenithLockScreenIsland: View {
     private func retarget(from old: CGSize, to new: CGSize) {
         guard frozen == nil else { return }
         guard !reduceMotion else { motion = nil; island.settlesAt = 0; return }
+        // Zenith fork: an entrance not yet released stays at the notch; it
+        // grows into the newest goal when it starts.
+        if motion == nil, island.entrance != nil, !island.entranceReleased { return }
         let old = motion == nil ? island.entrance ?? old : old
         island.entrance = nil
         let now = Date().timeIntervalSinceReferenceDate
@@ -200,6 +225,16 @@ struct ZenithLockScreenIsland: View {
         }
     }
 
+    /// Zenith fork: the room between the padlock's box and the glyph inside
+    /// it: the face glyph keeps the same from the right edge, so the two
+    /// sit as far from their edges as each other.
+    static let padlockLead: CGFloat = {
+        let configuration = NSImage.SymbolConfiguration(pointSize: ZenithLockIsland.padlockSize, weight: .semibold)
+        let width = NSImage(systemSymbolName: "lock.fill", accessibilityDescription: nil)?
+            .withSymbolConfiguration(configuration)?.size.width ?? ZenithLockIsland.padlockSize
+        return max(0, (FaceUnlockIslandLayout.glyphBox - width) / 2)
+    }()
+
     static func textWidth(_ string: String, size: CGFloat, weight: NSFont.Weight) -> CGFloat {
         guard !string.isEmpty else { return 0 }
         let font = NSFont.systemFont(ofSize: size, weight: weight)
@@ -208,8 +243,9 @@ struct ZenithLockScreenIsland: View {
 
     // MARK: Drawing
 
-    private func surface(shape: CGSize, goal: CGSize) -> some View {
-        let outline = NotchShape(attached: true, radius: NotchLayout.surfaceRadius(height: shape.height))
+    private func surface(shape: CGSize, goal: CGSize, continuous: CGFloat) -> some View {
+        // Zenith fork: Zenith's outline, or Glance's squircle corners for face unlock, blended.
+        let outline = FaceUnlockIslandShape(radius: NotchLayout.surfaceRadius(height: shape.height), continuous: continuous)
         return ZStack(alignment: .top) {
             outline.fill(.black)
             ZStack(alignment: .top) {
@@ -277,7 +313,9 @@ struct ZenithLockScreenIsland: View {
         let fit = touchIDFit
         let shoulder = NotchLayout.shoulder(height: fit.size.height)
         return HStack(spacing: 0) {
-            ZenithBurstTile(symbol: "touchid", tint: .white, fill: 0.12)
+            // Concentric with Glance's corner, 20 points in.
+            ZenithBurstTile(symbol: "touchid", tint: .white,
+                            radius: FaceUnlockIslandSilhouette.innerRadius(height: fit.size.height), fill: 0.12)
             ZenithBurstWords(title: FaceUnlockIslandText.needsTouchID, subtitle: "", titleLines: fit.lines)
                 .padding(.leading, ZenithIslandBurstLayout.tileGap)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -322,10 +360,14 @@ struct ZenithLockScreenIsland: View {
                 } else if faceGlyph { // Zenith fork: armed for face unlock, its glyph at the wing's end
                     HStack(spacing: FaceUnlockIslandLayout.glyphGap) {
                         if slot != .none { slotView(slot).id(slotKey(slot)) }
+                        // As big as the padlock reads and as far from the right edge,
+                        // both centred on the strip's height.
                         Image(systemName: "faceid")
-                            .font(.system(size: FaceUnlockIslandLayout.glyphSize, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.85))
-                            .frame(width: FaceUnlockIslandLayout.glyphSize, height: FaceUnlockIslandLayout.glyphSize)
+                            .font(.system(size: min(FaceUnlockIslandLayout.glyphSize, size.height * 0.6), weight: .medium))
+                            .foregroundStyle(.white)
+                            .fixedSize()
+                            .padding(.trailing, Self.padlockLead)
+                            .frame(height: size.height)
                     }
                     .transition(.zenithMorph(reduceMotion: reduceMotion))
                 } else {

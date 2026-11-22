@@ -315,6 +315,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Notch/ZenithLockHandover.swift
         Sources/Vorssaint/Services/FaceUnlock/FaceUnlockContract.swift
         Sources/Vorssaint/Services/FaceUnlock/Island/FaceUnlockIslandSupport.swift
+        Sources/Vorssaint/UI/FaceUnlock/Island/FaceUnlockIslandShape.swift
         Sources/Vorssaint/Core/ZenithLockIslandStrings.swift
         Sources/Vorssaint/Core/ZenithClaudeChimeStrings.swift
         Sources/Vorssaint/Core/ZenithRemoteStrings.swift

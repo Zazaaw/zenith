@@ -16,6 +16,77 @@ enum FaceUnlockIslandTests {
         sizes(suite)
         timing(suite)
         style(suite)
+        corners(suite)
+        blinks(suite)
+    }
+
+    /// Glance's continuous corners, for face unlock's shapes only.
+    private static func corners(_ suite: TestSuite) {
+        typealias C = FaceUnlockIslandSilhouette
+        typealias S = FaceUnlockIslandStage
+        suite.expect(S.usesGlanceCorners(.scan(.idle), faceGlyph: false) && S.usesGlanceCorners(.scan(.success), faceGlyph: false)
+                        && S.usesGlanceCorners(.scan(.failure), faceGlyph: false) && S.usesGlanceCorners(.touchID, faceGlyph: false)
+                        && S.usesGlanceCorners(.moment(.rest), faceGlyph: true),
+                     "the armed pill with its glyph, the scan, its results and the Touch ID line take Glance's corners")
+        suite.expect(!S.usesGlanceCorners(.moment(.rest), faceGlyph: false) && !S.usesGlanceCorners(.moment(.farewell), faceGlyph: true)
+                        && !S.usesGlanceCorners(.moment(.welcome(ZenithWelcomeBurst(title: "Welcome back", subtitle: ""))), faceGlyph: false)
+                        && !S.usesGlanceCorners(.moment(.remoteLock(device: "iPhone")), faceGlyph: false)
+                        && !S.usesGlanceCorners(.moment(.bare), faceGlyph: false),
+                     "every other island keeps Zenith's")
+        suite.expect(C.reach == 1.528 && C.radius(height: 37, body: 300, depth: 7) == 12
+                        && C.radius(height: 200, body: 231, depth: 27) == 60,
+                     "the squircle runs from 12 points on the closed pill to 60 on the open panel, reaching 1.528 times out")
+        suite.expect(abs(C.radius(height: 49, body: 40, depth: 7) - 20 / 1.528) < 0.001
+                        && abs(C.radius(height: 20, body: 300, depth: 7) - 13 / 1.528) < 0.001,
+                     "it never runs past the straight edges, across or down")
+        suite.expect(C.innerRadius(height: 37) == 8 && C.innerRadius(height: 178) == 40,
+                     "inner elements stay concentric, 20 points in")
+        let rect = CGRect(x: 0, y: 0, width: 300, height: 120)
+        let shoulder = NotchLayout.shoulder(height: rect.height), radius = NotchLayout.surfaceRadius(height: rect.height)
+        let zenith = ZenithIslandSilhouette.hangingPath(in: rect, shoulder: shoulder, radius: radius)
+        let blended = C.path(in: rect, shoulder: shoulder, radius: radius, continuous: 0)
+        var same = abs(zenith.boundingRect.width - blended.boundingRect.width) < 0.01
+            && abs(zenith.boundingRect.height - blended.boundingRect.height) < 0.01
+        for x in stride(from: 1.0, to: 300, by: 7) {
+            for y in stride(from: 1.0, to: 120, by: 3) where zenith.contains(CGPoint(x: x, y: y)) != blended.contains(CGPoint(x: x, y: y)) {
+                same = false
+            }
+        }
+        suite.expect(same, "with no blend the outline is exactly Zenith's island, shoulders and corners")
+        let glance = C.path(in: rect, shoulder: shoulder, radius: radius, continuous: 1)
+        let side = max(0, min(shoulder, rect.width / 2))
+        let r = C.radius(height: 120, body: rect.width - side * 2, depth: min(side + max(0, ZenithIslandSilhouette.openShoulderDepth - side)
+            * ZenithIslandSilhouette.openness(height: 120), 60))
+        suite.expect(glance.contains(CGPoint(x: side + r * C.reach + 1, y: 119.6)) && !glance.contains(CGPoint(x: side + 1.5, y: 118.5))
+                        && glance.contains(CGPoint(x: 150, y: 2)) && glance.contains(CGPoint(x: side + 0.5, y: 118 - r * C.reach)),
+                     "blended fully, the bottom corners are the squircle, flat until 1.528 radii from the corner, under the same shoulders")
+        let blend = FaceUnlockCornerBlend(from: 0, to: 1, begin: 10)
+        suite.expect(blend.value(at: 10) == 0 && blend.value(at: 10 + FaceUnlockCornerBlend.duration) == 1
+                        && abs(blend.value(at: 10 + FaceUnlockCornerBlend.duration / 2) - 0.5) < 0.001 && blend.value(at: .nan) == 1,
+                     "a scan becoming the welcome eases its corners from one style to the other, no jump")
+    }
+
+    /// The two blinks seen on video (IMG_9851): the success going back to the
+    /// pill before the welcome, and the lock's entrance arriving already grown.
+    private static func blinks(_ suite: TestSuite) {
+        typealias S = FaceUnlockIslandStage
+        suite.expect(S.next(current: .success, incoming: .hidden, sessionLocked: false) == .success,
+                     "face unlock standing down as the Mac unlocks keeps the success up, to morph straight into the welcome")
+        suite.expect(S.next(current: .success, incoming: .hidden, sessionLocked: true) == .hidden
+                        && S.next(current: .success, incoming: .failure(.noPassword), sessionLocked: true) == .failure(.noPassword)
+                        && S.next(current: .scanning, incoming: .hidden, sessionLocked: false) == .hidden
+                        && S.next(current: .armed, incoming: .scanning, sessionLocked: true) == .scanning,
+                     "still locked, or anything but a match, the island takes the state as it comes")
+        let welcome = ZenithLockIslandMoment.welcome(ZenithWelcomeBurst(title: "Welcome back", subtitle: ""))
+        suite.expect(S.resolve(moment: welcome, face: S.next(current: .success, incoming: .hidden, sessionLocked: false))
+                        == .moment(welcome),
+                     "and the welcome then wins over the held success")
+        typealias H = ZenithLockHandover
+        suite.expect(H.entranceWait(sinceLock: 0) == H.shieldFadeIn && abs(H.entranceWait(sinceLock: 0.5) - (H.shieldFadeIn - 0.5)) < 0.0001,
+                     "on screen early, the island stays the bare notch for the rest of the shield's fade")
+        suite.expect(H.entranceWait(sinceLock: 2) == H.entranceFrames && H.entranceWait(sinceLock: .nan) == H.entranceFrames
+                        && H.entranceFrames > 0,
+                     "on screen late, it still shows the notch first and grows after, never arriving already grown")
     }
 
     private static func windows(_ suite: TestSuite) {
@@ -115,8 +186,14 @@ enum FaceUnlockIslandTests {
                      "the minimal style widens beside the camera and grows 12 pt, as Glance's does")
         suite.expect(L.videoSide(in: L.panel) == 144 && L.minimalVideoSide(height: 49) == 27 && L.videoSide(in: .zero) == 0,
                      "the square video fits between Glance's paddings")
-        suite.expect(L.armedWing(slot: 0) == L.glyphSize && L.armedWing(slot: 20) == 20 + L.glyphGap + L.glyphSize,
+        suite.expect(L.armedWing(slot: 0) == L.glyphBox && L.armedWing(slot: 20) == 20 + L.glyphGap + L.glyphBox,
                      "armed, the right wing makes room for the face glyph after its slot")
+        suite.expect(L.glyphBox == ZenithLockIsland.padlockSize + 6 && L.glyphSize > ZenithLockIsland.padlockSize,
+                     "the face glyph takes a box as wide as the padlock's, a point bigger since it is lighter")
+        let resting: CGFloat = 40
+        let armedPill = ZenithLockIsland.wing(for: L.armedWing(slot: 0), resting: resting)
+        suite.expect(armedPill >= L.glyphBox + ZenithLockIsland.wingInset * 2,
+                     "the pill widens until the glyph keeps the padlock's inset from the right edge")
         let surface = CGRect(x: 653, y: 945, width: 285, height: 37)
         let hover = L.hoverRect(surface: surface, shown: L.panel)
         suite.expect(abs(hover.midX - surface.midX) < 0.01 && hover.maxY == surface.maxY + L.hoverOutset
