@@ -2975,6 +2975,53 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   - **Belum diverifikasi:** SSH sungguhan dari iPhone (Shortcuts mengirim perintah sebagai exec, kutip pintar iOS,
     izin TCC untuk proses sshd membaca Application Support), kunci layar sungguhan, island di layar, dan
     pemeriksaan Tailscale CLI dari app.
+- **Face unlock: keamanan, alur, Settings, onboarding (branch `feat/face-unlock-flow`, dari `feat/face-unlock`):**
+  port bagian keamanan dan alur Glance (Jonathan Zhou, MIT) di atas kontrak `Services/FaceUnlock/FaceUnlockContract.swift`.
+  Kode di `Services/FaceUnlock/Flow/` dan `UI/FaceUnlock/` (bukan `Recognition/` dan `UI/FaceUnlock/Lab/`, milik
+  bagian pengenalan). Teks di `Core/ZenithFaceUnlockStrings.swift`, bahasa Inggris di semua bahasa (keputusan Faiz;
+  Zenith tidak punya locale Indonesia, alias pencarian Indonesia tetap ada). Test: suite `face-unlock-flow`.
+  - **Sesi dan kunci:** `.userPresence` keychain butuh entitlement Apple (-34018), jadi password disegel AES-GCM
+    (`FaceUnlockCipher`) dan disimpan sebagai file 0600 lewat `ZenithSecretStore` (`face-unlock-password`, base64).
+    Kuncinya (256 bit) generic password di login keychain (`<bundle id>.face-unlock` / `session-key`), tanpa flag
+    access control dan tanpa data-protection keychain, jadi ACL bawaannya hanya app pembuat. Zenith sendiri minta
+    Touch ID (`LAContext`, biometrik lalu fallback password akun) sebelum membaca kunci, lalu kunci hanya di memori.
+    Sesi terkunci lagi setelah idle `faceUnlockAutoLockDays` (7/14/30/never, default 7; dicek tiap 5 menit dan saat
+    wake, hanya selama sesi terbuka), saat quit, dan lewat Lock Now. Mengetik dengan sukses dihitung pemakaian.
+    Kunci hilang padahal masih ada data tersegel (password atau face store) = error, tidak pernah membuat kunci baru.
+  - **Mengetik:** `FaceUnlockKeystrokes` (CGEvent di HID tap, Unicode per 20 unit tanpa memecah surrogate, ⌘→ ⌘⌫ dulu,
+    lalu Return; butuh Accessibility). `FaceUnlockSession.typeStoredPassword` hanya mengetik kalau CGSession bilang
+    terkunci (dicek dua kali: sebelum membaca dan tepat sebelum tombol pertama), sesi terbuka, dan Accessibility ada;
+    plaintext dinolkan. Coordinator hanya memanggilnya setelah scan `matched`.
+  - **Coordinator** (`FaceUnlockCoordinator`, main thread, semua dependensi disuntik): lock/unlock/sleep/wake dari
+    notifikasi (didengar `FaceUnlockRuntime` hanya selama fitur nyala), tunggu 0,3 dtk lalu baca CGSession, arm
+    0,25 dtk kemudian, debounce wake 2 dtk, tidak scan selama tidur. `FaceUnlockPresence.shared.state`: `hidden`,
+    `needsTouchID` (sesi terkunci), `armed`, `scanning`, `success` (setelah password terketik), `failure(...)` (5 dtk
+    lalu `armed`; match tapi gagal mengetik = `failure(.noPassword)`). `onActivate`: dari `armed` butuh trigger
+    `onHover`, dari `failure` butuh `faceUnlockRetryOnHover`. Auto-retry sekali per lock (opsional). Animasi `none` =
+    tanpa island, scan headless hanya untuk trigger yang dipilih. Trigger default Glance: lock, wake, hover; Space
+    lewat IOKit HID (`FaceUnlockSpaceKeyMonitor`) hanya saat terkunci + trigger nyala + izin ada; izin Input
+    Monitoring diminta hanya saat trigger Space dinyalakan di Settings.
+  - **DefaultsKey:** `faceUnlockEnabled`, `faceUnlockCameraID`, `faceUnlockNoticeAccepted` (tidak didaftarkan, tidak
+    ikut backup); `faceUnlockTriggers` (`onLock,onWake,onHover`), `faceUnlockAutoLockDays` (7),
+    `faceUnlockLivenessEnabled` (true), `faceUnlockLivenessMode` (`light`/`heavy`), `faceUnlockMatchThreshold`
+    (0,63; stop 0,58/0,63/0,68), `faceUnlockDetectionSeconds` (5, 3...10), `faceUnlockRetryOnHover` (true),
+    `faceUnlockAutoRetry` (false), `faceUnlockAnimationStyle` (`original`) didaftarkan dan ikut backup. Rahasia tidak
+    pernah di preferences.
+  - **Settings → Face Unlock** (`UI/FaceUnlock/FaceUnlockSettingsPage.swift`, halaman sendiri, anchor
+    `zenithFaceUnlock`): saklar (menyalakan sebelum setup membuka setup), sesi (Lock Now / Unlock with Touch ID,
+    auto-lock), trigger, durasi scan, retry, kamera, kecocokan, liveness, animasi, wajah (daftar, rename, on/off,
+    hapus, tambah), password (ganti/hapus, reset semua), Face Lab, dan catatan peringatan + trade-off kunci. Alias
+    pencarian: "face id", "buka pakai wajah", "wajah", dst.
+  - **Onboarding** di jendela (`UI/FaceUnlock/FaceUnlockSetupWindow.swift`, logika di `FaceUnlockOnboardingFlow`):
+    intro, izin, security notice, pre-setup, kamera, sweep 9 pose (ring + sapuan arah di jendela), nama, password,
+    selesai. Sampel disimpan di memori sampai sesi terbuka di langkah password; selesai = fitur nyala.
+  - **Sambungan ke bagian pengenalan (dibereskan saat integrasi):** `FaceUnlockEnrollmentDriver` dan
+    `FaceUnlockFaceLibrary` di `FaceUnlockSeams.swift`, dicolok lewat `FaceUnlockSetup.makeEnrollment` / `.faces`.
+    `FaceUnlockIntegrationShim.swift` (berisi `FaceUnlockKeyProvider`, `FaceUnlockKeys`, `FaceUnlockLab` sementara)
+    dihapus begitu branch pengenalan masuk. Sesi diumumkan lewat `.faceUnlockSessionDidChange`.
+  - **About:** kredit Glance (MIT, teks lisensi lengkap) dan model ArcFace InsightFace (non-komersial).
+  - **Belum diverifikasi di Mac:** prompt Touch ID, item keychain sungguhan (termasuk prompt ACL setelah rebuild),
+    mengetik di lock screen, HID Space di lock screen, jendela setup dan halaman Settings secara visual.
 - **Island pas isinya (branch `feat/island-fit`, dari 67/68/69.png):**
   - *"checked st…" (67.png):* `contentWidth(.remote)` mengukur dua jarak lebih sedikit daripada yang digambar
     `ZenithRemoteBurstRow` (HStack spacing 10 di antara lima elemen + Spacer), jadi island 20 pt terlalu sempit.
