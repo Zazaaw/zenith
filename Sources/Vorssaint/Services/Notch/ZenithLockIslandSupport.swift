@@ -12,6 +12,19 @@ import Foundation
 // page. Pure rules and sizes; the view and the service live beside the lock
 // screen's own.
 
+/// Zenith fork: dev builds log the lock screen's hand-offs beside the
+/// island's motion (`defaults write … zenithMotionTrace -bool true`,
+/// ~/Library/Logs/ZenithDeveloper/island-motion.log); the island sets
+/// `sink` as it starts. Nothing is logged without one.
+enum ZenithLockTrace {
+    nonisolated(unsafe) static var sink: ((String) -> Void)?
+
+    static func log(_ line: @autoclosure () -> String) {
+        guard let sink else { return }
+        sink("lock " + line())
+    }
+}
+
 /// What the island is showing.
 enum ZenithLockIslandMoment: Equatable {
     case rest

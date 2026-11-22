@@ -213,6 +213,14 @@ final class NotchService: ObservableObject {
         let size = host.shownSize
         return size.width > 0 && size.height > 0 ? size : nil
     }
+    /// Zenith fork: the closed island under the lock screen's padlock island
+    /// goes now, its twin on the desktop having taken its place at its size.
+    func retireIslandNow() {
+        guard let host = retiringHost else { return }
+        retiringHost = nil
+        host.close()
+        ZenithLockTrace.log("desktop island retired")
+    }
     /// Zenith fork: unlocking, the lock screen's padlock pill waiting for the
     /// island to come back and take over from it (ZenithLockHandoff).
     private var lockHandoff: ZenithLockHandoff?
@@ -1342,6 +1350,9 @@ final class NotchService: ObservableObject {
     }
 
     func syncWithPreferences() {
+#if VORSSAINT_DEVELOPMENT
+        if ZenithLockTrace.sink == nil { ZenithLockTrace.sink = { ZenithMotionTrace.log($0) } } // Zenith fork
+#endif
         // Zenith fork: an island retired under the lock screen goes once one returns.
         if let retiringHost, windowHost !== retiringHost { retiringHost.close(); self.retiringHost = nil }
         preferenceSyncWork?.cancel(); preferenceSyncWork = nil
@@ -2015,12 +2026,17 @@ final class NotchService: ObservableObject {
     private func adoptLockHandoff() {
         guard let handoff = takeLockHandoff() else { return }
         let burst = ZenithIslandBurst(.welcome(handoff.welcome), start: Date())
-        guard let windowHost, panel?.isVisible != true, showsSystemFeedback, noticeCanPresent, !peeking,
-              geometry.isNotched, !geometry.floats, !hiddenUntilHover, !hiddenAtRestInFullscreen,
-              ZenithIslandBurstTiming.replaces(notice?.zenith, with: burst, at: burst.start) else {
+        let refusal: String? = windowHost == nil ? "no island" : panel?.isVisible == true ? "already on screen"
+            : !showsSystemFeedback ? "no system feedback (full screen or hidden)" : !noticeCanPresent ? "open or busy"
+            : peeking ? "peeking" : !geometry.isNotched || geometry.floats ? "no camera" : hiddenUntilHover ? "hidden until hover"
+            : hiddenAtRestInFullscreen ? "hidden in full screen"
+            : !ZenithIslandBurstTiming.replaces(notice?.zenith, with: burst, at: burst.start) ? "a prayer's burst" : nil
+        guard let windowHost, refusal == nil else {
+            ZenithLockTrace.log("hand-off refused: \(refusal ?? "-")")
             handoff.declined()
             return
         }
+        ZenithLockTrace.log("hand-off adopted from \(handoff.size)")
         ZenithBurstWaiter.shared.cancel()
         var transaction = Transaction(animation: nil)
         transaction.disablesAnimations = true
@@ -4306,6 +4322,10 @@ final class NotchService: ObservableObject {
         let timerCouldRun = session.canRunTimer
         let wasLocked = session.locked
         change(&session)
+        if session.locked != wasLocked { // Zenith fork
+            ZenithLockTrace.log((session.locked ? "screenIsLocked" : "screenIsUnlocked")
+                                + " canPresent=\(session.canPresent) showsLockScreen=\(session.showsLockScreen)")
+        }
         // An unlock is someone at the Mac, even when the display's wake is
         // announced after it.
         if session.locked != wasLocked, session.locked ? session.hearsLockChange : session.onConsole,
