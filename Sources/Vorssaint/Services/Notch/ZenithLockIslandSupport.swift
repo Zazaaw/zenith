@@ -19,6 +19,23 @@ import Foundation
 enum ZenithLockTrace {
     nonisolated(unsafe) static var sink: ((String) -> Void)?
 
+    /// Any build: `defaults write id.satuvisual.zenith zenithLockTrace -bool true`
+    /// appends the lock hand-off events to ~/Library/Logs/Zenith/lock.log, so a
+    /// live lock and unlock can be read back. Off by default; logs nothing else.
+    static let fileSink: (String) -> Void = { line in
+        guard UserDefaults.standard.bool(forKey: "zenithLockTrace") else { return }
+        let folder = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs/Zenith", isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let url = folder.appendingPathComponent("lock.log")
+        let stamp = String(format: "%.4f ", locale: Locale(identifier: "en_US_POSIX"), ProcessInfo.processInfo.systemUptime)
+        guard let data = (stamp + line + "\n").data(using: .utf8) else { return }
+        if let handle = try? FileHandle(forWritingTo: url) {
+            handle.seekToEndOfFile(); handle.write(data); try? handle.close()
+        } else {
+            try? data.write(to: url)
+        }
+    }
+
     static func log(_ line: @autoclosure () -> String) {
         guard let sink else { return }
         sink("lock " + line())

@@ -1351,7 +1351,9 @@ final class NotchService: ObservableObject {
 
     func syncWithPreferences() {
 #if VORSSAINT_DEVELOPMENT
-        if ZenithLockTrace.sink == nil { ZenithLockTrace.sink = { ZenithMotionTrace.log($0) } } // Zenith fork
+        if ZenithLockTrace.sink == nil { ZenithLockTrace.sink = { ZenithMotionTrace.log($0); ZenithLockTrace.fileSink($0) } } // Zenith fork
+#else
+        if ZenithLockTrace.sink == nil { ZenithLockTrace.sink = ZenithLockTrace.fileSink } // Zenith fork
 #endif
         // Zenith fork: an island retired under the lock screen goes once one returns.
         if let retiringHost, windowHost !== retiringHost { retiringHost.close(); self.retiringHost = nil }
