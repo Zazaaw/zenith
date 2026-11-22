@@ -105,7 +105,7 @@ extension FaceScanWindow.Outcome {
     var summary: String {
         switch self {
         case .matched(let name, let similarity, let note):
-            return "Matched \(name) at \(String(format: "%.3f", similarity)), \(note)."
+            return "Matched \(name) at \(String(format: "%.3f", locale: Locale(identifier: "en_US_POSIX"), similarity)), \(note)."
         case .consistentlyWrongFace:
             return "Face not recognized."
         case .spoofSuspected(let reason):

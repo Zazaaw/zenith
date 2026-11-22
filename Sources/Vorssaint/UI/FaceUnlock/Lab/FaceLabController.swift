@@ -247,7 +247,7 @@ final class FaceLabController: ObservableObject {
 
     static func qualityLabel(_ quality: Float?) -> String {
         guard let quality else { return "—" }
-        return String(format: "%.0f%%", quality * 100)
+        return String(format: "%.0f%%", locale: .current, quality * 100)
     }
 
     // MARK: - Recognition
@@ -285,7 +285,7 @@ final class FaceLabController: ObservableObject {
         if let best = scored.first {
             let verdict = (bestMatch != nil) ? "MATCH" : "no match"
             let staleNote = best.identity.isStale(comparedTo: embedder) ? " [STALE — re-enroll under current model]" : ""
-            log("Recognize: best = \(best.identity.name) centroid=\(String(format: "%.3f", best.centroidSimilarity)) max=\(String(format: "%.3f", best.maxSampleSimilarity)) -> \(verdict)\(staleNote)")
+            log("Recognize: best = \(best.identity.name) centroid=\(String(format: "%.3f", locale: .current, best.centroidSimilarity)) max=\(String(format: "%.3f", locale: .current, best.maxSampleSimilarity)) -> \(verdict)\(staleNote)")
         }
     }
 
@@ -302,7 +302,7 @@ final class FaceLabController: ObservableObject {
             return
         }
         calibrationSamples.append(FaceLabCalibrationSample(centroidSimilarity: top.centroidSimilarity, isGenuine: isGenuine))
-        log("Calibration: recorded \(isGenuine ? "genuine" : "impostor") sample at \(String(format: "%.3f", top.centroidSimilarity)).")
+        log("Calibration: recorded \(isGenuine ? "genuine" : "impostor") sample at \(String(format: "%.3f", locale: .current, top.centroidSimilarity)).")
     }
 
     func clearCalibrationSamples() {

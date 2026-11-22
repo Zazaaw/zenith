@@ -140,7 +140,7 @@ struct FaceLabView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Faces detected: \(controller.detectedFaces.count)")
                     if let quality = controller.currentResult?.quality {
-                        Text("Capture quality: \(String(format: "%.0f%%", quality * 100))")
+                        Text("Capture quality: \(String(format: "%.0f%%", locale: .current, quality * 100))")
                     } else {
                         Text("Capture quality: —")
                             .foregroundStyle(.secondary)
@@ -302,7 +302,7 @@ struct FaceLabView: View {
             }
             .frame(height: 8)
 
-            Text(hasEvidence ? String(format: "%.0f%%", state.reading.level * 100) : "—")
+            Text(hasEvidence ? String(format: "%.0f%%", locale: .current, state.reading.level * 100) : "—")
                 .font(.caption.monospacedDigit())
                 .frame(width: 36, alignment: .trailing)
 
@@ -326,7 +326,7 @@ struct FaceLabView: View {
                 Text("Left EAR: \(ratioString(frame.leftEyeAspectRatio))  Right EAR: \(ratioString(frame.rightEyeAspectRatio))  Nose offset: \(ratioString(frame.noseOffsetRatio))")
                 Text("Device overlap: \(percentString(frame.deviceOverlapFraction))")
                 if let glare = frame.glare {
-                    Text("Specular: \(String(format: "%.4f", glare.specularFraction))  Cluster: \(String(format: "%.2f", glare.specularClusterRatio))  Crop: \(Int(glare.cropPixelWidth))px")
+                    Text("Specular: \(String(format: "%.4f", locale: .current, glare.specularFraction))  Cluster: \(String(format: "%.2f", locale: .current, glare.specularClusterRatio))  Crop: \(Int(glare.cropPixelWidth))px")
                 } else {
                     Text("Specular: — (no native-resolution crop this frame)")
                 }
@@ -364,12 +364,12 @@ struct FaceLabView: View {
 
     private func ratioString(_ value: CGFloat?) -> String {
         guard let value else { return "—" }
-        return String(format: "%+.3f", value)
+        return String(format: "%+.3f", locale: .current, value)
     }
 
     private func percentString(_ value: CGFloat?) -> String {
         guard let value else { return "—" }
-        return String(format: "%.0f%%", value * 100)
+        return String(format: "%.0f%%", locale: .current, value * 100)
     }
 
     // MARK: - Enrollment
@@ -469,7 +469,7 @@ struct FaceLabView: View {
 
                     Spacer()
 
-                    Text("Threshold: \(String(format: "%.2f", controller.threshold))")
+                    Text("Threshold: \(String(format: "%.2f", locale: .current, controller.threshold))")
                         .font(.caption)
                     Slider(value: $controller.threshold, in: -1...1)
                         .frame(width: 160)
@@ -478,13 +478,13 @@ struct FaceLabView: View {
                 if let best = controller.bestMatch {
                     HStack {
                         Circle().fill(.green).frame(width: 10, height: 10)
-                        Text("Best match: \(best.name) — centroid \(String(format: "%.3f", best.centroidSimilarity)), max \(String(format: "%.3f", best.maxSampleSimilarity))")
+                        Text("Best match: \(best.name) — centroid \(String(format: "%.3f", locale: .current, best.centroidSimilarity)), max \(String(format: "%.3f", locale: .current, best.maxSampleSimilarity))")
                         Text("MATCH").font(.caption.bold()).foregroundStyle(.green)
                     }
                 } else if let first = controller.recognitionResults.first {
                     HStack {
                         Circle().fill(.red).frame(width: 10, height: 10)
-                        Text("Closest: \(first.name) — centroid \(String(format: "%.3f", first.centroidSimilarity)), max \(String(format: "%.3f", first.maxSampleSimilarity))")
+                        Text("Closest: \(first.name) — centroid \(String(format: "%.3f", locale: .current, first.centroidSimilarity)), max \(String(format: "%.3f", locale: .current, first.maxSampleSimilarity))")
                         Text("NO MATCH").font(.caption.bold()).foregroundStyle(.red)
                     }
                 }
@@ -498,9 +498,9 @@ struct FaceLabView: View {
                                 Text("stale").font(.caption2.bold()).foregroundStyle(.orange)
                             }
                             Spacer()
-                            Text("centroid \(String(format: "%.3f", result.centroidSimilarity))")
+                            Text("centroid \(String(format: "%.3f", locale: .current, result.centroidSimilarity))")
                                 .foregroundStyle(.secondary)
-                            Text("max \(String(format: "%.3f", result.maxSampleSimilarity))")
+                            Text("max \(String(format: "%.3f", locale: .current, result.maxSampleSimilarity))")
                                 .foregroundStyle(.secondary)
                         }
                         .font(.caption)
@@ -554,7 +554,7 @@ struct FaceLabView: View {
 
                     if let suggested = controller.suggestedThreshold {
                         HStack {
-                            Text("Suggested threshold: \(String(format: "%.3f", suggested))")
+                            Text("Suggested threshold: \(String(format: "%.3f", locale: .current, suggested))")
                                 .font(.caption)
                             Button("Use it") {
                                 controller.threshold = Double(suggested)
@@ -602,7 +602,7 @@ struct FaceLabView: View {
 
     private func yawPitchString(_ value: Float?) -> String {
         guard let value else { return "—" }
-        return String(format: "%+.2f", value)
+        return String(format: "%+.2f", locale: .current, value)
     }
 }
 
@@ -620,7 +620,7 @@ private struct IdentityRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 ForEach(Array(identity.samples.enumerated()), id: \.offset) { index, sample in
                     HStack(spacing: 8) {
-                        Text(String(format: "%2d", index + 1))
+                        Text(String(format: "%2d", locale: .current, index + 1))
                             .foregroundStyle(.tertiary)
                         Text(sample.pose ?? "untagged")
                             .frame(width: 90, alignment: .leading)
