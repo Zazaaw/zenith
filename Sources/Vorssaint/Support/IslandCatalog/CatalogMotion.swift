@@ -101,6 +101,8 @@ enum CatalogMotion {
         Sequence(id: "motion-unlock-padlock-welcome", from: "lock-island-music", to: "lock-island-welcome"),
         Sequence(id: "motion-face-scan", from: "lock-island-face-armed", to: "lock-island-face-scanning"),
         Sequence(id: "motion-face-success-welcome", from: "lock-island-face-success", to: "lock-island-welcome"),
+        // Zenith fork: the minimal style's success straight into the welcome, never through the pill.
+        Sequence(id: "motion-face-minimal-success-welcome", from: "lock-island-face-minimal-success", to: "lock-island-welcome"),
     ]
 
     /// Zenith fork: the padlock island's own entrance as the Mac locks, drawn
@@ -118,6 +120,12 @@ enum CatalogMotion {
         Entrance(id: "motion-lock-entrance-farewell", from: "compact-music", open: true) { $0.moment = .farewell },
         Entrance(id: "motion-lock-entrance-remote", from: "compact-music") { $0.moment = .remoteLock(device: "Faiz’s iPhone") },
         Entrance(id: "motion-lock-entrance-rest", from: "compact-music") { _ in },
+        // Zenith fork: as the Mac locks now, from the bare notch, whatever face unlock shows.
+        Entrance(id: "motion-lock-entrance-notch-farewell", from: "lock-island-bare", open: true) { $0.moment = .farewell },
+        Entrance(id: "motion-lock-entrance-face-armed", from: "lock-island-bare") { $0.face = .armed },
+        Entrance(id: "motion-lock-entrance-face-minimal-scanning", from: "lock-island-bare") {
+            $0.faceStyle = .minimal; $0.face = .scanning
+        },
     ]
 
     /// Frames per second and seconds drawn; `ZENITH_MOTION_FPS` and
