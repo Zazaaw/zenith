@@ -3029,6 +3029,25 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
     - Catalog (120 fps, `ZENITH_MOTION_FPS=120 ZENITH_MOTION_LENGTH=1.2`): `motion-lock-entrance-farewell`,
       `-remote`, `-rest` digambar dari view island gembok sungguhan per frame (`frozen:`), mulai dari ukuran
       `compact-music`; `motion-unlock-welcome` dari pil ke welcome. 10 frame pertama dicek: tidak ada isi rest.
+  - *Kedip di video live (IMG_9827.MOV, 30 fps):* penyebabnya shield lock screen macOS sendiri. Shield memudarkan
+    seluruh Space lock screen, termasuk jendela pil kita, saat masuk dan keluar (±0,8 dtk), dan itu tidak bisa
+    dicegah. Saat lock, di bawah shield yang memudar masih ada island desktop yang pensiun (0,6 dtk) dengan ukuran
+    lain, jadi terlihat dua outline. Saat unlock, `screenIsUnlocked` datang setelah shield mulai (bahkan selesai)
+    memudar: selama itu island desktop masih ditutup (sesi terkunci), jadi di bawah pil yang memudar cuma ada kamera
+    telanjang; welcome baru muncul setelahnya (di video ±1 dtk kemudian). Gembok tidak membuka di video, jadi yang
+    jalan adalah jalur hand-off, hanya terlambat, bukan fallback.
+    - *Perbaikan, kembaran:* `NotchLockScreenService` membuat jendela kedua (`twin`) dengan view island gembok yang
+      sama, model yang sama, frame yang sama, tapi di desktop (level island biasa, di luar Space lock screen), jadi
+      ada di bawah shield. Selama shield memudar masuk atau keluar, bentuk di bawahnya adalah island yang sama
+      (rest, charging, focus, musik, farewell, remote, semua dari model yang sama). Island desktop yang pensiun
+      ditutup 0,05 dtk setelah kembaran tampil di ukurannya (overlap 0,6 dtk dengan ukuran lain dihapus,
+      `NotchService.retireIslandNow`). Unlock: hand-off sekarang dari kembaran (foto diambil dari kembaran),
+      `handedOver` menutup pil dan kembaran sekaligus; jalur cadangan memudarkan keduanya. Kapan pun
+      `screenIsUnlocked` datang, yang terlihat tetap satu island.
+    - *Log (build dev):* `ZenithLockTrace` menulis ke `island-motion.log` yang sama (`zenithMotionTrace`):
+      `screenIsLocked`/`screenIsUnlocked` (+ canPresent), pil dan kembaran tampil (momen, ukuran entrance), hide,
+      island desktop dipensiunkan, hand-off diadopsi (ukuran) atau ditolak (alasan), pil keluar; perubahan bentuk
+      island desktop sudah tercatat sebagai `install start=… target=…`.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
