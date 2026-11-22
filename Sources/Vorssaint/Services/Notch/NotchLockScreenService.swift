@@ -200,9 +200,9 @@ final class NotchLockScreenService {
         // first stands at the bare camera, showing nothing but the notch while
         // macOS fades its shield in, then grows straight into the farewell (or
         // "Locked from …"); the farewell holds the padlock open.
+        let began = CACurrentMediaTime()
         let padlockHold = frames.island == nil || frames.islandSurface == nil ? 0.35
-            : zenithIsland.begin(locking: closingPadlock, from: closingPadlock ? Self.entrance(frames) : nil,
-                                 after: ZenithLockHandover.shieldFadeIn)
+            : zenithIsland.begin(locking: closingPadlock, from: closingPadlock ? Self.entrance(frames) : nil)
         // Zenith fork: face unlock as it stands, from the island's first frame.
         zenithIsland.show(face: FaceUnlockPresence.shared.state)
         let makeIsland = { [model, zenithIsland] in
@@ -233,16 +233,36 @@ final class NotchLockScreenService {
         self.island = island
         self.full = full
         shownFrames = frames
-        if closingPadlock {
+        let closePadlock = { [weak self] in
+            guard let self, closingPadlock else { return }
             let work = DispatchWorkItem { [weak self] in self?.model.padlockOpen = false }
-            padlockWork = work
+            self.padlockWork?.cancel()
+            self.padlockWork = work
             DispatchQueue.main.asyncAfter(deadline: .now() + padlockHold, execute: work)
         }
+        // Zenith fork: with an entrance to come, the padlock's hold counts from it.
+        if zenithIsland.model.entranceReleased { closePadlock() }
         // Zenith fork: delegated to the lock screen Space before they are first
         // shown, so they are drawn over the lock screen from their first frame,
         // and only once the session is actually locked.
+        let generation = generation
         join(panels + [full].compactMap { $0 }, to: space, generation: generation) { [weak self] in
             guard let self else { return }
+            defer {
+                // Zenith fork: on screen at the bare notch now; once the shield
+                // has faded in, the island grows out of it, the whole spring seen.
+                if island != nil, !self.zenithIsland.model.entranceReleased {
+                    island?.displayIfNeeded()
+                    let wait = ZenithLockHandover.entranceWait(sinceLock: CACurrentMediaTime() - began)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + wait) { [weak self] in
+                        guard let self, self.showing, self.generation == generation else { return }
+                        ZenithLockTrace.log(ZenithDesktopZoom.text("entrance released at %.3f s", CACurrentMediaTime() - began)
+                                            + " face=\(self.zenithIsland.model.face)")
+                        self.zenithIsland.releaseEntrance()
+                        closePadlock()
+                    }
+                }
+            }
             for panel in panels {
                 // The padlock island is there at once, solid; the rest fades in.
                 if panel === island {
@@ -269,14 +289,14 @@ final class NotchLockScreenService {
             faceSubscription = FaceUnlockPresence.shared.$state
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] state in
-                    self?.zenithIsland.show(face: state)
+                    self?.zenithIsland.show(face: state, sessionLocked: ZenithLockScreenSpace.screenIsLocked())
                     self?.syncHover()
                 }
             syncHover()
         }
         ZenithLockTrace.log("shown locking=\(closingPadlock) island=\(island != nil)"
                             + " moment=\(zenithIsland.model.moment) entrance=\(zenithIsland.model.entrance.map { "\($0)" } ?? "-")"
-                            + " delay=\(zenithIsland.model.entranceDelay)")
+                            + " released=\(zenithIsland.model.entranceReleased)")
         playbackSubscription = NotchMusicService.shared.$playback
             .receive(on: DispatchQueue.main)
             .sink { [weak self] playback in

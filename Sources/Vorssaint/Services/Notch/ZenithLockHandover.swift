@@ -53,6 +53,20 @@ enum ZenithLockHandover {
     /// island's own welcome burst comes.
     static let burstDelay: TimeInterval = 0.1
 
+    /// At least this long at the bare notch once on screen, so the window's
+    /// first frames are the notch itself and the spring starts after them.
+    static let entranceFrames: TimeInterval = 1.0 / 30
+
+    /// Locking: how much longer the island, now on screen, stands at the bare
+    /// notch before it grows, `sinceLock` seconds after the lock began: the
+    /// rest of the shield's fade, and never less than a couple of frames.
+    /// Measured from the window being on screen, not from the island being
+    /// made, so a window shown late never skips its entrance.
+    static func entranceWait(sinceLock: TimeInterval) -> TimeInterval {
+        guard sinceLock.isFinite else { return entranceFrames }
+        return max(entranceFrames, shieldFadeIn - max(0, sinceLock))
+    }
+
     /// Whether the padlock island hands over now, `elapsed` seconds after the
     /// unlock: once the desktop has stopped zooming (or the fallback has
     /// passed) and the island itself has stopped moving; at `longest`

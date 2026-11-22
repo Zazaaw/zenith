@@ -92,6 +92,27 @@ enum FaceUnlockIslandStage: Equatable {
 
     /// Whether the island takes the pointer at all: only while face unlock shows.
     static func tracksHover(_ face: FaceUnlockIslandState) -> Bool { face != .hidden }
+
+    /// Zenith fork: Glance's continuous corners for face unlock's own shapes
+    /// (the armed pill with its glyph, the scan and its results, the Touch ID
+    /// line); every other island keeps Zenith's.
+    static func usesGlanceCorners(_ stage: FaceUnlockIslandStage, faceGlyph: Bool) -> Bool {
+        switch stage {
+        case .scan, .touchID: return true
+        case .moment(.rest): return faceGlyph
+        case .moment: return false
+        }
+    }
+
+    /// Zenith fork: the state the island takes when face unlock reports
+    /// `incoming`. A match holds through the unlock: face unlock stands down
+    /// (hidden) as the session unlocks, often a beat before the lock screen
+    /// hears of it, and the success must morph straight into the welcome
+    /// rather than back into the resting pill first. Still locked, it is taken.
+    static func next(current: FaceUnlockIslandState, incoming: FaceUnlockIslandState,
+                     sessionLocked: Bool) -> FaceUnlockIslandState {
+        current == .success && incoming == .hidden && !sessionLocked ? .success : incoming
+    }
 }
 
 /// Glance's sizes, in the island's terms. The notch panel is Glance's
@@ -110,9 +131,13 @@ enum FaceUnlockIslandLayout {
     static let minimalVideoWidth: CGFloat = 40
     static let minimalVideoInset: CGFloat = 11
     static let minimalLockSize: CGFloat = 16
-    /// The face glyph on the armed island's right wing, and its gap to the slot.
-    static let glyphSize: CGFloat = 14
-    static let glyphGap: CGFloat = 6
+    /// The face glyph on the armed island's right wing, mirroring the padlock
+    /// on the left: a little bigger than the padlock's 17 points, the glyph
+    /// being lighter, in a box as wide as the padlock's, as far from the right
+    /// edge as the padlock is from the left; and its gap to the slot.
+    static let glyphSize: CGFloat = 18
+    static var glyphBox: CGFloat { ZenithLockIsland.padlockSize + 6 }
+    static let glyphGap: CGFloat = 8
 
     /// The island for a scan: Glance's panel (or its minimal widening), never
     /// narrower than the island it grows out of.
@@ -148,7 +173,7 @@ enum FaceUnlockIslandLayout {
 
     /// The right wing's content while armed: the slot, then the face glyph.
     static func armedWing(slot: CGFloat) -> CGFloat {
-        max(0, slot) + (slot > 0 ? glyphGap : 0) + glyphSize
+        max(0, slot) + (slot > 0 ? glyphGap : 0) + glyphBox
     }
 
     /// The Touch ID line: its glyph on a tile and the words, one row below

@@ -39,9 +39,11 @@ final class ZenithLockIslandModel: ObservableObject {
     /// (the desktop island it covers) and grows from into its opening
     /// moment. Taken by the view as it starts that motion.
     var entrance: CGSize?
-    /// Zenith fork: how long the island stands at `entrance` before it
-    /// grows: as the Mac locks, the bare notch while macOS fades its shield in.
-    var entranceDelay: TimeInterval = 0
+    /// Zenith fork: whether the island may grow out of `entrance` now. As the
+    /// Mac locks it stands at the bare notch until its window is on screen
+    /// and macOS's shield has faded in; the lock screen releases it then, so
+    /// the whole spring is seen, whatever face unlock shows by that time.
+    @Published var entranceReleased = true
     /// Zenith fork: when the island's motion comes to rest (reference date
     /// seconds), set by its view: the unlock hands over only once it is still.
     var settlesAt: TimeInterval = 0
@@ -98,10 +100,10 @@ final class ZenithLockIslandController {
     /// holds it open. Locking, the island's first frame is already its
     /// opening moment, at `start` (the desktop island it covers), growing
     /// from there; nothing at rest is drawn first.
-    /// Zenith fork: `delay` keeps the island at `start` that long first (the
-    /// bare notch while macOS fades its shield in); its holds count from then.
+    /// Zenith fork: locking, the island stands at `start` (the bare notch)
+    /// until `releaseEntrance()`; the opening moment's hold counts from then.
     @discardableResult
-    func begin(locking: Bool, from start: CGSize? = nil, after delay: TimeInterval = 0) -> TimeInterval {
+    func begin(locking: Bool, from start: CGSize? = nil) -> TimeInterval {
         cancelWork()
         let options = ZenithLockIslandModel.Options.current()
         model.options = options
@@ -115,23 +117,42 @@ final class ZenithLockIslandController {
                                                     remoteDevice: locking ? lockedFrom : nil)
         model.moment = moment
         model.entrance = locking ? start : nil
-        let delay = locking && start != nil ? max(0, delay) : 0 // Zenith fork
-        model.entranceDelay = delay
+        model.entranceReleased = model.entrance == nil // Zenith fork: released by the lock screen
         if let hold = ZenithLockIsland.openingHold(moment) {
-            let began = Date()
-            schedule(after: delay + hold) { [weak self] in
-                ZenithLockTrace.log(ZenithDesktopZoom.text("opening moment over after %.2f s (hold %.2f + %.2f)",
-                                                           Date().timeIntervalSince(began), hold, delay))
-                self?.model.moment = .rest
-            }
+            if model.entranceReleased { scheduleOpeningHold(hold) } else { pendingHold = hold }
         }
-        return delay + ZenithLockIsland.padlockHold(moment)
+        return ZenithLockIsland.padlockHold(moment)
+    }
+
+    /// Zenith fork: the island's window is on screen and macOS's shield has
+    /// faded in: the island grows out of the notch now, into whatever it
+    /// shows by then, and its opening moment starts counting.
+    func releaseEntrance() {
+        guard !model.entranceReleased else { return }
+        model.entranceReleased = true
+        if let hold = pendingHold {
+            pendingHold = nil
+            scheduleOpeningHold(hold)
+        }
+    }
+
+    private func scheduleOpeningHold(_ hold: TimeInterval) {
+        let began = Date()
+        schedule(after: hold) { [weak self] in
+            ZenithLockTrace.log(ZenithDesktopZoom.text("opening moment over after %.2f s (hold %.2f)",
+                                                       Date().timeIntervalSince(began), hold))
+            self?.model.moment = .rest
+        }
     }
 
     /// Zenith fork: face unlock's state changed while the lock screen shows.
     /// The animation style is read as a scan begins, as Glance snapshots it
-    /// per attempt, so a change mid-attempt never resizes the panel.
-    func show(face: FaceUnlockIslandState, style: () -> FaceUnlockAnimationStyle = { FaceUnlockIslandStyle.current() }) {
+    /// per attempt, so a change mid-attempt never resizes the panel. A match
+    /// holds through the unlock (FaceUnlockIslandStage.next).
+    func show(face incoming: FaceUnlockIslandState, sessionLocked: Bool = true,
+              style: () -> FaceUnlockAnimationStyle = { FaceUnlockIslandStyle.current() }) {
+        let face = FaceUnlockIslandStage.next(current: model.face, incoming: incoming, sessionLocked: sessionLocked)
+        if face != incoming { ZenithLockTrace.log("face \(incoming) ignored: the match holds into the welcome") }
         guard model.face != face else { return }
         if face == .scanning || (Self.attempting(face) && !Self.attempting(model.face)) { model.faceStyle = style() }
         model.faceSuccessAt = face == .success ? Date() : nil
@@ -149,9 +170,11 @@ final class ZenithLockIslandController {
 
     /// Zenith fork: unlocked: the welcome grows in the island itself, or with
     /// none the island draws back into the bare notch.
+    /// Straight from what it shows (the success, the pill), never through the
+    /// resting pill or the camera; an entrance not yet begun grows from the notch.
     func showUnlocked(_ welcome: ZenithWelcomeBurst?) {
         cancelWork()
-        model.entrance = nil
+        model.entranceReleased = true
         model.moment = welcome.map { .welcome($0) } ?? .bare
     }
 
@@ -189,7 +212,7 @@ final class ZenithLockIslandController {
         stopPower()
         model.moment = .rest
         model.entrance = nil
-        model.entranceDelay = 0 // Zenith fork
+        model.entranceReleased = true // Zenith fork
         model.face = .hidden
         model.faceSuccessAt = nil
     }
@@ -203,7 +226,11 @@ final class ZenithLockIslandController {
     private func cancelWork() {
         work.forEach { $0.cancel() }
         work = []
+        pendingHold = nil // Zenith fork
     }
+
+    /// Zenith fork: the opening moment's hold, waiting for the entrance.
+    private var pendingHold: TimeInterval?
 
     // MARK: Power
 
