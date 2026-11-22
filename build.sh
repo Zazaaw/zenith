@@ -671,6 +671,16 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Uninstall/UninstallerSupport.swift
         Sources/Vorssaint/Services/ManagedDownloads/WhatsAppDownloadSupport.swift
         Sources/Vorssaint/Core/SecureInputSupport.swift
+        Sources/Vorssaint/Services/FaceUnlock/FaceUnlockContract.swift
+        Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockPreferences.swift
+        Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockSession.swift
+        Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockSeams.swift
+        Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockIntegrationShim.swift
+        Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockCoordinator.swift
+        Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockOnboardingFlow.swift
+        Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockSystem.swift
+        Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockKeystrokes.swift
+        Sources/Vorssaint/Core/ZenithFaceUnlockStrings.swift
         Tests/*.swift
         build/generated-tests/*.swift
     )
