@@ -571,6 +571,9 @@ enum SettingsDirectory {
                 SettingsDirectoryItem(page: .remote, title: ZenithStrings.remote(language).title,
                                       icon: "iphone.radiowaves.left.and.right",
                                       keywords: ZenithRemoteSearch.keywords(language)),
+                // Zenith fork: face unlock, a page of its own (no hub feature).
+                SettingsDirectoryItem(page: .faceUnlock, title: ZenithStrings.faceUnlock(language).title,
+                                      icon: "faceid", keywords: FaceUnlockSearch.keywords(language)),
                 SettingsDirectoryItem(page: .commandBar,
                                       title: FeatureStrings.commandBar(language).pageTitle,
                                       icon: "command",

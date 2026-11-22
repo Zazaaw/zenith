@@ -27,6 +27,7 @@ enum ZenithSettingsSearch {
         .page(.workspaces): ["workspace", "ruang kerja", "mode kerja", "preset kerja", "profil kerja"],
         .page(.lockScreen): ["lock screen", "lockscreen", "layar kunci", "kunci layar", "layar terkunci"],
         .page(.remote): ZenithRemoteSearch.aliases,
+        .page(.faceUnlock): FaceUnlockSearch.aliases,
         .page(.about): ["tentang", "tentang aplikasi", "versi", "version", "Satu Visual", "Zenith"],
     ]
 
@@ -51,6 +52,7 @@ enum ZenithSettingsSearch {
         let lockPage = ZenithStrings.lockScreenPage(language)
         let lockIsland = ZenithStrings.lockIsland(language) // the padlock island's switches
         let remote = ZenithStrings.remote(language) // iPhone Remote
+        let face = ZenithStrings.faceUnlock(language) // Face Unlock
         let widgets = ZenithStrings.lockScreenWidgets(language)
         let terminal = ZenithStrings.lockScreenTerminal(language)
         let terminalTitle = ZenithStrings.lockScreenTerminalTitle(language)
@@ -146,6 +148,15 @@ enum ZenithSettingsSearch {
                  keywords: [remote.title, remote.checklist, remote.remoteLogin, remote.tailscale, remote.devices,
                             remote.shortcut, remote.test, remote.hardening, remote.recent],
                  aliases: ZenithRemoteSearch.aliases),
+            // Face Unlock: unlock by looking at the Mac.
+            page(.zenithFaceUnlock, title: face.enable, icon: "faceid",
+                 keywords: [face.title, face.setUp, face.session, face.sessionOpen, face.sessionLocked, face.lockNow,
+                            face.unlockWithTouchID, face.autoLock, face.triggers, face.onLock, face.onWake,
+                            face.onHover, face.onSpace, face.scanning, face.scanDuration, face.retryOnHover,
+                            face.autoRetry, face.camera, face.recognition, face.matchStrictness, face.liveness,
+                            face.livenessLevel, face.animation, face.faces, face.addFace, face.password,
+                            face.passwordStored, face.passwordMissing, face.reset, face.lab, face.openLab, face.notes],
+                 aliases: FaceUnlockSearch.aliases),
             // Dynamic Island › Activity: the fork's cards.
             section(.zenithCommandActivity, in: .activity, title: commands.section, icon: "terminal",
                     keywords: [commands.toggle, commands.showAfter, commands.showFolder, commands.ignore, commands.hook],
