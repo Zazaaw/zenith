@@ -296,6 +296,8 @@ struct MetricsTests {
             ("prompter", { PrompterTests.run(suite) }),
             ("fork-settings-search", { ForkSettingsSearchTests.run(suite) }),
             ("remote-lock", { RemoteControlTests.run(suite) }), // Zenith fork: lock and status from an iPhone
+            ("face-unlock-recognition", { FaceUnlockRecognitionTests.run(suite) }), // Zenith fork
+            ("face-unlock-liveness", { FaceUnlockLivenessTests.run(suite) }), // Zenith fork: Glance's liveness self-test
         ]
         var selected = Set<String>()
         var listOnly = false

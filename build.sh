@@ -671,6 +671,22 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Uninstall/UninstallerSupport.swift
         Sources/Vorssaint/Services/ManagedDownloads/WhatsAppDownloadSupport.swift
         Sources/Vorssaint/Core/SecureInputSupport.swift
+        # Zenith fork: face unlock's recognition logic (no camera, model or store).
+        Sources/Vorssaint/Services/FaceUnlock/FaceUnlockContract.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/Liveness/LandmarkGeometry.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/Liveness/GeometryLiveness.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/Liveness/GlareCue.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/Liveness/LivenessCues.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/Liveness/LivenessScoring.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/Liveness/LivenessAnalyzer.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceUnlockRecognitionSupport.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceEmbedder.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceEnrollmentModel.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceDetector.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceEnrollmentPose.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceScanWindow.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceModelCache.swift
+        Sources/Vorssaint/UI/FaceUnlock/Lab/FaceLabCalibration.swift
         Tests/*.swift
         build/generated-tests/*.swift
     )
