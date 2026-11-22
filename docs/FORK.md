@@ -3011,6 +3011,24 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   - **Belum diverifikasi di Mac:** hand-off pil → welcome di layar sungguhan (urutan window server antara
     jendela lock screen dan panel island, satu frame tumpang tindih), island gembok tumbuh saat dikunci dari
     iPhone, dan pop glyph gembok/musik saat jendela pil hilang.
+  - *Kedip saat lock/unlock (dicoba Faiz di build rilis):*
+    - Lock: `begin(locking:)` dulu memasang `.rest` lalu `.farewell`/`.remoteLock` 0,05 dtk kemudian, jadi frame
+      pertama island gembok = gembok + bar musik, lalu diganti salam. Sekarang `begin` dipanggil sebelum jendela
+      island dibuat, momen pembuka langsung dipasang (`ZenithLockIsland.openingMoment`, test `lock-island`), dan
+      `ZenithLockIslandModel.entrance` = ukuran island desktop yang sedang pensiun di bawahnya
+      (`NotchService.retiringIslandSize`, atau kamera telanjang). View berdiri di bentuk itu sampai frame pertamanya
+      tampil, lalu jam motion dimulai di giliran berikutnya (pegas yang sama, lantai notch) ke ukuran salam; isi
+      salam terlihat sejak frame pertama, keluar dari balik kamera (teks tidak lagi terpotong "S…" saat sayap
+      tumbuh). Saat salam selesai, morph balik ke pil seperti biasa.
+    - Unlock: `unlocking()` dulu mereset `moment = .rest` dan mematikan sampler daya (slot charging hilang, pil
+      menyempit) dan `padlockOpen = true` mengubah gembok, semuanya tepat saat cross-over. Sekarang isi pil tidak
+      disentuh selama hand-off (reset lewat `end()` setelah jendelanya hilang); pil difoto (`cacheDisplay`) dan
+      frame pertama island desktop menampilkan foto itu di bentuk yang sama (`NotchCanvas.showLeavingLook`), yang
+      lalu pergi seperti halaman keluar (`ZenithContentRide.outgoing`) sementara welcome masuk. Jalur cadangan
+      (tanpa hand-off) tetap membuka gembok lalu memudar.
+    - Catalog (120 fps, `ZENITH_MOTION_FPS=120 ZENITH_MOTION_LENGTH=1.2`): `motion-lock-entrance-farewell`,
+      `-remote`, `-rest` digambar dari view island gembok sungguhan per frame (`frozen:`), mulai dari ukuran
+      `compact-music`; `motion-unlock-welcome` dari pil ke welcome. 10 frame pertama dicek: tidak ada isi rest.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.
