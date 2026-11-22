@@ -3044,6 +3044,26 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
       `NotchService.retireIslandNow`). Unlock: hand-off sekarang dari kembaran (foto diambil dari kembaran),
       `handedOver` menutup pil dan kembaran sekaligus; jalur cadangan memudarkan keduanya. Kapan pun
       `screenIsUnlocked` datang, yang terlihat tetap satu island.
+    - *Ronde berikutnya (IMG_9829.MOV, slow-motion 240 fps diputar 30 fps, jadi semua durasi 8× lebih
+      lama):* farewell ±18 dtk di video = 2,2 dtk nyata (`farewellHold`, bukan bug). Kembaran **memang
+      tergambar**: di frame video kembaran terlihat sebagai pil kedua yang lebih kecil dan lebih rendah, naik ke
+      notch. Penyebab sebenarnya: macOS men-*zoom* seluruh desktop (semua jendela desktop, termasuk island dan
+      kembaran) dari ±0,9 ke 1 selama ±0,15 dtk saat unlock (dan sebaliknya saat lock), berpusat di tengah
+      layar; poll jendela mencatat kembaran 790 → 800 → 830 → 844 → 858 → 876 pt. Jendela di Space lock screen
+      tidak ikut di-zoom, tapi ikut dipudarkan shield. Jadi jendela desktop mana pun (kembaran, atau island
+      desktop yang dibentuk jadi pil) tergeser selama zoom; island desktop yang muncul di tengah zoom (hand-off
+      +65 ms) juga tergeser, lalu pil dikeluarkan, maka celah kamera telanjang ±60 ms.
+    - *Perbaikan:* kembaran dihapus. Saat lock, island desktop ditutup seketika ketika pil gembok tampil
+      (sebelum zoom keluar), bukan 0,6 dtk kemudian. Saat unlock, island desktop ditahan di luar layar
+      (`NotchPanel.heldOffScreen`, `NotchService.holdIslandForLockScreen`) sementara jendela probe bening
+      (`ZenithDesktopZoomProbe`, 40 pt, di desktop sejak lock) membaca skala desktop dari window server tiap
+      1/120 dtk; begitu zoom selesai (`ZenithDesktopZoom.settled`: skala kembali 1, atau tidak ada zoom dalam
+      0,1 dtk, maks 0,8 dtk), hand-off didaftarkan dan island dilepas: muncul tepat di frame pil (tidak
+      tergeser), dengan foto pil, lalu pil dikeluarkan. Foto pil diambil saat unlock, sebelum shield
+      memudarkannya. Pengaman: tahanan dilepas paksa setelah 1,3 dtk.
+    - *Log rilis* (`defaults write id.satuvisual.zenith zenithLockTrace -bool true`,
+      `~/Library/Logs/Zenith/lock.log`, dari coordinator) ditambah: skala zoom pertama, lama tunggu zoom, island
+      ditahan/dilepas, rata-rata alpha foto pil, dan timer farewell (lama sebenarnya vs `farewellHold`).
     - *Log (build dev):* `ZenithLockTrace` menulis ke `island-motion.log` yang sama (`zenithMotionTrace`):
       `screenIsLocked`/`screenIsUnlocked` (+ canPresent), pil dan kembaran tampil (momen, ukuran entrance), hide,
       island desktop dipensiunkan, hand-off diadopsi (ukuran) atau ditolak (alasan), pil keluar; perubahan bentuk
