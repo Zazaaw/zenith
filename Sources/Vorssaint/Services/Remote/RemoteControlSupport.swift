@@ -396,6 +396,8 @@ enum RemoteScript {
 enum RemoteTailscale {
     static let appPath = "/Applications/Tailscale.app"
     static let cliPath = "/Applications/Tailscale.app/Contents/MacOS/Tailscale"
+    /// Makes the app's binary act as the command line tool instead of the GUI.
+    static let cliModeVariable = "TAILSCALE_BE_CLI"
 
     struct Status: Equatable {
         let running: Bool

@@ -334,8 +334,13 @@ final class RemoteControlService: ObservableObject {
             let installed = FileManager.default.fileExists(atPath: RemoteTailscale.appPath)
             var tailscale: RemoteTailscale.Status?
             if installed, FileManager.default.isExecutableFile(atPath: RemoteTailscale.cliPath) {
+                // The App Store build is the GUI's binary too; run from an
+                // app rather than a terminal it tries to open its window and
+                // fails, unless told to be the CLI.
+                var environment = ProcessInfo.processInfo.environment
+                environment[RemoteTailscale.cliModeVariable] = "1"
                 let result = BoundedProcessRunner.run(RemoteTailscale.cliPath, ["status", "--json"], timeout: 5,
-                                                      maxOutputBytes: 2_000_000)
+                                                      maxOutputBytes: 2_000_000, environment: environment)
                 if !result.timedOut { tailscale = RemoteTailscale.parse(result.output) }
             }
             let local = RemoteTailscale.localHost(SCDynamicStoreCopyLocalHostName(nil) as String?)
