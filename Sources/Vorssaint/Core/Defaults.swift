@@ -975,6 +975,21 @@ enum DefaultsKey {
     /// Zenith fork: lock and check status from an iPhone (RemoteControlService). Off by default and
     /// deliberately not registered, so it never travels in a settings backup to another Mac.
     static let zenithRemoteEnabled = "zenithRemoteEnabled"
+    // Zenith fork: face unlock (Services/FaceUnlock). The switch, the camera and whether the
+    // security notice was read stay on this Mac and out of settings backups; secrets never
+    // live in preferences (the key is in the login keychain, the password an encrypted file).
+    static let faceUnlockEnabled = "faceUnlockEnabled"
+    static let faceUnlockCameraID = "faceUnlockCameraID" // a camera's uniqueID; absent = system default
+    static let faceUnlockNoticeAccepted = "faceUnlockNoticeAccepted"
+    static let faceUnlockTriggers = "faceUnlockTriggers" // FaceUnlockTriggers.encoded
+    static let faceUnlockAutoLockDays = "faceUnlockAutoLockDays" // FaceUnlockAutoLock.rawValue, 0 = never
+    static let faceUnlockLivenessEnabled = "faceUnlockLivenessEnabled"
+    static let faceUnlockLivenessMode = "faceUnlockLivenessMode" // "light" or "heavy"
+    static let faceUnlockMatchThreshold = "faceUnlockMatchThreshold" // cosine similarity, Double
+    static let faceUnlockDetectionSeconds = "faceUnlockDetectionSeconds" // 3...10
+    static let faceUnlockRetryOnHover = "faceUnlockRetryOnHover"
+    static let faceUnlockAutoRetry = "faceUnlockAutoRetry" // one automatic retry per lock after a failure
+    static let faceUnlockAnimationStyle = "faceUnlockAnimationStyle" // FaceUnlockAnimationStyle.rawValue
     // Zenith fork: long-running terminal commands in the closed island (CommandActivityService).
     static let notchCommandActivity = "notchCommandActivity"
     static let notchCommandThreshold = "notchCommandThreshold" // seconds before a command shows: 5, 8, 15 or 30
@@ -1928,6 +1943,16 @@ enum Defaults {
         DefaultsKey.notchLockScreenTerminalLines: NotchLockScreenTerminalSelection.defaultValue,
         DefaultsKey.notchLockScreenTerminalProjects: false,
         DefaultsKey.notchLockScreenTerminalTitle: "", // Zenith fork
+        // Zenith fork: face unlock (FaceUnlockPreferences). The switch is deliberately not here.
+        DefaultsKey.faceUnlockTriggers: FaceUnlockTriggers.defaultEncoded,
+        DefaultsKey.faceUnlockAutoLockDays: FaceUnlockAutoLock.sevenDays.rawValue,
+        DefaultsKey.faceUnlockLivenessEnabled: true,
+        DefaultsKey.faceUnlockLivenessMode: FaceUnlockLivenessLevel.light.rawValue,
+        DefaultsKey.faceUnlockMatchThreshold: FaceUnlockMatchLevel.standard.threshold,
+        DefaultsKey.faceUnlockDetectionSeconds: FaceUnlockPreferences.defaultDetectionSeconds,
+        DefaultsKey.faceUnlockRetryOnHover: true,
+        DefaultsKey.faceUnlockAutoRetry: false,
+        DefaultsKey.faceUnlockAnimationStyle: FaceUnlockAnimationStyle.original.rawValue,
         // Zenith fork: lock screen v2 (ZenithLockScreenOption.isOnByDefault).
         DefaultsKey.zenithLockJobs: true,
         DefaultsKey.zenithLockJobExport: true,
