@@ -188,6 +188,10 @@ rm -rf "$HOME/Library/Saved Application State/$BUNDLE.savedState"
 # Clipboard history, shelf files, captures and the share delete tokens live
 # here; the in-app uninstall takes them, so this path must not keep them.
 rm -rf "$HOME/Library/Application Support/$BUNDLE"
+# Zenith fork: face unlock's sealed password and faces went with the folder
+# above. Its session key stays in the login keychain: this script does not
+# touch the keychain (the in-app uninstall removes it), so say where it is.
+echo "  Face unlock: if you used it, delete \"Zenith Face Unlock\" ($BUNDLE.face-unlock) in Keychain Access."
 rm -rf "$HOME/Library/Caches/$BUNDLE"
 # Written by URLSession on the app's behalf, so they exist without the app ever
 # naming the path; `defaults delete` does not reach them either.

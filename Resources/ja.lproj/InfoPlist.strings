@@ -11,7 +11,7 @@
 "NSMicrophoneUsageDescription" = "Zenithは、画面収録でマイクをオンにしたときだけ音声を収録します。一時リンクを作成しない限り、音声はMac上に保存されます。";
 
 /* macOS Camera permission prompt. */
-"NSCameraUsageDescription" = "Zenithは、開いたプレビューウインドウにのみカメラを表示し、通話前に自分の映りを確認できるようにします。何も録画されず、Macの外に送信されることもありません。";
+"NSCameraUsageDescription" = "Zenithは、開いたプレビューウインドウでカメラを使います。Face Unlockをオンにした場合は、ロック画面で顔を認識するためにも使います。動画は録画されず、Macの外に送信されることもありません。";
 
 /* macOS Downloads folder permission prompt. */
 "NSDownloadsFolderUsageDescription" = "Zenithは、ダウンロード内のローカルメタデータを確認し、選択した確認済みWhatsAppファイルだけを確認、整理、またはゴミ箱へ移動します。スクリーンショットをここに保存している場合、クリーンアップは忘れられたスクリーンショットも探します。";

@@ -11,7 +11,7 @@
 "NSMicrophoneUsageDescription" = "Zenith nahráva váš mikrofón len vtedy, keď ho zapnete pre nahrávanie obrazovky. Zvuk ostáva na vašom Macu, pokiaľ sa nerozhodnete vytvoriť dočasný odkaz.";
 
 /* macOS Camera permission prompt. */
-"NSCameraUsageDescription" = "Zenith zobrazuje vašu kameru len v okne náhľadu, ktoré otvoríte, aby ste pred hovorom videli, ako vyzeráte. Nič sa nenahráva a nič neopustí váš Mac.";
+"NSCameraUsageDescription" = "Zenith používa vašu kameru v okne náhľadu, ktoré otvoríte, a ak zapnete Face Unlock, aj na rozpoznanie vašej tváre na uzamknutej obrazovke. Nenahráva sa žiadne video a nič neopustí váš Mac.";
 
 /* macOS Downloads folder permission prompt. */
 "NSDownloadsFolderUsageDescription" = "Zenith kontroluje lokálne metadáta v priečinku Stiahnuté, aby preveril, usporiadal alebo presunul do Koša len potvrdené súbory z WhatsAppu, ktoré vyberiete. Čistenie tiež hľadá zabudnuté snímky obrazovky, ak ich sem ukladáte.";
