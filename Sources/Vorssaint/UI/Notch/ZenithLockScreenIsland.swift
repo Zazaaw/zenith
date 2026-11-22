@@ -54,19 +54,32 @@ struct ZenithLockScreenIsland: View {
 
     // MARK: Size and motion
 
+    /// The padlock pill at rest, with what its right wing shows.
+    private var restGoal: CGSize {
+        ZenithLockIsland.size(camera: camera, wing: ZenithLockIsland.wing(for: slotWidth(slot), resting: restingWing))
+    }
+
+    /// Zenith fork (remote lock): the island grown below the camera, and its lines.
+    private func remoteFit(_ device: String) -> ZenithIslandBurstLayout.Fit {
+        ZenithLockIsland.remoteFit(device: device, camera: size.height, resting: restGoal.width,
+                                   screenWidth: geometry.screen.width)
+    }
+
     /// Where the island is headed for what it shows now.
     private var goal: CGSize {
         switch island.moment {
         case .rest:
-            return ZenithLockIsland.size(camera: camera, wing: ZenithLockIsland.wing(for: slotWidth(slot), resting: restingWing))
+            return restGoal
         case .farewell:
-            let width = Self.textWidth(text.seeYou(island.firstName), size: 13, weight: .semibold)
+            let width = Self.farewellWidth(text.seeYou(island.firstName))
             return ZenithLockIsland.size(camera: camera, wing: ZenithLockIsland.wing(for: width, resting: restingWing))
-        case .remoteLock(let device): // Zenith fork: locked from an iPhone
-            return ZenithLockIsland.size(camera: camera, wing: ZenithLockIsland.wing(for: Self.remoteWidth(device),
-                                                                                       resting: restingWing))
+        case .remoteLock(let device): // Zenith fork: locked from an iPhone, grown below the camera
+            return remoteFit(device).size
         }
     }
+
+    /// The farewell beside the camera, as wide as its wing must be.
+    static func farewellWidth(_ text: String) -> CGFloat { textWidth(text, size: 13, weight: .semibold) + 2 }
 
     /// A new goal carries the running motion on from where it is, at its
     /// speed; at rest it starts from the last goal. Reduce Motion snaps.
@@ -105,10 +118,30 @@ struct ZenithLockScreenIsland: View {
         let outline = NotchShape(attached: true, radius: NotchLayout.surfaceRadius(height: shape.height))
         return ZStack(alignment: .top) {
             outline.fill(.black)
-            wings(width: shape.width)
-                .frame(width: shape.width, height: shape.height, alignment: .top)
-                .clipShape(outline)
+            ZStack(alignment: .top) {
+                if case .remoteLock(let device) = island.moment { // Zenith fork: grown below the camera
+                    grownRemote(device)
+                        .transition(.zenithMorph(reduceMotion: reduceMotion))
+                } else {
+                    wings(width: shape.width)
+                        .transition(.zenithMorph(reduceMotion: reduceMotion))
+                }
+            }
+            .animation(ZenithMorph.animation(reduceMotion: reduceMotion), value: island.moment)
+            .frame(width: shape.width, height: shape.height, alignment: .top)
+            .clipShape(outline)
         }
+    }
+
+    /// Zenith fork (remote lock): the row under the camera, with the padding
+    /// of the island it grew into on each side and below.
+    private func grownRemote(_ device: String) -> some View {
+        let fit = remoteFit(device)
+        let shoulder = NotchLayout.shoulder(height: fit.size.height)
+        return ZenithLockRemoteRow(device: device, lines: fit.lines)
+            .padding(.horizontal, ZenithIslandRoom.edge + shoulder)
+            .padding(.top, size.height + ZenithIslandInset.belowCamera)
+            .frame(width: fit.size.width, height: fit.size.height, alignment: .top)
     }
 
     /// The padlock beside the camera and, across it, the slot or the farewell,
@@ -128,9 +161,6 @@ struct ZenithLockScreenIsland: View {
                         .foregroundStyle(.white)
                         .lineLimit(1)
                         .transition(.zenithMorph(reduceMotion: reduceMotion))
-                } else if case .remoteLock(let device) = island.moment { // Zenith fork
-                    Self.remoteLock(device)
-                        .transition(.zenithMorph(reduceMotion: reduceMotion))
                 } else {
                     slotView(slot)
                         .id(slotKey(slot))
@@ -143,31 +173,6 @@ struct ZenithLockScreenIsland: View {
             .animation(ZenithMorph.animation(reduceMotion: reduceMotion), value: slotKey(slot))
         }
         .frame(width: width, height: size.height)
-    }
-
-    /// Zenith fork (remote lock): "Locked from Faiz’s iPhone" over "just now",
-    /// and the iPhone at the outer edge.
-    static func remoteLock(_ device: String) -> some View {
-        HStack(spacing: 7) {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(RemoteText.lockedFrom(device))
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .truncationMode(.middle)
-                Text(RemoteText.justNow)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.55))
-            }
-            Image(systemName: "iphone")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.85))
-        }
-        .lineLimit(1)
-    }
-
-    static func remoteWidth(_ device: String) -> CGFloat {
-        max(textWidth(RemoteText.lockedFrom(device), size: 12, weight: .semibold),
-            textWidth(RemoteText.justNow, size: 10, weight: .medium)) + 7 + 12
     }
 
     private func padlock(tint: Color) -> some View {
@@ -217,5 +222,31 @@ struct ZenithLockScreenIsland: View {
             .foregroundStyle(violet)
             .lineLimit(1)
         }
+    }
+}
+
+/// Zenith fork (remote lock): the padlock on its tile, "Locked from Faiz’s
+/// iPhone" over "just now", and the iPhone at the end, laid out with the
+/// pieces and gaps ZenithLockIsland.remoteRow measures.
+struct ZenithLockRemoteRow: View {
+    let device: String
+    var lines = 1
+
+    private typealias Layout = ZenithIslandBurstLayout
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ZenithBurstTile(symbol: "lock.fill", tint: .white, fill: 0.12)
+            ZenithBurstWords(title: RemoteText.lockedFrom(device), subtitle: RemoteText.justNow, titleLines: lines)
+                .padding(.leading, Layout.tileGap)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Image(systemName: "iphone")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.85))
+                .frame(width: Layout.remoteGlyph, height: Layout.markSide)
+                .padding(.leading, Layout.columnGap)
+        }
+        .frame(minHeight: Layout.welcomeRow)
+        .foregroundStyle(.white)
     }
 }

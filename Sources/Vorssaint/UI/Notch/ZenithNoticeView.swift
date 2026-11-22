@@ -133,7 +133,7 @@ extension ZenithNotice.Tone {
 
 /// One row: glyph, title over subtitle, accessory. Each piece blurs in after
 /// the one before it.
-private struct ZenithNoticeContent: View {
+struct ZenithNoticeContent: View {
     let notice: ZenithNotice
     let shown: Bool
     let reduceMotion: Bool
@@ -437,7 +437,8 @@ private struct ZenithNoticeCheckShape: Shape {
 enum ZenithNoticeMeasure {
     static let pillFontSize: CGFloat = 12.5
     static let pillPadding: CGFloat = 14
-    static let figureGap: CGFloat = 12
+    /// The battery figure's gap, shared with the charging burst's measure.
+    static var figureGap: CGFloat { ZenithIslandBurstLayout.figureGap }
 
     /// `fixed` is everything but the text, with the gaps between the pieces.
     /// A low battery notice is measured as it reads with Low Power Mode on

@@ -140,8 +140,30 @@ extension CatalogShots {
             burst("burst-unplugged-low") { charge(.onBattery, percent: 18, minutes: nil) },
             burst("burst-charging-capsule", preferences: [DefaultsKey.notchSilhouette: NotchSilhouette.capsule.rawValue],
                   geometry: capsule) { charge(.charging, percent: 82, minutes: 70) },
+            // Zenith fork: the longest words each burst takes, past the widest island.
+            burst("burst-remote-status-long") { .remote(ZenithRemoteBurst(device: longDevice)) },
+            burst("burst-claude-long") {
+                .agent(ZenithAgentBurst(provider: .claude, title: ZenithStrings.claudeChime(.ptBR).needsYou,
+                                        subtitle: "satuvisual-zenith-island-fit-review-worktree-a0bfa27a-final-pass"))
+            },
+            burst("burst-welcome-long") {
+                let text = ZenithStrings.lockIsland(.ru)
+                return .welcome(ZenithWelcomeBurst(
+                    title: text.welcomeBack("Maximiliano"),
+                    subtitle: text.detail(duration: ZenithLockIsland.duration(26 * 3_600, locale: Locale(identifier: "ru_RU")),
+                                          notifications: nil) + " · " + RemoteText.welcomeDetail(device: longDevice, seconds: 80 * 60),
+                    photo: nil, initials: "MH"))
+            },
+            burst("burst-charge-long") {
+                .charge(ZenithChargeBurst.make(.charging, percent: 80, minutes: nil, hint: ZenithStrings.notices(.ptBR).chargeHint,
+                                               island: ZenithStrings.island(.ptBR), notices: ZenithStrings.notices(.ptBR),
+                                               locale: Locale(identifier: "pt_BR")))
+            },
         ]
     }
+
+    /// Zenith fork: the longest device name the remote script passes on (40 characters).
+    static let longDevice = "Muhammad Faiz Hawari’s iPhone 17 Pro Max"
 
     /// A charger moment as the notice center builds it.
     static func charge(_ state: ZenithChargeState, percent: Int, minutes: Int?, hint: String? = nil) -> ZenithIslandBurst.Content {

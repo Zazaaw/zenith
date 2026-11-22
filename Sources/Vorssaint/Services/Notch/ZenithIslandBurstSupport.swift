@@ -242,7 +242,11 @@ enum ZenithIslandBurstTiming {
 }
 
 /// The burst's island: a row right below the camera, with the open
-/// island's padding beside and below it (ZenithIslandInset).
+/// island's padding beside and below it (ZenithIslandInset). The row's
+/// pieces and the gaps between them are measured here from the same
+/// constants the views lay them out with (`row(_:)`), so the island is never
+/// narrower than what it draws. Past the widest island the subtitle wraps to
+/// a second line instead of truncating.
 enum ZenithIslandBurstLayout {
     // Prayer.
     static let tile: CGFloat = 46
@@ -253,32 +257,125 @@ enum ZenithIslandBurstLayout {
     static let progressHeight: CGFloat = 3
     static let progressGap: CGFloat = 12
     static let prayerTitleFont = NSFont.systemFont(ofSize: 17, weight: .semibold)
-    static let prayerSubtitleFont = NSFont.systemFont(ofSize: 13, weight: .regular)
+    static let prayerSubtitleFont = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .regular)
     static let nextLabelFont = NSFont.systemFont(ofSize: 11, weight: .medium)
-    static let nextValueFont = NSFont.systemFont(ofSize: 14, weight: .semibold)
+    static let nextValueFont = NSFont.monospacedDigitSystemFont(ofSize: 14, weight: .semibold)
     // Charge.
     /// The title over the subtitle, which the battery centres against.
     static let chargeRow: CGFloat = 36
     static let chargeTitleFont = NSFont.systemFont(ofSize: 15, weight: .semibold)
-    static let chargeSubtitleFont = NSFont.systemFont(ofSize: 12.5, weight: .regular)
+    static let chargeSubtitleFont = NSFont.monospacedDigitSystemFont(ofSize: 12.5, weight: .regular)
     static let figureFont = NSFont.monospacedDigitSystemFont(ofSize: ZenithNoticeLayout.figureSize, weight: .semibold)
-    // Welcome and agent: a mark, two lines, and (welcome) the picture.
+    /// Between the battery and its percentage (ZenithBatteryFigure).
+    static let figureGap: CGFloat = 12
+    /// Between a title and the subtitle below it.
+    static let lineSpacing: CGFloat = 2
+    /// What a subtitle's second line adds to its row.
+    static let lineHeight: CGFloat = 16
+    /// What a title's second line adds, where the title is what wraps.
+    static let titleLineHeight: CGFloat = 19
+    /// A line of text drawn by SwiftUI can come out a point or two wider than
+    /// AppKit measures it; each piece of text keeps this much over.
+    static let textSlack: CGFloat = 2
+    // Welcome, agent, and the lock screen's remote lock: a tile, two lines,
+    // and (welcome) the picture.
     static let welcomeRow: CGFloat = 38
-    static let markSide: CGFloat = 30
-    static let photoSide: CGFloat = 34
+    static let markSide: CGFloat = 36
+    /// The tile's corner: rounded like the prayer's, scaled to its side.
+    static let markRadius: CGFloat = 11
+    static let photoSide: CGFloat = 36
     // Remote: one line, the iPhone, the name, what it did and the eye.
     static let remoteRow: CGFloat = 26
     static let remoteGlyph: CGFloat = 18
     static let remoteGap: CGFloat = 10
+    /// Between the name and what it did, on the one line.
+    static let remoteWordGap: CGFloat = 7
     static let remoteDetailFont = NSFont.systemFont(ofSize: 15, weight: .regular)
 
-    /// The rows' height, without the strip above them or the room below.
-    static func contentHeight(_ burst: ZenithIslandBurst) -> CGFloat {
+    /// A burst's row from left to right: fixed pieces (glyphs, tiles, the
+    /// battery, the next prayer, the picture) with their gaps before and
+    /// after the words, and the words' own widths.
+    struct Row: Equatable {
+        /// Everything before the words, the gap to them included.
+        var leading: CGFloat
+        /// Everything after the words, the gap from them included.
+        var trailing: CGFloat = 0
+        var title: CGFloat
+        var subtitle: CGFloat
+        /// Set when the title and subtitle share one line, this far apart
+        /// (the remote status); otherwise the subtitle is below the title.
+        var inlineGap: CGFloat? = nil
+        /// Whether the title, rather than the subtitle, takes the second
+        /// line: "Locked from {a long device name}" over "just now".
+        var wrapsTitle = false
+
+        /// The row's width on one line, the gaps included.
+        var width: CGFloat {
+            let words = inlineGap.map { title + (subtitle > 0 ? $0 + subtitle : 0) } ?? max(title, subtitle)
+            return leading + words + trailing
+        }
+
+        /// Whether the words fit `content` points on `lines` lines: on one,
+        /// the whole row; on two, the line that wraps within two and the
+        /// other on its own.
+        func fits(_ content: CGFloat, lines: Int) -> Bool {
+            guard lines > 1 else { return width <= content + 0.5 }
+            let room = content - leading - trailing + 0.5
+            return wrapsTitle ? title <= room * 2 && subtitle <= room : title <= room && subtitle <= room * 2
+        }
+    }
+
+    /// A line of text, with the room SwiftUI may draw it in.
+    static func words(_ text: String, _ font: NSFont) -> CGFloat {
+        let width = ZenithIslandRoom.measure(text, font: font)
+        return width > 0 ? width + textSlack : 0
+    }
+
+    /// The battery and its percentage, as ZenithBatteryFigure draws them:
+    /// the body, its nub and the gap to it, then the figure.
+    static func figureWidth(percent: Int?) -> CGFloat {
+        let battery = ZenithNoticeLayout.batteryWidth + 4
+        guard let percent else { return battery }
+        return battery + figureGap + words("\(ZenithNoticeFormat.clamped(percent))%", figureFont)
+    }
+
+    /// The next prayer's column, the label over the time.
+    static func nextWidth(_ prayer: ZenithPrayerBurst) -> CGFloat {
+        prayer.next.map { max(words(prayer.nextLabel, nextLabelFont), words($0, nextValueFont)) } ?? 0
+    }
+
+    static func row(_ burst: ZenithIslandBurst) -> Row {
         switch burst.content {
-        case .prayer: return prayerRow + progressGap + progressHeight
-        case .charge, .agent: return chargeRow
-        case .welcome: return welcomeRow
-        case .remote: return remoteRow
+        case .prayer(let prayer):
+            let next = nextWidth(prayer)
+            return Row(leading: tile + tileGap, trailing: next > 0 ? columnGap + next : 0,
+                       title: words(prayer.title, prayerTitleFont), subtitle: words(prayer.subtitle, prayerSubtitleFont))
+        case .charge(let charge):
+            return Row(leading: figureWidth(percent: charge.percent) + columnGap,
+                       title: words(charge.title, chargeTitleFont), subtitle: words(charge.subtitle, chargeSubtitleFont))
+        case .welcome(let welcome):
+            return Row(leading: markSide + tileGap, trailing: columnGap + photoSide,
+                       title: words(welcome.title, chargeTitleFont), subtitle: words(welcome.subtitle, chargeSubtitleFont))
+        case .agent(let agent):
+            return Row(leading: markSide + tileGap,
+                       title: words(agent.title, chargeTitleFont), subtitle: words(agent.subtitle, chargeSubtitleFont))
+        case .remote(let remote):
+            return Row(leading: remoteGlyph + remoteGap, trailing: columnGap + remoteGlyph,
+                       title: words(remote.device, chargeTitleFont), subtitle: words(remote.subtitle, remoteDetailFont),
+                       inlineGap: remoteWordGap)
+        }
+    }
+
+    /// The rows' height on `lines` lines, without the strip above them or
+    /// the room below.
+    static func contentHeight(_ burst: ZenithIslandBurst, lines: Int = 1) -> CGFloat {
+        let more = CGFloat(max(1, min(2, lines)) - 1)
+        switch burst.content {
+        case .prayer: return prayerRow + more * lineHeight + progressGap + progressHeight
+        case .charge, .agent: return chargeRow + more * lineHeight
+        case .welcome: return welcomeRow + more * lineHeight
+        // Two lines put what it did below the name, as a welcome reads.
+        case .remote: return more > 0 ? welcomeRow : remoteRow
         }
     }
 
@@ -288,30 +385,8 @@ enum ZenithIslandBurstLayout {
         geometry.floats ? ZenithIslandRoom.vertical + (geometry.floatingGap ?? 0) : ZenithIslandInset.padding
     }
 
-    /// The content's width, the gaps included.
-    static func contentWidth(_ burst: ZenithIslandBurst) -> CGFloat {
-        let measure = ZenithIslandRoom.measure
-        switch burst.content {
-        case .prayer(let prayer):
-            let words = max(measure(prayer.title, prayerTitleFont), measure(prayer.subtitle, prayerSubtitleFont)) + 2
-            let next = prayer.next.map { max(measure(prayer.nextLabel, nextLabelFont), measure($0, nextValueFont)) + 2 } ?? 0
-            return tile + tileGap + words + (next > 0 ? columnGap + next : 0)
-        case .charge(let charge):
-            let figure = charge.percent.map { ZenithNoticeLayout.batteryWidth + 4 + 12 + measure("\($0)%", figureFont) + 2 }
-                ?? ZenithNoticeLayout.batteryWidth + 4
-            let words = max(measure(charge.title, chargeTitleFont), measure(charge.subtitle, chargeSubtitleFont)) + 2
-            return figure + columnGap + words
-        case .welcome(let welcome):
-            let words = max(measure(welcome.title, chargeTitleFont), measure(welcome.subtitle, chargeSubtitleFont)) + 2
-            return markSide + tileGap + words + columnGap + photoSide
-        case .agent(let agent):
-            let words = max(measure(agent.title, chargeTitleFont), measure(agent.subtitle, chargeSubtitleFont)) + 2
-            return markSide + tileGap + words
-        case .remote(let remote):
-            let words = measure(remote.device, chargeTitleFont) + 2 + remoteGap + measure(remote.subtitle, remoteDetailFont) + 2
-            return remoteGlyph + remoteGap + words + columnGap + remoteGlyph
-        }
-    }
+    /// The content's width on one line, the gaps included.
+    static func contentWidth(_ burst: ZenithIslandBurst) -> CGFloat { row(burst).width }
 
     /// Where the row starts from the island's top: right below the camera's
     /// strip, or inside a floating capsule's margin and room.
@@ -320,14 +395,45 @@ enum ZenithIslandBurstLayout {
             : geometry.stripHeight + ZenithIslandInset.belowCamera
     }
 
+    /// The island for a burst, the lines its words take and the room it
+    /// leaves them.
+    struct Fit: Equatable {
+        let size: CGSize
+        let lines: Int
+        /// The row's width inside the island's edges and shoulders.
+        let content: CGFloat
+    }
+
+    /// One line, as wide as it needs by the room rule; past the widest
+    /// island, the subtitle on a second line.
+    static func fit(_ burst: ZenithIslandBurst, geometry: NotchGeometry) -> Fit {
+        fit(row(burst), height: { contentHeight(burst, lines: $0) }, top: rowTop(geometry: geometry),
+            bottom: bottomInset(geometry: geometry), minimum: minimumWidth(burst), floats: geometry.floats,
+            screenWidth: geometry.screen.width)
+    }
+
+    /// The island around `row`, `top` points from the island's top to the
+    /// row and `bottom` below it, whose rows are `height(lines)` tall: as
+    /// wide as the row on one line by the room rule, at least `minimum` and
+    /// the island it covers, and on two lines once that is the widest.
+    static func fit(_ row: Row, height: (Int) -> CGFloat, top: CGFloat, bottom: CGFloat, minimum: CGFloat,
+                    covering: CGFloat = 0, floats: Bool, screenWidth: CGFloat) -> Fit {
+        let edge = ZenithIslandRoom.edge(floats: floats)
+        func island(lines: Int) -> Fit {
+            let total = top + height(lines) + bottom
+            // A floating capsule draws its pill inside the same shoulders (NotchLayout.capsuleBody).
+            let shoulder = NotchLayout.shoulder(height: total)
+            let width = ZenithIslandRoom.width(content: row.width, shoulder: shoulder, covering: covering,
+                                               minimum: minimum, edge: edge, screenWidth: screenWidth)
+            return Fit(size: CGSize(width: width, height: total), lines: lines,
+                       content: ZenithIslandRoom.contentWidth(width: width, shoulder: shoulder, edge: edge))
+        }
+        let one = island(lines: 1)
+        return row.fits(one.content, lines: 1) ? one : island(lines: 2)
+    }
+
     static func size(_ burst: ZenithIslandBurst, geometry: NotchGeometry) -> CGSize {
-        let height = rowTop(geometry: geometry) + contentHeight(burst) + bottomInset(geometry: geometry)
-        // A floating capsule draws its pill inside the same shoulders (NotchLayout.capsuleBody).
-        let shoulder = NotchLayout.shoulder(height: height)
-        let width = ZenithIslandRoom.width(content: contentWidth(burst), shoulder: shoulder, minimum: minimumWidth(burst),
-                                           edge: ZenithIslandRoom.edge(floats: geometry.floats),
-                                           screenWidth: geometry.screen.width)
-        return CGSize(width: width, height: height)
+        fit(burst, geometry: geometry).size
     }
 
     /// A charge says little; it keeps a smaller island than a prayer.

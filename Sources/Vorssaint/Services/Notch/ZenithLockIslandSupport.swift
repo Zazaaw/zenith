@@ -104,13 +104,50 @@ enum ZenithLockIsland {
         CGSize(width: camera.width + wing * 2, height: camera.height)
     }
 
-    /// The island's window: room for the farewell and its swing around the
-    /// resting island, still within the screen. The window takes no clicks.
+    /// The island's window: room for the farewell, the island grown below
+    /// the camera (`grown`) and their swing around the resting island, still
+    /// within the screen. The window takes no clicks.
     static func windowFrame(around surface: CGRect, in screen: CGRect) -> CGRect {
         let swing = ZenithIslandMotion.widthSwingLimit + ZenithIslandMotion.narrowingLimit
-        let width = min(screen.width, surface.width + maximumWing * 2 + swing * 2)
-        let height = surface.height + ZenithIslandMotion.heightSwingLimit + ZenithIslandMotion.flatteningLimit
+        let widest = max(surface.width + maximumWing * 2, ZenithIslandRoom.maximumWidth)
+        let width = min(screen.width, widest + swing * 2)
+        let height = grownHeight(camera: surface.height, lines: 2) + ZenithIslandMotion.heightSwingLimit
+            + ZenithIslandMotion.flatteningLimit
         let frame = CGRect(x: surface.midX - width / 2, y: surface.maxY - height, width: width, height: height)
         return frame.intersection(screen).integral
+    }
+
+    // MARK: Grown below the camera
+
+    /// Zenith fork: "Locked from Faiz’s iPhone" says more than a wing holds,
+    /// so the island grows down into two lines below the camera, the way
+    /// the desktop island's welcome does: the padlock on its tile, the words,
+    /// and the iPhone at the end, with the island's padding around them. The
+    /// same pieces and gaps as the welcome (ZenithIslandBurstLayout).
+    static func remoteRow(device: String) -> ZenithIslandBurstLayout.Row {
+        typealias Layout = ZenithIslandBurstLayout
+        return .init(leading: Layout.markSide + Layout.tileGap, trailing: Layout.columnGap + Layout.remoteGlyph,
+                     title: Layout.words(RemoteText.lockedFrom(device), Layout.chargeTitleFont),
+                     subtitle: Layout.words(RemoteText.justNow, Layout.chargeSubtitleFont), wrapsTitle: true)
+    }
+
+    /// The grown island's height for a strip `camera` points tall: the row
+    /// right under it, a long device's name on a second line, and the
+    /// island's padding below.
+    static func grownHeight(camera: CGFloat, lines: Int) -> CGFloat {
+        let row = ZenithIslandBurstLayout.welcomeRow
+            + CGFloat(max(1, min(2, lines)) - 1) * ZenithIslandBurstLayout.titleLineHeight
+        return ZenithIslandInset.height(content: row, strip: camera)
+    }
+
+    /// The island grown for a remote lock, at least as wide as the island
+    /// it grows out of (`resting`), so none of that one shows past it.
+    static func remoteFit(device: String, camera: CGFloat, resting: CGFloat,
+                          screenWidth: CGFloat) -> ZenithIslandBurstLayout.Fit {
+        ZenithIslandBurstLayout.fit(remoteRow(device: device),
+                                    height: { grownHeight(camera: camera, lines: $0) - camera - ZenithIslandInset.belowCamera
+                                        - ZenithIslandInset.padding },
+                                    top: camera + ZenithIslandInset.belowCamera, bottom: ZenithIslandInset.padding,
+                                    minimum: 360, covering: resting, floats: false, screenWidth: screenWidth)
     }
 }
