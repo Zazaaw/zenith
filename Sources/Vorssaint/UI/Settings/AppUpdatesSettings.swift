@@ -19,6 +19,7 @@ struct AppUpdatesSettings: View {
 
     var body: some View {
         Form {
+            ZenithScreenPreviewSection(group: .appUpdates) // Zenith fork
             Section(text.pageTitle) {
                 Text(text.caption)
                     .font(.caption)

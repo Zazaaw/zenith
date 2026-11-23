@@ -7,9 +7,17 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct MediaSettings: View {
+    // Zenith fork: the preview card above the workspace, on its tool.
+    @AppStorage(DefaultsKey.mediaLastTool) private var toolRaw = MediaTool.videoCompressor.rawValue
+
     var body: some View {
-        MediaWorkspaceView(compact: false)
-            .padding(16)
+        VStack(spacing: 14) {
+            ZenithScreenPreviewCard(group: .media,
+                                    current: MediaTool(rawValue: toolRaw).flatMap(ZenithScreenScene.init(mediaTool:)))
+                .frame(maxWidth: 760)
+            MediaWorkspaceView(compact: false)
+        }
+        .padding(16)
     }
 }
 

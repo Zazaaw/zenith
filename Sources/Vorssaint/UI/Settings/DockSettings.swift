@@ -32,6 +32,7 @@ struct DockSettings: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 SettingsPageHeader(title: pages.dockTitle, subtitle: pages.dockDescription)
+                ZenithScreenPreviewCard(group: .dock) // Zenith fork
                 if AppFeature.dockPreview.isAvailable {
                     dockPreviewCard
                         .settingsSectionAnchor(.dock, cornerRadius: ZenithRadius.panel)

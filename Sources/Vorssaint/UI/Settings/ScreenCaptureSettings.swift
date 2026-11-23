@@ -28,6 +28,8 @@ struct ScreenCaptureSettings: View {
     var body: some View {
         Form {
             if !availableTools.isEmpty {
+                // Zenith fork: the preview card, on the tool picked.
+                ZenithScreenPreviewSection(group: .screenCapture, current: ZenithScreenScene(captureTool: currentTool))
                 Section {
                     if availableTools.count > 1 {
                         ScreenCaptureToolPicker(tools: availableTools,
