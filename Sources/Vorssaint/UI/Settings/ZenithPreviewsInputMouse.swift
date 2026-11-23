@@ -475,12 +475,17 @@ struct ZenithMousePreviewCard: View {
                 .position(x: 226, y: 88)
             arrow(276)
             VStack(spacing: 6) {
-                LazyVGrid(columns: [GridItem(.fixed(44), spacing: 6), GridItem(.fixed(44), spacing: 6)], spacing: 6) {
-                    ForEach(0..<4, id: \.self) { index in
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(index == 1 ? Color.accentColor.opacity(0.45) : ZPI.surface)
-                            .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(ZPI.stroke))
-                            .frame(width: 44, height: 30)
+                // A plain Grid: lazy grids crash inside Settings' Forms.
+                Grid(horizontalSpacing: 6, verticalSpacing: 6) {
+                    ForEach(0..<2, id: \.self) { row in
+                        GridRow {
+                            ForEach(0..<2, id: \.self) { column in
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(row * 2 + column == 1 ? Color.accentColor.opacity(0.45) : ZPI.surface)
+                                    .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(ZPI.stroke))
+                                    .frame(width: 44, height: 30)
+                            }
+                        }
                     }
                 }
                 ZPILabel(text.missionControl, lit: shown > 0.5)

@@ -98,12 +98,17 @@ private struct ZenithKeepAwakePanel: View {
                 Capsule().fill(Color.primary.opacity(0.15)).frame(width: 34, height: 20)
                     .overlay(alignment: .leading) { Circle().fill(.white).frame(width: 16).padding(2) }
             }
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
-                ForEach(["15m", "30m", "1h", "2h", "4h", "8h", "∞", "…"], id: \.self) { label in
-                    Text(verbatim: label).font(.system(size: 11.5, weight: .semibold))
-                        .frame(maxWidth: .infinity).frame(height: 24)
-                        .background(Color.primary.opacity(0.06), in: Capsule())
-                        .overlay(Capsule().strokeBorder(Color.primary.opacity(0.1)))
+            // A plain Grid: lazy grids crash inside Settings' Forms.
+            Grid(horizontalSpacing: 6, verticalSpacing: 6) {
+                ForEach([["15m", "30m", "1h", "2h"], ["4h", "8h", "∞", "…"]], id: \.self) { row in
+                    GridRow {
+                        ForEach(row, id: \.self) { label in
+                            Text(verbatim: label).font(.system(size: 11.5, weight: .semibold))
+                                .frame(maxWidth: .infinity).frame(height: 24)
+                                .background(Color.primary.opacity(0.06), in: Capsule())
+                                .overlay(Capsule().strokeBorder(Color.primary.opacity(0.1)))
+                        }
+                    }
                 }
             }
         }
