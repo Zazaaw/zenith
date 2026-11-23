@@ -17,6 +17,7 @@ struct AutoQuitSettings: View {
 
     var body: some View {
         Form {
+            ZenithPreviewFormSection { ZenithAutoQuitPreviewCard() } // Zenith fork: the preview card
             Section {
                 Toggle(l10n.s.autoQuitEnable, isOn: $enabled)
                     .onChange(of: enabled) { _, _ in
@@ -31,6 +32,7 @@ struct AutoQuitSettings: View {
                         .foregroundStyle(ZenithStatus.success)
                 }
             }
+            .zenithPreviewTarget("autoQuit.main") // Zenith fork
 
             Section(l10n.s.autoQuitHowTitle) {
                 bullet("rectangle.badge.xmark", l10n.s.autoQuitStep1)
@@ -126,6 +128,7 @@ struct AutoQuitSettings: View {
             }
         }
         .formStyle(.grouped)
+        .zenithPreviewJumps() // Zenith fork
         .sheet(isPresented: $showingAppPicker) {
             appPickerSheet
         }

@@ -32,6 +32,7 @@ struct QuitProtectionSettings: View {
 
     var body: some View {
         Form {
+            ZenithPreviewFormSection { ZenithQuitProtectionPreviewCard() } // Zenith fork: the preview card
             Section {
                 Text(strings.intro)
                     .font(.caption)
@@ -65,6 +66,7 @@ struct QuitProtectionSettings: View {
             }
         }
         .formStyle(.grouped)
+        .zenithPreviewJumps() // Zenith fork
         .sheet(item: $pickerShortcut) { shortcut in
             AppPickerView(onCancel: { pickerShortcut = nil }, onSelect: { url in
                 pickerShortcut = nil
@@ -161,6 +163,7 @@ struct QuitProtectionSettings: View {
             Toggle(strings.feedback, isOn: showFeedback)
                 .onChange(of: showFeedback.wrappedValue) { _, _ in service.syncWithPreferences() }
         }
+        .zenithPreviewTarget(shortcut == .quit ? "quitProtection.quit" : "quitProtection.close") // Zenith fork
     }
 
     @ViewBuilder

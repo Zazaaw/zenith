@@ -63,6 +63,7 @@ struct RadialMenuSettings: View {
 
     var body: some View {
         Form {
+            ZenithPreviewFormSection { ZenithRadialMenuPreviewCard() } // Zenith fork: the preview card
             Section {
                 Toggle(text.enableLabel, isOn: $enabled)
                 Text(text.hubDescription)
@@ -184,8 +185,10 @@ struct RadialMenuSettings: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            .zenithPreviewTarget("radial.actions") // Zenith fork
         }
         .formStyle(.grouped)
+        .zenithPreviewJumps() // Zenith fork
         .onAppear {
             if selectedProfileID == nil || !profiles.contains(where: { $0.id == selectedProfileID }) {
                 selectedProfileID = profiles.first?.id

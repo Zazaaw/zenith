@@ -31,6 +31,7 @@ struct CutPasteSettings: View {
 
     var body: some View {
         Form {
+            ZenithPreviewFormSection { ZenithCutPastePreviewCard() } // Zenith fork: the preview card
             if AppFeature.finderCutPaste.isAvailable {
                 Section {
                     Toggle(l10n.s.cutPasteEnable, isOn: $enabled)

@@ -30,6 +30,7 @@ struct URLCleanerSettings: View {
 
     var body: some View {
         Form {
+            ZenithPreviewFormSection { ZenithURLCleanerPreviewCard() } // Zenith fork: the preview card
             Section {
                 Toggle(l10n.s.urlCleanerEnable, isOn: $enabled)
                     .onChange(of: enabled) { _, _ in
@@ -89,6 +90,7 @@ struct URLCleanerSettings: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            .zenithPreviewTarget("urlCleaner.rules") // Zenith fork
 
             Section(l10n.s.urlCleanerManualTitle) {
                 HStack(spacing: 8) {
@@ -131,6 +133,7 @@ struct URLCleanerSettings: View {
             }
         }
         .formStyle(.grouped)
+        .zenithPreviewJumps() // Zenith fork
     }
 
     /// Two dozen names for one site is a lot of clicking to say "not this
