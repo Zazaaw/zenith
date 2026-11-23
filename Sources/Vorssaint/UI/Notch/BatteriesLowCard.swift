@@ -372,22 +372,8 @@ struct BatteriesActivityStrip: View {
 
     private func strip(_ indicator: BatteriesLowIndicator) -> some View {
         let geometry = displayGeometry ?? service.compactActivityGeometry
-        let height = geometry.compactActivityContentHeight
-        let wing = geometry.compactActivityWingWidth
         return Button { service.openActivity(NotchCompactActivity.batteries.module) } label: {
-            HStack(spacing: 0) {
-                BatteriesStripDevice(indicator: indicator)
-                    .padding(.leading, geometry.compactActivityEdgeInset(boxHeight: BatteriesStripMetrics.glyphSize, radius: 0))
-                    .frame(width: wing, height: height, alignment: .leading)
-                    .clipped()
-                Color.clear.frame(width: geometry.compactActivityCameraGap)
-                BatteriesStripReading(indicator: indicator)
-                    .padding(.trailing, geometry.compactActivityEdgeInset(boxHeight: 8, radius: 0))
-                    .frame(width: wing, height: height, alignment: .trailing)
-                    .clipped()
-            }
-            .frame(height: height)
-            .contentShape(Rectangle())
+            BatteriesStripContent(indicator: indicator, geometry: geometry)
         }
         .buttonStyle(.plain)
         .padding(.horizontal, geometry.compactActivityHorizontalPadding)
@@ -396,6 +382,32 @@ struct BatteriesActivityStrip: View {
         .accessibilityLabel(ZenithStrings.batteriesIsland(l10n.language).title)
         .accessibilityValue(BatteriesStripLayout.accessibilityValue(indicator, language: l10n.language))
         .accessibilityHint(ZenithStrings.batteriesIsland(l10n.language).open)
+    }
+}
+
+/// The compact form's wings in the closed island at `geometry`: the device
+/// left of the camera, the reading right of it, inside the strip's padding.
+/// Also the Settings preview's.
+struct BatteriesStripContent: View {
+    let indicator: BatteriesLowIndicator
+    let geometry: NotchGeometry
+
+    var body: some View {
+        let height = geometry.compactActivityContentHeight
+        let wing = geometry.compactActivityWingWidth
+        HStack(spacing: 0) {
+            BatteriesStripDevice(indicator: indicator)
+                .padding(.leading, geometry.compactActivityEdgeInset(boxHeight: BatteriesStripMetrics.glyphSize, radius: 0))
+                .frame(width: wing, height: height, alignment: .leading)
+                .clipped()
+            Color.clear.frame(width: geometry.compactActivityCameraGap)
+            BatteriesStripReading(indicator: indicator)
+                .padding(.trailing, geometry.compactActivityEdgeInset(boxHeight: 8, radius: 0))
+                .frame(width: wing, height: height, alignment: .trailing)
+                .clipped()
+        }
+        .frame(height: height)
+        .contentShape(Rectangle())
     }
 }
 

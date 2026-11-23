@@ -162,6 +162,8 @@ struct NotchSettings: View {
                     PermissionRow(kind: .accessibility)
                 }
             }
+            // Zenith fork: the shared preview card, its states the tabs below.
+            ZenithNotchPreviewCard(tab: $tab, module: selectedModule, showsCompanion: features.isAvailable(.notchMascot))
             NotchSettingsTabRow(tab: $tab, language: l10n.language, showsCompanion: features.isAvailable(.notchMascot),
                                 canOpen: enabled) { NotchService.shared.open() }
             if tab == .content {

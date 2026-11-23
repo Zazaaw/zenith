@@ -47,17 +47,27 @@ struct FaceUnlockSettingsPage: View {
     private var triggers: Set<FaceUnlockTrigger> { FaceUnlockTriggers.decode(triggersValue) }
     private var isSetUp: Bool { session.hasPassword && noticeAccepted }
 
+    private static let animationID = "zenith.preview.animation" // Zenith fork
+
     var body: some View {
+        ScrollViewReader { proxy in // Zenith fork: the preview card scrolls to its settings
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 SettingsPageHeader(title: text.title, subtitle: text.subtitle)
+                ZenithFaceUnlockPreviewCard { // Zenith fork: the shared preview card
+                    if isSetUp {
+                        withAnimation(.easeInOut(duration: 0.3)) { proxy.scrollTo(Self.animationID, anchor: .center) }
+                    } else {
+                        SettingsRouter.shared.request(FeatureSettingsDestination(.faceUnlock, sectionAnchor: .zenithFaceUnlock))
+                    }
+                }
                 enableCard
                 if isSetUp {
                     sessionCard
                     triggersCard
                     scanningCard
                     recognitionCard
-                    animationCard
+                    animationCard.id(Self.animationID)
                     facesCard
                     passwordCard
                     labCard
@@ -67,6 +77,7 @@ struct FaceUnlockSettingsPage: View {
             .frame(maxWidth: 760)
             .frame(maxWidth: .infinity)
             .padding(22)
+        }
         }
         .onAppear {
             session.refresh()

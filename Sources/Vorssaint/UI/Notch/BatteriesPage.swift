@@ -16,6 +16,9 @@ import SwiftUI
 
 struct BatteriesPage: View {
     let size: CGSize
+    /// Zenith fork: readings to draw instead of the store's, for the
+    /// Settings preview (always with `notchSettingsPreview`).
+    var sample: [BatteryDevice]? = nil
     @ObservedObject private var store = BatteriesStore.shared
     @ObservedObject private var l10n = L10n.shared
     @AppStorage(BatteriesDefaults.layout) private var layoutRaw = BatteriesLayout.rings.rawValue
@@ -27,7 +30,8 @@ struct BatteriesPage: View {
     private enum Stage: Hashable { case reading, empty, rings, list }
 
     private var devices: [BatteryDevice] {
-        BatteriesIslandSupport.shown(store.devices, hidden: BatteriesIslandSupport.hiddenDeviceIDs())
+        if let sample { return sample }
+        return BatteriesIslandSupport.shown(store.devices, hidden: BatteriesIslandSupport.hiddenDeviceIDs())
     }
 
     private var stage: Stage {

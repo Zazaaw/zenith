@@ -42,6 +42,11 @@ struct CommandBarSettings: View {
 
     var body: some View {
         Form {
+            // Zenith fork: the shared preview card, as a header, which the
+            // form draws without a box of its own.
+            Section {} header: {
+                ZenithCommandBarPreviewCard().zenithFormPreviewCard()
+            }
             Section {
                 // One choice, open it or recenter it, so one row. Neither
                 // carries an icon: a ⌘ glyph in front of "Open the bar now"

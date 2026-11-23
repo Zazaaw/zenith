@@ -33,6 +33,9 @@ struct RemoteControlSettings: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 SettingsPageHeader(title: text.title, subtitle: text.subtitle)
+                ZenithRemotePreviewCard { // Zenith fork: the shared preview card
+                    SettingsRouter.shared.request(FeatureSettingsDestination(.remote, sectionAnchor: .zenithRemote))
+                }
                 SettingsCard {
                     ZenithSwitchRow(text.enable, isOn: Binding(get: { enabled }, set: { on in
                         enabled = on

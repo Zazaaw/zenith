@@ -121,11 +121,12 @@ struct ZenithSettingsPreviewCard<Picture: View, Footer: View>: View {
                     .accessibilityLabel(text.hide)
                 }
                 if let selection, states.count > 1 {
-                    Picker(text.preview, selection: selection) {
-                        ForEach(states.indices, id: \.self) { Text(states[$0]).tag($0) }
+                    // Up to three segments fit the column; more make a menu.
+                    if states.count <= 3 {
+                        statePicker(selection).pickerStyle(.segmented)
+                    } else {
+                        statePicker(selection).pickerStyle(.menu).fixedSize()
                     }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
                 }
                 Text(caption)
                     .font(ZenithType.caption)
@@ -149,6 +150,13 @@ struct ZenithSettingsPreviewCard<Picture: View, Footer: View>: View {
         }
         // The column takes the picture's height, so a footer sits at its foot.
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func statePicker(_ selection: Binding<Int>) -> some View {
+        Picker(text.preview, selection: selection) {
+            ForEach(states.indices, id: \.self) { Text(states[$0]).tag($0) }
+        }
+        .labelsHidden()
     }
 }
 
