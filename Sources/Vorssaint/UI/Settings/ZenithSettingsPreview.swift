@@ -121,11 +121,16 @@ struct ZenithSettingsPreviewCard<Picture: View, Footer: View>: View {
                     .accessibilityLabel(text.hide)
                 }
                 if let selection, states.count > 1 {
-                    Picker(text.preview, selection: selection) {
+                    let picker = Picker(text.preview, selection: selection) {
                         ForEach(states.indices, id: \.self) { Text(states[$0]).tag($0) }
                     }
-                    .pickerStyle(.segmented)
                     .labelsHidden()
+                    // Segments while they fit the column; a menu when they don't.
+                    if statesFitSegments {
+                        picker.pickerStyle(.segmented)
+                    } else {
+                        picker.pickerStyle(.menu).fixedSize()
+                    }
                 }
                 Text(caption)
                     .font(ZenithType.caption)
@@ -149,6 +154,16 @@ struct ZenithSettingsPreviewCard<Picture: View, Footer: View>: View {
         }
         // The column takes the picture's height, so a footer sits at its foot.
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// Whether the states' labels fit the column as segments, each with the
+    /// control's padding around its label.
+    private var statesFitSegments: Bool {
+        let font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
+        let width = states.reduce(CGFloat(0)) { total, state in
+            total + (state as NSString).size(withAttributes: [.font: font]).width + 12
+        }
+        return width <= 184
     }
 }
 
