@@ -10,7 +10,7 @@ import SwiftUI
 /// pages in their window. Same sample data and sandbox as the catalog.
 @MainActor
 extension CatalogShots {
-    static var readme: [CatalogShot] { readmeIslands + readmePanels + readmeSettings }
+    static var readme: [CatalogShot] { readmeIslands + readmePanels + readmeSettings + previewsIsland } // Zenith fork: + previews
 
     /// How wide a band of the screen the island pictures show.
     static let bandWidth: CGFloat = 1280
