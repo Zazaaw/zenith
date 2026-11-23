@@ -583,7 +583,8 @@ struct NotchSettings: View {
         case .prompter:
             // Zenith fork: the scripts, the reading, mirror, the guide, the voice pace and the shortcut.
             PrompterSettingsView()
-        case .mixer, .system, .tools:
+        // Zenith fork: Batteries keeps its options on its own page under Monitor.
+        case .mixer, .system, .tools, .batteries:
             EmptyView()
         }
     }
@@ -928,7 +929,8 @@ struct NotchSettings: View {
         case .scratchpad: return .scratchpad
         case .agents: return .notchAgents
         case .watch: return .notchWatch
-        case .wakatime, .vercel, .github, .cardImport, .devServers, .recap, .sky, .git, .prompter: return nil // Zenith fork: cardImport, devServers, recap, sky, git, prompter
+        case .wakatime, .vercel, .github, .cardImport, .devServers, .recap, .sky, .git, .prompter,
+             .batteries: return nil // Zenith fork: cardImport, devServers, recap, sky, git, prompter, batteries
         }
     }
 

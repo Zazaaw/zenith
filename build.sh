@@ -698,6 +698,9 @@ if (( TEST )); then
         Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockSystem.swift
         Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockKeystrokes.swift
         Sources/Vorssaint/Core/ZenithFaceUnlockStrings.swift
+        Sources/Vorssaint/Services/Batteries/BatteriesContract.swift
+        Sources/Vorssaint/Services/Notch/BatteriesIslandSupport.swift
+        Sources/Vorssaint/Core/ZenithBatteriesIslandStrings.swift
         Tests/*.swift
         build/generated-tests/*.swift
     )

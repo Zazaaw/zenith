@@ -213,6 +213,7 @@ extension NotchModule {
         case .sky: return "moon.stars.fill"
         case .git: return GitSupportSymbols.module // Zenith fork
         case .prompter: return "scroll.fill"
+        case .batteries: return "battery.75percent" // Zenith fork
         }
     }
 }

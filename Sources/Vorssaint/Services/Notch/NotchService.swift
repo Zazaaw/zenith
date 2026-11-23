@@ -684,6 +684,11 @@ final class NotchService: ObservableObject {
         GitService.shared.indicator != nil
     }
 
+    /// Zenith fork: a device's low battery, after its card, while it stands.
+    var hasBatteriesActivity: Bool {
+        BatteriesIslandService.shared.indicator != nil && BatteriesIslandSupport.isEnabled()
+    }
+
     var compactActivity: NotchCompactActivity? {
         // A new song waiting for its notice is not drawn yet.
         activitySelection.current(available: awaitsTrackNotice ? compactActivities.filter { $0 != .music } : compactActivities)
@@ -697,7 +702,7 @@ final class NotchService: ObservableObject {
                                       cardImport: hasCardImportActivity, // Zenith fork
                                       export: hasExportActivity, // Zenith fork
                                       devServers: hasDevServersActivity, prayer: hasPrayerActivity, golden: hasGoldenActivity, // Zenith fork
-                                      git: hasGitActivity) // Zenith fork
+                                      git: hasGitActivity, batteries: hasBatteriesActivity) // Zenith fork
     }
 
     var showsCompactActivityPicker: Bool {
@@ -832,6 +837,7 @@ final class NotchService: ObservableObject {
         case .prayer: return geometry.compactWatchGeometry(wing: prayerStripWing(in: geometry)) // Zenith fork
         case .golden: return geometry.compactWatchGeometry(wing: goldenStripWing(in: geometry)) // Zenith fork
         case .git: return geometry.compactWatchGeometry(wing: gitStripWing(in: geometry)) // Zenith fork
+        case .batteries: return geometry.compactWatchGeometry(wing: batteriesStripWing(in: geometry)) // Zenith fork
         default: return geometry
         }
     }
@@ -883,6 +889,11 @@ final class NotchService: ObservableObject {
     /// Zenith fork: the wider of the sun and its clock or the golden hour's words.
     private func goldenStripWing(in geometry: NotchGeometry) -> CGFloat {
         SkyStripLayout.stripWing(.golden, language: L10n.shared.language, in: geometry)
+    }
+
+    /// Zenith fork: the device's symbol on one side, the red battery and its level on the other.
+    private func batteriesStripWing(in geometry: NotchGeometry) -> CGFloat {
+        BatteriesStripLayout.stripWing(BatteriesIslandService.shared.indicator, in: geometry)
     }
 
     /// Zenith fork: the branch glyph on one side, the branch and its dot on the other.
@@ -1124,6 +1135,13 @@ final class NotchService: ObservableObject {
             if selected == .controls { result.zenithHome = ZenithHomeIsland.geometry(modules: modules) } // Zenith fork
             // Zenith fork: a drag offering three zones or more widens the Files page to fit them.
             if selected == .files, choosingFileDropDestination { result.zenithDropZoneCount = dropTargets.count }
+            // Zenith fork: the Batteries page is as tall as its rings or rows.
+            if selected == .batteries {
+                let devices = BatteriesIslandSupport.shown(BatteriesStore.shared.devices,
+                                                           hidden: BatteriesIslandSupport.hiddenDeviceIDs())
+                result.zenithBatteriesHeight = BatteriesIslandSupport.pageHeight(count: devices.count,
+                                                                                 layout: BatteriesIslandSupport.layout())
+            }
             // Zenith fork: prompting, the page is a tall, narrow reading panel right under the camera.
             if selected == .prompter, let prompter = ZenithPrompterIsland.geometry {
                 result.zenithPrompter = prompter
@@ -1339,6 +1357,8 @@ final class NotchService: ObservableObject {
             return SkyStripLayout.capsuleSurface(.golden, language: language, geometry: geometry)
         case .git: // Zenith fork
             return GitStripLayout.capsuleSurface(GitService.shared.indicator, geometry: geometry)
+        case .batteries: // Zenith fork
+            return BatteriesStripLayout.capsuleSurface(BatteriesIslandService.shared.indicator, geometry: geometry)
         }
     }
 
@@ -1435,6 +1455,7 @@ final class NotchService: ObservableObject {
         ExportTrackerService.shared.syncWithPreferences() // Zenith fork: watches only while its switch is on.
         DevServersService.shared.syncWithPreferences() // Zenith fork: checks in the background only for its notice or count.
         GitService.shared.syncWithPreferences() // Zenith fork: follows the editor; reads only while shown or its branch is.
+        BatteriesIslandService.shared.syncWithPreferences() // Zenith fork: presents the low-battery alerts.
         RecapService.shared.syncWithPreferences() // Zenith fork: one timer for the day's recap notice.
         SkyService.shared.syncWithPreferences() // Zenith fork: one timer for the next prayer and golden hour.
         ClaudeHooksService.shared.syncWithPreferences() // Zenith fork: Claude Code's hooks, while Claude shows.
@@ -1545,6 +1566,7 @@ final class NotchService: ObservableObject {
         ExportTrackerService.shared.stop() // Zenith fork
         DevServersService.shared.stop() // Zenith fork
         GitService.shared.stop() // Zenith fork
+        BatteriesIslandService.shared.stop() // Zenith fork
         RecapService.shared.stop() // Zenith fork
         SkyService.shared.stop() // Zenith fork
         let cancelCapture = captureControlsCancel
@@ -4823,6 +4845,20 @@ final class NotchService: ObservableObject {
             }.store(in: &subscriptions)
         // Zenith fork: the current repository's branch showing, changing or going.
         GitService.shared.$indicator.removeDuplicates().dropFirst().receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.syncMenuSpaceMonitoring()
+                self?.objectWillChange.send()
+                self?.refreshPresentation()
+            }.store(in: &subscriptions)
+        // Zenith fork: devices coming and going resize the open Batteries page.
+        BatteriesStore.shared.$devices.map(\.count).removeDuplicates().dropFirst().receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self, self.expanded, self.selected == .batteries else { return }
+                self.objectWillChange.send()
+                self.refreshPresentation()
+            }.store(in: &subscriptions)
+        // Zenith fork: a device's low battery showing in the closed island, changing or going.
+        BatteriesIslandService.shared.$indicator.removeDuplicates().dropFirst().receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.syncMenuSpaceMonitoring()
                 self?.objectWillChange.send()

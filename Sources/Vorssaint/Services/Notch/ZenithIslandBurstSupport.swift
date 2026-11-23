@@ -21,6 +21,9 @@ struct ZenithIslandBurst: Equatable {
         case agent(ZenithAgentBurst)
         /// An iPhone asked how the Mac is (RemoteControlService): "Faiz’s iPhone checked status".
         case remote(ZenithRemoteBurst)
+        /// Zenith fork: a device's battery running low (BatteriesIslandService):
+        /// the Batteries droplet's Battery Low card.
+        case batteryLow(ZenithBatteryLowBurst)
     }
 
     let content: Content
@@ -38,6 +41,7 @@ struct ZenithIslandBurst: Equatable {
         case .welcome: duration = ZenithIslandBurstTiming.welcome
         case .agent: duration = ZenithIslandBurstTiming.agent
         case .remote: duration = ZenithIslandBurstTiming.remote
+        case .batteryLow: duration = ZenithIslandBurstTiming.batteryLow
         }
     }
 
@@ -47,7 +51,7 @@ struct ZenithIslandBurst: Equatable {
     var event: NotchEvent {
         switch content {
         case .prayer, .welcome, .remote: return .timer
-        case .charge: return .battery
+        case .charge, .batteryLow: return .battery
         case .agent: return .agents
         }
     }
@@ -58,6 +62,7 @@ struct ZenithIslandBurst: Equatable {
         case .prayer: return .sky
         case .charge, .welcome, .remote: return nil
         case .agent: return .agents
+        case .batteryLow: return .batteries
         }
     }
 
@@ -68,6 +73,7 @@ struct ZenithIslandBurst: Equatable {
         case .welcome(let welcome): return welcome.title
         case .agent(let agent): return agent.title
         case .remote(let remote): return remote.device
+        case .batteryLow(let low): return low.name
         }
     }
 
@@ -78,6 +84,7 @@ struct ZenithIslandBurst: Equatable {
         case .welcome(let welcome): return welcome.subtitle
         case .agent(let agent): return agent.subtitle
         case .remote(let remote): return remote.subtitle
+        case .batteryLow(let low): return low.detail
         }
     }
 
@@ -91,6 +98,9 @@ struct ZenithIslandBurst: Equatable {
                 .filter { !$0.isEmpty }.joined(separator: ", ")
         case .welcome, .agent, .remote:
             return [title, subtitle].filter { !$0.isEmpty }.joined(separator: ", ")
+        case .batteryLow(let low):
+            return [low.name, ZenithStrings.batteriesIsland(.enUS).lowTitle, "\(low.percent)%", low.detail]
+                .joined(separator: ", ")
         }
     }
 
@@ -204,6 +214,8 @@ enum ZenithIslandBurstTiming {
     static let agent: TimeInterval = 2.6
     /// An iPhone checking on the Mac: a glance.
     static let remote: TimeInterval = 2
+    /// A device's battery low: the droplet's card stays five seconds.
+    static let batteryLow: TimeInterval = 5
 
     /// How long a burst waits for an open or busy island to close before it
     /// is dropped: a prayer's time is worth waiting for, a greeting only a
@@ -213,6 +225,8 @@ enum ZenithIslandBurstTiming {
         case .prayer: return 120
         case .welcome, .agent, .remote: return 5
         case .charge: return 0
+        // Its compact form stays in the meantime; the card comes once the island closes.
+        case .batteryLow: return 60
         }
     }
 
@@ -233,7 +247,7 @@ enum ZenithIslandBurstTiming {
         guard let current, phase(current, at: now) != .settled else { return true }
         if case .prayer = current.content {
             switch incoming.content {
-            case .charge, .welcome, .agent, .remote: return false
+            case .charge, .welcome, .agent, .remote, .batteryLow: return false
             case .prayer: break
             }
         }
@@ -363,6 +377,15 @@ enum ZenithIslandBurstLayout {
             return Row(leading: remoteGlyph + remoteGap, trailing: columnGap + remoteGlyph,
                        title: words(remote.device, chargeTitleFont), subtitle: words(remote.subtitle, remoteDetailFont),
                        inlineGap: remoteWordGap)
+        case .batteryLow(let low):
+            // The name and its level on one line, the advice below, then the
+            // spacer between two gaps, and the battery and the device's
+            // symbol in their slot.
+            let card = BatteriesCardMetrics.self
+            return Row(leading: 0, trailing: card.rowSpacing * 2 + card.textSpacerMinimum + card.slot.width,
+                       title: words(low.name, card.titleFont) + card.titleRowSpacing
+                           + words("\(low.percent)%", card.percentFont),
+                       subtitle: words(low.detail, card.detailFont))
         }
     }
 
@@ -376,6 +399,7 @@ enum ZenithIslandBurstLayout {
         case .welcome: return welcomeRow + more * lineHeight
         // Two lines put what it did below the name, as a welcome reads.
         case .remote: return more > 0 ? welcomeRow : remoteRow
+        case .batteryLow: return BatteriesCardMetrics.rowHeight
         }
     }
 
@@ -408,8 +432,8 @@ enum ZenithIslandBurstLayout {
     /// island, the subtitle on a second line.
     static func fit(_ burst: ZenithIslandBurst, geometry: NotchGeometry) -> Fit {
         fit(row(burst), height: { contentHeight(burst, lines: $0) }, top: rowTop(geometry: geometry),
-            bottom: bottomInset(geometry: geometry), minimum: minimumWidth(burst), floats: geometry.floats,
-            screenWidth: geometry.screen.width)
+            bottom: bottomInset(geometry: geometry), minimum: minimumWidth(burst), maximum: maximumWidth(burst),
+            floats: geometry.floats, screenWidth: geometry.screen.width)
     }
 
     /// The island around `row`, `top` points from the island's top to the
@@ -417,6 +441,7 @@ enum ZenithIslandBurstLayout {
     /// wide as the row on one line by the room rule, at least `minimum` and
     /// the island it covers, and on two lines once that is the widest.
     static func fit(_ row: Row, height: (Int) -> CGFloat, top: CGFloat, bottom: CGFloat, minimum: CGFloat,
+                    maximum: CGFloat = ZenithIslandRoom.maximumWidth, // Zenith fork: the Battery Low card's own width
                     covering: CGFloat = 0, floats: Bool, screenWidth: CGFloat) -> Fit {
         let edge = ZenithIslandRoom.edge(floats: floats)
         func island(lines: Int) -> Fit {
@@ -424,7 +449,7 @@ enum ZenithIslandBurstLayout {
             // A floating capsule draws its pill inside the same shoulders (NotchLayout.capsuleBody).
             let shoulder = NotchLayout.shoulder(height: total)
             let width = ZenithIslandRoom.width(content: row.width, shoulder: shoulder, covering: covering,
-                                               minimum: minimum, edge: edge, screenWidth: screenWidth)
+                                               minimum: minimum, maximum: maximum, edge: edge, screenWidth: screenWidth)
             return Fit(size: CGSize(width: width, height: total), lines: lines,
                        content: ZenithIslandRoom.contentWidth(width: width, shoulder: shoulder, edge: edge))
         }
@@ -442,6 +467,14 @@ enum ZenithIslandBurstLayout {
         case .charge, .welcome, .agent: return 360
         case .remote: return 320
         case .prayer: return ZenithIslandRoom.minimumWidth
+        case .batteryLow: return BatteriesCardMetrics.width
         }
+    }
+
+    /// Zenith fork: the Battery Low card keeps the droplet's one width and
+    /// wraps its advice; the others grow up to the widest island.
+    static func maximumWidth(_ burst: ZenithIslandBurst) -> CGFloat {
+        if case .batteryLow = burst.content { return BatteriesCardMetrics.width }
+        return ZenithIslandRoom.maximumWidth
     }
 }

@@ -33,6 +33,7 @@ extension NotchService {
         case .welcome: symbol = "lock.open.fill"
         case .agent: symbol = "exclamationmark.bubble.fill"
         case .remote: symbol = "iphone"
+        case .batteryLow(let low): symbol = low.symbol // Zenith fork
         }
         return show(NotchNotice(event: burst.event, title: burst.title, detail: burst.subtitle, symbol: symbol,
                                 zenith: burst))

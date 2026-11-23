@@ -261,6 +261,7 @@ struct NotchView: View {
             case .prayer: SkyCapsuleStrip(service: service, kind: .prayer, size: size) // Zenith fork
             case .golden: SkyCapsuleStrip(service: service, kind: .golden, size: size) // Zenith fork
             case .git: GitCapsuleStrip(service: service, size: size) // Zenith fork
+            case .batteries: BatteriesCapsuleStrip(service: service, size: size) // Zenith fork
             }
         } else {
             // Handed down, the wings stay as they were drawn while a strip
@@ -283,6 +284,7 @@ struct NotchView: View {
             case .prayer: SkyActivityStrip(service: service, kind: .prayer, displayGeometry: geometry) // Zenith fork
             case .golden: SkyActivityStrip(service: service, kind: .golden, displayGeometry: geometry) // Zenith fork
             case .git: GitActivityStrip(service: service, displayGeometry: geometry) // Zenith fork
+            case .batteries: BatteriesActivityStrip(service: service, displayGeometry: geometry) // Zenith fork
             }
         }
     }
@@ -644,6 +646,7 @@ struct NotchView: View {
             case .sky: SkyPage(size: pageSize) // Zenith fork
             case .git: GitPage(size: pageSize) // Zenith fork
             case .prompter: PrompterPage(size: pageSize) // Zenith fork
+            case .batteries: BatteriesPage(size: pageSize).notchBand(trailing: { BatteriesPageActions() }) // Zenith fork
             }
         }
     }
@@ -868,6 +871,7 @@ extension NotchModule: PanelOrderItem {
         case .sky: return ZenithStrings.sky(language).title // Zenith fork
         case .git: return ZenithStrings.git(language).title // Zenith fork
         case .prompter: return ZenithStrings.prompter(language).title // Zenith fork
+        case .batteries: return ZenithStrings.batteriesIsland(language).title // Zenith fork
         }
     }
 }
