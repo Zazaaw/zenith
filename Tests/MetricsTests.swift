@@ -289,6 +289,7 @@ struct MetricsTests {
             ("card-backup", { BackupTests.run(suite) }), // Zenith fork
             ("dev-servers", { DevServersTests.run(suite) }),
             ("recap", { RecapTests.run(suite) }),
+            ("batteries", { BatteriesTests.run(suite) }), // Zenith fork: readers, alerts, last known
             ("sky", { SkyTests.run(suite) }),
             ("qr", { QRTests.run(suite) }),
             ("workspaces", { WorkspacesTests.run(suite) }),
