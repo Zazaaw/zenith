@@ -40,6 +40,7 @@ struct ShortcutsSettings: View {
 
     var body: some View {
         Form {
+            ZenithPreviewFormSection { ZenithShortcutsPreviewCard() } // Zenith fork: the preview card
             Section {
                 Text(l10n.s.shortcutsPageCaption)
                     .font(.caption)
@@ -56,6 +57,7 @@ struct ShortcutsSettings: View {
                         }
                     }
                 }
+                .zenithPreviewTarget("shortcuts.\(group.rawValue)") // Zenith fork
             }
 
             if AppFeature.commandBar.isAvailable {
@@ -73,6 +75,7 @@ struct ShortcutsSettings: View {
             }
         }
         .formStyle(.grouped)
+        .zenithPreviewJumps() // Zenith fork
         .onAppear { revealKeyboardBrightnessShortcuts() }
         .onChange(of: router.requestID) { _, _ in revealKeyboardBrightnessShortcuts() }
         .sheet(isPresented: $showsAppShortcuts) {

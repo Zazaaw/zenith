@@ -41,6 +41,7 @@ struct ClipboardSettings: View {
 
     var body: some View {
         Form {
+            ZenithPreviewFormSection { ZenithClipboardPreviewCard() } // Zenith fork: the preview card
             if AppFeature.clipboardHistory.isAvailable {
                 Section {
                     Toggle(text.enable, isOn: $enabled)
