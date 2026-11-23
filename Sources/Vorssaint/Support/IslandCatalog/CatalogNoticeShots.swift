@@ -118,16 +118,16 @@ extension CatalogShots {
             burst("burst-welcome") {
                 let text = ZenithStrings.lockIsland(.enUS)
                 return .welcome(ZenithWelcomeBurst(
-                    title: text.welcomeBack("Faiz"),
+                    title: text.welcomeBack("Alex"),
                     subtitle: text.detail(duration: ZenithLockIsland.duration(2 * 3_600 + 14 * 60, locale: Locale(identifier: "en_US")),
                                           notifications: nil),
-                    photo: nil, initials: "FH"))
+                    photo: nil, initials: "A"))
             },
-            burst("burst-remote-status") { .remote(ZenithRemoteBurst(device: "Faiz’s iPhone")) },
+            burst("burst-remote-status") { .remote(ZenithRemoteBurst(device: "Alex’s iPhone")) },
             burst("burst-welcome-remote") {
-                .welcome(ZenithWelcomeBurst(title: ZenithStrings.lockIsland(.enUS).welcomeBack("Faiz"),
-                                            subtitle: RemoteText.welcomeDetail(device: "Faiz’s iPhone", seconds: 80 * 60),
-                                            photo: nil, initials: "FH"))
+                .welcome(ZenithWelcomeBurst(title: ZenithStrings.lockIsland(.enUS).welcomeBack("Alex"),
+                                            subtitle: RemoteText.welcomeDetail(device: "Alex’s iPhone", seconds: 80 * 60),
+                                            photo: nil, initials: "A"))
             },
             burst("burst-claude") {
                 .agent(ZenithAgentBurst(provider: .claude, title: ZenithStrings.claudeChime(.enUS).needsYou, subtitle: "zenith"))
@@ -163,7 +163,7 @@ extension CatalogShots {
     }
 
     /// Zenith fork: the longest device name the remote script passes on (40 characters).
-    static let longDevice = "Muhammad Faiz Hawari’s iPhone 17 Pro Max"
+    static let longDevice = "Muhammad Alex Wibowo’s iPhone 17 Pro Max"
 
     /// A charger moment as the notice center builds it.
     static func charge(_ state: ZenithChargeState, percent: Int, minutes: Int?, hint: String? = nil) -> ZenithIslandBurst.Content {

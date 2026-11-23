@@ -327,6 +327,10 @@ final class RemoteControlService: ObservableObject {
     /// Reads whether Remote Login answers and how Tailscale names this Mac,
     /// off the main thread; nothing is changed.
     func checkReadiness() {
+#if VORSSAINT_DEVELOPMENT
+        // Zenith fork: the catalog draws sample data only.
+        if IslandCatalog.isRendering { return }
+#endif
         guard !readiness.checking else { return }
         readiness.checking = true
         DispatchQueue.global(qos: .utility).async {
@@ -378,6 +382,9 @@ final class RemoteControlService: ObservableObject {
     }
 
     func reloadDevices() {
+#if VORSSAINT_DEVELOPMENT
+        if IslandCatalog.isRendering { return }
+#endif
         queue.async { [self] in
             let list = RemoteAuthorizedKeys.devices(ssh: Self.sshFolder)
             DispatchQueue.main.async { self.devices = list }
@@ -432,3 +439,17 @@ final class RemoteControlService: ObservableObject {
         }
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog's Settings renders
+// (`--render-island-catalog`). Nothing else calls this, and the release build
+// does not have it.
+extension RemoteControlService {
+    func catalogPose(running: Bool, readiness: Readiness, devices: [RemoteDevice], log: [LogEntry]) {
+        self.running = running
+        self.readiness = readiness
+        self.devices = devices
+        self.log = log
+    }
+}
+#endif

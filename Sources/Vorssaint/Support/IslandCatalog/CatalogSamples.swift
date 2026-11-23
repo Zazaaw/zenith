@@ -275,7 +275,7 @@ enum CatalogSamples {
         let mine = [pull(214, "Island catalog: render every state offscreen", "satuvisual/zenith", author: nil,
                          checks: .pending, hours: 0.3),
                     pull(87, "Pricing page refresh", "satuvisual/web", author: nil, checks: .failure, hours: 5)]
-        GitHubService.shared.catalogPose(GitHubSupport.Inbox(login: "Zazaaw", reviewRequested: review, reviewCount: 1,
+        GitHubService.shared.catalogPose(GitHubSupport.Inbox(login: "satuvisual", reviewRequested: review, reviewCount: 1,
                                                              mine: mine, mineCount: 2))
     }
 
@@ -304,7 +304,7 @@ enum CatalogSamples {
                                     received: now.addingTimeInterval(-120), canOpen: true),
             NotchSystemNotification(id: UUID(), content: NotchNotificationContent(app: "Mail", title: "Dina Prameswari",
                                                                                   subtitle: "Brief video company profile",
-                                                                                  body: "Halo Faiz, terlampir brief untuk shooting minggu depan."),
+                                                                                  body: "Halo Alex, terlampir brief untuk shooting minggu depan."),
                                     received: now.addingTimeInterval(-25 * 60), canOpen: true),
             NotchSystemNotification(id: UUID(), content: NotchNotificationContent(app: "Calendar", title: "Design review",
                                                                                   subtitle: "", body: "In 15 minutes · Zoom"),

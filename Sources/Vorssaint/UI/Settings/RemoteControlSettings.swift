@@ -107,6 +107,24 @@ struct RemoteControlSettings: View {
         }
     }
 
+    /// The device name's placeholder and the account the Shortcut signs in
+    /// as; the catalog's Settings renders show made-up ones.
+    private static var namePrompt: String {
+#if VORSSAINT_DEVELOPMENT
+        if IslandCatalog.isRendering { return "Alex’s iPhone" }
+#endif
+        // The person's own first name, so the placeholder fits whoever runs Zenith.
+        let first = NSFullUserName().split(separator: " ").first.map(String.init) ?? ""
+        return first.isEmpty ? "My iPhone" : "\(first)’s iPhone"
+    }
+
+    private static var userName: String {
+#if VORSSAINT_DEVELOPMENT
+        if IslandCatalog.isRendering { return "alex" }
+#endif
+        return NSUserName()
+    }
+
     // MARK: Devices
 
     private var devices: some View {
@@ -134,7 +152,7 @@ struct RemoteControlSettings: View {
                 }
             }
             Divider()
-            TextField(text.deviceName, text: $name, prompt: Text("Faiz’s iPhone"))
+            TextField(text.deviceName, text: $name, prompt: Text(Self.namePrompt))
                 .textFieldStyle(.roundedBorder)
             TextField(text.publicKey, text: $key, prompt: Text(text.publicKey), axis: .vertical)
                 .lineLimit(2...4)
@@ -180,7 +198,7 @@ struct RemoteControlSettings: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             value(text.host, service.readiness.host ?? "…")
-            value(text.user, NSUserName())
+            value(text.user, Self.userName)
             value(text.port, "22")
             value(text.lockScript, RemoteScript.shortcutScript(.lock, device: deviceName))
             value(text.statusScript, RemoteScript.shortcutScript(.status, device: deviceName))
