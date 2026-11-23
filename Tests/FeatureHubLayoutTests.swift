@@ -20,6 +20,7 @@ enum FeatureHubLayoutTests {
         typealias SettingsCard<Content: View> = FeatureHubLayoutTests.SettingsCard<Content>
         typealias SettingsPageHeader<Accessory: View> = FeatureHubLayoutTests.SettingsPageHeader<Accessory>
         typealias PermissionsPortalSections = FeatureHubLayoutTests.PermissionsPortalSections
+        typealias ZenithScreenPreviewCard = FeatureHubLayoutTests.ZenithScreenPreviewCard // Zenith fork
         enum Tab { case features, permissions }
         @ObservedObject var features = FeatureRuntime.shared
         @State var tab = Tab.features
@@ -50,6 +51,13 @@ enum FeatureHubLayoutTests {
             }
             .id(group)
         }
+    }
+
+    /// Zenith fork: the page's preview card, as a block of its height.
+    struct ZenithScreenPreviewCard: View {
+        enum Group { case features }
+        let group: Group
+        var body: some View { Text("Preview").frame(height: 260) }
     }
 
     struct PermissionsPortalSections: View {

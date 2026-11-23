@@ -15,6 +15,9 @@ struct GeneralToolSettings: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                // Zenith fork: the preview card, on the tool opened.
+                ZenithScreenPreviewCard(group: ZenithScreenPreviewGroup(general: anchor),
+                                        current: ZenithScreenScene(anchor: anchor))
                 switch anchor {
                 case .panelConfiguration:
                     SettingsCard(title: l10n.s.menuBarSection) {

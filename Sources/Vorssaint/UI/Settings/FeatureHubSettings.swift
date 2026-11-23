@@ -62,6 +62,7 @@ struct FeatureHubSettings: View {
                 // Keep the header's identity stable when the notice changes.
                 VStack(alignment: .leading, spacing: 20) {
                     SettingsPageHeader(title: hub.pageTitle, subtitle: tab == .features ? hub.intro : hub.permissionsIntro)
+                    ZenithScreenPreviewCard(group: .features) // Zenith fork
                     Picker(hub.pageTitle, selection: $tab) {
                         Text(hub.tabFeatures).tag(Tab.features)
                         Text(hub.tabPermissions).tag(Tab.permissions)

@@ -44,6 +44,8 @@ struct EnergySettings: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 SettingsPageHeader(title: pageTitle, subtitle: pageDescription)
+                // Zenith fork: the preview card, on the feature opened.
+                ZenithScreenPreviewCard(group: .energy, current: focus.map(ZenithScreenScene.init(anchor:)))
                 if (focus == nil || focus == .keepAwake), AppFeature.keepAwake.isAvailable {
                     keepAwakeCard
                         .settingsSectionAnchor(.keepAwake, cornerRadius: ZenithRadius.panel)
