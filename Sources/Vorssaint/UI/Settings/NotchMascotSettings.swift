@@ -50,20 +50,31 @@ struct NotchMascotSettings: View {
     private var animation: Animation? { reduceMotion ? nil : .smooth(duration: 0.25) }
 
     var body: some View {
+        ScrollViewReader { proxy in // Zenith fork: the preview card scrolls to the look
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 header
+                // Zenith fork: the shared preview card; as the Dynamic Island
+                // page's tab, that page's card shows the companion.
+                if !embedded {
+                    ZenithMascotPreviewCard {
+                        withAnimation(.easeInOut(duration: 0.3)) { proxy.scrollTo(Self.appearanceID, anchor: .top) }
+                    }
+                }
                 if !islandOn { islandNote }
                 NotchMascotStageCard(look: look, side: restingSide, awake: enabled, canGreet: enabled && islandOn,
                                      visits: visits, reactions: reactions, hides: hidesWhenIdle, text: text,
                                      language: l10n.language)
-                appearance
+                appearance.id(Self.appearanceID)
                 behavior
                 commandBarCard
             }
             .padding(embedded ? [.bottom] : .all, 22)
         }
+        }
     }
+
+    private static let appearanceID = "zenith.preview.appearance" // Zenith fork
 
     private var header: some View {
         SettingsPageHeader(title: text.title, subtitle: text.hint) {
