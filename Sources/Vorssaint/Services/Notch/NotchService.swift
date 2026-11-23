@@ -1437,6 +1437,7 @@ final class NotchService: ObservableObject {
         GitService.shared.syncWithPreferences() // Zenith fork: follows the editor; reads only while shown or its branch is.
         RecapService.shared.syncWithPreferences() // Zenith fork: one timer for the day's recap notice.
         SkyService.shared.syncWithPreferences() // Zenith fork: one timer for the next prayer and golden hour.
+        BatteriesMonitor.shared.syncWithPreferences() // Zenith fork: Batteries scans only while it is on.
         ClaudeHooksService.shared.syncWithPreferences() // Zenith fork: Claude Code's hooks, while Claude shows.
         followsPointer = displayPreference == .pointer || displayPreference == .all
         showsOnAllDisplays = displayPreference == .all
@@ -1547,6 +1548,7 @@ final class NotchService: ObservableObject {
         GitService.shared.stop() // Zenith fork
         RecapService.shared.stop() // Zenith fork
         SkyService.shared.stop() // Zenith fork
+        BatteriesMonitor.shared.stop() // Zenith fork
         let cancelCapture = captureControlsCancel
         endCaptureControls()
         cancelCapture?()
@@ -1607,6 +1609,7 @@ final class NotchService: ObservableObject {
         NotchAudioLevelService.shared.stop()
         CameraPreviewService.shared.hideEmbedded()
         NotchAccessoryService.shared.suspend()
+        BatteriesMonitor.shared.suspend() // Zenith fork: no scans while the island is away
         NotchDownloadService.shared.stop()
         NotchCalendarService.shared.stop()
         NotchNotificationService.shared.stop()
