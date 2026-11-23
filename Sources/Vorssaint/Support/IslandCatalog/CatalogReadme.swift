@@ -17,11 +17,12 @@ extension CatalogShots {
 
     /// `shot` drawn at the top of a band of the sample wallpaper, under the
     /// sample menu bar (none over the lock screen).
-    static func banded(_ id: String, from shot: CatalogShot, menuBar: Bool = true, height: CGFloat? = nil) -> CatalogShot {
+    static func banded(_ id: String, from shot: CatalogShot, menuBar: Bool = true, width: CGFloat = bandWidth,
+                       height: CGFloat? = nil) -> CatalogShot {
         CatalogShot(id: id, kind: .screen, preferences: shot.preferences, setup: shot.setup, teardown: shot.teardown,
                     settle: shot.settle) {
             let (view, size) = shot.draw()
-            let band = CGSize(width: bandWidth, height: height ?? (size.height + 56).rounded(.up))
+            let band = CGSize(width: width, height: height ?? (size.height + 56).rounded(.up))
             let composed = ZStack(alignment: .top) {
                 CatalogBackdrop(size: band, menuBar: menuBar)
                 view.frame(width: size.width, height: size.height)
@@ -76,7 +77,16 @@ extension CatalogShots {
             lockScreen("readme-lock-minimal", mode: .minimal, preferences: [:]),
             lockScreen("readme-lock-full", mode: .full, preferences: [:]),
         ]
-        return bands + screens
+        // A 16:9 tile for the README's highlights.
+        let tiles = source("page-home").map {
+            [banded("readme-tile-island", from: $0, menuBar: false, width: 720, height: 405)]
+        } ?? []
+        // The bare desktop, for the tiles that float a window over it.
+        let desktop = CatalogShot(id: "readme-desktop", kind: .screen) {
+            let size = CGSize(width: 1440, height: 810)
+            return (AnyView(CatalogBackdrop(size: size)), size)
+        }
+        return bands + tiles + [desktop] + screens
     }
 
     // MARK: The menu bar panel
