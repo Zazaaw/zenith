@@ -701,7 +701,6 @@ if (( TEST )); then
         Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockSystem.swift
         Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockKeystrokes.swift
         Sources/Vorssaint/Core/ZenithFaceUnlockStrings.swift
-        Sources/Vorssaint/Services/Batteries/BatteriesContract.swift
         Sources/Vorssaint/Core/ZenithBatteriesStrings.swift
         Sources/Vorssaint/UI/Settings/BatteriesSettingsSupport.swift
         Tests/*.swift
