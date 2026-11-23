@@ -29,6 +29,9 @@ enum CatalogSamples {
         DevServersService.shared.catalogPose(servers: [], indicator: nil)
         SkyService.shared.catalogPose(day: nil, prayer: nil, golden: nil)
         GitService.shared.catalogPose(state: .empty, current: nil, snapshot: nil, indicator: nil)
+        BatteriesStore.shared.devices = [] // Zenith fork
+        BatteriesStore.shared.lastUpdated = nil
+        BatteriesIslandService.shared.catalogPose(indicator: nil)
         WakaTimeService.shared.catalogPose(today: nil, history: [:])
         GitHubService.shared.catalogPose(nil)
         NotchNotificationService.shared.catalogPose([])
@@ -192,6 +195,30 @@ enum CatalogSamples {
                                          start: now.addingTimeInterval(during ? -10 * 60 : 20 * 60),
                                          end: now.addingTimeInterval(during ? 30 * 60 : 60 * 60))
         SkyService.shared.catalogPose(day: skyDay, prayer: nil, golden: during ? .during(window) : .upcoming(window))
+    }
+
+    // MARK: Batteries
+
+    /// The contract's sample readings (BatteriesStore.sample), as the monitor
+    /// would leave them in the store.
+    static func batteries(_ devices: [BatteryDevice] = BatteriesStore.sample) {
+        BatteriesStore.shared.devices = devices
+        BatteriesStore.shared.lastUpdated = now
+    }
+
+    /// The compact form the Battery Low card leaves behind.
+    static func batteryLow(_ id: String = "sample-gamepad") {
+        batteries()
+        guard let device = BatteriesStore.sample.first(where: { $0.id == id }) else { return }
+        BatteriesIslandService.shared.catalogPose(indicator: BatteriesLowIndicator(
+            deviceID: device.id, name: device.name, symbol: device.symbolName, percent: device.percent ?? 0, since: now))
+    }
+
+    /// The Battery Low card for one of the sample devices.
+    static func batteryLowBurst(_ id: String = "sample-gamepad", others: [String] = []) -> ZenithIslandBurst.Content {
+        let device = BatteriesStore.sample.first { $0.id == id } ?? BatteriesStore.sample[0]
+        let alert = BatteriesLowAlert(id: UUID(), device: device, percent: device.percent ?? 0, others: others)
+        return .batteryLow(BatteriesIslandSupport.lowBurst(alert, text: ZenithStrings.batteriesIsland(.enUS)))
     }
 
     // MARK: Git

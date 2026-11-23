@@ -99,6 +99,18 @@ extension CatalogShots {
             page(.sky) { S.prayer() },
             page(.git) { S.gitRepository() },
             page(.prompter),
+            // Zenith fork: Batteries in both layouts, more devices than fit, and none at all.
+            page(.batteries, id: "page-batteries-rings",
+                 preferences: [BatteriesDefaults.layout: BatteriesLayout.rings.rawValue]) { S.batteries() },
+            page(.batteries, id: "page-batteries-rings-few",
+                 preferences: [BatteriesDefaults.layout: BatteriesLayout.rings.rawValue]) {
+                S.batteries(Array(BatteriesStore.sample.prefix(3)))
+            },
+            page(.batteries, id: "page-batteries-list",
+                 preferences: [BatteriesDefaults.layout: BatteriesLayout.list.rawValue]) { S.batteries() },
+            page(.batteries, id: "page-batteries-empty") { S.batteries([]) },
+            page(.controls, id: "page-home-batteries",
+                 preferences: [DefaultsKey.zenithHomeLayout: "batteries,timer"]) { S.batteries(); S.timer() },
         ]
     }
 

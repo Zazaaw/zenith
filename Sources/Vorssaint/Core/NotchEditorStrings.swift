@@ -103,6 +103,7 @@ struct NotchEditorStrings {
         case .recap: return ZenithStrings.recap(L10n.shared.language).summary
         case .sky: return ZenithStrings.sky(L10n.shared.language).summary
         case .git: return ZenithStrings.git(L10n.shared.language).summary // Zenith fork
+        case .batteries: return ZenithStrings.batteriesIsland(L10n.shared.language).summary // Zenith fork
         case .prompter: return ZenithStrings.prompter(L10n.shared.language).summary // Zenith fork
         }
     }

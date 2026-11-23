@@ -188,6 +188,10 @@ enum CatalogShots {
             activity("compact-prayer-arrived") { S.prayer(arrived: true) },
             activity("compact-golden-hour") { S.golden() },
             activity("compact-git") { S.gitBranch() },
+            activity("compact-battery-low") { S.batteryLow() }, // Zenith fork
+            activity("compact-battery-low-headphones") { S.batteryLow("sample-headphones") }, // Zenith fork
+            activity("compact-battery-low-capsule", preferences: [DefaultsKey.notchSilhouette: NotchSilhouette.capsule.rawValue],
+                     geometry: capsule) { S.batteryLow() }, // Zenith fork
             activity("compact-picker", preferences: music, inside: true) { S.timer(); S.music(); S.downloads(); S.gitBranch() },
         ]
     }

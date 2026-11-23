@@ -37,6 +37,7 @@ struct ZenithHomeWidgetView: View {
         case .workspaces: WorkspacesHomeWidget().modifier(ZenithHomeWidgetCard(framed: true))
         case .git: GitHomeWidget(service: service).modifier(ZenithHomeWidgetCard(framed: true)) // Zenith fork
         case .qr: QRHomeWidget().modifier(ZenithHomeWidgetCard(framed: true)) // Zenith fork
+        case .batteries: BatteriesHomeWidget(service: service).modifier(ZenithHomeWidgetCard(framed: true)) // Zenith fork
         }
     }
 }

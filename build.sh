@@ -703,6 +703,8 @@ if (( TEST )); then
         Sources/Vorssaint/Core/ZenithFaceUnlockStrings.swift
         Sources/Vorssaint/Core/ZenithBatteriesStrings.swift
         Sources/Vorssaint/UI/Settings/BatteriesSettingsSupport.swift
+        Sources/Vorssaint/Services/Notch/BatteriesIslandSupport.swift
+        Sources/Vorssaint/Core/ZenithBatteriesIslandStrings.swift
         Tests/*.swift
         build/generated-tests/*.swift
     )

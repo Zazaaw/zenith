@@ -38,6 +38,7 @@ struct ZenithIslandBurstRow: View {
         case .welcome(let welcome): ZenithWelcomeBurstRow(welcome: welcome, lines: lines)
         case .agent(let agent): ZenithAgentBurstRow(agent: agent, lines: lines)
         case .remote(let remote): ZenithRemoteBurstRow(remote: remote, lines: lines)
+        case .batteryLow(let low): BatteriesLowCard(low: low) // Zenith fork
         }
     }
 }
