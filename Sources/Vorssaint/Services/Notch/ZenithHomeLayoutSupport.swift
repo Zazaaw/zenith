@@ -30,6 +30,8 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
     case git
     /// A QR code of the latest copy, which opens the QR page (QRService).
     case qr
+    /// Zenith fork: the weakest device's battery (BatteriesStore).
+    case batteries
 
     var id: String { rawValue }
 
@@ -51,6 +53,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .workspaces: return nil
         case .git: return .git
         case .qr: return nil
+        case .batteries: return .batteries
         }
     }
 
@@ -72,6 +75,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .workspaces: return "square.grid.2x2.fill"
         case .git: return GitSupportSymbols.module
         case .qr: return "qrcode"
+        case .batteries: return "battery.75percent"
         }
     }
 
@@ -95,6 +99,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .workspaces: return 0x67E8F9 // cyan 300: it has no page whose colour to wear
         case .git: return 0xFCA5A5
         case .qr: return 0xC4B5FD // violet 300, beside the clipboard it reads
+        case .batteries: return 0xBEF264 // lime 300, its page's
         }
     }
 
@@ -118,6 +123,7 @@ enum ZenithHomeWidget: String, CaseIterable, Identifiable {
         case .workspaces: return 252
         case .git: return 216
         case .qr: return 216
+        case .batteries: return 196
         }
     }
 

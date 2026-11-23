@@ -54,6 +54,14 @@ enum ZenithIslandFitSamples {
                                                          subtitle: folder))))
         samples.append(("remote", .remote(ZenithRemoteBurst(device: device))))
         samples.append(("remote-short", .remote(ZenithRemoteBurst(device: "Faiz’s iPhone"))))
+        // Zenith fork: the Battery Low card with each line of advice, at its longest.
+        let batteries = ZenithStrings.batteriesIsland(language)
+        for (name, others) in [("battery-low", [String]()), ("battery-low-one", ["Xbox Wireless Controller"]),
+                               ("battery-low-many", ["AirPods Pro", "Magic Mouse"])] {
+            samples.append((name, .batteryLow(ZenithBatteryLowBurst(
+                deviceID: name, name: "soundcore Liberty 4 NC", percent: 100, symbol: "headphones",
+                detail: BatteriesIslandSupport.lowDetail(others: others, text: batteries)))))
+        }
         return samples.map { ($0.0, ZenithIslandBurst($0.1, start: start)) }
     }
 

@@ -154,6 +154,14 @@ extension CatalogShots {
                                           notifications: nil) + " · " + RemoteText.welcomeDetail(device: longDevice, seconds: 80 * 60),
                     photo: nil, initials: "MH"))
             },
+            // Zenith fork: the Batteries droplet's Battery Low card, alone and with others low.
+            burst("burst-battery-low") { CatalogSamples.batteryLowBurst() },
+            burst("burst-battery-low-one") { CatalogSamples.batteryLowBurst(others: ["Maxfit61 5.0"]) },
+            burst("burst-battery-low-many") {
+                CatalogSamples.batteryLowBurst("sample-headphones", others: ["Xbox Wireless Controller", "Maxfit61 5.0"])
+            },
+            burst("burst-battery-low-capsule", preferences: [DefaultsKey.notchSilhouette: NotchSilhouette.capsule.rawValue],
+                  geometry: capsule) { CatalogSamples.batteryLowBurst() },
             burst("burst-charge-long") {
                 .charge(ZenithChargeBurst.make(.charging, percent: 80, minutes: nil, hint: ZenithStrings.notices(.ptBR).chargeHint,
                                                island: ZenithStrings.island(.ptBR), notices: ZenithStrings.notices(.ptBR),

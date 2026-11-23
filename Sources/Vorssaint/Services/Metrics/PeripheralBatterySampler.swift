@@ -263,7 +263,8 @@ final class PeripheralBatterySampler {
     }
 }
 
-private final class BluetoothBatteryRead: NSObject, PeripheralBluetoothReading, CBCentralManagerDelegate, CBPeripheralDelegate {
+// Zenith fork: not private, so Batteries asks the BLE Battery Service through the same read.
+final class BluetoothBatteryRead: NSObject, PeripheralBluetoothReading, CBCentralManagerDelegate, CBPeripheralDelegate {
     private static let batteryService = CBUUID(string: "180F")
     private static let batteryLevel = CBUUID(string: "2A19")
 

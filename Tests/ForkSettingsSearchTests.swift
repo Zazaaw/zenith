@@ -227,6 +227,7 @@ enum ForkSettingsSearchTests {
         "Sources/Vorssaint/UI/Settings/ZenithLockScreenSettings.swift",
         "Sources/Vorssaint/UI/Settings/ZenithReplySettings.swift", "Sources/Vorssaint/UI/Settings/ZenithTabBarSettings.swift",
         "Sources/Vorssaint/UI/FaceUnlock/FaceUnlockSettingsPage.swift", // Zenith fork: face unlock
+        "Sources/Vorssaint/UI/Settings/BatteriesSettingsPage.swift", // Zenith fork: Batteries
     ]
 
     /// Switches whose label is a value of their own, named where they are shown.

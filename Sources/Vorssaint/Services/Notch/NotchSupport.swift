@@ -21,6 +21,8 @@ enum NotchModule: String, CaseIterable, Identifiable {
     case git
     /// Zenith fork: a teleprompter under the camera (PrompterService).
     case prompter
+    /// Zenith fork: the batteries of this Mac and its devices (BatteriesStore).
+    case batteries
     var id: String { rawValue }
 
     var symbol: String {
@@ -53,6 +55,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .sky: return "moon.stars" // Zenith fork: Today keeps sun.horizon
         case .git: return GitSupportSymbols.module // Zenith fork
         case .prompter: return "scroll" // Zenith fork
+        case .batteries: return "battery.75percent" // Zenith fork
         }
     }
 
@@ -84,6 +87,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .sky: return "q" // Zenith fork: qibla times
         case .git: return "h" // Zenith fork: HEAD
         case .prompter: return "x" // Zenith fork: teXt
+        case .batteries: return "z" // Zenith fork: the last letter left
         }
     }
 
@@ -126,6 +130,8 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .git: return GitCLI.isInstalled()
         // Zenith fork: scripts live in the container; nothing to install.
         case .prompter: return true
+        // Zenith fork: always listed; it shows while Batteries is on in Settings.
+        case .batteries: return true
         case .system:
             return [.monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork,
                     .monitorDisk, .monitorPower, .fanControl, .connectedDevices].contains { (feature: AppFeature) in
@@ -944,6 +950,8 @@ enum NotchCompactActivity: String, Identifiable {
     case prayer, golden
     /// Zenith fork: the current repository's branch and whether it is dirty, when asked for.
     case git
+    /// Zenith fork: a device's battery low, after its card (BatteriesIslandService).
+    case batteries
 
     var id: String { rawValue }
 
@@ -964,6 +972,7 @@ enum NotchCompactActivity: String, Identifiable {
         case .prayer: return ZenithStrings.sky(language).prayerTab // Zenith fork
         case .golden: return ZenithStrings.sky(language).goldenTab // Zenith fork
         case .git: return ZenithStrings.git(language).title // Zenith fork
+        case .batteries: return ZenithStrings.batteriesIsland(language).title // Zenith fork
         }
     }
 
@@ -985,6 +994,7 @@ enum NotchCompactActivity: String, Identifiable {
         case .devServers: return .devServers // Zenith fork
         case .prayer, .golden: return .sky // Zenith fork
         case .git: return .git // Zenith fork
+        case .batteries: return .batteries // Zenith fork
         }
     }
 
@@ -1944,11 +1954,12 @@ enum NotchSupport {
                                 vercel: Bool = false, command: Bool = false,
                                 cardImport: Bool = false, export: Bool = false,
                                 devServers: Bool = false, prayer: Bool = false, golden: Bool = false,
-                                git: Bool = false) -> NotchCompactActivity? { // Zenith fork
+                                git: Bool = false, batteries: Bool = false) -> NotchCompactActivity? { // Zenith fork
         compactActivities(timer: timer, downloads: downloads, agents: agents,
                           calendar: calendar, music: music, keepAwake: keepAwake, vercel: vercel,
                           command: command, cardImport: cardImport, export: export,
-                          devServers: devServers, prayer: prayer, golden: golden, git: git).first // Zenith fork
+                          devServers: devServers, prayer: prayer, golden: golden, git: git,
+                          batteries: batteries).first // Zenith fork
     }
 
     /// Keep Awake comes last: a session can run all day, even more than
@@ -1962,15 +1973,18 @@ enum NotchSupport {
     /// The dev servers' count stays up as long as they run, all day like Keep
     /// Awake, so it waits behind music and goes just before Keep Awake. The
     /// current branch is there all day too, and says the least: it goes
-    /// after the dev servers.
+    /// after the dev servers. A device's low battery, after its card, asks
+    /// for a charger and goes on its own in minutes: it follows a watch.
     static func compactActivities(timer: Bool, watch: Bool = false, downloads: Bool, agents: Bool,
                                   calendar: Bool, music: Bool, keepAwake: Bool = false,
                                   vercel: Bool = false, command: Bool = false,
                                   cardImport: Bool = false, export: Bool = false,
                                   devServers: Bool = false, prayer: Bool = false, golden: Bool = false,
-                                  git: Bool = false) -> [NotchCompactActivity] { // Zenith fork
+                                  git: Bool = false, batteries: Bool = false) -> [NotchCompactActivity] { // Zenith fork
         let candidates: [(Bool, NotchCompactActivity)] = [
-            (timer, .timer), (watch, .watch), (downloads, .downloads), (agents, .agents), (vercel, .vercel),
+            (timer, .timer), (watch, .watch),
+            (batteries, .batteries), // Zenith fork
+            (downloads, .downloads), (agents, .agents), (vercel, .vercel),
             (command, .command), (cardImport, .cardImport), (export, .export),
             (prayer, .prayer), (golden, .golden), // Zenith fork
             (calendar, .calendar), (music, .music),
@@ -2043,6 +2057,7 @@ enum NotchSupport {
                 && ($0 != .vercel || defaults.bool(forKey: DefaultsKey.notchVercelEnabled)) // Zenith fork
                 && ($0 != .cardImport || CardImportOptions.isEnabled(in: defaults)) // Zenith fork
                 && ($0 != .devServers || DevServersOptions.isEnabled(in: defaults)) // Zenith fork
+                && ($0 != .batteries || BatteriesIslandSupport.isEnabled(in: defaults)) // Zenith fork
         }
     }
 
@@ -2461,6 +2476,8 @@ struct NotchGeometry: Equatable {
     var zenithPrompter: ZenithPrompterIslandGeometry? = nil
     /// Zenith fork: how many drop zones a drag hovering the Files page offers (ZenithDropZoneLayout).
     var zenithDropZoneCount = 0
+    /// Zenith fork: the Batteries page's own height (BatteriesIslandSupport.pageHeight).
+    var zenithBatteriesHeight: CGFloat? = nil
     private var allowsActivityFooter = true
     private var minimumCompactWidth: CGFloat = 0
     /// Narrower wings than this are dropped rather than drawn cramped.
@@ -3006,6 +3023,8 @@ struct NotchGeometry: Equatable {
             case .mixer, .calendar, .clipboard, .captures, .files, .notifications, .downloads, .camera, .scratchpad, .watch,
                  .wakatime, .vercel, .github, .cardImport, .devServers, .recap, .sky, .git: // Zenith fork: devServers, recap, sky, git
                 contentHeight = budget
+            case .batteries: // Zenith fork: as tall as its rings or rows, a long list scrolling
+                contentHeight = zenithBatteriesHeight.map { min(budget, $0) } ?? budget
             case .prompter: // Zenith fork: the reading panel's own height while it prompts
                 contentHeight = zenithPrompter?.contentHeight ?? budget
             }

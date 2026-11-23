@@ -289,16 +289,19 @@ struct MetricsTests {
             ("card-backup", { BackupTests.run(suite) }), // Zenith fork
             ("dev-servers", { DevServersTests.run(suite) }),
             ("recap", { RecapTests.run(suite) }),
+            ("batteries", { BatteriesTests.run(suite) }), // Zenith fork: readers, alerts, last known
             ("sky", { SkyTests.run(suite) }),
             ("qr", { QRTests.run(suite) }),
             ("workspaces", { WorkspacesTests.run(suite) }),
             ("repo-status", { GitTests.run(suite) }), // the Git page
+            ("batteries-island", { BatteriesIslandTests.run(suite) }), // Zenith fork: the Batteries page, widget and card
             ("prompter", { PrompterTests.run(suite) }),
             ("fork-settings-search", { ForkSettingsSearchTests.run(suite) }),
             ("remote-lock", { RemoteControlTests.run(suite) }), // Zenith fork: lock and status from an iPhone
             ("face-unlock-flow", { FaceUnlockFlowTests.run(suite) }), // Zenith fork: security, triggers, setup
             ("face-unlock-recognition", { FaceUnlockRecognitionTests.run(suite) }), // Zenith fork
             ("face-unlock-liveness", { FaceUnlockLivenessTests.run(suite) }), // Zenith fork: Glance's liveness self-test
+            ("batteries-settings", { BatteriesSettingsTests.run(suite) }), // Zenith fork: Settings → Batteries
         ]
         var selected = Set<String>()
         var listOnly = false

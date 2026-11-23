@@ -130,12 +130,17 @@ enum SettingsDirectory {
         guard let essentials = grouped.first(where: { $0.id == 0 }) else { return grouped }
         let categories = FeatureStrings.settingsCategories(language)
         // Monitor keeps its tool rows, such as Fan Control, beside it.
-        let core = essentials.items.filter { item in
+        var core = essentials.items.filter { item in
             switch item.id {
             case .page(.general), .page(.features),
-                 .setting(.panelConfiguration): return true
+                 .setting(.panelConfiguration), .page(.batteries): return true // Zenith fork: Batteries
             default: return item.destination.page == .monitor
             }
+        }
+        // Zenith fork: Batteries right under Monitor, above Monitor's tool rows.
+        if let batteries = core.firstIndex(where: { $0.id == .page(.batteries) }),
+           let monitor = core.firstIndex(where: { $0.id == .page(.monitor) }), batteries > monitor {
+            core.insert(core.remove(at: batteries), at: monitor + 1)
         }
         // The companion lives in the island, and its settings in a tab of the
         // island's page rather than a row of their own.
@@ -388,6 +393,9 @@ enum SettingsDirectory {
                                         .init([barStyle.customize, barStyle.normalColor, barStyle.mediumColor, barStyle.highColor,
                                                barStyle.mediumFrom, barStyle.highFrom], when: state.bars),
                                        ]),
+                // Zenith fork: every device's battery, a page of its own under Monitor (no hub feature).
+                SettingsDirectoryItem(page: .batteries, title: ZenithStrings.batteries(language).title,
+                                      icon: "battery.75percent", keywords: BatteriesSearch.keywords(language)),
             ]),
             (categories.windowsControls, [
                 SettingsDirectoryItem(page: .mouse, title: s.tabMouse, icon: "computermouse",

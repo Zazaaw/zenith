@@ -149,12 +149,20 @@ extension CatalogShots {
             settings("readme-settings-remote", page: .remote, preferences: [DefaultsKey.zenithRemoteEnabled: true]) {
                 S.remote()
             },
+            // Zenith fork: Batteries over the contract's sample readings, libimobiledevice missing,
+            // the whole page in one tall window.
+            settings("readme-settings-batteries", page: .batteries, height: 1500) {
+                BatteriesStore.shared.catalogPose(devices: BatteriesStore.sample, tools: .missing)
+            },
             // Drawn as if covered, so the headline holds its word rather than mid-decrypt.
             settings("readme-settings-about", page: .about, visible: false, settle: 3),
             settings("readme-settings-monitor", page: .monitor),
             CatalogShot(id: "readme-about-credits", settle: 0.4) {
-                let size = CGSize(width: 640, height: 250)
-                let view = FaceUnlockCredits()
+                let size = CGSize(width: 640, height: 360)
+                let view = VStack(alignment: .leading, spacing: 10) {
+                    FaceUnlockCredits()
+                    BatteriesCredits() // Zenith fork
+                }
                     .padding(24)
                     .frame(width: size.width, height: size.height, alignment: .topLeading)
                     .background(Color(white: 0.09))
@@ -165,7 +173,8 @@ extension CatalogShots {
 
     /// The Settings window open on `page`, as the app opens it.
     static func settings(_ id: String, page: SettingsPage, preferences: [String: Any] = [:], visible: Bool = true,
-                         settle: TimeInterval = 1.5, setup: @escaping @MainActor () -> Void = {}) -> CatalogShot {
+                         settle: TimeInterval = 1.5, height: CGFloat = 700, // Zenith fork: a taller window
+                         setup: @escaping @MainActor () -> Void = {}) -> CatalogShot {
         CatalogShot(id: id, kind: .window, preferences: preferences, setup: {
             setup()
             SettingsRouter.shared.page = page
@@ -173,8 +182,20 @@ extension CatalogShots {
         }, teardown: {
             SettingsWindowVisibility.shared.set(false)
         }, settle: settle) {
-            (AnyView(SettingsView()), CGSize(width: 1000, height: 700))
+            (AnyView(SettingsView()), CGSize(width: 1000, height: height))
         }
+    }
+}
+
+extension BatteriesStore {
+    /// Zenith fork: fixed readings for the catalog. The monitor's handlers are
+    /// let go, so no scan replaces them while the shot settles.
+    @MainActor func catalogPose(devices: [BatteryDevice], tools: BatteriesIOSToolsStatus) {
+        refreshHandler = nil
+        visibilityHandler = nil
+        self.devices = devices
+        iOSTools = tools
+        lastUpdated = Date()
     }
 }
 
