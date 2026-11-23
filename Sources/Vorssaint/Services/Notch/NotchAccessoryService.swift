@@ -45,7 +45,12 @@ final class NotchAccessoryService: NSObject {
                     }
                 }
                 let text = FeatureStrings.notchActivities(L10n.shared.language)
-                for device in self.batteryState.consume(sample, observedAfter: self.activationTime) {
+                let low = self.batteryState.consume(sample, observedAfter: self.activationTime)
+                // Zenith fork: while Batteries is on it announces low accessories
+                // itself (Battery Low card), so this notice stays quiet; episodes
+                // are still followed, so turning Batteries off brings no backlog.
+                guard !BatteriesConfig.current().enabled else { return }
+                for device in low {
                     self.enqueue(NotchNotice(event: .accessory, title: device.name,
                         detail: text.lowBattery + " · \(device.percent)%",
                         symbol: NotchAccessorySupport.symbol(for: device.kind, name: device.name),
