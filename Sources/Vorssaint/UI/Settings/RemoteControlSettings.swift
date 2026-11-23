@@ -113,7 +113,9 @@ struct RemoteControlSettings: View {
 #if VORSSAINT_DEVELOPMENT
         if IslandCatalog.isRendering { return "Alex’s iPhone" }
 #endif
-        return "Faiz’s iPhone"
+        // The person's own first name, so the placeholder fits whoever runs Zenith.
+        let first = NSFullUserName().split(separator: " ").first.map(String.init) ?? ""
+        return first.isEmpty ? "My iPhone" : "\(first)’s iPhone"
     }
 
     private static var userName: String {
