@@ -293,6 +293,7 @@ struct MetricsTests {
             ("qr", { QRTests.run(suite) }),
             ("workspaces", { WorkspacesTests.run(suite) }),
             ("repo-status", { GitTests.run(suite) }), // the Git page
+            ("batteries-island", { BatteriesIslandTests.run(suite) }), // Zenith fork: the Batteries page, widget and card
             ("prompter", { PrompterTests.run(suite) }),
             ("fork-settings-search", { ForkSettingsSearchTests.run(suite) }),
             ("remote-lock", { RemoteControlTests.run(suite) }), // Zenith fork: lock and status from an iPhone
