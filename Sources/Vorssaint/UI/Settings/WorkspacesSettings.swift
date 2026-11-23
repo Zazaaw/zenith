@@ -26,7 +26,10 @@ struct WorkspacesSettings: View {
         selection.flatMap(service.workspace) ?? service.workspaces.first
     }
 
+    private static let listID = "zenith.preview.list" // Zenith fork
+
     var body: some View {
+        ScrollViewReader { proxy in // Zenith fork: the preview card scrolls to the list
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 SettingsPageHeader(title: text.title, subtitle: text.subtitle) {
@@ -38,7 +41,11 @@ struct WorkspacesSettings: View {
                     }
                     .disabled(service.workspaces.count >= WorkspaceLibrary.maximum)
                 }
-                listCard
+                // Zenith fork: the shared preview card.
+                ZenithWorkspacesPreviewCard {
+                    withAnimation(.easeInOut(duration: 0.3)) { proxy.scrollTo(Self.listID, anchor: .top) }
+                }
+                listCard.id(Self.listID)
                 if let workspace = selected {
                     WorkspaceEditor(workspace: workspace, confirmsDelete: $confirmsDelete)
                         .id(workspace.id)
@@ -52,6 +59,7 @@ struct WorkspacesSettings: View {
             .frame(maxWidth: .infinity)
             .padding(22)
             .animation(motion, value: selected?.id)
+        }
         }
         .toggleStyle(ZenithSwitchStyle())
         .confirmationDialog(selected.map { WorkspaceFormat.displayName($0.name, text: text) } ?? "",

@@ -24,8 +24,24 @@ struct ShelfSettings: View {
     @AppStorage(DefaultsKey.notchPhotoActionsEnabled) private var photoActions = true // Zenith fork
     @AppStorage(DefaultsKey.zenithDropZones) private var dropZones = ZenithDropZones.automatic // Zenith fork
 
+    /// Zenith fork: the zones a file dragged to the island offers, as the
+    /// preview card draws them: the shelf's own first.
+    private var previewTargets: [NotchDropTarget] {
+        let zones = ZenithDropZones(encoded: dropZones, airDrop: airDrop, photoActions: photoActions)
+        let others = zones.entries.filter(\.isOn).compactMap(\.target).filter { $0 != .files && !$0.isPhotoAction }
+        return Array(([NotchDropTarget.files] + others).prefix(3))
+    }
+
     var body: some View {
         Form {
+            // Zenith fork: the shared preview card, as a header, which the
+            // form draws without a box of its own.
+            Section {} header: {
+                ZenithShelfPreviewCard(targets: previewTargets) {
+                    SettingsRouter.shared.request(FeatureSettingsDestination(.shelf, sectionAnchor: .zenithDropZones))
+                }
+                .zenithFormPreviewCard()
+            }
             Section {
                 Toggle(l10n.s.shelfEnable, isOn: $enabled)
                     .onChange(of: enabled) { _, _ in
