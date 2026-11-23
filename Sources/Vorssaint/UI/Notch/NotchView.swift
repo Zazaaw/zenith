@@ -86,14 +86,9 @@ struct NotchView: View {
                 NotchCapsuleCaptureStrip(symbol: options.selectedTool.systemImageName, geometry: service.geometry,
                                          size: service.surfaceSize)
             } else if service.captureControlsCollapsed {
-                HStack(spacing: 0) {
-                    Image(systemName: options.selectedTool.systemImageName).frame(width: 28)
-                    Color.clear.frame(width: service.geometry.cameraWidth)
-                    Image(systemName: "chevron.down").frame(width: 28)
-                }
-                .font(.system(size: 10, weight: .semibold))
-                .frame(maxHeight: .infinity)
-                .accessibilityHidden(true)
+                // Zenith fork: a row below the camera, clear of the shoulders.
+                ZenithCaptureStrip(tool: options.selectedTool, geometry: service.geometry, size: service.surfaceSize,
+                                   expand: service.expandCaptureControls)
             } else {
                 NotchCaptureControlsView(options: options, service: service, layout: service.captureControlsLayout)
             }
@@ -118,17 +113,33 @@ struct NotchView: View {
                 }
             }
                 .font(.system(size: 13, weight: .medium)).foregroundStyle(.white)
-                .frame(maxWidth: .infinity, minHeight: 52)
+                .frame(maxWidth: .infinity, minHeight: NotchLayout.dropHintHeight) // Zenith fork
                 .overlay {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    // Zenith fork: on the island's padding line, concentric with its corner.
+                    RoundedRectangle(cornerRadius: ZenithIslandInset.concentricRadius(
+                        inset: ZenithIslandInset.padding,
+                        outer: NotchLayout.surfaceRadius(height: service.surfaceSize.height)), style: .continuous)
                         .strokeBorder(.white.opacity(0.24),
                                       style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
                         .allowsHitTesting(false)
                 }
-                .padding(.horizontal, 18 + NotchLayout.shoulderFlare(height: service.surfaceSize.height)) // Zenith fork
+                .padding(.horizontal, NotchLayout.horizontalInset(height: service.surfaceSize.height)) // Zenith fork
                 .padding(.top, service.geometry.safeContentTop)
         } else if let notice = service.stripNotice {
-            if service.noticeExpanded, let content = notice.notification {
+            if let burst = notice.zenith { // Zenith fork: the island grown for a moment
+                Button {
+                    service.activateNotice(notice)
+                } label: {
+                    ZenithIslandBurstView(burst: burst, geometry: service.geometry)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(notice.accessibilityText)
+                .accessibilityAddTraits(.isButton)
+                .id(notice.clickTarget)
+                .transition(.opacity)
+            } else if service.noticeExpanded, let content = notice.notification {
                 NotchNotificationPreviewView(notice: notice, content: content, service: service)
                     .padding(.horizontal, NotchLayout.horizontalInset)
                     .padding(.top, service.geometry.safeContentTop)
@@ -194,7 +205,8 @@ struct NotchView: View {
                                         columns: layout.columns, language: l10n.language,
                                         select: service.selectCompactActivity, combine: service.selectCompactCombination)
                         .padding(.horizontal, layout.horizontalPadding) // Zenith fork: past the shoulders' flare
-                        .padding(.vertical, NotchActivityPickerLayout.verticalInset)
+                        .padding(.top, NotchActivityPickerLayout.verticalInset)
+                        .padding(.bottom, NotchActivityPickerLayout.bottomInset) // Zenith fork: the island's padding
                 }
             } else {
                 // Hover grows the capsule around its strip, as it grows the

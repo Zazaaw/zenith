@@ -74,6 +74,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         // Zenith fork: a daily WakaTime goal and, when asked, failed Vercel builds check in the background.
         WakaTimeService.shared.syncGoalMonitoring()
         VercelService.shared.syncFailureAlerts() // Zenith fork
+        RemoteControlService.shared.syncWithPreferences() // Zenith fork: the iPhone remote, when it is on
+        FaceUnlockRecognition.install() // Zenith fork: face unlock's recognizer, idle until a scan
+        FaceUnlockRuntime.shared.launch() // Zenith fork: face unlock, listening only while it is on
         // Before any window exists, so nothing is ever built with the wrong
         // appearance and then repainted.
         AppAppearanceController.shared.apply()
@@ -343,6 +346,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         isTerminating = true
         CommandBarService.shared.restoreBorrowedInputSource()
         MenuBarHiderService.shared.prepareForTermination() // Zenith fork
+        FaceUnlockRuntime.shared.terminate() // Zenith fork: the session locks on quit
         if AppFeature.notch.isAvailable { NotchService.shared.stop(restoreCapture: false) }
         // Quitting properly means the start worked, whenever it happened.
         endStartupWatch()

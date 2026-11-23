@@ -370,7 +370,10 @@ struct ZenithHomeCardRow: View {
         if widgets.count == 1 { return [max(0, width)] }
         let room = max(0, width - ZenithHomeLayout.spacing * CGFloat(widgets.count - 1))
         let natural = widgets.reduce(0) { $0 + $1.width }
-        return widgets.map { (room * $0.width / max(1, natural)).rounded(.down) }
+        var widths = widgets.map { (room * $0.width / max(1, natural)).rounded(.down) }
+        // The last takes what rounding left, so the row ends on the island's padding line.
+        widths[widths.count - 1] = max(0, room - widths.dropLast().reduce(0, +))
+        return widths
     }
 
     private func slot(_ widget: ZenithHomeWidget, index: Int, alone: Bool) -> some View {

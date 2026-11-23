@@ -514,3 +514,16 @@ final class CardImportService: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + hold, execute: work)
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension CardImportService {
+    func catalogPose(activity: CardImportActivity?, progress: CardImportProgress, session: CardImportSession? = nil) {
+        self.activity = activity
+        meter.progress = progress
+        self.session = session
+    }
+}
+#endif

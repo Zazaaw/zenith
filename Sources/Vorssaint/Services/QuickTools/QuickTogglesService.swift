@@ -282,6 +282,20 @@ final class QuickTogglesService: ObservableObject {
         }
     }
 
+    /// Zenith fork: the same lock for the iPhone remote (RemoteControlService),
+    /// a feature of its own that does not need Quick Toggles. True when the
+    /// immediate lock ran, false when only the screen saver could start.
+    @discardableResult
+    func lockScreenForRemote() -> Bool {
+        if let lock = Self.lockScreenFunction {
+            _ = lock()
+            return true
+        }
+        let url = URL(fileURLWithPath: "/System/Library/CoreServices/ScreenSaverEngine.app")
+        NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+        return false
+    }
+
     func turnDisplayOff() {
         guard available, beginRun(.displayOff) else { return }
         workQueue.async {

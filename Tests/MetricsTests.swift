@@ -262,6 +262,9 @@ struct MetricsTests {
             ("wakatime", { WakaTimeTests.run(suite) }),
             ("lockscreen-widgets", { LockScreenWidgetsTests.run(suite) }),
             ("lockscreen-terminal", { LockScreenTerminalTests.run(suite) }),
+            ("lockscreen-v2", { LockScreenV2Tests.run(suite) }),
+            ("lockscreen-settings", { LockScreenSettingsTests.run(suite) }),
+            ("lockscreen-jobs", { LockScreenJobFeedTests.run(suite) }),
             ("vercel", { VercelTests.run(suite) }),
             ("gh", { GitHubTests.run(suite) }),
             ("command-activity", { CommandActivityTests.run(suite) }),
@@ -273,6 +276,11 @@ struct MetricsTests {
             ("screenshot-beautify", { ScreenshotBeautifyTests.run(suite) }),
             ("menubar-hider", { MenuBarHiderTests.run(suite) }),
             ("notices", { ZenithNoticeTests.run(suite) }),
+            ("island-room", { IslandRoundThreeTests.run(suite) }),
+            ("island-motion", { IslandMotionTests.run(suite) }),
+            ("lock-island", { LockIslandTests.run(suite) }),
+            ("island-floor", { IslandFloorTests.run(suite) }),
+            ("island-fit", { IslandFitTests.run(suite) }), // Zenith fork
             ("reply", { ReplyTests.run(suite) }),
             ("home-layout", { HomeLayoutTests.run(suite) }),
             ("tab-bar", { TabBarTests.run(suite) }),
@@ -287,6 +295,10 @@ struct MetricsTests {
             ("repo-status", { GitTests.run(suite) }), // the Git page
             ("prompter", { PrompterTests.run(suite) }),
             ("fork-settings-search", { ForkSettingsSearchTests.run(suite) }),
+            ("remote-lock", { RemoteControlTests.run(suite) }), // Zenith fork: lock and status from an iPhone
+            ("face-unlock-flow", { FaceUnlockFlowTests.run(suite) }), // Zenith fork: security, triggers, setup
+            ("face-unlock-recognition", { FaceUnlockRecognitionTests.run(suite) }), // Zenith fork
+            ("face-unlock-liveness", { FaceUnlockLivenessTests.run(suite) }), // Zenith fork: Glance's liveness self-test
         ]
         var selected = Set<String>()
         var listOnly = false

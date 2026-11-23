@@ -1968,3 +1968,12 @@ private final class ClipboardPanelSizeLimit: NSObject, NSWindowDelegate {
             visibleFrame: visibleFrame(sender))
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension ClipboardHistoryService {
+    func catalogPose(_ entries: [ClipboardHistoryEntry]) { self.entries = entries }
+}
+#endif

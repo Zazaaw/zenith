@@ -11,7 +11,7 @@
 "NSMicrophoneUsageDescription" = "Zenith nimmt dein Mikrofon nur auf, wenn du es für eine Bildschirmaufnahme einschaltest. Der Ton bleibt auf deinem Mac, außer du erstellst einen temporären Link.";
 
 /* macOS Camera permission prompt. */
-"NSCameraUsageDescription" = "Zenith zeigt deine Kamera nur im Vorschaufenster, das du öffnest, damit du vor einem Anruf prüfen kannst, wie du aussiehst. Es wird nichts aufgezeichnet und nichts verlässt deinen Mac.";
+"NSCameraUsageDescription" = "Zenith nutzt deine Kamera im Vorschaufenster, das du öffnest, und, wenn du Face Unlock einschaltest, um dein Gesicht auf dem Sperrbildschirm zu erkennen. Es wird kein Video aufgezeichnet und nichts verlässt deinen Mac.";
 
 /* macOS Downloads folder permission prompt. */
 "NSDownloadsFolderUsageDescription" = "Zenith prüft lokale Metadaten in Downloads, um nur ausgewählte bestätigte WhatsApp-Dateien zu prüfen, zu organisieren oder in den Papierkorb zu verschieben. Aufräumen sucht außerdem nach vergessenen Bildschirmfotos, wenn du sie hier speicherst.";

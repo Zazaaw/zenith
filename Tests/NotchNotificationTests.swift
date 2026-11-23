@@ -212,7 +212,7 @@ enum NotchNotificationTests {
                                              cameraWidth: physical ? 180 : 0, layout: layout, customWidth: 360)
                 let size = geometry.notificationPreviewSize(contentHeight: 180)
                 // Zenith fork: the card's shoulders flare outside its 400 points, as the island's do.
-                expect(size.width == min(400 + NotchLayout.shoulderFlare * 2, geometry.expandedWidth)
+                expect(size.width == min(400 + NotchLayout.openGrowth * 2, geometry.expandedWidth)
                        && size.width <= geometry.expandedWidth
                        && size.height == geometry.safeContentTop + 180 + NotchLayout.bottomInset
                        && screen.contains(geometry.frame(for: size)),
@@ -225,7 +225,7 @@ enum NotchNotificationTests {
         }
         let narrow = NotchGeometry(screen: CGRect(x: 0, y: 0, width: 640, height: 480), safeAreaTop: 32, cameraWidth: 210)
         let narrowSize = narrow.notificationPreviewSize(contentHeight: 180)
-        expect(narrowSize.width == max(400, narrow.cameraWidth + 200) + NotchLayout.shoulderFlare * 2 // Zenith fork
+        expect(narrowSize.width == max(400, narrow.cameraWidth + 200) + NotchLayout.openGrowth * 2 // Zenith fork
                && narrowSize.width <= narrow.expandedWidth
                && narrow.screen.contains(narrow.frame(for: narrowSize)),
                "a wide camera keeps its clearance on either side of the card within a narrow display")

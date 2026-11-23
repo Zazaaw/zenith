@@ -972,6 +972,25 @@ enum DefaultsKey {
     static let notchVercelEnabled = "notchVercelEnabled"
     static let notchVercelActivity = "notchVercelActivity"
     static let notchVercelFailureAlerts = "notchVercelFailureAlerts" // Zenith fork: notify when a build fails
+    /// Zenith fork: lock and check status from an iPhone (RemoteControlService). Off by default and
+    /// deliberately not registered, so it never travels in a settings backup to another Mac.
+    static let zenithRemoteEnabled = "zenithRemoteEnabled"
+    // Zenith fork: face unlock (Services/FaceUnlock). The switch, the camera and whether the
+    // security notice was read stay on this Mac and out of settings backups; secrets never
+    // live in preferences (the key is in the login keychain, the password an encrypted file).
+    static let faceUnlockEnabled = "faceUnlockEnabled"
+    static let faceUnlockCameraID = "faceUnlockCameraID" // a camera's uniqueID; absent = system default
+    static let faceUnlockNoticeAccepted = "faceUnlockNoticeAccepted"
+    static let faceUnlockTriggers = "faceUnlockTriggers" // FaceUnlockTriggers.encoded
+    static let faceUnlockAutoLockDays = "faceUnlockAutoLockDays" // FaceUnlockAutoLock.rawValue, 0 = never
+    static let faceUnlockLivenessEnabled = "faceUnlockLivenessEnabled"
+    static let faceUnlockLivenessMode = "faceUnlockLivenessMode" // "light" or "heavy"
+    static let faceUnlockMatchThreshold = "faceUnlockMatchThreshold" // cosine similarity, Double
+    static let faceUnlockDetectionSeconds = "faceUnlockDetectionSeconds" // 3...10
+    static let faceUnlockMinimumFaceWidth = "faceUnlockMinimumFaceWidth" // fraction of the frame width, Double
+    static let faceUnlockRetryOnHover = "faceUnlockRetryOnHover"
+    static let faceUnlockAutoRetry = "faceUnlockAutoRetry" // one automatic retry per lock after a failure
+    static let faceUnlockAnimationStyle = "faceUnlockAnimationStyle" // FaceUnlockAnimationStyle.rawValue
     // Zenith fork: long-running terminal commands in the closed island (CommandActivityService).
     static let notchCommandActivity = "notchCommandActivity"
     static let notchCommandThreshold = "notchCommandThreshold" // seconds before a command shows: 5, 8, 15 or 30
@@ -1101,7 +1120,8 @@ enum DefaultsKey {
     static let notchAgentsPriceUpdates = "notchAgentsPriceUpdates"
     // Zenith fork: Claude Code's hooks followed live (ClaudeHooksService). A soft sound when a
     // session needs the person; when the hook last wrote, unregistered so it stays out of backups.
-    static let notchAgentsClaudeSound = "notchAgentsClaudeSound"
+    static let notchAgentsClaudeSound = "notchAgentsClaudeSound" // Zenith fork: replaced by notchAgentsClaudeChime; false still means off
+    static let notchAgentsClaudeChime = "notchAgentsClaudeChime" // Zenith fork: ClaudeChimeMode.rawValue
     static let notchAgentsClaudeLastEvent = "notchAgentsClaudeLastEvent"
     static let notchEnabled = "notchEnabled"
     static let notchDisplay = "notchDisplay"
@@ -1168,6 +1188,48 @@ enum DefaultsKey {
     static let notchLockScreenTerminalLines = "notchLockScreenTerminalLines" // NotchLockScreenTerminalSelection.stored
     static let notchLockScreenTerminalProjects = "notchLockScreenTerminalProjects"
     static let notchLockScreenTerminalTitle = "notchLockScreenTerminalTitle" // Zenith fork, "" = zenith — status
+    // Zenith fork: how many lock screens have shown the lyric's "Click for full lyrics" hint (stops at 3).
+    static let zenithLockLyricHintCount = "zenithLockLyricHintCount"
+    // Zenith fork: the tab Settings → Lock Screen last showed; a convenience, not registered or backed up.
+    static let zenithLockSettingsTab = "zenithLockSettingsTab"
+    // Zenith fork: the island Calendar page's last Week or Month (ZenithCalendarMode); a convenience, not backed up.
+    static let zenithCalendarMode = "zenithCalendarMode"
+    // Zenith fork: the lock screen v2 (ZenithLockScreenOption), one switch each.
+    static let zenithLockJobs = "zenithLockJobs"
+    static let zenithLockJobExport = "zenithLockJobExport"
+    static let zenithLockJobCardImport = "zenithLockJobCardImport"
+    static let zenithLockJobBackup = "zenithLockJobBackup"
+    static let zenithLockJobCommand = "zenithLockJobCommand"
+    static let zenithLockJobVercel = "zenithLockJobVercel"
+    static let zenithLockNowPlaying = "zenithLockNowPlaying"
+    static let zenithLockLyrics = "zenithLockLyrics"
+    static let zenithLockKaraoke = "zenithLockKaraoke"
+    static let zenithLockTitleControls = "zenithLockTitleControls"
+    static let zenithLockTerminalPlacement = "zenithLockTerminalPlacement" // ZenithLockScreenTerminalPlacement
+    static let zenithLockFull = "zenithLockFull"
+    static let zenithLockFullDisc = "zenithLockFullDisc"
+    static let zenithLockFullAccount = "zenithLockFullAccount"
+    static let zenithLockFullDevice = "zenithLockFullDevice"
+    static let zenithLockFullClock = "zenithLockFullClock"
+    static let zenithLockFullJobs = "zenithLockFullJobs"
+    static let zenithLockFullCoverColor = "zenithLockFullCoverColor"
+    static let zenithLockFullLoginHint = "zenithLockFullLoginHint"
+    static let zenithLockFullBackground = "zenithLockFullBackground" // ZenithLockScreenFullBackground
+    static let zenithLockFullBlurRadius = "zenithLockFullBlurRadius" // points, ZenithLockScreenFullBlur.range
+    static let zenithLockFullCustomColor = "zenithLockFullCustomColor" // "RRGGBB", used when the solid colour is not the cover's
+    static let zenithLockLyricShade = "zenithLockLyricShade"
+    static let zenithLockLyricOffset = "zenithLockLyricOffset" // seconds, ZenithLockScreenLyricOffset.range
+    static let zenithLockFullDiscSpin = "zenithLockFullDiscSpin"
+    static let zenithLockFullTone = "zenithLockFullTone" // ZenithLockScreenFullTone
+    static let zenithLockFullTopPrayer = "zenithLockFullTopPrayer"
+    static let zenithLockFullTopWeather = "zenithLockFullTopWeather"
+    static let zenithLockFullTopTimer = "zenithLockFullTopTimer"
+    static let zenithLockFullTopCalendar = "zenithLockFullTopCalendar"
+    static let zenithLockFullTopWakaTime = "zenithLockFullTopWakaTime"
+    static let zenithLockIslandCharging = "zenithLockIslandCharging" // Zenith fork: the padlock island's slots and greetings
+    static let zenithLockIslandFocus = "zenithLockIslandFocus"
+    static let zenithLockIslandFarewell = "zenithLockIslandFarewell"
+    static let zenithLockIslandWelcome = "zenithLockIslandWelcome"
     static let wakaTimeDailyGoalMinutes = "wakaTimeDailyGoalMinutes" // Zenith fork, 0 = off
     // Companion: a small friend who rests in the closed island and is the Command Bar's face.
     static let notchMascotEnabled = "notchMascotEnabled"
@@ -1745,6 +1807,7 @@ enum Defaults {
         DefaultsKey.notchAgentsDailyBudget: 0.0,
         DefaultsKey.notchAgentsPriceUpdates: true,
         DefaultsKey.notchAgentsClaudeSound: true, // Zenith fork
+        DefaultsKey.notchAgentsClaudeChime: ClaudeChimeMode.soundAndIsland.rawValue, // Zenith fork
         DefaultsKey.notchLyricsEnabled: true,
         DefaultsKey.notchLyricsOnline: false,
         DefaultsKey.notchBrowserCovers: false,
@@ -1881,6 +1944,53 @@ enum Defaults {
         DefaultsKey.notchLockScreenTerminalLines: NotchLockScreenTerminalSelection.defaultValue,
         DefaultsKey.notchLockScreenTerminalProjects: false,
         DefaultsKey.notchLockScreenTerminalTitle: "", // Zenith fork
+        // Zenith fork: face unlock (FaceUnlockPreferences). The switch is deliberately not here.
+        DefaultsKey.faceUnlockTriggers: FaceUnlockTriggers.defaultEncoded,
+        DefaultsKey.faceUnlockAutoLockDays: FaceUnlockAutoLock.sevenDays.rawValue,
+        DefaultsKey.faceUnlockLivenessEnabled: true,
+        DefaultsKey.faceUnlockLivenessMode: FaceUnlockLivenessLevel.light.rawValue,
+        DefaultsKey.faceUnlockMatchThreshold: FaceUnlockMatchLevel.standard.threshold,
+        DefaultsKey.faceUnlockDetectionSeconds: FaceUnlockPreferences.defaultDetectionSeconds,
+        DefaultsKey.faceUnlockMinimumFaceWidth: FaceUnlockDistanceLevel.standard.minimumFaceWidth,
+        DefaultsKey.faceUnlockRetryOnHover: true,
+        DefaultsKey.faceUnlockAutoRetry: false,
+        DefaultsKey.faceUnlockAnimationStyle: FaceUnlockAnimationStyle.original.rawValue,
+        // Zenith fork: lock screen v2 (ZenithLockScreenOption.isOnByDefault).
+        DefaultsKey.zenithLockJobs: true,
+        DefaultsKey.zenithLockJobExport: true,
+        DefaultsKey.zenithLockJobCardImport: true,
+        DefaultsKey.zenithLockJobBackup: true,
+        DefaultsKey.zenithLockJobCommand: true,
+        DefaultsKey.zenithLockJobVercel: true,
+        DefaultsKey.zenithLockNowPlaying: true,
+        DefaultsKey.zenithLockLyrics: true,
+        DefaultsKey.zenithLockKaraoke: true,
+        DefaultsKey.zenithLockTitleControls: true,
+        DefaultsKey.zenithLockTerminalPlacement: "low",
+        DefaultsKey.zenithLockFull: true,
+        DefaultsKey.zenithLockFullDisc: true,
+        DefaultsKey.zenithLockFullAccount: true,
+        DefaultsKey.zenithLockFullDevice: true,
+        DefaultsKey.zenithLockFullClock: true,
+        DefaultsKey.zenithLockFullJobs: true,
+        DefaultsKey.zenithLockFullCoverColor: true,
+        DefaultsKey.zenithLockFullLoginHint: true,
+        DefaultsKey.zenithLockFullBackground: "solid",
+        DefaultsKey.zenithLockFullBlurRadius: 40.0,
+        DefaultsKey.zenithLockFullCustomColor: "1C1C1E",
+        DefaultsKey.zenithLockLyricShade: true,
+        DefaultsKey.zenithLockLyricOffset: 0.0,
+        DefaultsKey.zenithLockFullDiscSpin: false,
+        DefaultsKey.zenithLockFullTone: "vivid",
+        DefaultsKey.zenithLockFullTopPrayer: true,
+        DefaultsKey.zenithLockFullTopWeather: true,
+        DefaultsKey.zenithLockFullTopTimer: false,
+        DefaultsKey.zenithLockFullTopCalendar: false,
+        DefaultsKey.zenithLockFullTopWakaTime: false,
+        DefaultsKey.zenithLockIslandCharging: true, // Zenith fork
+        DefaultsKey.zenithLockIslandFocus: true,
+        DefaultsKey.zenithLockIslandFarewell: true,
+        DefaultsKey.zenithLockIslandWelcome: true,
         DefaultsKey.wakaTimeDailyGoalMinutes: 0,
         DefaultsKey.notchMascotEnabled: false,
         DefaultsKey.notchMascotVisits: true,

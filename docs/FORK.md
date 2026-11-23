@@ -353,6 +353,90 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   - **Belum diverifikasi visual:** tampilan di lock screen sungguhan, efek ketik, kedip
     kursor, dan tata letak bersama player musik belum dilihat di Mac (app UI tidak dijalankan
     saat pengerjaan).
+- **Lock screen v2, bagian visual (branch `feat/lockscreen-v2`):** lapisan minimal di atas
+  wallpaper dan lapisan penuh (lirik) yang dibuka dengan klik lirik. Saklar per bagian ada di
+  `ZenithLockScreenOption` (`Services/Notch/ZenithLockScreenOptions.swift`), dibaca sekali saat
+  lock screen muncul lewat `ZenithLockScreenV2Gates.resolve` (lirik butuh now-playing dan lirik
+  island nyala; title controls butuh now-playing; lapisan penuh butuh lirik; tiap sudut lapisan
+  penuh butuh lapisan penuh). Kode: `Services/Notch/ZenithLockScreenV2Support.swift` (logika
+  murni: saklar, warna, karaoke, jendela lirik, job, layout), `Services/Notch/ZenithLockScreenV2.swift`
+  (buka/tutup lapisan penuh, foto akun, warna cover), `UI/Notch/ZenithLockScreenMinimalView.swift`,
+  `UI/Notch/ZenithLockScreenFullView.swift`; teks di `Core/ZenithStrings.swift` (15 bahasa). Test di
+  `Tests/LockScreenV2Tests.swift` (suite `lockscreen-v2`).
+  - **Minimal:** job (dari `ZenithLockScreenJobs.shared`) di baris aktivitas, pertama di kiri item,
+    kedua di kanan, sisanya `+N`, jadi item tetap di tengah; ring 12 pt (export #C4B5FD, import dan
+    backup #FDBA74, command #86EFAC, vercel putih; tanpa fraksi = ring berputar; selesai = centang).
+    Baris judul + artis tanpa cover 38 pt di bawah frame baris aktivitas, lirik 33 pt di bawahnya
+    (baris aktif 23 bold dengan karaoke per karakter, baris berikut 17 semibold 32%). Panel minimal
+    selebar baris aktivitas, menggantikan player lama hanya kalau now-playing nyala. Klik judul =
+    kartu kaca (cover 32, tombol, timeline) yang terlipat lagi 4 detik tanpa interaksi. Hover lirik
+    = chip "Click for full lyrics", hanya di 3 lock screen pertama (`zenithLockLyricHintCount`,
+    tidak di-backup). Terminal `.low` = bawah readout 10 pt di atas garis login (260 pt dari bawah),
+    `.normal` = posisi sekarang (250 pt).
+  - **Lirik:** memakai `NotchLyricsService` yang sama dengan island: online hanya kalau
+    `notchLyricsOnline` sudah diizinkan, selain itu lirik yang tersimpan di memori saja; tanpa lirik
+    bertimestamp tidak ada yang tampil dan lapisan penuh tidak ditawarkan. lrclib hanya memberi waktu
+    per baris, jadi karaoke dibagi rata per karakter (paling lama 0,18 dtk per karakter, minimal 1,5 dtk).
+  - **Penuh:** panel layar penuh di Space lock screen yang sama, dibuat saat lock screen muncul tapi
+    baru di-order saat dibuka; island gembok tetap di atasnya; fade 0,35 dtk. Latar
+    (`ZenithLockScreenFullBackground`): `.solid` dengan `fullCoverColor` nyala = warna dominan cover
+    (saturasi maks 0,42, kecerahan 0,16–0,80), mati = warna pilihan (`ZenithLockScreenCustomColor`,
+    default #1C1C1E); `.blurredCover` = cover aspect-fill selayar, di-blur Gaussian sekali per lagu
+    (CoreImage pada salinan 160 px, radius `ZenithLockScreenFullBlur` 10–80 pt dikonversi ke piksel
+    salinan, lalu di-scale), diredupkan hitam 28%, crossfade 0,6 dtk saat lagu ganti. Tanpa cover,
+    warna pilihan yang dipakai. Tinta #1C1917 kalau luminans > 0,4, selain itu putih; kalau kontras
+    < 4,5:1 latar solid digeser lebih gelap/terang, dan untuk cover blur yang dinaikkan peredupnya
+    (maks 86%), diukur dari rata-rata warna gambar blur setelah diredupkan. Keluar saat pointer
+    bergerak > 8 pt (dicek 4×/detik), klik di luar tombol, musik berhenti > 1,2 dtk, atau tombol
+    keyboard kalau event-nya sampai. Panel tidak pernah jadi key, jadi password tetap ke loginwindow.
+    Foto akun dari Open Directory (`JPEGPhoto`, atau path `Picture`), fallback inisial; nama dari
+    `NSFullUserName()`, nama Mac dari `SCDynamicStoreCopyComputerName`. Semua lokal.
+  - **Belum diverifikasi di Mac terkunci:** tampilan, hover di panel non-key, urutan panel penuh di
+    bawah island, event keyboard saat terkunci, dan klik pada lapisan penuh.
+  - **Ronde dua (menggantikan aturan ronde satu di atas yang bertentangan):**
+    - *Minimal:* judul + lirik satu blok. Teks judul 24 pt di bawah frame baris aktivitas (sama
+      dengan jarak jam → teks baris), baris lirik aktif 7 pt di bawahnya, baris berikut 2 pt di
+      bawahnya (42%). Panel minimal kini naik sampai atas frame baris, supaya bayangan lirik
+      (`.lyricShade`, default nyala: gradien elips hitam 40% → 0, 110 × 44 pt melewati blok) memudar
+      di belakang baris, bukan terpotong. Terminal `.low`: kartu menempel ke bawah frame (frame
+      disiapkan untuk semua baris yang mungkin tampil), jadi bawah kartu selalu 260 pt dari bawah;
+      `.normal` tetap menggantung dari atas frame seperti sebelumnya.
+    - *Waktu lirik:* posisi = posisi player + offset island + `ZenithLockScreenLyricOffset`
+      (−3…+3 dtk, positif = lebih lambat), dipakai untuk baris aktif dan karaoke di kedua lapisan.
+      Penyebab lirik telat di ronde satu: bukan polling (adapter now-playing berbasis notifikasi dan
+      sudah mengekstrapolasi elapsed dengan timestamp + rate MediaRemote), tapi karaoke 0,18 dtk per
+      karakter yang direntangkan sampai baris berikut (baris 30 karakter baru penuh setelah 5,4 dtk)
+      dan animasi ganti baris 0,45–0,6 dtk. Sekarang 0,085 dtk per karakter (min 1,2 dtk, selesai
+      di 92% jarak ke baris berikut), animasi 0,28 dtk (minimal) / spring 0,42 (penuh).
+    - *Karaoke per kata:* kata utuh menyala; kata yang sedang dinyanyikan memudar masuk dari huruf
+      pertama dengan tepi lembut (`ZenithLockScreenKaraoke.levels`); tidak pernah ada kata terbelah.
+      Teks CJK: tiap karakter satu kata.
+    - *Warna latar dari cover:* klaster hue jenuh terbanyak (bin 10°, jendela 30°, hanya piksel
+      saturasi ≥ 0,28, kecerahan ≥ 0,18, kroma ≥ 0,12, minimal 6% cover), bukan rata-rata; tanpa
+      klaster jenuh baru rata-rata. `ZenithLockScreenFullTone.vivid` = warna itu apa adanya,
+      `.muted` = versi tenang ronde satu. Tinta tetap (luminans > 0,4 → #1C1917); dengan tinta gelap
+      opasitas baris pudar ×1,3.
+    - *Layout penuh:* piringan 320 pt + 90 pt + lirik 690 pt = satu grup di tengah layar (kiri 350 pt
+      di 1800 pt), kolom piringan di tengah antara baris atas dan bawah, tengah baris aktif = tengah
+      piringan (`ZenithLockScreenLyricStack`). Judul/artis/progres rata kiri dengan piringan, tombol
+      di tengah. Lirik: 1 sebelum (35%), aktif (54 pt, maks 2 baris), 3 berikut (45/28/14%, blur naik,
+      40 pt, 1 baris), dimask sebelum jam dan sebelum baris bawah.
+    - *Piringan:* tanpa lubang; cincin hub 26 pt (tinta 35%); cincin tepi tipis (tinta 25%) hanya
+      kalau salah satu dari 8 busur tepi cover mirip latar (`ZenithLockScreenRecordEdge`).
+      `.fullDiscSpin` (default mati): satu putaran per 8 dtk saat main, melambat 1,2 dtk saat jeda;
+      Reduce Motion = diam.
+    - *Kanan atas:* tombol tutup bulat 42 pt (tinta 16%) di pojok, lalu ke kiri: job, salat
+      berikutnya, cuaca, timer, kalender, WakaTime (saklar masing-masing, hanya kalau ada isi).
+      WakaTime dan cuaca dinyalakan selama lock screen tampil kalau baris aktivitas belum
+      membacanya (cuaca hanya kalau izinnya sudah ada); timer dan kalender memakai yang sudah jalan.
+    - *Keluar:* tombol tutup, musik berhenti > 1,2 dtk, Esc kalau event-nya sampai, atau unlock.
+      Gerak pointer dan klik di mana saja tidak lagi menutup. Hint: "Type your password or use Touch ID".
+    - *Preview Settings* (`UI/Notch/ZenithLockScreenPreview.swift`): lapisan minimal/penuh yang asli
+      dengan contoh ("Lose You Now" – Nadia Rae, cover merah buatan, job contoh
+      `ZenithLockScreenJobLine.sampleJobs`, cuaca/salat contoh, akun dan Mac asli) di atas wallpaper
+      layar utama (dibaca sekali, diperkecil ke 1600 px; gagal = gradien netral). Mengikuti saklar
+      langsung lewat `UserDefaults.didChangeNotification`; lirik di preview selalu dianggap tersedia.
+      Klik bagian = `onSelect`, `highlight` = garis putus-putus aksen.
 - **Panel menu bar, bahasa desain Settings (branch `feat/panel-redesign`):** panel memakai
   bahasa p441z.my.id yang sama dengan Settings, diperkecil untuk panel 332 pt. Hanya
   visual; perilaku, layout, dan daftar section tidak berubah. Komponen baru di
@@ -2710,6 +2794,462 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   - **Belum diverifikasi di Mac:** app UI tidak dijalankan. Perlu dicek: gulir dan outline di tab Activity/Layout dan di
     opsi modul (ScrollView bersarang), Form Shelf/Screen capture/Clipboard, outline di dalam kartu (light/dark), Reduce
     Motion, dan command bar.
+- **Island ronde tiga (branch `feat/island-round3`):** enam perubahan yang disetujui, dicek lewat render katalog
+  (`Tools/IslandCatalog/render.sh`). Teks baru di `Core/ZenithIslandStrings.swift` (15 bahasa); test di
+  `Tests/IslandRoundThreeTests.swift` (suite `island-room`).
+  - **Aturan ruang** (`Services/Notch/ZenithIslandRoom.swift`): isi island yang tumbuh (kapsul notice, burst, kontrol
+    capture ciut) berjarak 30 pt dari sisi lurus body, di luar bahu. Island melebar mengikuti isinya (min 380, maks
+    580, tidak melewati layar), minimal selebar island yang ditutupinya; lewat lebar maksimum, subtitle pindah ke
+    baris kedua dan baris tumbuh 15 pt. Strip kompak di samping kamera sengaja tetap ukuran upstream: sayapnya ada di
+    menu bar, ruangnya milik menu (`compactSideRoom`) dan dikunci test upstream.
+  - **Kontrol capture ciut:** baris di bawah kamera (ikon tool, nama, hint redup per tool, tombol chevron bulat yang
+    membuka kontrol). Lebarnya mengikuti baris tool terlebar, jadi ganti tool tidak mengubah island.
+  - **Notice baterai 20%/10%:** glyph baterai sungguhan terisi sesuai level, persen besar, judul dan subtitle, pil di
+    kanan. Low Power Mode mati: merah, "Battery low", pil "Low Power" (klik tetap membuka pengaturan Battery, karena
+    menyalakannya butuh admin). Nyala: amber, "Low Power Mode is on", "Plug in soon · about N min left" kalau macOS
+    punya perkiraan, chip "✓ On". Kapsul diukur untuk dua keadaan, jadi menyalakan mode saat tampil tidak terpotong.
+  - **Calendar:** segmented Week/Month (`zenithCalendarMode`, kenyamanan, tidak di-backup). Di samping kamera
+    segmented-nya menjadi kepala agenda karena baris atas tidak muat. Month: grid bulan itu saja (hari ini merah,
+    hari lewat redup, maks 3 titik warna kalender), event hari terpilih di kanan; halaman sempit = grid saja (Escape
+    atau pilih hari kembali ke Week). Baris event tanpa nama kalender (cukup batang warnanya), agenda memudar di tepi
+    dan bisa di-scroll sampai event terakhir (dulu terpotong).
+  - **Adzan:** penyebab bug: notice adzan adalah kapsul `ZenithNoticeCenter` di window sendiri di atas island,
+    sementara island tetap menggambar pill salat; kapsul dibatasi 420 pt dan pill bersayap lebih lebar, jadi ujung
+    pill ("ar") kelihatan di luar kapsul. Sekarang waktu salat adalah *burst* di notice island sendiri
+    (`NotchNotice.zenith`, `ZenithIslandBurst*`): pill di-morph oleh window host jadi satu island besar (tile simbol
+    biru #93C5FD, "Waktunya Ashar", jam · metode, "Next · Maghrib 18.02", garis yang menyusut 8 detik), lalu mengecil
+    lagi ke pill. Island terbuka = menunggu sampai ditutup, maks 2 menit. Jenis kapsul `prayer` dihapus; kapsul lain
+    yang sedang tampil mundur saat burst tumbuh.
+  - **Charging:** colok = burst ±3,2 dtk (baterai + petir, persen hijau, "Charging", "Full in 1h 10m" dari
+    `kIOPSTimeToFullChargeKey`), ditahan sebelum penuh (sekali per colokan) = amber "On hold" / "Optimized Battery
+    Charging", cabut = ±2,6 dtk "On Battery" + sisa waktu. Kapsul charging/80%/unplugged diganti burst; event baterai
+    baru `.held`. Lock screen tidak ikut: kapsul lama juga tidak pernah tampil di sana.
+  - **Lock screen jobs:** job di samping baris aktivitas lapisan minimal dulu di overlay dengan alignment guide yang
+    tidak dipatuhi saat digambar offscreen (keduanya jatuh di atas cuaca). Sekarang tiap job punya slot sendiri,
+    sama lebar di kiri dan kanan; job panjang meluber ke luar, tidak ke dalam.
+  - **Belum diverifikasi di Mac:** colok/cabut charger sungguhan, Optimized Battery Charging, perkiraan waktu dari
+    macOS, menyalakan Low Power Mode saat notice tampil, morph adzan di waktu salat sungguhan, island di layar tanpa
+    notch, dan job lock screen di Mac terkunci.
+- **Gerak island ala iOS + island gembok lock screen (branch `feat/island-motion-ios`):** gerak island dibangun
+  ulang mengikuti simulasi yang disetujui Faiz ("ala iOS, mantul lebih"). Matematika murni di
+  `Services/Notch/ZenithIslandMotion.swift` (`ZenithIslandMotion`, `ZenithContentRide`), dipakai window host, island
+  gembok, test dan renderer frame.
+  - **Pegas:** tumbuh: lebar `Spring(0.52, 0.42)`, tinggi `Spring(0.56, 0.38)` mulai 20 ms setelah lebar. Menyusut:
+    tinggi `Spring(0.44, 0.30)`, lebar `Spring(0.48, 0.36)` mulai 35 ms setelahnya. Batas ayun 12 pt dihapus; tinggal
+    batas waras 64 pt (lebar) / 36 pt (tinggi), muat di 48 pt yang selalu disisakan island tertinggi. Menyusut juga
+    mantul sedikit melewati target (di notch fisik bagian itu tersembunyi di balik kamera).
+  - **Squash & stretch:** lebar −= clamp(vh·0,011, ±14), tinggi −= clamp(vw·0,004, ±7); kecepatan dari turunan
+    analitik pegas (`Spring.velocity`), bukan selisih frame. `NotchMotion.shape`/`NotchMotionTimeline.shape` = bentuk
+    yang digambar; keyframe path, kontur backdrop, envelope jendela memakai bentuk itu.
+  - **Interupsi:** `NotchMotionTimeline.continued` kini juga menerima arah balik: pegas baru dijumlahkan dari posisi
+    dan kecepatan saat itu (tanpa lompatan, tanpa mulai dari diam). Yang masih mulai ulang: lebar steady dan pusat
+    yang sedang bergeser (seperti upstream).
+  - **Isi menumpang bentuk** (`NotchCanvas.beginRide`): halaman keluar pudar 0,12 dtk + blur sampai 8 pt + skala
+    lebar island / lebarnya (0,35…1,3); halaman masuk mulai 0,05 dtk, ease 0,3 dtk, blur 12 → 0, skala lebar island /
+    lebar target (0,35…1,04), naik dari −8 pt. Berurutan: satu hosting layer, halaman lama = snapshot `CATransition`
+    (kurva Bézier yang menahan halaman baru sampai yang lama setengah hilang), mask opacity = jumlah keduanya, blur,
+    skala dan naik = rata-rata berbobot halaman yang terlihat (`ZenithContentRide.composite`). Transform mengikuti
+    timeline bentuk sampai ayunan selesai, disampel 120 Hz. Berlaku untuk buka/tutup, hover peek, ganti halaman,
+    strip compact (HUD volume/brightness, AirPods, aksesori), burst (adzan, charging, baterai, timer, chat), zona
+    drop, Command Bar di island, dan departure notice. `AnyTransition.zenithMorph` (swap SwiftUI) memakai urutan
+    yang sama (blur 8 keluar, blur 12 + naik 8 pt masuk). Reduce Motion: bentuk langsung, crossfade 0,2 dtk.
+  - **Island gembok** (`UI/Notch/ZenithLockScreenIsland.swift`, `Services/Notch/ZenithLockIsland*.swift`, teks
+    `Core/ZenithLockIslandStrings.swift`): menggantikan `NotchLockScreenIsland` di service (view upstream dibiarkan).
+    Bergerak dengan `NotchMotionTimeline` yang sama lewat `TimelineView(.animation)`; jendela island dibesarkan
+    (`ZenithLockIsland.windowFrame`) supaya salam dan ayunannya muat; jendela tetap tidak menerima klik.
+    - Gembok 17 pt (dulu ±13), animasi buka/tutup tetap.
+    - Slot kanan: charger tersambung = petir + persen hijau #34D399, 5 detik pertama setelah colok menang atas
+      Focus (dan musik); lalu musik, lalu Focus (bulan + nama, ungu #A78BFA), lalu charging. Daya dibaca
+      `PowerSampler` + `IOPSNotificationCreateRunLoopSource` selama lock screen tampil.
+    - **Focus tanpa data:** macOS tidak punya cara tanpa izin untuk membaca Focus (`INFocusStatusCenter` butuh
+      entitlement + prompt dan hanya memberi on/off; database Do Not Disturb di balik Full Disk Access). Slot,
+      warna dan saklar sudah ada; `ZenithLockIslandFocus.reader` kosong sampai ada pembaca.
+    - "See you, {nama} 👋" saat Mac dikunci: island melebar ±2,2 dtk dengan gembok terbuka, lalu gembok menutup dan
+      island menyusut. Nama depan dari `NSFullUserName()` (fallback `NSUserName()`).
+    - "Welcome back, {nama}" saat dibuka: island dua baris (gembok hijau terbuka, salam, "Locked for 2h 14m", foto
+      akun dari Open Directory atau inisial) ±3 dtk, lalu menyusut dan memudar di atas island yang sudah kembali.
+      Tidak menahan unlock (jendela non-interaktif). Jumlah notifikasi tidak ditampilkan: Zenith hanya menyimpan
+      notifikasi dari sesi tidak terkunci; parameter `notifications:` sudah ada.
+    - Saklar baru `ZenithLockScreenOption.islandCharging/islandFocus/islandFarewell/islandWelcome` (default nyala),
+      kartu "Island" di Settings › Lock Screen › Over the wallpaper, teks 15 bahasa.
+  - **Catalog:** shot `lock-island-*` (rest, music, charging, focus, farewell, welcome) dan
+    `ONLY=motion… Tools/IslandCatalog/render.sh <dir>` untuk urutan frame (30 fps, 1 dtk, plus sheet) dari
+    `motion-open`, `-swap`, `-close`, `-notice`, `-burst`, `-lock-farewell`, `-lock-welcome`, digambar dari render
+    kedua ujung dengan matematika yang sama (bukan rekaman host Core Animation).
+  - **Test:** suite baru `island-motion` (pegas dan kecepatannya, lag, batas ayun, squash, urutan isi, interupsi,
+    Reduce Motion) dan `lock-island`. Diubah karena mengunci pegas lama (`NotchTests`): durasi settle (< 1,6 dtk),
+    batas ayun 12 pt → batas waras + squash, "menyusut tidak pernah melewati target" → maksimal batas waras,
+    "turun dulu baru melebar" → "melebar dulu", tinggi notice horizontal boleh pipih/memanjang ±7 pt, motion yang
+    berbalik kini lanjut (dulu nil), envelope tutup boleh +14 pt lebar, perbandingan steady vs pegas pakai kecepatan
+    puncak, durasi notice = durasi pegas lebar. `ZenithIslandTests.morphReach` mengikuti ride.
+    `NotchPresentationProbe` diselaraskan (drift naik 8 pt, tunggu ayunan selesai) tapi belum dijalankan.
+  - **Ronde dua (setelah dicoba Faiz di MacBook Pro M4, notch 205 × 37 pt):**
+    - *Lantai notch:* tidak ada frame yang lebih kecil dari cutout kamera (`NotchMotionFloor`: kamera telanjang di
+      layar ber-notch, atau strip tujuan saat menutup ke strip; kapsul tanpa lantai). Sisi yang mendarat ke lantai
+      memakai pegas pendaratan yang lebih lembut (`landingWidth 0,48/0,15`, `landingHeight 0,44/0,12`) dan ayunan
+      lewat target dipantulkan ke luar (rebound kecil, < 4% jarak), squash juga di-clamp ke lantai. Menyusut ke
+      halaman terbuka yang lebih kecil boleh undershoot asal tetap di atas kamera. Island yang disembunyikan (tinggi
+      0) boleh lewat di balik kamera. Lantai ikut ke motion yang diteruskan (`continued(to:at:floor:)`).
+    - *Tutup ease-in:* sisi yang menyusut memakai jam yang dipercepat pelan selama 80 ms pertama
+      (`ZenithIslandMotion.warp`, laju kontinu, lalu 40 ms di belakang jam), jadi tutup tidak langsung di kecepatan
+      puncak; buka tetap langsung dan mantul. Sampel (catalog, 505×234 ↔ 215×38): buka 0 ms 215×38, 40 ms 238×38,
+      80 ms 294×64, 120 ms 363×105, 200 ms 477×187, 300 ms 532×242, 450 ms 518×247, 700 ms 502×233, 1000 ms
+      505×234; tutup 0 ms 505×234, 20 ms 505×234, 40 ms 507×232, 80 ms 512×212, 120 ms 481×173, 200 ms 358×99,
+      300 ms 256×53, 450 ms 215×39, 700 ms 216×38, 1000 ms 215×38.
+    - *Penyebab "datar" yang ditemukan:* blur dan transform isi diberi `beginTime` = saat transisi diminta, padahal
+      halaman baru baru di-layout SwiftUI secara sinkron sesudahnya dan semuanya sampai ke layar saat commit; layout
+      halaman yang berat menghabiskan waktu ride sebelum terlihat, jadi isi muncul tajam tanpa tumpangan. Sekarang
+      ride dimulai Core Animation saat commit (bersama halaman), transform diambil dari waktu mulai yang dicap CA.
+      Bentuknya sendiri sudah benar di matematika (lihat sampel); yang di layar perlu dicek lewat log dev:
+      `defaults write id.satuvisual.zenith.dev zenithMotionTrace -bool true`, lalu
+      `~/Library/Logs/ZenithDeveloper/island-motion.log` (keyframe yang dipasang + ukuran di layar per frame).
+    - *Welcome tidak lagi di jendela lock screen:* jendela gembok memudar 0,55 dtk seperti dulu, lalu 0,8 dtk setelah
+      unlock island desktop sendiri yang tumbuh (`ZenithIslandBurst.welcome`: gembok hijau, salam, lama terkunci,
+      foto/inisial, 3 dtk). Kalau island sedang terbuka, burst menunggu maksimal 5 dtk lalu dibatalkan
+      (`ZenithIslandBurstTiming.patience`); tidak pernah menumpuk di atas halaman (penyebab 61.png/62.png).
+    - *Claude needs you:* saklar suara diganti pilihan Off / Sound + island (`notchAgentsClaudeChime`, default
+      Sound + island; bool lama `false` tetap berarti Off sampai dipilih ulang). Suara selalu bersama burst island
+      (`ZenithIslandBurst.agent`: mark Claude, "Claude needs you", nama folder; klik membuka halaman AI), dan hanya
+      berbunyi kalau burst tampil atau island sedang terbuka. `ClaudeChimeLimiter`: per sesi maks sekali per 3 menit,
+      semua sesi maks sekali per 30 dtk. Teks 15 bahasa, alias pencarian. Test: suite `island-floor`.
+  - **Ronde tiga (dibandingkan dengan reel mockup, 120 fps):**
+    - *Tutup:* halaman keluar menumpang bentuk yang menyusut (skala ≤ 100%) dan memudar selama ~60% penyusutan
+      (`ZenithContentRide.Timing.closing`: 0,17 dtk; isi tertutup mulai 0,1 dtk), ease-in 40 ms (dulu 80), pegas
+      pendaratan `landingWidth 0,24/0,1`, `landingHeight 0,28/0,1`: ukuran tertutup tercapai (≤ 1 pt) sekitar 0,3 dtk,
+      tetap di atas lantai notch dengan rebound ke luar yang sangat kecil.
+    - *Buka:* blur masuk 6 pt (dulu 12), mulai 0,03 dtk, tajam dan utuh ~0,23 dtk. Skala halaman masuk maksimal 100%
+      dan tidak pernah turun lagi setelah tumbuh (`ZenithContentRide.frames`), jadi hanya bentuk yang mantul; keyframe
+      terakhir tepat identitas. Isi strip yang keluar saat buka tumbuh maksimal 110% dan pudar dalam 0,1 dtk.
+    - *Kaca saat bergerak:* `NotchMotionSurface`: permukaan kaca jadi hampir hitam (0,9) selama gerak (naik dalam
+      80 ms, turun lagi di 0,3 dtk terakhir), `NotchBackdropPresentation.motionSolid`.
+    - *Kedip lock/unlock:* saat dikunci di depan Mac, island desktop yang tertutup tetap tergambar 0,6 dtk di bawah
+      island gembok (`retiringHost`) baru ditutup. Saat unlock, island gembok baru memudar setelah island desktop
+      tampil lagi (`NotchService.islandOnScreen`, tunggu maks 1,5 dtk) dengan tumpang 0,35 dtk; welcome burst mulai
+      0,1 dtk setelah unlock, di bawah island gembok yang masih ada.
+    - *Render:* `ZENITH_MOTION_FPS=120 ZENITH_MOTION_LENGTH=1.2 ONLY=motion Tools/IslandCatalog/render.sh <dir>`;
+      sampel ukuran, skala dan opacity isi dicetak per urutan.
+  - **Belum diverifikasi di Mac:** semua gerak di layar sungguhan (120 Hz, blur CAFilter, urutan crossfade
+    `CATransition`, transform selama ayunan, interupsi hover), bayangan lembut saat terbuka (belum dibuat: jendela
+    island hanya seluas siluet, bayangan butuh ruang tambahan di sekitar jendela), island gembok di Mac terkunci
+    (salam, colok charger, foto akun, fade setelah unlock), dan droplet Command Bar (sistem gerak sendiri, tidak
+    diubah).
+- **Kunci dan cek status dari iPhone (branch `feat/remote-lock`):** Shortcut iPhone ("Run Script over SSH")
+  masuk ke Mac lewat Tailscale + Remote Login, dan kuncinya hanya boleh menjalankan skrip kecil Zenith.
+  Kode di `Services/Remote/` (`RemoteControlSupport.swift` murni dan ikut test, `RemoteControlService.swift`),
+  `UI/Settings/RemoteControlSettings.swift`, teks Settings di `Core/ZenithRemoteStrings.swift` (15 bahasa);
+  teks island dan jawaban ke iPhone bahasa Inggris (`RemoteText`). Test: suite `remote-lock`.
+  - **Skrip** `<container>/remote/zenith-remote` (POSIX sh, 0600, dijalankan `/bin/sh '<path>'`): baca
+    `$SSH_ORIGINAL_COMMAND` (baris pertama; verb `lock`/`status`, huruf besar boleh; tanda kutip lurus atau
+    lengkung di sekitar nama dibuang; karakter kontrol dibuang; maks 40 karakter; default "iPhone"). Lainnya:
+    usage, exit 2. Cek `remote/zenith.pid` (`kill -0`) dan folder `requests/`; kalau tidak ada: "Zenith isn't
+    running". Tulis `requests/<epoch>-<pid>-<acak>.req` (umask 077, lewat `.tmp` lalu `mv`), tunggu
+    `responses/<id>` maks 4 dtk (baris 1 = exit status, sisanya dicetak), hapus keduanya; habis waktu: "Zenith
+    didn't answer". Tanpa jaringan, tanpa `eval`. Ditulis saat fitur dinyalakan atau device ditambah, dan
+    diperbarui saat launch kalau sudah ada (seperti hook Claude).
+  - **Service:** jalan hanya kalau `zenithRemoteEnabled` nyala (default mati; sengaja **tidak** didaftarkan di
+    `registeredDefaults`, jadi tidak ikut backup ke Mac lain). DispatchSource di `requests/` (tanpa polling).
+    Validasi: nama id `[A-Za-z0-9-]`, ≤ 1 KB, header `zenith-remote 1`, verb dikenal, umur teks dan mtime < 10 dtk
+    (toleransi masa depan 2 dtk). Batas 10 request per menit (semua device). `lock` = `SACLockScreenImmediate`
+    yang sama dengan Quick Toggles (`QuickTogglesService.lockScreenForRemote()`, tanpa gerbang fitur Quick
+    Toggles; fallback screen saver), jawab "MacBook locked ✓" (atau "already locked"). `status` = baris yang ada
+    datanya saja: `Unlocked · in use 3h 12m` (sejak unlock terakhir yang dilihat, wake, atau boot) / `Locked ·
+    1h 20m`, `Battery 82% · charging`, job dari `ZenithLockScreenJobs` (maks 3), lagu yang sedang diputar dari
+    `NotchMusicService`, `WakaTime today 4h 56m` dari data WakaTime yang sudah ada (tanpa jaringan). Log 20 request
+    terakhir di memori. Mati: pid dan folder request/response dihapus.
+  - **Island:** `ZenithIslandBurst.remote` ("Faiz’s iPhone checked status", ikon iPhone + mata, 2 dtk, satu baris)
+    hanya kalau Mac tidak terkunci. Lock: `ZenithRemoteLockMark` dipasang tepat sebelum mengunci, diambil
+    `ZenithLockIslandController.locked()`; island gembok menampilkan `ZenithLockIslandMoment.remoteLock` ("Locked
+    from Faiz’s iPhone" / "just now" + iPhone, 3 dtk, gembok sudah tertutup) sebagai pengganti "See you". Unlock
+    berikutnya: subtitle welcome "Locked from iPhone · 1h 20m ago". Catalog: `burst-remote-status`,
+    `burst-welcome-remote`, `lock-island-remote`, gerak `motion-remote-status` dan `motion-lock-remote`.
+  - **Settings → iPhone Remote** (halaman sendiri, tidak digerbang fitur hub): saklar, checklist read-only (port 22
+    di 127.0.0.1; `/Applications/Tailscale.app` + `Tailscale status --json` untuk nama MagicDNS), device (tempel
+    public key + nama → satu baris `restrict,no-pty,no-port-forwarding,no-agent-forwarding,no-X11-forwarding,
+    command="/bin/sh '<skrip>'" <key> zenith-remote:<nama>`; `~/.ssh` 0700 dan file 0600 kalau belum ada; backup
+    ke `authorized_keys.zenith-backup` sebelum tiap perubahan; idempoten; hanya baris bertanda Zenith yang
+    diubah/dihapus; key yang sudah ada tanpa batasan = konflik, file berupa link = ditolak), nilai untuk Shortcut
+    (host Tailscale atau `<hostname>.local`, user, port 22, `lock "…"`/`status "…"`), tombol Test (menjalankan skrip
+    lokal dengan `status Test`), perintah hardening yang hanya ditampilkan
+    (`/etc/ssh/sshd_config.d/050-zenith.conf`, urut sebelum `100-macos.conf`), dan request terakhir. Alias
+    pencarian: "kunci dari iphone", "tailscale", "remote", "ssh", dst.
+  - **Belum diverifikasi:** SSH sungguhan dari iPhone (Shortcuts mengirim perintah sebagai exec, kutip pintar iOS,
+    izin TCC untuk proses sshd membaca Application Support), kunci layar sungguhan, island di layar, dan
+    pemeriksaan Tailscale CLI dari app.
+- **Face unlock, port Glance (branch `feat/face-unlock-flow`, menggabungkan `feat/face-unlock-island` dan
+  `feat/face-unlock-recognition` di atas kontrak `Services/FaceUnlock/FaceUnlockContract.swift`):** buka Mac dengan
+  wajah, dari Glance (Jonathan Zhou, MIT; `glance` commit b97f521). Mati default, opt-in, macOS 15+ saja
+  (`FaceUnlockRecognition.isSupported`; Zenith tetap macOS 14). Teks fitur bahasa Inggris di semua bahasa (keputusan
+  Faiz; Zenith tidak punya locale Indonesia), alias pencarian Indonesia ada. Kredit di About (Glance MIT dengan teks
+  lisensinya, ArcFace InsightFace non-komersial) dan `Resources/FaceUnlock/NOTICE.txt`.
+  - **Yang dilihat Faiz pertama kali:** Settings → Face Unlock → "Set Up Face Unlock…" (atau menyalakan saklarnya)
+    membuka jendela setup: intro → izin (Accessibility, Kamera; Next terkunci sampai keduanya ada) → peringatan
+    keamanan ("I Understand") → pre-setup → pilih kamera → sweep 9 pose (kamera menyala, ring + sapuan arah, model
+    ArcFace di-compile saat pertama) → beri nama wajah → password login (Touch ID muncul di sini: membuka sesi dan
+    membuat kunci, lalu wajah dan password disegel) → "You’re all set", fitur menyala. Setelah itu, tiap Zenith
+    start (login) Touch ID diminta sekali untuk membuka sesi; tolak = tidak ditanya lagi sampai Zenith start ulang.
+    Kalau sesi terkunci saat Mac dikunci, island menulis "Unlock with Touch ID once to use Face ID", dan setelah
+    Faiz unlock pakai password, Touch ID diminta lagi.
+  - **Pengenalan** (`Services/FaceUnlock/Recognition/`, `UI/FaceUnlock/Lab/`): kamera, Vision, alignment 5 titik,
+    ArcFace (`Resources/FaceUnlock/ArcFace.mlpackage`, di-compile di Mac saat pertama dipakai karena tanpa Xcode,
+    cache per hash di Application Support; fallback feature print Vision), lima cue liveness Glance (light/heavy),
+    `FaceUnlockRecognitionService` = `FaceUnlock.recognizer` (dipasang `FaceUnlockRecognition.install()` saat launch,
+    menganggur sampai scan; `shouldContinueScan` = layar masih terkunci menurut CGSession). Wajah disegel AES-GCM
+    dengan kunci sesi yang sama di `Application Support/<bundle id>/FaceUnlock/face-identities.enc`
+    (`FaceEnrollmentStore`, terkunci tanpa kunci). Face Lab = jendela debug Glance (`FaceUnlockLab.open()`); tombol
+    Start Onboarding / Add Identity / Recapture membuka jendela setup lewat `FaceUnlockLab.enrollmentHandler`.
+    Test: suite `face-unlock-recognition`, `face-unlock-liveness`.
+  - **Sesi dan kunci** (`Services/FaceUnlock/Flow/FaceUnlockSession.swift`, `FaceUnlockSystem.swift`):
+    `.userPresence` keychain butuh entitlement Apple (-34018), jadi password disegel AES-GCM dan disimpan sebagai file
+    0600 lewat `ZenithSecretStore` (`Secrets/face-unlock-password`, base64). Kunci 256 bit = generic password di
+    login keychain (`<bundle id>.face-unlock` / `session-key`), tanpa flag access control dan tanpa data-protection
+    keychain, jadi ACL bawaannya hanya app pembuat (build self-signed bisa memunculkan prompt izin keychain lagi
+    setelah update; hanya saat sesi dibuka, saat Faiz ada). Zenith sendiri minta Touch ID (`LAContext`, biometrik
+    lalu fallback password akun) sebelum membaca kunci; kunci hanya di memori (`FaceUnlockKeys.provider` = sesi,
+    `.faceUnlockSessionDidChange` saat buka/kunci). Kunci lagi setelah idle `faceUnlockAutoLockDays` (7/14/30/never,
+    default 7; dicek tiap 5 menit dan saat wake, hanya selama sesi terbuka), saat quit, dan lewat Lock Now; mengetik
+    yang berhasil dihitung pemakaian. Kunci hilang padahal masih ada data tersegel (password atau
+    `SecureFaceStore.exists`) = error, tidak pernah membuat kunci baru. Trade-off ini ditulis di peringatan
+    onboarding dan Settings.
+  - **Mengetik** (`FaceUnlockKeystrokes`): CGEvent di HID tap, Unicode per 20 unit tanpa memecah surrogate, ⌘→ ⌘⌫
+    dulu lalu Return; butuh Accessibility. Hanya kalau CGSession bilang terkunci (dicek sebelum membaca file dan
+    tepat sebelum tombol pertama), sesi terbuka, dan Accessibility ada; plaintext dinolkan. Hanya setelah scan
+    `matched`.
+  - **Coordinator** (`FaceUnlockCoordinator`, main thread, semua dependensi disuntik; `FaceUnlockRuntime` hanya
+    mendengar lock/unlock/sleep/wake selama fitur nyala): tunggu 0,3 dtk lalu baca CGSession, arm 0,25 dtk kemudian,
+    debounce wake 2 dtk, tidak scan selama tidur. State: `hidden`, `needsTouchID` (sesi terkunci), `armed`,
+    `scanning`, `success`, `failure(...)` (5 dtk lalu `armed`). **`success` dipasang saat password mulai diketik,
+    bukan sesudahnya:** mengetik password membuat Mac unlock, dan unlock island gembok menunggu sisa animasi sukses
+    (`FaceUnlockIslandTiming.welcomeDelay`) sebelum welcome, jadi animasinya harus sudah jalan; kalau mengetik
+    ditolak/gagal → `failure(.noPassword)`, dan kalau 4 dtk setelah mengetik Mac masih terkunci (password tersimpan
+    sudah basi) → `failure(.noPassword)`. `onActivate`: dari `armed` butuh trigger `onHover`, dari `failure` butuh
+    `faceUnlockRetryOnHover`. Auto-retry sekali per lock (opsional). Animasi `none` = tanpa island, scan headless
+    hanya untuk trigger yang dipilih. Trigger default Glance: lock, wake, hover; Space lewat IOKit HID
+    (`FaceUnlockSpaceKeyMonitor`) hanya saat terkunci + trigger nyala + izin ada; izin Input Monitoring diminta hanya
+    saat trigger Space dinyalakan di Settings. Saat fitur dinyalakan, model ArcFace disiapkan di latar
+    (`prepareModel`) supaya scan pertama di lock screen tidak menunggu compile.
+  - **Di island gembok** (branch `feat/face-unlock-island`, membaca `FaceUnlockPresence.shared`):
+    `FaceUnlockIslandStage.resolve` (murni, ikut test) menggabungkan momen island dan state face unlock: unlock
+    (welcome/bare) menang atas semua; scan/sukses/gagal menang atas salam; baris Touch ID dan glyph Face ID hanya
+    menggantikan pil saat rest. Kode: `Services/FaceUnlock/Island/FaceUnlockIslandSupport.swift`,
+    `UI/FaceUnlock/Island/FaceUnlockMediaView.swift`, view di `ZenithLockScreenIsland`.
+    - `.armed`: pil gembok seperti biasa + glyph `faceid` 18 pt (medium, lebih tipis dari gembok 17 pt semibold)
+      di sayap kanan, setelah slot (jarak 8). Kotaknya selebar kotak gembok (23 pt) dan jaraknya dari tepi kanan
+      sama dengan jarak gembok dari tepi kiri (`ZenithLockScreenIsland.padlockLead`, diukur dari lebar simbol
+      `lock.fill`); pil melebar seperlunya. Keduanya di tengah tinggi strip.
+    - *Sudut Glance (setelah video IMG_9851):* hanya untuk bentuk face unlock (pil armed dengan glyph, scan, sukses,
+      gagal, baris Touch ID; `FaceUnlockIslandStage.usesGlanceCorners`): sudut bawah squircle Apple (reach 1,528),
+      radius 12 (tertutup) → 60 (terbuka, `(h − 38) / 140`), dibatasi `(h − bahu) / 1,528` dan `(lebar badan / 2) /
+      1,528`; bahu Zenith tetap (`FaceUnlockIslandSilhouette`, `UI/FaceUnlock/Island/FaceUnlockIslandShape.swift`).
+      Elemen di dalam konsentris (radius − 20, tile Touch ID). Kedua sudut tiga cubic per sudut dan dicampur titik
+      per titik (`continuous` 0 = sudut Zenith persis, 1 = Glance); saat scan jadi welcome campurannya berjalan
+      0,35 dtk (`FaceUnlockCornerBlend`) bersama pegas bentuk. Island lain (desktop, welcome, farewell, notice)
+      tidak berubah.
+    - *Kedip unlock (IMG_9851, setelah ✓ island menyusut ±4 frame lalu welcome tumbuh):* coordinator mematikan face
+      unlock (`presence.state = .hidden`) begitu sesi terbuka, sering ±70 ms sebelum lock screen mendengar
+      `screenIsUnlocked`. Island menerima `.hidden` itu: stage kembali ke pil rest (tinggi kamera, tanpa isi) dan
+      `faceSuccessAt` terhapus, lalu unlock menumbuhkan welcome dari pil itu tanpa menunggu video sukses. Sekarang
+      `FaceUnlockIslandStage.next` menahan `.success` saat `.hidden` datang dan sesi sudah tidak terkunci
+      (`CGSSessionScreenIsLocked`); welcome lalu morph langsung dari bentuk sukses (isi ✓ pudar 0,1 dtk seperti
+      ganti halaman, bentuk pegas ke ukuran welcome, lantai notch tetap).
+    - *Kedip lock (IMG_9851, pil muncul langsung selebar penuh):* jam entrance dulu mulai saat view island muncul
+      (+0,6 dtk), sedangkan jendelanya baru di-order setelah sesi benar-benar terkunci (delegasi), dan perubahan
+      state (armed +0,25 dtk, lalu scanning) langsung memulai pegas dari notch. Pegasnya habis sebelum jendela
+      tampil. Sekarang entrance menunggu dilepas (`ZenithLockIslandModel.entranceReleased`): service melepasnya
+      setelah jendela island di-order dan digambar, sisa fade shield (`ZenithLockHandover.entranceWait`, minimal
+      1/30 dtk), jadi frame pertama selalu notch telanjang (`bareCutout`, tanpa bayangan) dan pegas terlihat utuh.
+      Perubahan state sebelum dilepas tidak memotong: entrance tumbuh ke tujuan terbaru; sesudahnya menumpang
+      pegas yang berjalan. Hold farewell dan gembok dihitung dari saat dilepas. Dua frame tepi notch lebih tebal
+      sebelum pil (island desktop yang menutup) dibiarkan: Glance sama.
+    - `.scanning`: panel Glance 252 × 200 (220 × 200 + flare 16), tidak lebih sempit dari pil, video 144 pt di
+      top 26, `idleanimation.mp4` berulang (`AVPlayerLooper`). Minimal: kamera + 2 × 54, tinggi + 12, gembok kiri,
+      video 27 pt kanan. Gaya dibaca dari `faceUnlockAnimationStyle` saat scan dimulai (default `original`,
+      `FaceUnlockIslandStyle`).
+    - `.success`: `unlockanimation.mp4` sekali, frame terakhir ditahan, lalu morph ke welcome saat unlock.
+      `.failure`: `unsuccessfulunlockanimation.mp4` sekali lalu ditahan. Gaya `none`: video hasil diganti
+      `unlockstatic.png` (seperti Glance).
+    - `.needsTouchID`: satu baris di bawah kamera, tile `touchid` + "Unlock with Touch ID once to use Face ID"
+      (teks Inggris saja).
+    - *Hover:* selama state ≠ `.hidden`, posisi pointer di-poll 60 Hz; jendela hanya menerima mouse di atas panel
+      yang terlihat (+6 pt), dan masuk hover saat `.armed`/`.failure` memanggil `FaceUnlockPresence.shared.onActivate`.
+    - *Media:* `Resources/FaceUnlock/` (idle, unlock, unsuccessful, logo mp4 + `unlockstatic.png`, dari Glance, MIT),
+      disalin `build.sh` ke `Contents/Resources/FaceUnlock/`. Diputar `AVPlayerLayer` dengan poster sampai siap,
+      selalu muted.
+    - *Catalog:* `lock-island-welcome`, `-bare`, `-face-armed`, `-face-armed-music`, `-face-scanning`, `-face-success`,
+      `-face-failure`, `-face-touchid`, `-face-minimal-scanning`, `-face-minimal-success`, `-face-none-failure`
+      (video digambar sebagai still lewat `AVAssetImageGenerator`, `stillMedia`), gerak
+      `motion-unlock-padlock-welcome`, `motion-face-scan`, `motion-face-success-welcome`,
+      `motion-face-minimal-success-welcome`, dan entrance dari notch `motion-lock-entrance-notch-farewell`,
+      `-face-armed`, `-face-minimal-scanning`.
+    - *Test:* `Tests/FaceUnlockIslandTests.swift`, dijalankan suite `lock-island` (level/behavior, timing hand-off,
+      rencana hand-off, stage, ukuran, hover rect, gaya).
+    - **Belum diverifikasi:** video di lock screen sungguhan, hover di jendela non-key saat terkunci, dan semua yang
+      butuh Mac terkunci sungguhan.
+  - **DefaultsKey:** `faceUnlockEnabled`, `faceUnlockCameraID`, `faceUnlockNoticeAccepted` tidak didaftarkan (tetap di
+    Mac ini, tidak ikut backup). Didaftarkan dan ikut backup: `faceUnlockTriggers` (`onLock,onWake,onHover`),
+    `faceUnlockAutoLockDays` (7), `faceUnlockLivenessEnabled` (true), `faceUnlockLivenessMode` (`light`/`heavy`),
+    `faceUnlockMatchThreshold` (0,66 = nilai yang benar-benar dipakai Glance; stop slider 0,61/0,66/0,71, jarak 0,05
+    Glance di sekitar nilai itu, karena slider Glance berpusat di 0,63 dan menampilkan default-nya sebagai "More
+    strict"), `faceUnlockMinimumFaceWidth` (0,21, "Detection distance": 0,25/0,21/0,17), `faceUnlockDetectionSeconds`
+    (5, 3...10), `faceUnlockRetryOnHover` (true), `faceUnlockAutoRetry` (false), `faceUnlockAnimationStyle`
+    (`original`). Recognition dan island membaca kunci yang sama (test mencocokkan nama dan default). Rahasia tidak
+    pernah di preferences.
+  - **Settings → Face Unlock** (`UI/FaceUnlock/FaceUnlockSettingsPage.swift`, halaman sendiri, anchor
+    `zenithFaceUnlock`): saklar (menyalakan sebelum setup membuka setup), sesi (Lock Now / Unlock with Touch ID,
+    auto-lock), trigger, durasi scan, retry, kamera, kecocokan, jarak deteksi, liveness, animasi, wajah (daftar,
+    rename, on/off, hapus, tambah), password (ganti/hapus, reset semua), Face Lab, dan peringatan + trade-off kunci.
+    Alias pencarian: "face id", "buka pakai wajah", "wajah", dst.
+  - **Onboarding** di jendela (`UI/FaceUnlock/FaceUnlockSetupWindow.swift`, logika `FaceUnlockOnboardingFlow`):
+    sampel disimpan di memori sampai sesi terbuka di langkah password. Recognition dicolok lewat
+    `FaceUnlockRecognitionAdapters.swift`: `FaceEnrollmentSession` → `FaceUnlockEnrollmentDriver`
+    (`FaceUnlockSetup.makeEnrollment`, dengan target wajah baru atau yang diganti), `FaceEnrollmentStore` →
+    `FaceUnlockFaceLibrary` (`FaceUnlockSetup.faces`).
+  - **Izin dan uninstall:** teks `NSCameraUsageDescription` (Info.plist + 14 `InfoPlist.strings`) menyebut face
+    unlock. Uninstall di app dan `Tools/uninstall.sh` menghapus item keychain kunci sesi (hanya saat uninstall
+    eksplisit); password tersegel dan folder `FaceUnlock/` ikut terhapus bersama `Application Support/<bundle id>`.
+  - Test: `face-unlock-flow` (kripto dengan kunci tes, auto-lock, trigger, state coordinator dengan recognizer dan
+    credentials palsu, guard "ketik hanya saat terkunci", onboarding), `face-unlock-recognition`,
+    `face-unlock-liveness`, `lock-island`. Katalog island: `ONLY=lock-island-face Tools/IslandCatalog/render.sh`.
+  - **Belum diverifikasi di Mac:** prompt Touch ID dan fallback-nya, item keychain sungguhan (dan prompt ACL setelah
+    update), mengetik di lock screen, waktu CGSession setelah wake, HID Space di lock screen, video dan hover di lock
+    screen, compile ArcFace di Mac, kamera dan sweep enrollment, tampilan jendela setup dan halaman Settings.
+- **Island pas isinya (branch `feat/island-fit`, dari 67/68/69.png):**
+  - *"checked st…" (67.png):* `contentWidth(.remote)` mengukur dua jarak lebih sedikit daripada yang digambar
+    `ZenithRemoteBurstRow` (HStack spacing 10 di antara lima elemen + Spacer), jadi island 20 pt terlalu sempit.
+    Sekarang semua burst diukur dari satu `ZenithIslandBurstLayout.row(_:)` (potongan tetap + jarak + lebar teks,
+    konstanta yang sama dipakai view dengan `HStack(spacing: 0)` dan padding eksplisit), dan `fit(_:geometry:)`
+    memberi ukuran + jumlah baris: satu baris di bawah kamera selebar perlu (padding 20 samping/bawah), lewat
+    580 pt subtitle turun ke baris kedua (+16 pt). Baris yang memuat angka diukur dengan font monospaced digit,
+    seperti yang digambar. Tile bersama `ZenithBurstTile`, teks dua baris `ZenithBurstWords`.
+  - *"Locked from …" di lock screen (68.png):* island gembok tidak lagi melebar tipis di samping kamera; ia turun
+    jadi island dua baris (`ZenithLockIsland.remoteFit`, `ZenithLockRemoteRow`): tile gembok putih di atas 12%
+    putih, "Locked from Faiz’s iPhone" semibold di atas "just now", iPhone di kanan, padding 20, teks di bawah
+    kamera; nama device panjang membungkus judul ke baris kedua. 3 dtk, lalu kembali ke pil gembok dengan pegas
+    iOS dan lantai notch. Jendela island gembok dibesarkan untuk island tumbuh (maks 580 + ayunan).
+  - *Unlock jadi satu island (69.png):* `ZenithLockHandoff`. Saat unlock, layanan lock screen menitipkan ukuran
+    pil gembok (`ZenithLockIslandModel.restSize`) + welcome ke `NotchService.awaitLockHandoff`. Saat island desktop
+    kembali (`syncWithPreferences` setelah `updateScreen`), welcome jadi notice pertamanya dan
+    `NotchWindowHost.takeOver(from:onScreen:)` membuat presentasi pertama mulai dari bentuk pil itu (path awal =
+    siluet ukuran pil, tanpa shift) lalu tumbuh jadi welcome (tile gembok hijau). Begitu panel island desktop
+    tampil (`visibilityDidChange`, setelah `CATransaction.flush`), jendela pil langsung di-`orderOut` tanpa fade.
+    Kalau island tidak bisa mengambil alih (tersembunyi, full screen, terbuka, capsule, tanpa notch) atau tidak
+    tampil dalam 1,5 dtk, pil memudar seperti dulu dan welcome jadi burst biasa. Farewell dan remote lock tetap
+    tumbuh dari dan kembali ke pil yang sama (motion island gembok sendiri).
+  - *Ikut diperbaiki:* `syncNoticeWithPreferences` tidak lagi membuang burst (welcome/remote/adzan menumpang event
+    `.timer`) saat notice timer dimatikan; `show(_:)` sudah mengecualikan burst.
+  - *Pemeriksaan:* suite `island-fit` (semua jenis burst × 15 bahasa × notch/notch kecil/capsule dengan teks
+    terpanjang dari `ZenithIslandFitSamples`: device 40 karakter, nama "Maximiliano", folder panjang, semua salat
+    dan metode; remote lock; farewell muat di sayap; jendela island gembok). `--selftest` kini juga mengukur view
+    sungguhan offscreen (`IslandFitCheck`, `NSHostingView.fittingSize`): burst, baris remote lock, dan capsule
+    notice dengan teks panjang. Catalog: `burst-remote-status-long`, `burst-claude-long`, `burst-welcome-long`,
+    `burst-charge-long`, `lock-island-remote-long`, gerak `motion-lock-remote-close` dan `motion-unlock-welcome`.
+  - *Sengaja tidak diubah:* notice kecil upstream di sayap (volume, AirPods, track, download, dst.) tetap ukuran
+    upstream di samping kamera (ruangnya milik menu, dikunci test upstream); teks yang terlalu panjang di sana
+    masih dipotong.
+  - **Belum diverifikasi di Mac:** hand-off pil → welcome di layar sungguhan (urutan window server antara
+    jendela lock screen dan panel island, satu frame tumpang tindih), island gembok tumbuh saat dikunci dari
+    iPhone, dan pop glyph gembok/musik saat jendela pil hilang.
+  - *Kedip saat lock/unlock (dicoba Faiz di build rilis):*
+    - Lock: `begin(locking:)` dulu memasang `.rest` lalu `.farewell`/`.remoteLock` 0,05 dtk kemudian, jadi frame
+      pertama island gembok = gembok + bar musik, lalu diganti salam. Sekarang `begin` dipanggil sebelum jendela
+      island dibuat, momen pembuka langsung dipasang (`ZenithLockIsland.openingMoment`, test `lock-island`), dan
+      `ZenithLockIslandModel.entrance` = ukuran island desktop yang sedang pensiun di bawahnya
+      (`NotchService.retiringIslandSize`, atau kamera telanjang). View berdiri di bentuk itu sampai frame pertamanya
+      tampil, lalu jam motion dimulai di giliran berikutnya (pegas yang sama, lantai notch) ke ukuran salam; isi
+      salam terlihat sejak frame pertama, keluar dari balik kamera (teks tidak lagi terpotong "S…" saat sayap
+      tumbuh). Saat salam selesai, morph balik ke pil seperti biasa.
+    - Unlock: `unlocking()` dulu mereset `moment = .rest` dan mematikan sampler daya (slot charging hilang, pil
+      menyempit) dan `padlockOpen = true` mengubah gembok, semuanya tepat saat cross-over. Sekarang isi pil tidak
+      disentuh selama hand-off (reset lewat `end()` setelah jendelanya hilang); pil difoto (`cacheDisplay`) dan
+      frame pertama island desktop menampilkan foto itu di bentuk yang sama (`NotchCanvas.showLeavingLook`), yang
+      lalu pergi seperti halaman keluar (`ZenithContentRide.outgoing`) sementara welcome masuk. Jalur cadangan
+      (tanpa hand-off) tetap membuka gembok lalu memudar.
+    - Catalog (120 fps, `ZENITH_MOTION_FPS=120 ZENITH_MOTION_LENGTH=1.2`): `motion-lock-entrance-farewell`,
+      `-remote`, `-rest` digambar dari view island gembok sungguhan per frame (`frozen:`), mulai dari ukuran
+      `compact-music`; `motion-unlock-welcome` dari pil ke welcome. 10 frame pertama dicek: tidak ada isi rest.
+  - *Kedip di video live (IMG_9827.MOV, 30 fps):* penyebabnya shield lock screen macOS sendiri. Shield memudarkan
+    seluruh Space lock screen, termasuk jendela pil kita, saat masuk dan keluar (±0,8 dtk), dan itu tidak bisa
+    dicegah. Saat lock, di bawah shield yang memudar masih ada island desktop yang pensiun (0,6 dtk) dengan ukuran
+    lain, jadi terlihat dua outline. Saat unlock, `screenIsUnlocked` datang setelah shield mulai (bahkan selesai)
+    memudar: selama itu island desktop masih ditutup (sesi terkunci), jadi di bawah pil yang memudar cuma ada kamera
+    telanjang; welcome baru muncul setelahnya (di video ±1 dtk kemudian). Gembok tidak membuka di video, jadi yang
+    jalan adalah jalur hand-off, hanya terlambat, bukan fallback.
+    - *Perbaikan, kembaran:* `NotchLockScreenService` membuat jendela kedua (`twin`) dengan view island gembok yang
+      sama, model yang sama, frame yang sama, tapi di desktop (level island biasa, di luar Space lock screen), jadi
+      ada di bawah shield. Selama shield memudar masuk atau keluar, bentuk di bawahnya adalah island yang sama
+      (rest, charging, focus, musik, farewell, remote, semua dari model yang sama). Island desktop yang pensiun
+      ditutup 0,05 dtk setelah kembaran tampil di ukurannya (overlap 0,6 dtk dengan ukuran lain dihapus,
+      `NotchService.retireIslandNow`). Unlock: hand-off sekarang dari kembaran (foto diambil dari kembaran),
+      `handedOver` menutup pil dan kembaran sekaligus; jalur cadangan memudarkan keduanya. Kapan pun
+      `screenIsUnlocked` datang, yang terlihat tetap satu island.
+    - *Ronde berikutnya (IMG_9829.MOV, slow-motion 240 fps diputar 30 fps, jadi semua durasi 8× lebih
+      lama):* farewell ±18 dtk di video = 2,2 dtk nyata (`farewellHold`, bukan bug). Kembaran **memang
+      tergambar**: di frame video kembaran terlihat sebagai pil kedua yang lebih kecil dan lebih rendah, naik ke
+      notch. Penyebab sebenarnya: macOS men-*zoom* seluruh desktop (semua jendela desktop, termasuk island dan
+      kembaran) dari ±0,9 ke 1 selama ±0,15 dtk saat unlock (dan sebaliknya saat lock), berpusat di tengah
+      layar; poll jendela mencatat kembaran 790 → 800 → 830 → 844 → 858 → 876 pt. Jendela di Space lock screen
+      tidak ikut di-zoom, tapi ikut dipudarkan shield. Jadi jendela desktop mana pun (kembaran, atau island
+      desktop yang dibentuk jadi pil) tergeser selama zoom; island desktop yang muncul di tengah zoom (hand-off
+      +65 ms) juga tergeser, lalu pil dikeluarkan, maka celah kamera telanjang ±60 ms.
+    - *Perbaikan:* kembaran dihapus. Saat lock, island desktop ditutup seketika ketika pil gembok tampil
+      (sebelum zoom keluar), bukan 0,6 dtk kemudian. Saat unlock, island desktop ditahan di luar layar
+      (`NotchPanel.heldOffScreen`, `NotchService.holdIslandForLockScreen`) sementara jendela probe bening
+      (`ZenithDesktopZoomProbe`, 40 pt, di desktop sejak lock) membaca skala desktop dari window server tiap
+      1/120 dtk; begitu zoom selesai (`ZenithDesktopZoom.settled`: skala kembali 1, atau tidak ada zoom dalam
+      0,1 dtk, maks 0,8 dtk), hand-off didaftarkan dan island dilepas: muncul tepat di frame pil (tidak
+      tergeser), dengan foto pil, lalu pil dikeluarkan. Foto pil diambil saat unlock, sebelum shield
+      memudarkannya. Pengaman: tahanan dilepas paksa setelah 1,3 dtk.
+    - *Log rilis* (`defaults write id.satuvisual.zenith zenithLockTrace -bool true`,
+      `~/Library/Logs/Zenith/lock.log`, dari coordinator) ditambah: skala zoom pertama, lama tunggu zoom, island
+      ditahan/dilepas, rata-rata alpha foto pil, dan timer farewell (lama sebenarnya vs `farewellHold`).
+    - *Log (build dev):* `ZenithLockTrace` menulis ke `island-motion.log` yang sama (`zenithMotionTrace`):
+      `screenIsLocked`/`screenIsUnlocked` (+ canPresent), pil dan kembaran tampil (momen, ukuran entrance), hide,
+      island desktop dipensiunkan, hand-off diadopsi (ukuran) atau ditolak (alasan), pil keluar; perubahan bentuk
+      island desktop sudah tercatat sebagai `install start=… target=…`.
+  - *Plan B: jendela lock screen ala Glance (branch `feat/face-unlock-island`):* kedua sumber kedip di atas (pil
+    ikut dipudarkan shield sebelum `screenIsUnlocked`, island desktop ikut zoom 0,9 → 1) dihindari dengan cara
+    Glance, bukan diakali.
+    - *Satu Space untuk seumur app* (`ZenithLockScreenSpace`, diadaptasi dari `NotchSkyLight` Glance): dibuat sekali
+      saat pertama dibutuhkan (`SLSSpaceCreate` flag `1`, flag lain bikin Finder menggambar ikon desktop di Space
+      ini), level absolut 400, langsung ditampilkan, tidak pernah dihancurkan per lock. Jendela di-*delegate*
+      (`SLSSpaceAddWindowsAndRemoveFromSpaces`, mask 7) hanya saat sesi benar-benar terkunci
+      (`CGSessionCopyCurrentDictionary` → `CGSSessionScreenIsLocked`; dicoba ulang tiap 50 ms maks 3 dtk, kalau tidak
+      pernah terkunci jendela tidak ditampilkan), dan di-*undelegate* tepat sebelum `orderOut`.
+      `NotchOverlaySpace(absoluteLevel:)` tidak lagi dipakai lock screen.
+    - *Level:* jendela island gembok `CGShieldingWindowLevel() + 1`, behavior `[.canJoinAllSpaces, .stationary,
+      .fullScreenAuxiliary, .ignoresCycle]`, `animationBehavior = .none`, non-activating, tidak menerima klik kecuali
+      di atas panel face unlock (`ZenithLockScreenWindow`). Scene (player, aktivitas, terminal, layer penuh) tetap
+      di `NotchPanel.normalLevel` di Space yang sama, jadi tetap dipudarkan shield bersama lock screen seperti dulu.
+    - *Unlock* (`ZenithLockHandover`): island gembok tetap solid dan diam (tanpa fade, tanpa `orderOut`) selama
+      shield memudar. Welcome (`ZenithIslandBurstView` yang sama dengan burst island desktop, ukuran
+      `ZenithIslandBurstLayout.fit` dengan geometri yang sama) tumbuh di dalam island gembok
+      (`ZenithLockIslandMoment.welcome`); kalau face unlock baru cocok, animasi sukses dihabiskan dulu (±1,34 dtk).
+      Hand-off ke island desktop baru terjadi setelah zoom desktop selesai (`ZenithDesktopZoomProbe`, atau 1 dtk
+      tanpa probe) **dan** gerak island gembok sudah diam (`ZenithLockIslandModel.settlesAt`), maks 2,5 dtk. Island
+      desktop kembali tepat di bentuk welcome (`takeOver` dari ukuran yang sama = tanpa gerak), foto welcome dari
+      island gembok tetap utuh di atasnya sampai halaman yang sama selesai masuk (`showLeavingLook(holds:)`),
+      lalu island gembok di-undelegate dan di-`orderOut` seketika. Sisa durasi welcome dibawa
+      (`ZenithLockHandoff.shownFor`). Kalau ditolak atau island desktop tidak tampil dalam 1,5 dtk: island gembok
+      menahan welcome sampai habis, menyusut ke notch kosong, lalu keluar. Tanpa welcome: menyusut ke notch kosong
+      (`.bare`) lalu keluar, island desktop muncul biasa.
+    - *Dihapus:* fade 0,55 dtk island gembok (`fadeOutOverIsland`, `NotchWindowServerFade` untuk island), konstanta
+      `welcomeDelay`/`unlockOverlap`/`unlockPatience`/`handoffOverlap`, hand-off dari pil, dan entrance dari
+      ukuran island desktop (`retiringIslandSize`). Penahan island desktop (`holdIslandForLockScreen(upTo:)`) tetap
+      ada sebagai mekanisme supaya island desktop baru tampil saat hand-off.
+    - *Lock:* island desktop menutup ke notch kosong saat lock dimulai (`retireIsland(animated:)`, motion hide
+      biasa, ditutup 0,5 dtk kemudian). Island gembok berdiri di ukuran kamera telanjang selama shield memudar masuk
+      (`ZenithLockHandover.shieldFadeIn` 0,6 dtk; kini dilepas lewat `entranceReleased`, lihat Kedip lock), lalu farewell / "Locked
+      from …" tumbuh dari notch dengan pegas iOS yang sama; timer farewell dan gembok dihitung dari situ.
+    - *Log* (`zenithLockTrace`, `~/Library/Logs/Zenith/lock.log`): Space dibuat/ditampilkan (id, level, hasil),
+      delegate/undelegate per jendela (nomor, level, hasil, atau ditunda karena belum terkunci), level dan alpha
+      island saat unlock, alpha island dari window server tiap 1/30 dtk selama unlock (hanya saat berubah, plus
+      `onScreen`), kapan welcome tumbuh, waktu hand-off dan rencananya, handed over / declined, pil keluar, entrance
+      (delay, ukuran awal → target), perubahan state face unlock, dan hover.
+    - **Belum diverifikasi di Mac terkunci:** apakah jendela di level shielding + 1 di Space ini memang tidak
+      dipudarkan shield (log alpha hanya membaca alpha jendela sendiri, bukan komposit shield; perlu video), apakah
+      island desktop yang kembali di tengah/akhir zoom tepat di bentuk welcome tanpa geser, urutan window server
+      saat `orderOut`, `SLSSpaceAddWindowsAndRemoveFromSpaces` sebelum jendela pertama kali di-order, dan durasi
+      0,6 dtk notch kosong terhadap fade shield sebenarnya.
+  - *Face unlock di island gembok:* lihat bagian **Face unlock** di atas.
 - `PanelMetricColor` sengaja belum dipetakan: dipakai untuk tingkat status (bar
   hijau/kuning/merah) sekaligus warna identitas kategori (GPU cyan, memori mint, disk
   kuning). Dipetakan per pemakaian saat redesign panel menu bar.

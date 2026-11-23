@@ -12,6 +12,11 @@ import SwiftUI
 struct NotchLockScreenTerminalView: View {
     let configuration: NotchLockScreenTerminalConfiguration
     let size: CGSize
+    /// Lock screen v2's low placement: the card sits on the frame's bottom,
+    /// which has room for every line that may show, rather than hanging from its top.
+    var anchorsBottom = false
+    /// The Settings preview's lines, drawn instead of the live readings.
+    var sampleLines: [NotchLockScreenTerminalLine]? = nil
     @ObservedObject private var usage = AgentUsageService.shared
     @ObservedObject private var wakaTime = WakaTimeService.shared
     @ObservedObject private var vercel = VercelService.shared
@@ -30,14 +35,15 @@ struct NotchLockScreenTerminalView: View {
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
-            let lines = NotchLockScreenTerminalSupport.lines(configuration.sources, readings: readings(at: context.date),
-                                                             showsProjects: configuration.showsProjects)
-            ZStack(alignment: .top) {
+            let lines = sampleLines ?? NotchLockScreenTerminalSupport.lines(configuration.sources,
+                                                                            readings: readings(at: context.date),
+                                                                            showsProjects: configuration.showsProjects)
+            ZStack(alignment: anchorsBottom ? .bottom : .top) {
                 if !lines.isEmpty {
-                    card(typing && !reduceMotion ? Array(lines.prefix(typed)) : lines)
+                    card(typing && !reduceMotion && sampleLines == nil ? Array(lines.prefix(typed)) : lines)
                 }
             }
-            .frame(width: size.width, height: size.height, alignment: .top)
+            .frame(width: size.width, height: size.height, alignment: anchorsBottom ? .bottom : .top)
         }
         .allowsHitTesting(false)
         .task { await typeIn() }

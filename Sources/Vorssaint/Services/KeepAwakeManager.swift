@@ -1312,3 +1312,18 @@ final class KeepAwakeManager: ObservableObject {
         return true
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension KeepAwakeManager {
+    /// Only the published reading: no assertion is taken.
+    func catalogPose(active: Bool, until end: Date?, minutes: Int?) {
+        isActive = active
+        endDate = end
+        sessionMinutes = minutes
+        sessionTrigger = active ? .manual : nil
+    }
+}
+#endif

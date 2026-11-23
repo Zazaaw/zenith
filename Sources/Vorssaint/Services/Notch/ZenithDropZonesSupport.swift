@@ -329,6 +329,17 @@ enum ZenithDropZoneLayout {
         return (count + rows - 1) / rows
     }
 
+    /// Zenith fork: the height the zones' rows take in a page `width` wide,
+    /// which the island takes while a drag chooses among them, so the tiles
+    /// sit on its padding line at the sides and the bottom. Zero without zones.
+    static func blockHeight(count: Int, width: CGFloat) -> CGFloat {
+        guard count > 0, width > 0, width.isFinite else { return 0 }
+        let rows = min(rows(count: count, width: width), count)
+        let columns = columns(count: count, rows: rows)
+        let tileWidth = max(1, (width - spacing * CGFloat(columns - 1)) / CGFloat(columns))
+        return (tileWidth * tileAspect).rounded() * CGFloat(rows) + spacing * CGFloat(rows - 1)
+    }
+
     /// Each zone's frame in a page of `size`, its origin at the page's top
     /// leading corner: equal tiles filling the width, centred down the page,
     /// a short last row centred across it.

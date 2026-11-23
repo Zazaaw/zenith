@@ -228,8 +228,18 @@ enum DropZonesTests {
         five.zenithDropZoneCount = 5
         suite.expect(five.contentWidth == 668 && five.expandedWidth == 668 + NotchLayout.horizontalInset * 2,
                      "five zones widen a compact island to a comfortable tile each: \(five.contentWidth)")
-        suite.expect(five.expandedSize(module: .files).height == compact.expandedSize(module: .files).height,
-                     "widening keeps the page’s height")
+        // Zenith fork: the island fits the zones' rows, so they sit on its padding line below.
+        let block = Layout.blockHeight(count: 5, width: five.contentWidth)
+        suite.expect(block == (124 * Layout.tileAspect).rounded() && block < compact.contentBudget
+                        && five.expandedSize(module: .files).height
+                            == compact.expandedSize(module: .files).height - compact.contentBudget + block,
+                     "a drag choosing a zone fits the island to the zones' row: \(block)")
+        suite.expect(Layout.frames(count: 5, in: CGSize(width: five.contentWidth, height: block))
+                        .allSatisfy { $0.minY == 0 && $0.maxY == block },
+                     "the zones fill the page they fit, from its top to the padding line")
+        suite.expect(Layout.blockHeight(count: 6, width: 396) == 2 * (124 * Layout.tileAspect).rounded() + Layout.spacing
+                        && Layout.blockHeight(count: 0, width: 400) == 0 && Layout.blockHeight(count: 3, width: 0) == 0,
+                     "two rows add their gap; no zones or no room take no height")
         var three = compact
         three.zenithDropZoneCount = 3
         var two = compact

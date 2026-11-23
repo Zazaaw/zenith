@@ -79,6 +79,10 @@ final class DevServersService: ObservableObject {
 
     /// The page or the home widget appeared; while any shows, it looks often.
     func shown() {
+#if VORSSAINT_DEVELOPMENT
+        // Zenith fork: the island catalog draws sample data only.
+        if IslandCatalog.isRendering { return }
+#endif
         viewers += 1
         options = DevServersOptions.current()
         schedule()
@@ -244,3 +248,17 @@ final class DevServersService: ObservableObject {
         }
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension DevServersService {
+    func catalogPose(servers: [DevServer], indicator: Int?) {
+        self.servers = servers
+        self.indicator = indicator
+        hasLoaded = true
+        failed = false
+    }
+}
+#endif

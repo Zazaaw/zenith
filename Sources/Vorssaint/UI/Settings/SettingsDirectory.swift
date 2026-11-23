@@ -294,7 +294,7 @@ enum SettingsDirectory {
             .init([FeatureStrings.claudeAccount(language).title], feature: .notchAgents,
                   notch: .module(.agents), when: state.on(DefaultsKey.notchAgentsClaude)),
             .init([notchEditor.activity, notchEditor.resting, notch.coverMenus, notchEditor.feedback, notch.inputSource,
-                   notch.newTrack, lockScreen.title, lockScreen.sounds, lockScreen.show], notch: .activity),
+                   notch.newTrack], notch: .activity),
             .init([notchLowBattery.title], feature: .monitorPower, notch: .activity, when: batteryRest),
             .init([notchLowBattery.threshold, notchLowBattery.early, notchLowBattery.menuBar],
                   feature: .monitorPower, notch: .activity, when: tintedBattery),
@@ -564,6 +564,16 @@ enum SettingsDirectory {
                                         .init([mascot.frequency], when: state.on(DefaultsKey.notchMascotVisits)),
                                         .init([mascot.opensAs], feature: .commandBar, when: state.on(DefaultsKey.notchCommandBar)),
                                       ]),
+                // Zenith fork: the lock screen, a page of its own beside the island's.
+                SettingsDirectoryItem(page: .lockScreen, title: lockScreen.title, icon: "lock.display",
+                                      keywords: [lockScreen.show, lockScreen.sounds]),
+                // Zenith fork: lock and check status from an iPhone, a page of its own (no hub feature).
+                SettingsDirectoryItem(page: .remote, title: ZenithStrings.remote(language).title,
+                                      icon: "iphone.radiowaves.left.and.right",
+                                      keywords: ZenithRemoteSearch.keywords(language)),
+                // Zenith fork: face unlock, a page of its own (no hub feature).
+                SettingsDirectoryItem(page: .faceUnlock, title: ZenithStrings.faceUnlock(language).title,
+                                      icon: "faceid", keywords: FaceUnlockSearch.keywords(language)),
                 SettingsDirectoryItem(page: .commandBar,
                                       title: FeatureStrings.commandBar(language).pageTitle,
                                       icon: "command",

@@ -584,18 +584,40 @@ struct ZenithIslandSwitchStyle: ToggleStyle {
     /// 1 is AppKit's regular switch, 0.88 its small one.
     var scale: CGFloat = 1
 
-    func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 8) {
-            configuration.label
-            ZenithSwitch(isOn: configuration.$isOn)
-                // The island tints its controls white; the switch keeps the accent.
-                .tint(ZenithIsland.accent)
-                .scaleEffect(scale)
-                .frame(width: 34 * scale, height: 20 * scale)
+    // A custom style is handed the label even under `labelsHidden()`, so it
+    // reads the visibility itself (macOS 15+), as ZenithSwitchStyle does.
+    @ViewBuilder func makeBody(configuration: Configuration) -> some View {
+        if #available(macOS 15.0, *) {
+            ZenithIslandSwitchBody(configuration: configuration, scale: scale)
+        } else {
+            zenithIslandSwitchBody(configuration, scale: scale, showsLabel: true)
         }
-        .accessibilityRepresentation {
-            Toggle(isOn: configuration.$isOn) { configuration.label }
-        }
+    }
+}
+
+@available(macOS 15.0, *)
+private struct ZenithIslandSwitchBody: View {
+    let configuration: ToggleStyleConfiguration
+    let scale: CGFloat
+    @Environment(\.labelsVisibility) private var labelsVisibility
+
+    var body: some View {
+        zenithIslandSwitchBody(configuration, scale: scale, showsLabel: labelsVisibility != .hidden)
+    }
+}
+
+@MainActor @ViewBuilder
+private func zenithIslandSwitchBody(_ configuration: ToggleStyleConfiguration, scale: CGFloat, showsLabel: Bool) -> some View {
+    HStack(spacing: 8) {
+        if showsLabel { configuration.label }
+        ZenithSwitch(isOn: configuration.$isOn)
+            // The island tints its controls white; the switch keeps the accent.
+            .tint(ZenithIsland.accent)
+            .scaleEffect(scale)
+            .frame(width: 34 * scale, height: 20 * scale)
+    }
+    .accessibilityRepresentation {
+        Toggle(isOn: configuration.$isOn) { configuration.label }
     }
 }
 

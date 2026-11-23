@@ -151,6 +151,11 @@ enum SelfTest {
             failures.append("menu bar glyph representations")
         }
 
+        // Zenith fork: every grown island's view fits the island measured for
+        // it, offscreen, with the longest words in every language.
+        _ = NSApplication.shared
+        failures += MainActor.assumeIsolated { IslandFitCheck.failures() }.prefix(8).map { "island fit: \($0)" }
+
         for warning in warnings {
             print("SELFTEST WARNING: \(warning)")
         }

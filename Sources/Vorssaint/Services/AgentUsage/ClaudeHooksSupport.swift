@@ -51,7 +51,21 @@ enum ClaudeHooksSupport {
     }
 
     static func playsSound(in defaults: UserDefaults = .standard) -> Bool {
-        defaults.object(forKey: DefaultsKey.notchAgentsClaudeSound) as? Bool ?? true
+        chime(in: defaults) != .off
+    }
+
+    /// What happens when a session starts needing the person. The old sound
+    /// switch, turned off, still means off until a choice is made here.
+    static func chime(in defaults: UserDefaults = .standard) -> ClaudeChimeMode {
+        if defaults.object(forKey: DefaultsKey.notchAgentsClaudeSound) as? Bool == false { return .off }
+        return defaults.string(forKey: DefaultsKey.notchAgentsClaudeChime).flatMap(ClaudeChimeMode.init(rawValue:))
+            ?? .soundAndIsland
+    }
+
+    /// Makes `mode` the choice, leaving the old switch behind.
+    static func setChime(_ mode: ClaudeChimeMode, in defaults: UserDefaults = .standard) {
+        defaults.set(mode.rawValue, forKey: DefaultsKey.notchAgentsClaudeChime)
+        defaults.removeObject(forKey: DefaultsKey.notchAgentsClaudeSound)
     }
 
     // MARK: Events
@@ -553,5 +567,35 @@ enum ClaudeHooksSupport {
         exit 0
 
         """#
+    }
+}
+
+/// Zenith fork: what a Claude Code session waiting for the person does. The
+/// sound never plays on its own: it always comes with the island's burst
+/// naming the project, so it is never a chime with nothing to see.
+enum ClaudeChimeMode: String, CaseIterable, Identifiable {
+    case off
+    case soundAndIsland
+
+    var id: String { rawValue }
+}
+
+/// Zenith fork: keeps many sessions sitting idle from chiming every minute:
+/// one session at most once every 3 minutes, and any at most once every 30 s.
+struct ClaudeChimeLimiter: Equatable {
+    static let perSession: TimeInterval = 180
+    static let overall: TimeInterval = 30
+
+    private(set) var lastBySession: [String: Date] = [:]
+    private(set) var last: Date?
+
+    /// Whether `session` may chime at `now`; when it may, the chime counts.
+    mutating func allows(session: String, at now: Date) -> Bool {
+        if let last, now.timeIntervalSince(last) < Self.overall { return false }
+        if let previous = lastBySession[session], now.timeIntervalSince(previous) < Self.perSession { return false }
+        lastBySession = lastBySession.filter { now.timeIntervalSince($0.value) < Self.perSession }
+        lastBySession[session] = now
+        last = now
+        return true
     }
 }

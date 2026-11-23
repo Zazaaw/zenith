@@ -18,8 +18,10 @@ import SwiftUI
 // on each side hang outside the body like a skirt: the open island is that
 // much wider and its page that much further in (`NotchLayout.horizontalInset`,
 // `NotchLayout.shoulderFlare`), so the body, the page and everything laid out
-// inside keep their widths. The bottom corners grow to 34 points and become
-// continuous ("smoothed") corners. The closed island, every compact strip
+// inside keep their widths. The bottom corners grow to 40 points (a little
+// rounder than the recording, so the open island's one padding, half the
+// corner, is 20 points: `ZenithIslandInset`) and become continuous
+// ("smoothed") corners. The closed island, every compact strip
 // and the camera geometry draw exactly as before: the new profile only
 // arrives as the island grows past a closed strip's height, and eases in
 // with that height, so a resize morphs from one to the other and the
@@ -34,8 +36,9 @@ import SwiftUI
 
 enum ZenithIslandSilhouette {
     /// The open island's bottom corner. Inner surfaces nest inside it
-    /// (`ZenithIsland.innerRadius(depth:)`).
-    static let openCornerRadius: CGFloat = 34
+    /// (`ZenithIslandInset.concentricRadius(inset:)`), and content keeps
+    /// half of it from the body's sides and bottom.
+    static let openCornerRadius: CGFloat = 40
     /// The open island's shoulder, across and down the screen edge: a
     /// circular arc, as wide as it is deep.
     static let openShoulderWidth: CGFloat = 27

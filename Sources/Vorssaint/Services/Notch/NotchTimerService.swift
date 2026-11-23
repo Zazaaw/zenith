@@ -123,3 +123,12 @@ final class NotchTimerService: ObservableObject {
         }
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension NotchTimerService {
+    func catalogPose(_ session: NotchTimerSession) { self.session = session }
+}
+#endif

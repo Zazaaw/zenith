@@ -252,6 +252,10 @@ final class AgentUsageService: ObservableObject {
     /// Reads local fallbacks immediately and asks Claude for fresh account
     /// limits. A Settings preview reads too, without counting as the page.
     func pageDidAppear(preview: Bool = false) {
+#if VORSSAINT_DEVELOPMENT
+        // Zenith fork: the island catalog draws sample data only.
+        if IslandCatalog.isRendering { return }
+#endif
         if !preview { pageVisible = true }
         guard running else { return }
         refreshClaudeLimits(pageShows: true)
@@ -922,3 +926,12 @@ final class AgentUsageService: ObservableObject {
         }
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension AgentUsageService {
+    func catalogPose(_ snapshot: AgentUsageSnapshot) { self.snapshot = snapshot }
+}
+#endif

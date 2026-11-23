@@ -63,7 +63,8 @@ struct RecapBento: View {
     /// A still image has no arrival.
     var animated = true
 
-    static let spacing: CGFloat = 8
+    /// The island's even gap between cards (ZenithIslandInset).
+    static let spacing: CGFloat = ZenithIslandInset.gap
     /// What a card's tile, figure and detail need (RecapCardView.inset each
     /// way); below it the page scrolls rather than squeeze them.
     static let minimumCardHeight: CGFloat = 82

@@ -309,6 +309,21 @@ if (( TEST )); then
         Sources/Vorssaint/Services/ExportTracker/ExportTrackerSupport.swift
         Sources/Vorssaint/Services/ExportTracker/ExportWriterProbe.swift
         Sources/Vorssaint/Services/Notch/ZenithNoticeSupport.swift
+        Sources/Vorssaint/Services/Notch/ZenithIslandRoom.swift
+        Sources/Vorssaint/Services/Notch/ZenithIslandMotion.swift
+        Sources/Vorssaint/Services/Notch/ZenithLockIslandSupport.swift
+        Sources/Vorssaint/Services/Notch/ZenithLockHandover.swift
+        Sources/Vorssaint/Services/FaceUnlock/FaceUnlockContract.swift
+        Sources/Vorssaint/Services/FaceUnlock/Island/FaceUnlockIslandSupport.swift
+        Sources/Vorssaint/UI/FaceUnlock/Island/FaceUnlockIslandShape.swift
+        Sources/Vorssaint/Core/ZenithLockIslandStrings.swift
+        Sources/Vorssaint/Core/ZenithClaudeChimeStrings.swift
+        Sources/Vorssaint/Core/ZenithRemoteStrings.swift
+        Sources/Vorssaint/Services/Remote/RemoteControlSupport.swift
+        Sources/Vorssaint/Services/Notch/ZenithCalendarSupport.swift
+        Sources/Vorssaint/Services/Notch/ZenithIslandBurstSupport.swift
+        Sources/Vorssaint/Services/Notch/ZenithIslandFitSamples.swift
+        Sources/Vorssaint/Core/ZenithIslandStrings.swift
         Sources/Vorssaint/Services/Notch/ZenithHomeLayoutSupport.swift
         Sources/Vorssaint/Services/Notch/ZenithHomeShortcutsSupport.swift
         Sources/Vorssaint/Services/Notch/ZenithTabBarSupport.swift
@@ -328,8 +343,13 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Notifications/ZenithReplySupport.swift
         Sources/Vorssaint/Services/GitHub/GitHubSupport.swift
         Sources/Vorssaint/Core/ZenithStrings.swift
+        Sources/Vorssaint/Core/ZenithLockScreenSettingsStrings.swift
+        Sources/Vorssaint/Core/ZenithLockScreenPageStrings.swift
+        Sources/Vorssaint/Services/Notch/ZenithLockScreenOptions.swift
+        Sources/Vorssaint/Services/Notch/ZenithLockScreenJobFeedSupport.swift
         Sources/Vorssaint/UI/Settings/ZenithAboutSupport.swift
         Sources/Vorssaint/UI/Settings/ZenithSettingsSearch.swift
+        Sources/Vorssaint/UI/Settings/ZenithLockScreenSettingsTab.swift
         Sources/Vorssaint/UI/ZenithTokens.swift
         Sources/Vorssaint/UI/ZenithSwitch.swift
         Sources/Vorssaint/UI/Notch/ZenithIslandChrome.swift
@@ -349,6 +369,7 @@ if (( TEST )); then
         Sources/Vorssaint/Core/NotchLockScreenStrings.swift
         Sources/Vorssaint/Services/Notch/NotchLockScreenSupport.swift
         Sources/Vorssaint/Services/Notch/NotchLockScreenTerminalSupport.swift
+        Sources/Vorssaint/Services/Notch/ZenithLockScreenV2Support.swift
         Sources/Vorssaint/Services/AgentUsage/AgentUsageModels.swift
         Sources/Vorssaint/Services/AgentUsage/AgentPricing.swift
         Sources/Vorssaint/Services/AgentUsage/AgentLogObject.swift
@@ -654,6 +675,29 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Uninstall/UninstallerSupport.swift
         Sources/Vorssaint/Services/ManagedDownloads/WhatsAppDownloadSupport.swift
         Sources/Vorssaint/Core/SecureInputSupport.swift
+        # Zenith fork: face unlock's recognition logic (no camera, model or store).
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/Liveness/LandmarkGeometry.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/Liveness/GeometryLiveness.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/Liveness/GlareCue.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/Liveness/LivenessCues.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/Liveness/LivenessScoring.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/Liveness/LivenessAnalyzer.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceUnlockRecognitionSupport.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceEmbedder.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceEnrollmentModel.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceDetector.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceEnrollmentPose.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceScanWindow.swift
+        Sources/Vorssaint/Services/FaceUnlock/Recognition/FaceModelCache.swift
+        Sources/Vorssaint/UI/FaceUnlock/Lab/FaceLabCalibration.swift
+        Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockPreferences.swift
+        Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockSession.swift
+        Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockSeams.swift
+        Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockCoordinator.swift
+        Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockOnboardingFlow.swift
+        Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockSystem.swift
+        Sources/Vorssaint/Services/FaceUnlock/Flow/FaceUnlockKeystrokes.swift
+        Sources/Vorssaint/Core/ZenithFaceUnlockStrings.swift
         Tests/*.swift
         build/generated-tests/*.swift
     )
@@ -824,6 +868,12 @@ if [[ -d Resources/Images ]]; then
     mkdir -p "$STAGE/Contents/Resources/Images"
     cp Resources/Images/* "$STAGE/Contents/Resources/Images/"
 fi
+# Zenith fork: face unlock's animations and still (Glance, MIT), its ArcFace model,
+# compiled on the Mac at first use (no Xcode here to precompile it), and its notices.
+mkdir -p "$STAGE/Contents/Resources/FaceUnlock"
+cp Resources/FaceUnlock/*.mp4 Resources/FaceUnlock/*.png "$STAGE/Contents/Resources/FaceUnlock/"
+ditto Resources/FaceUnlock/ArcFace.mlpackage "$STAGE/Contents/Resources/FaceUnlock/ArcFace.mlpackage"
+cp Resources/FaceUnlock/NOTICE.txt "$STAGE/Contents/Resources/FaceUnlock/NOTICE.txt"
 xattr -c -r "$STAGE" 2>/dev/null || true
 
 # Signing, in order of preference:

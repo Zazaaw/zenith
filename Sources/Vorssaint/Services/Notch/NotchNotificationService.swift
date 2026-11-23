@@ -366,3 +366,19 @@ final class NotchNotificationService: ObservableObject {
         workspaceObservers.removeAll()
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension NotchNotificationService {
+    func catalogPose(_ items: [NotchSystemNotification]) {
+        var inbox = NotchNotificationInbox()
+        // The first reading only primes it; later arrivals go on top.
+        _ = inbox.update([])
+        _ = inbox.update(items.reversed())
+        self.inbox = inbox
+        monitoring = true
+    }
+}
+#endif

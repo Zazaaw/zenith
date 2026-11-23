@@ -25,6 +25,9 @@ enum ZenithSettingsSearch {
     /// Pages that are fork pages already, or that the fork rewrote.
     static let pageAliases: [SettingsSearchItem.ID: [String]] = [
         .page(.workspaces): ["workspace", "ruang kerja", "mode kerja", "preset kerja", "profil kerja"],
+        .page(.lockScreen): ["lock screen", "lockscreen", "layar kunci", "kunci layar", "layar terkunci"],
+        .page(.remote): ZenithRemoteSearch.aliases,
+        .page(.faceUnlock): FaceUnlockSearch.aliases,
         .page(.about): ["tentang", "tentang aplikasi", "versi", "version", "Satu Visual", "Zenith"],
     ]
 
@@ -35,6 +38,7 @@ enum ZenithSettingsSearch {
         let vercelAlerts = ZenithStrings.vercelAlerts(language)
         let gitHub = ZenithStrings.gitHub(language)
         let hooks = ZenithStrings.claudeHooks(language)
+        let chime = ZenithStrings.claudeChime(language) // Zenith fork: when Claude needs you
         let card = ZenithStrings.cardImport(language)
         let backup = ZenithStrings.cardBackup(language)
         let servers = ZenithStrings.devServers(language)
@@ -44,7 +48,11 @@ enum ZenithSettingsSearch {
         let prompter = ZenithStrings.prompter(language)
         let camera = ZenithStrings.camera(language)
         let reply = ZenithStrings.reply(language)
-        let lockScreen = FeatureStrings.notchLockScreen(language)
+        let lockScreen = ZenithStrings.lockScreenSettings(language)
+        let lockPage = ZenithStrings.lockScreenPage(language)
+        let lockIsland = ZenithStrings.lockIsland(language) // the padlock island's switches
+        let remote = ZenithStrings.remote(language) // iPhone Remote
+        let face = ZenithStrings.faceUnlock(language) // Face Unlock
         let widgets = ZenithStrings.lockScreenWidgets(language)
         let terminal = ZenithStrings.lockScreenTerminal(language)
         let terminalTitle = ZenithStrings.lockScreenTerminalTitle(language)
@@ -106,12 +114,50 @@ enum ZenithSettingsSearch {
             section(.zenithReply, in: .module(.notifications), title: reply.autoWhatsApp,
                     icon: "arrowshape.turn.up.left", keywords: [],
                     aliases: ["reply", "balas", "balas pesan", "WhatsApp", "iMessage"], feature: .notchNotifications),
-            // Dynamic Island › Activity: the lock screen card and the fork's cards under it.
-            section(.zenithLockScreen, in: .activity, title: lockScreen.title, icon: "lock.display",
-                    keywords: [widgets.weather, widgets.reminders, sky.lockPrayer, sky.lockGolden, terminal.title,
-                               terminal.lines, terminal.showProjects, terminalTitle.windowTitle,
-                               terminalTitle.useComputerName],
-                    aliases: ["lock screen", "layar kunci", "cuaca", "pengingat", "terminal readout"]),
+            // Lock Screen: one result per tab, each landing on its tab.
+            page(.zenithLockScreen, title: lockScreen.overWallpaper, icon: "lock.display",
+                 keywords: [lockPage.activityRow, widgets.weather, widgets.reminders, sky.lockPrayer, sky.lockGolden,
+                            lockScreen.jobs, lockScreen.jobExport, lockScreen.jobCardImport, lockScreen.jobBackup,
+                            lockScreen.jobCommand, lockScreen.jobVercel, lockPage.jobExport, lockPage.jobCardImport,
+                            lockPage.jobCommand, lockIsland.section, lockIsland.charging, lockIsland.focus,
+                            lockIsland.farewell, lockIsland.welcome],
+                 aliases: ["activity row", "baris aktivitas", "cuaca", "pengingat", "progress", "progres",
+                           "progres pekerjaan", "gembok", "padlock", "see you", "welcome back", "selamat datang"]),
+            page(.zenithLockScreenMusic, title: lockPage.tabMusic, icon: "music.note",
+                 keywords: [lockPage.music, lockScreen.nowPlaying, lockScreen.titleControls, lockScreen.lyrics,
+                            lockScreen.karaoke, lockPage.lyricShade, lockPage.lyricTiming],
+                 aliases: ["lirik", "lyrics", "karaoke", "lagu", "musik", "now playing", "sedang diputar",
+                           "bayangan lirik", "lyric shade", "timing lirik", "geser lirik", "lyric offset",
+                           "lyrics delay", "lirik telat", "sinkron lirik"]),
+            page(.zenithLockScreenTerminal, title: terminal.title, icon: "terminal",
+                 keywords: [lockScreen.terminal, terminal.lines, terminal.showProjects, terminalTitle.windowTitle,
+                            terminalTitle.useComputerName, lockScreen.placement],
+                 aliases: ["terminal readout", "terminal layar kunci", "posisi terminal"]),
+            page(.zenithLockScreenLyrics, title: lockScreen.fullSection, icon: "music.note.list",
+                 keywords: [lockScreen.full, lockScreen.fullDisc, lockPage.fullDiscSpin, lockScreen.fullAccount,
+                            lockPage.fullAccount, lockScreen.fullDevice, lockScreen.fullClock, lockScreen.fullLoginHint,
+                            lockPage.topRight, lockScreen.background, lockPage.style, lockScreen.backgroundSolid,
+                            lockScreen.backgroundBlurred, lockScreen.color, lockScreen.colorFromCover,
+                            lockScreen.colorChoose, lockPage.tone, lockPage.toneVivid, lockPage.toneMuted, lockScreen.blur],
+                 aliases: ["full lyrics", "full-screen lyrics", "lirik layar penuh", "lirik penuh", "piringan hitam",
+                           "piringan muter", "spin the record", "vinyl", "pojok kanan atas", "top right corner",
+                           "cover color", "background color", "latar", "latar belakang", "blur", "warna latar",
+                           "warna sendiri", "warna sampul", "sampul blur", "nada warna", "redam", "muted color"]),
+            // iPhone Remote: lock and check status from an iPhone.
+            page(.zenithRemote, title: remote.enable, icon: "iphone.radiowaves.left.and.right",
+                 keywords: [remote.title, remote.checklist, remote.remoteLogin, remote.tailscale, remote.devices,
+                            remote.shortcut, remote.test, remote.hardening, remote.recent],
+                 aliases: ZenithRemoteSearch.aliases),
+            // Face Unlock: unlock by looking at the Mac.
+            page(.zenithFaceUnlock, title: face.enable, icon: "faceid",
+                 keywords: [face.title, face.setUp, face.session, face.sessionOpen, face.sessionLocked, face.lockNow,
+                            face.unlockWithTouchID, face.autoLock, face.triggers, face.onLock, face.onWake,
+                            face.onHover, face.onSpace, face.scanning, face.scanDuration, face.retryOnHover,
+                            face.autoRetry, face.camera, face.recognition, face.matchStrictness, face.detectionDistance, face.liveness,
+                            face.livenessLevel, face.animation, face.faces, face.addFace, face.password,
+                            face.passwordStored, face.passwordMissing, face.reset, face.lab, face.openLab, face.notes],
+                 aliases: FaceUnlockSearch.aliases),
+            // Dynamic Island › Activity: the fork's cards.
             section(.zenithCommandActivity, in: .activity, title: commands.section, icon: "terminal",
                     keywords: [commands.toggle, commands.showAfter, commands.showFolder, commands.ignore, commands.hook],
                     aliases: ["terminal", "zsh", "perintah terminal", "long command", "shell hook"]),
@@ -157,8 +203,9 @@ enum ZenithSettingsSearch {
         // Claude Code's hooks show under the AI agents options while Claude is on.
         if state.on(DefaultsKey.notchAgentsClaude) {
             items.append(section(.zenithClaudeHooks, in: .module(.agents), title: hooks.section, icon: "sparkles",
-                                 keywords: [hooks.connect, hooks.sound],
-                                 aliases: ["Claude Code", "hooks", "live steps", "langkah Claude"], feature: .notchAgents))
+                                 keywords: [hooks.connect, hooks.sound, chime.alert, chime.soundAndIsland, chime.needsYou],
+                                 aliases: ["Claude Code", "hooks", "live steps", "langkah Claude", "chime", "Tink", "bunyi",
+                                           "suara Claude", "Claude butuh kamu"], feature: .notchAgents))
         }
         return items
     }

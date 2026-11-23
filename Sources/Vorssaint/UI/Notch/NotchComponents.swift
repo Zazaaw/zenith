@@ -503,6 +503,9 @@ final class NotchBackdropPresentation: ObservableObject {
     /// keeps black at every island height.
     @Published var stripHeight: CGFloat = 0
     @Published private(set) var fade = NotchGlassFade.open
+    /// Zenith fork: how close to solid black the glass is while the island
+    /// moves (NotchMotionSurface), so its swing reads; 0 at rest.
+    @Published var motionSolid: Double = 0
     /// The menu bar a floating capsule leaves below itself, part of the
     /// surface height a fade is planned in.
     var floatingGap: CGFloat = 0
@@ -576,7 +579,8 @@ struct NotchSurfaceBackground: View {
             // the glass has opened, and the glass exists only while that
             // black lets it show, so the window's resizes at either end of a
             // transition happen in plain black.
-            Color.black.opacity(showsGlass || showsTranslucent ? presentation.restingBlack : 1)
+            Color.black.opacity(showsGlass || showsTranslucent
+                                ? max(presentation.restingBlack, presentation.motionSolid) : 1) // Zenith fork: solid while moving
 #if compiler(>=6.2)
             if #available(macOS 26, *), showsGlass, presentation.restingBlack < 1 {
                 let shape = NotchBackdropShape(contour: presentation.contour)
@@ -591,10 +595,12 @@ struct NotchSurfaceBackground: View {
                             .frame(maxHeight: .infinity, alignment: .top)
                             .mask(shape)
                     }
+                    .opacity(1 - presentation.motionSolid) // Zenith fork
             }
 #endif
             if showsTranslucent, presentation.restingBlack < 1 {
                 translucentOrBlack
+                    .opacity(1 - presentation.motionSolid) // Zenith fork
             }
         }
         .environment(\.colorScheme, .dark)

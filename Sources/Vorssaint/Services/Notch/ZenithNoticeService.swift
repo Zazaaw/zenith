@@ -36,6 +36,8 @@ final class ZenithNoticeCenter: ObservableObject {
     @Published private(set) var contentShown = false
     @Published private(set) var surfaceOpacity = 1.0
     @Published private(set) var panelSize = CGSize.zero
+    /// The subtitle's lines: two once the capsule is as wide as it gets.
+    @Published private(set) var lines = 1
     @Published private(set) var lowPowerOn = ProcessInfo.processInfo.isLowPowerModeEnabled
     @Published private(set) var thumbnails: [URL: NSImage] = [:]
 
@@ -76,8 +78,46 @@ final class ZenithNoticeCenter: ObservableObject {
         let previous = Self.reading(before), reading = Self.reading(next)
         let events = battery.update(reading, previous: previous, settings: settings)
         guard NotchSupport.routes(.battery) else { return false }
-        for event in events { enqueue(notice(for: event, reading: next)) }
+        for event in events {
+            // The charger grows the island itself (ZenithIslandBurst); a low
+            // battery stays a capsule with its Low Power pill.
+            if case let .low(percent, critical) = event {
+                enqueue(lowBatteryNotice(percent: percent, critical: critical, reading: next))
+            } else if let charge = chargeBurst(for: event, reading: next) {
+                if case .charging = event { answerLowBattery() }
+                NotchService.shared.showZenithBurst(.charge(charge))
+            }
+        }
         return ZenithBatteryNoticeState.replacesSmallNotice(before: previous, after: reading, settings: settings)
+    }
+
+    /// The island's charging burst for a charger event, nil for a low battery.
+    private func chargeBurst(for event: ZenithBatteryEvent, reading: PowerReading) -> ZenithChargeBurst? {
+        let language = L10n.shared.language
+        let island = ZenithStrings.island(language), locale = language.formattingLocale()
+        func burst(_ state: ZenithChargeState, percent: Int?, minutes: Int?, hint: String? = nil) -> ZenithChargeBurst {
+            ZenithChargeBurst.make(state, percent: percent, minutes: minutes, hint: hint, island: island, notices: text,
+                                   locale: locale)
+        }
+        let plugged = ZenithChargeState.of(external: true, charging: reading.isCharging, percent: reading.chargePercent)
+        switch event {
+        case .low:
+            return nil
+        case .charging(let percent):
+            return burst(plugged, percent: percent, minutes: plugged == .charging ? ZenithPowerEstimate.minutesToFull() : nil)
+        case .chargeLimit(let percent):
+            return burst(plugged, percent: percent, minutes: nil, hint: plugged == .charging ? text.chargeHint : nil)
+        case .held(let percent):
+            return burst(.held, percent: percent, minutes: nil)
+        case .unplugged(let percent):
+            return burst(.onBattery, percent: percent, minutes: ZenithPowerFormat.minutes(reading.timeRemainingSeconds))
+        }
+    }
+
+    /// A charger plugged in answers a low battery warning, waiting or shown.
+    private func answerLowBattery() {
+        queue.removeAll { $0.key == ZenithNoticeKey.batteryLow }
+        if notice?.key == ZenithNoticeKey.batteryLow { dismiss(quickly: true) }
     }
 
     /// An accessory connected. Returns whether a capsule shows it, so the
@@ -191,13 +231,6 @@ final class ZenithNoticeCenter: ObservableObject {
         return true
     }
 
-    /// Zenith fork: a prayer's time came (SkyService): "Waktunya Dzuhur", the
-    /// time and the method below, its sun or moon in the Sky section's colour.
-    func prayerTime(key: String, title: String, subtitle: String, symbol: String) {
-        enqueue(ZenithNotice(kind: .prayer, key: ZenithNoticeKey.prayer(key), title: title, subtitle: subtitle,
-                             glyph: .symbol(symbol, .tint(NotchModule.sky))))
-    }
-
     /// Zenith fork: a workspace finished (WorkspaceService): "Coding workspace
     /// ready" in its colour with a checkmark, or what did not work below.
     func workspaceFinished(id: String, title: String, subtitle: String, symbol: String, hex: UInt32, succeeded: Bool) {
@@ -209,33 +242,13 @@ final class ZenithNoticeCenter: ObservableObject {
         ZenithBatteryReading(percent: power.chargePercent, external: power.externalConnected, charging: power.isCharging)
     }
 
-    private func notice(for event: ZenithBatteryEvent, reading: PowerReading) -> ZenithNotice {
-        let text = text
-        switch event {
-        case let .low(percent, critical):
-            return ZenithNotice(kind: critical ? .batteryCritical : .batteryLow, key: ZenithNoticeKey.batteryLow,
-                                title: ZenithNoticeFormat.filling(text.batteryTitle, percent: percent),
-                                subtitle: lowPowerOn ? text.lowPowerOn : text.lowPowerAction,
-                                accessory: .lowPower(on: lowPowerOn), action: .batterySettings)
-        case let .charging(percent):
-            return ZenithNotice(kind: .charging, key: ZenithNoticeKey.power,
-                                title: ZenithNoticeFormat.titled(text.charging, percent: percent),
-                                subtitle: text.chargerConnected,
-                                glyph: .symbol("bolt.fill", .green),
-                                accessory: percent.map { .ring(percent: $0, tone: .green) } ?? .none)
-        case let .unplugged(percent):
-            return ZenithNotice(kind: .unplugged, key: ZenithNoticeKey.power,
-                                title: ZenithNoticeFormat.titled(text.onBattery, percent: percent),
-                                subtitle: text.chargerRemoved,
-                                glyph: .symbol("powerplug", .white),
-                                accessory: percent.map { .ring(percent: $0, tone: ZenithNoticeFormat.batteryTone($0)) } ?? .none)
-        case let .chargeLimit(percent):
-            return ZenithNotice(kind: .chargeLimit, key: ZenithNoticeKey.chargeLimit,
-                                title: ZenithNoticeFormat.titled(text.charging, percent: percent),
-                                subtitle: text.chargeHint,
-                                glyph: .symbol("leaf.fill", .green),
-                                accessory: .ring(percent: percent, tone: .green))
-        }
+    /// Zenith fork: a battery glyph and the percentage, the words by Low Power Mode.
+    private func lowBatteryNotice(percent: Int, critical: Bool, reading: PowerReading) -> ZenithNotice {
+        let notice = ZenithNotice(kind: critical ? .batteryCritical : .batteryLow, key: ZenithNoticeKey.batteryLow,
+                                  title: "", subtitle: "", glyph: .battery(percent: percent, tone: .red),
+                                  accessory: .lowPower(on: lowPowerOn), action: .batterySettings,
+                                  minutesLeft: ZenithPowerFormat.minutes(reading.timeRemainingSeconds))
+        return refreshedLowPower(notice)
     }
 
     private func audioNotice(name: String, symbol: String, percent: Int?) -> ZenithNotice {
@@ -332,10 +345,7 @@ final class ZenithNoticeCenter: ObservableObject {
         let island = NotchService.shared
         let geometry = island.geometry
         let closed = closedIslandFrame()
-        let capsule = ZenithNoticeLayout.frame(screen: geometry.screen, centerX: geometry.screen.midX,
-                                               closedWidth: closed.width, floats: geometry.floats,
-                                               top: geometry.floats ? geometry.floatingDrop + (geometry.floatingGap ?? 0) : 0,
-                                               stripHeight: geometry.stripHeight)
+        let (capsule, lines) = capsuleLayout(next, covering: closed)
         capsuleFrame = capsule
         panelFrame = capsule.union(closed).integral
         let panel = panel ?? makePanel()
@@ -346,7 +356,9 @@ final class ZenithNoticeCenter: ObservableObject {
         let end = outline(closedFrame: capsule, closed: false)
         let rowTop = ZenithNoticeLayout.rowTop(floats: geometry.floats, stripHeight: geometry.stripHeight)
         row = CGRect(x: end.rect.minX + end.shoulder, y: end.rect.minY + rowTop,
-                     width: end.rect.width - end.shoulder * 2, height: ZenithNoticeLayout.rowHeight)
+                     width: end.rect.width - end.shoulder * 2,
+                     height: ZenithNoticeLayout.rowHeight(lines: lines, floats: geometry.floats))
+        self.lines = lines
         lowPowerOn = ProcessInfo.processInfo.isLowPowerModeEnabled
         var transaction = Transaction()
         transaction.disablesAnimations = true
@@ -400,9 +412,28 @@ final class ZenithNoticeCenter: ObservableObject {
         return CGRect(x: frame.minX + body.minX, y: frame.maxY - body.maxY, width: body.width, height: body.height)
     }
 
+    /// The capsule on screen for `notice`, and its lines: as wide as its
+    /// content needs by the island's room rule, and wide enough to cover the
+    /// closed island it grows from, even one reaching further to one side,
+    /// so no wing of it shows past the capsule.
+    private func capsuleLayout(_ notice: ZenithNotice, covering closed: CGRect) -> (frame: CGRect, lines: Int) {
+        let geometry = NotchService.shared.geometry
+        let centre = geometry.screen.midX
+        let covering = closed.isEmpty ? 0 : 2 * max(centre - closed.minX, closed.maxX - centre)
+        let measured = ZenithNoticeMeasure.content(notice)
+        let fit = ZenithNoticeLayout.fit(fixed: measured.fixed, title: measured.title, subtitle: measured.subtitle,
+                                         closedWidth: covering, screenWidth: geometry.screen.width,
+                                         floats: geometry.floats)
+        let frame = ZenithNoticeLayout.frame(screen: geometry.screen, centerX: centre, width: fit.width, lines: fit.lines,
+                                             floats: geometry.floats,
+                                             top: geometry.floats ? geometry.floatingDrop + (geometry.floatingGap ?? 0) : 0,
+                                             stripHeight: geometry.stripHeight)
+        return (frame, fit.lines)
+    }
+
     /// An outline in the window for a frame on screen. Closed, it keeps the
     /// island's own corners; grown, a floating one is a full pill and a
-    /// hanging one rounds the row below the camera by half its height.
+    /// hanging one takes the open island's corner, which its padding nests in.
     private func outline(closedFrame frame: CGRect, closed: Bool) -> ZenithNoticeOutline {
         let geometry = NotchService.shared.geometry
         let rect = CGRect(x: frame.minX - panelFrame.minX, y: panelFrame.maxY - frame.maxY,
@@ -413,7 +444,7 @@ final class ZenithNoticeCenter: ObservableObject {
         // The notice's own capsule keeps upstream's shoulder: only the open
         // island flares (ZenithIslandSilhouette).
         let shoulder = NotchLayout.plainShoulder(height: frame.height)
-        let radius = closed ? NotchLayout.surfaceRadius(height: frame.height) : ZenithNoticeLayout.rowHeight / 2
+        let radius = closed ? NotchLayout.surfaceRadius(height: frame.height) : ZenithNoticeLayout.hangingRadius
         return ZenithNoticeOutline(rect: rect, hanging: true, shoulder: shoulder, radius: radius)
     }
 
@@ -498,7 +529,8 @@ final class ZenithNoticeCenter: ObservableObject {
             }.store(in: &islandSubscriptions)
         island.$notice.dropFirst().receive(on: DispatchQueue.main)
             .sink { [weak self] shown in
-                guard let shown, shown.event.priority >= 3 else { return }
+                // A burst grows the island itself; the capsule never stays over it.
+                guard let shown, shown.event.priority >= 3 || shown.zenith != nil else { return }
                 self?.dismiss(quickly: true)
             }.store(in: &islandSubscriptions)
         if case .lowPower = notice?.accessory { startLowPowerObserver() }
@@ -507,11 +539,10 @@ final class ZenithNoticeCenter: ObservableObject {
     // MARK: Low Power Mode
 
     private func refreshedLowPower(_ notice: ZenithNotice) -> ZenithNotice {
-        var notice = notice
-        let on = ProcessInfo.processInfo.isLowPowerModeEnabled
-        notice.accessory = .lowPower(on: on)
-        notice.subtitle = on ? text.lowPowerOn : text.lowPowerAction
-        return notice
+        let language = L10n.shared.language
+        return ZenithBatteryNoticeLook.refreshed(notice, lowPowerOn: ProcessInfo.processInfo.isLowPowerModeEnabled,
+                                                 island: ZenithStrings.island(language), notices: text,
+                                                 locale: language.formattingLocale())
     }
 
     /// Turned on in System Settings while the notice shows, its switch follows.
@@ -648,7 +679,6 @@ final class ZenithNoticeCenter: ObservableObject {
                 let options = DevServersOptions.current(in: defaults)
                 return !options.enabled || !options.announces
             case .recap: return !RecapSettings.current(in: defaults).enabled
-            case .prayer: return !NotchSupport.modules(in: defaults).contains(.sky)
             case .workspace: return false
             }
         }
@@ -659,3 +689,31 @@ final class ZenithNoticeCenter: ObservableObject {
 private final class ZenithNoticeHostingView<Content: View>: NSHostingView<Content> {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension ZenithNoticeCenter {
+    /// `next` fully shown, laid out as `present` lays it out, in a panel just the capsule's size.
+    func catalogPose(_ next: ZenithNotice?) {
+        guard let next else { notice = nil; return }
+        let geometry = NotchService.shared.geometry
+        let (capsule, lines) = capsuleLayout(next, covering: closedIslandFrame())
+        panelFrame = capsule
+        panelSize = capsule.size
+        let end = outline(closedFrame: capsule, closed: false)
+        let rowTop = ZenithNoticeLayout.rowTop(floats: geometry.floats, stripHeight: geometry.stripHeight)
+        row = CGRect(x: end.rect.minX + end.shoulder, y: end.rect.minY + rowTop,
+                     width: end.rect.width - end.shoulder * 2,
+                     height: ZenithNoticeLayout.rowHeight(lines: lines, floats: geometry.floats))
+        self.lines = lines
+        lowPowerOn = false
+        notice = next
+        contentShown = true
+        outline = end
+        surfaceOpacity = 1
+        revision += 1
+    }
+}
+#endif

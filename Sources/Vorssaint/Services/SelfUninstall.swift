@@ -255,8 +255,12 @@ enum SelfUninstall {
         let home = NSHomeDirectory()
         try? FileManager.default.removeItem(atPath: "\(home)/Library/Preferences/\(id).plist")
         try? FileManager.default.removeItem(atPath: "\(home)/Library/Saved Application State/\(id).savedState")
-        // Clipboard images and any other app-owned data live here.
+        // Clipboard images and any other app-owned data live here, face
+        // unlock's sealed password (Secrets/) and faces (FaceUnlock/) too.
         try? FileManager.default.removeItem(atPath: "\(home)/Library/Application Support/\(id)")
+        // Zenith fork: face unlock's session key, from the login keychain. Only
+        // on this explicit uninstall; nothing else ever deletes it unasked.
+        try? FaceUnlockLoginKeychain(bundleID: id).deleteKey()
         try? FileManager.default.removeItem(atPath: "\(home)/Library/Caches/\(id)")
         // URLSession writes these on our behalf whenever the app talks to the
         // network, so they exist without the app ever choosing the path.

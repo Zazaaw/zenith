@@ -180,9 +180,13 @@ enum ZenithIslandTests {
     /// keep the widths and places they had.
     private static func shoulderSkirt(_ suite: TestSuite) {
         let flare = NotchLayout.shoulderFlare
-        suite.expect(NotchLayout.horizontalInset == 28 + flare
-                     && NotchLayout.horizontalInset - NotchLayout.shoulder(height: 300) == ZenithIsland.pageInset,
-                     "a page sits as far inside the open island's body as it did, past the wider shoulder")
+        // Zenith fork: the page sits the open island's one padding inside its body.
+        let inset = NotchLayout.shoulder + ZenithIslandInset.padding
+        suite.expect(NotchLayout.horizontalInset == inset + flare
+                     && NotchLayout.horizontalInset - NotchLayout.shoulder(height: 300) == ZenithIsland.pageInset
+                     && ZenithIsland.pageInset == ZenithIslandInset.padding
+                     && NotchLayout.bottomInset == ZenithIslandInset.padding,
+                     "a page sits one padding inside the open island's body and above its bottom, past the wider shoulder")
         let screen = CGRect(x: 0, y: 0, width: 1710, height: 1112)
         var widths = true, bodies = true
         for camera: CGFloat in [0, 185, 210] {
@@ -193,22 +197,25 @@ enum ZenithIslandTests {
                                                  silhouette: camera == 0 ? .capsule : .notch)
                     let chosen = NotchLayout.preferredWidth(layout, custom: CGFloat(custom))
                     let size = geometry.expanded
-                    widths = widths && geometry.expandedWidth == chosen + flare * 2
+                    // Zenith fork: the padding's growth past upstream's inset hangs outside the page too.
+                    let growth = NotchLayout.paddingGrowth
+                    widths = widths && geometry.expandedWidth == chosen + (flare + growth) * 2
+                        && NotchLayout.openGrowth == flare + growth && growth == inset - 28
                         && geometry.contentWidth == chosen - 56
                         && geometry.contentSize(for: size).width == chosen - 56
-                    bodies = bodies && size.width - NotchLayout.shoulder(height: size.height) * 2 == chosen - 28
+                    bodies = bodies && size.width - NotchLayout.shoulder(height: size.height) * 2 == chosen - 28 + growth * 2
                 }
             }
         }
-        suite.expect(widths, "the open island grows by the flare while its page keeps upstream's width")
-        suite.expect(bodies, "the open island's body keeps upstream's width on every preset and width")
+        suite.expect(widths, "the open island grows by the flare and the padding while its page keeps upstream's width")
+        suite.expect(bodies, "the open island's body grows by the padding past upstream's on every preset and width")
         // Shorter surfaces with insets of their own keep their bodies too.
         let geometry = NotchGeometry(screen: screen, safeAreaTop: 32, cameraWidth: 185)
         let peek = geometry.peek
         suite.expect(abs(peek.width - NotchLayout.shoulder(height: peek.height) * 2
                          - (geometry.peekWidth - NotchLayout.plainShoulder(height: peek.height) * 2)) < 0.001
                      && abs(NotchLayout.horizontalInset(height: peek.height) - NotchLayout.shoulder(height: peek.height)
-                            - (28 - NotchLayout.plainShoulder(height: peek.height))) < 0.001,
+                            - (inset - NotchLayout.plainShoulder(height: peek.height))) < 0.001,
                      "the peek keeps its body and its row's place inside it")
         for rows in [1, 2, 3] {
             let picker = NotchActivityPickerLayout(count: rows * 3, labelWidth: 60,
@@ -294,15 +301,47 @@ enum ZenithIslandTests {
                      "an inner radius never pinches to a point or grows past its outer one")
         suite.expect(ZenithIsland.radius(18) == ZenithIsland.cardRadius,
                      "upstream's large island cards take the concentric radius")
+        islandInset(suite)
+    }
+
+    /// Zenith fork: the open island's one padding and the corners nested in it.
+    private static func islandInset(_ suite: TestSuite) {
+        typealias Inset = ZenithIslandInset
+        suite.expect(ZenithIslandSilhouette.openCornerRadius == 40 && Inset.cornerRadius == 40 && Inset.padding == 20,
+                     "the open island's corner is 40 points and its padding half of it")
+        suite.expect(Inset.padding == (Inset.cornerRadius / 2).rounded(),
+                     "the padding follows the corner, so a rounder island brings its content in with it")
+        suite.expect(Inset.concentricRadius(inset: Inset.padding) == 20 && ZenithIsland.cardRadius == 20,
+                     "a card on the padding line runs concentric with the island's corner")
+        suite.expect(Inset.concentricRadius(inset: 8, outer: 20) == 12
+                        && Inset.concentricRadius(inset: 0) == Inset.cornerRadius
+                        && Inset.concentricRadius(inset: -6) == Inset.cornerRadius,
+                     "an element nested deeper takes a smaller corner, never a larger one than its surface")
+        suite.expect(Inset.concentricRadius(inset: 100) == Inset.minimumRadius
+                        && Inset.concentricRadius(inset: .nan) == Inset.minimumRadius
+                        && Inset.concentricRadius(inset: 4, outer: .infinity) == Inset.minimumRadius
+                        && Inset.concentricRadius(inset: 30, minimum: 0) == 10,
+                     "a corner never pinches below its least, and a measure that is not one reads as the least")
+        suite.expect(Inset.itemWidth(count: 3, in: 540) == 172 && Inset.itemWidth(count: 1, in: 540) == 540
+                        && Inset.itemWidth(count: 2, in: 100, gap: 20) == 40,
+                     "repeated cards split the width evenly between one even gap")
+        suite.expect(Inset.itemWidth(count: 0, in: 540) == 0 && Inset.itemWidth(count: 3, in: 10) == 0
+                        && Inset.itemWidth(count: 2, in: .infinity) == 0,
+                     "no cards, no room or no measure leave no width")
+        let width = Inset.itemWidth(count: 3, in: 540)
+        suite.expect(abs(width * 3 + Inset.gap * 2 - 540) < 0.001,
+                     "the cards and their gaps end exactly on the padding line")
+        suite.expect(Inset.height(content: 48, strip: 38) == 38 + Inset.belowCamera + 48 + Inset.padding
+                        && Inset.height(content: -5, strip: -2) == Inset.belowCamera + Inset.padding,
+                     "a grown row starts right under the camera and keeps the padding below it")
     }
 
     private static func morphReach(_ suite: TestSuite) {
-        suite.expect(!ZenithMorph.morphs(height: 32) && !ZenithMorph.morphs(height: 64) && ZenithMorph.morphs(height: 220),
-                     "open pages morph, while a closed strip's reading only fades")
-        suite.expect(ZenithMorph.blur == 10 && ZenithMorph.scale == 0.97
-                     && ZenithMorph.layerPeak > 0 && ZenithMorph.layerPeak < 1
-                     && ZenithMorph.layerDuration <= ZenithMotion.slow,
-                     "the morph blurs to 10, dips to 97% and lasts no longer than a large transform")
+        // The island's own page swaps ride the shape (IslandMotionTests);
+        // SwiftUI swaps take the same leaving fade and arriving ease.
+        suite.expect(ZenithContentRide.outgoingFade < ZenithContentRide.incomingDelay + ZenithContentRide.incomingFade
+                     && ZenithContentRide.incomingDelay + ZenithContentRide.incomingFade <= ZenithMotion.slow,
+                     "a SwiftUI swap fades out first and is sharp again within a large transform's time")
     }
 
     private static func palette(_ suite: TestSuite) {

@@ -285,3 +285,15 @@ final class ExportTrackerService: ObservableObject {
         }
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension ExportTrackerService {
+    func catalogPose(activity: Support.Activity?, live: Support.Live?) {
+        self.activity = activity
+        self.live = live
+    }
+}
+#endif

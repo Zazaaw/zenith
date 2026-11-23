@@ -2846,3 +2846,16 @@ final class ShelfService: ObservableObject {
         return panel
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension ShelfService {
+    func catalogPose(_ items: [Item]) {
+        self.items = items
+        selection = []
+        contentRevision += 1
+    }
+}
+#endif

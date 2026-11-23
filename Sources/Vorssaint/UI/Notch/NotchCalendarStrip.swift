@@ -92,7 +92,8 @@ struct NotchCalendarStrip: View {
                     .lineLimit(1).truncationMode(.tail)
             }
             .padding(.leading, inset)
-            .frame(width: geometry.compactActivityWingWidth, alignment: .trailing)
+            // Zenith fork: each wing from its outer end, so both ends keep the same inset.
+            .frame(width: geometry.compactActivityWingWidth, alignment: .leading)
             .clipped()
             Color.clear.frame(width: geometry.compactActivityCameraGap)
             // The start or end time fills the side the clock alone left
@@ -108,7 +109,7 @@ struct NotchCalendarStrip: View {
                 Self.clock(remaining, ongoing: countdown.ongoing)
             }
             .padding(.trailing, inset)
-            .frame(width: geometry.compactActivityWingWidth, alignment: .leading)
+            .frame(width: geometry.compactActivityWingWidth, alignment: .trailing) // Zenith fork
         }
     }
 

@@ -110,6 +110,10 @@ final class GitService: ObservableObject {
 
     /// The page or the home widget appeared; while any shows, it reads often.
     func shown() {
+#if VORSSAINT_DEVELOPMENT
+        // Zenith fork: the island catalog draws sample data only.
+        if IslandCatalog.isRendering { return }
+#endif
         viewers += 1
         options = GitOptions.current()
         accessibilityGranted = AXIsProcessTrusted()
@@ -519,3 +523,17 @@ final class GitService: ObservableObject {
         }
     }
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog (IslandCatalog,
+// `--render-island-catalog`), which draws the island offscreen. Nothing else
+// calls this, and the release build does not have it.
+extension GitService {
+    func catalogPose(state: State, current: GitRepoSelector.Current?, snapshot: GitSnapshot?, indicator: GitIndicator?) {
+        self.state = state
+        self.current = current
+        self.snapshot = snapshot
+        self.indicator = indicator
+    }
+}
+#endif

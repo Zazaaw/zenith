@@ -517,9 +517,8 @@ enum SkyTests {
         suite.expect(ZenithHomeWidget.prayer.module == .sky && ZenithHomeWidget.golden.module == .sky
                      && ZenithHomeWidget.prayer.isAvailable(modules: [.sky]) && !ZenithHomeWidget.golden.isAvailable(modules: [.controls]),
                      "the home widgets follow the Sky page")
-        suite.expect(ZenithNotice.Kind.prayer.priority == 3 && ZenithNoticeQueue.lifetime(.prayer) == 120
-                     && ZenithNoticeTiming.duration(.prayer) == 6 && ZenithNoticeKey.prayer("dhuhr") == "prayer.dhuhr",
-                     "a prayer’s notice outranks chargers and downloads, and waits up to two minutes")
+        suite.expect(!ZenithNotice.Kind.allCases.map(\.rawValue).contains("prayer"),
+                     "a prayer’s time is no capsule over the island: its pill grows instead (IslandRoundThreeTests)")
         suite.expect(NotchLockScreenSupport.activities(timer: false, calendar: false, agents: false, downloads: false,
                                                        weather: true, prayer: true, golden: true) == [.weather, .prayer, .golden],
                      "the lock screen line gives up the Sky items first")

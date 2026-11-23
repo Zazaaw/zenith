@@ -100,7 +100,10 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         canvas.layoutSubtreeIfNeeded()
         appliedFrame = panel.frame
         overlaySpace?.add(panel)
-        panel.visibilityDidChange = { [weak self] in self?.syncMissionControlMonitoring() }
+        panel.visibilityDidChange = { [weak self] in
+            self?.syncMissionControlMonitoring()
+            self?.handOverIfShown() // Zenith fork
+        }
     }
 
     /// Whether leaving content is fading out with the shape rather than hidden at once.
@@ -111,6 +114,10 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
 
     /// Temporary order-outs still belong to the current presentation.
     private var isPresented: Bool { panel.isVisible || concealedForFrameChange || relocationHidden }
+    /// Zenith fork: the shape the next presentation takes over from, and
+    /// what to do once it is on screen (takeOver(from:onScreen:)).
+    private var pendingHandoff: (size: CGSize, look: NSImage?, onScreen: () -> Void)?
+    private var handoffOnScreen: (() -> Void)?
     var isConcealedForMissionControl: Bool {
         // Media-key taps can ask from a worker thread. Never touch AppKit or
         // run the frame probe there; a panel being hidden cannot show feedback.
@@ -245,6 +252,25 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         content.adoptEqualizerHeights(pose)
     }
 
+    /// Zenith fork: the next presentation, while the island is not on
+    /// screen, starts from `size` (another window's island at the camera,
+    /// as the lock screen's padlock pill) and grows from there; `onScreen`
+    /// runs once the island is shown at that frame, to take the other away.
+    func takeOver(from size: CGSize, look: NSImage? = nil, onScreen: @escaping () -> Void) {
+        pendingHandoff = (size, look, onScreen)
+    }
+
+    /// Zenith fork: the island's size as drawn now.
+    var shownSize: CGSize { canvas.visibleSize ?? targetSize }
+
+    private func handOverIfShown() {
+        guard panel.isVisible, let onScreen = handoffOnScreen else { return }
+        handoffOnScreen = nil
+        // Its first frame reaches the screen before the other window goes.
+        CATransaction.flush()
+        onScreen()
+    }
+
     func hide(animated: Bool, transitionContent: NotchContentTransition = .dismiss) {
         guard isPresented else { return }
         let animate = animated && !relocationHidden && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
@@ -282,14 +308,20 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         if concealedForMissionControl { panel.ignoresMouseEvents = true }
         canvas.updateContrast()
         let revealing = revealFromHidden && !isPresented
-        if isPresented || revealing {
+        // Zenith fork: brought back to take over from another window's island
+        // (the lock screen's padlock pill), it starts from that shape exactly.
+        let handoff = isPresented || hideWhenSettled ? nil : pendingHandoff?.size
+        let handoffLook = handoff == nil ? nil : pendingHandoff?.look
+        if handoff != nil { handoffOnScreen = pendingHandoff?.onScreen }
+        if handoff != nil || isPresented { pendingHandoff = nil }
+        if isPresented || revealing || handoff != nil {
             // Settle the probe on screen ahead of its first reading: a window
             // ordered in and sized in one flush has no previous bounds to animate from.
             let probe = frameProbe ?? NotchFrameProbe(collectionBehavior: panel.collectionBehavior)
             frameProbe = probe
             probe.attach(level: panel.level, screen: geometry.screen)
         }
-        let canAnimate = animated && !relocationHidden && (isPresented || revealing)
+        let canAnimate = (animated || handoff != nil) && !relocationHidden && (isPresented || revealing || handoff != nil)
             && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         let previousGutter = quickAccessConfiguration == nil ? 0 : NotchQuickAccessLayout.gutter
         let previousBottom = quickAccessBottomInset(for: targetSize, geometry: currentGeometry)
@@ -310,7 +342,8 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         let gutter = quickAccessConfiguration == nil ? 0 : NotchQuickAccessLayout.gutter
         let bottom = quickAccessBottomInset(for: size, geometry: geometry)
         let frame = geometry.frame(for: CGSize(width: size.width + gutter * 2, height: size.height + bottom))
-        let changesFrame = revealing || relocationHidden || (hideWhenSettled && !canAnimate) || size != targetSize
+        let changesFrame = revealing || handoff != nil || relocationHidden || (hideWhenSettled && !canAnimate)
+            || size != targetSize
             || frame != previousFrame || (!isAnimating && panel.frame != appliedFrame)
         targetUsesGlass = usesGlass
         if canvas.backdropPresentation.stripHeight != geometry.stripHeight {
@@ -320,7 +353,7 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
             // Glass closing into a black strip shuts as its page leaves, so the
             // empty shell never shows the windows beneath it; opening out of one
             // lets the glass in over the last stretch, as the page fades in.
-            let start = revealing ? 0 : canvas.visibleSize?.height ?? targetSize.height
+            let start = revealing ? 0 : handoff?.height ?? canvas.visibleSize?.height ?? targetSize.height
             canvas.backdropPresentation.planFade(from: start, to: size.height, endsInGlass: usesGlass)
             canvas.updateCanvasBlack()
         }
@@ -335,7 +368,10 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
             if !isAnimating { quickAccessContainer?.dock.setVisible(showsDock, animated: dockAnimates) } // Zenith fork
             return
         }
-        if canAnimate { canvas.transitionContent(revealing ? .reveal : transitionContent) }
+        if canAnimate { // Zenith fork
+            canvas.transitionContent(revealing || handoff != nil ? .reveal : transitionContent,
+                                     leaving: !revealing && handoff == nil)
+        }
         else if animated && changesFrame && (revealing || transitionContent == .reveal) {
             // Reduce Motion, or a panel that was ordered out, puts the island
             // at its new size at once. Shown at once, the page reached the
@@ -354,24 +390,25 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         let previousPath = revealing
             ? NotchShape(attached: true, radius: 0, floatingGap: geometry.floatingGap)
                 .path(in: CGRect(x: 0, y: 0, width: previousWidth, height: 0)).cgPath
-            : canvas.visiblePath
+            : handoff.map { canvas.silhouettePath(for: $0) } ?? canvas.visiblePath
         let sameScreen = geometry.screen == currentGeometry.screen
         // Where the island's centre is now, relative to the camera's; pixel
         // rounding of a centred island is not a shift.
         let previousShift = currentGeometry.surfaceShift
         let drawnShift = canvas.visibleShift.map { abs($0 - previousShift) < 1 ? previousShift : $0 } ?? previousShift
-        let startShift = revealing ? 0 : drawnShift
+        let startShift = revealing || handoff != nil ? 0 : drawnShift
         animationGeneration += 1
         let generation = animationGeneration
         targetSize = size
         currentGeometry = geometry
         resizeCount += 1
-        guard canAnimate, sameScreen || revealing, let previousPath else {
+        guard canAnimate, sameScreen || revealing || handoff != nil, let previousPath else {
             settle()
             return
         }
 
-        let drawn = revealing ? canvas.surfaceSize(of: previousPath) : canvas.visibleSize ?? canvas.surfaceSize(of: previousPath)
+        let drawn = revealing ? canvas.surfaceSize(of: previousPath)
+            : handoff ?? canvas.visibleSize ?? canvas.surfaceSize(of: previousPath)
         // Only a width change eases steadily; anything that also grows taller
         // keeps the island's usual springs.
         let steady = steady && drawn.height == size.height
@@ -381,20 +418,26 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         // carries on at its speed. Started again from where it was drawn, it
         // stalled; and asked for while SwiftUI drew new content, it reached the
         // screen only with that content and began from where it had been.
-        let carried = isAnimating && !revealing && !steady && !withdrawing && startOffset == 0
-            ? canvas.carriedMotion(to: size, at: CACurrentMediaTime()) : nil
+        let carried = isAnimating && !revealing && handoff == nil && !steady && !withdrawing && startOffset == 0
+            ? canvas.carriedMotion(to: size, at: CACurrentMediaTime(),
+                                   floor: NotchMotionFloor.floor(for: size, geometry: geometry)) : nil // Zenith fork
         let start = carried?.start ?? drawn
-        let motion = carried?.frames() ?? NotchMotion.frames(from: start, to: size, steady: steady, offset: startOffset)
+        // Zenith fork: no frame shows narrower or shorter than the camera
+        // cutout, and closing onto the strip settles from above.
+        let floor = carried?.floor ?? NotchMotionFloor.floor(for: size, geometry: geometry)
+        let motion = carried?.frames()
+            ?? NotchMotion.frames(from: start, to: size, steady: steady, offset: startOffset, floor: floor)
         let offsets = motion.keyTimes.map {
-            $0 == 1 ? 0 : NotchMotion.offset(at: motion.duration * $0, from: start, to: size, start: startOffset, steady: steady)
+            $0 == 1 ? 0 : NotchMotion.offset(at: motion.duration * $0, from: start, to: size, start: startOffset,
+                                             steady: steady, floor: floor)
         }
         // Room for the swing past a larger target, and for everything already reserved.
-        var envelope = NotchMotion.envelope(from: start, to: size)
+        var envelope = NotchMotion.envelope(from: start, to: size, floor: floor)
         let reach = zip(motion.sizes, offsets).map { $0.width + 2 * abs($1) }.max() ?? 0
         envelope.width = max(envelope.width, reach.rounded(.up))
         let tallest = motion.sizes.map(\.height).max() ?? 0
         envelope.height = max(envelope.height, tallest.rounded(.up))
-        if !revealing {
+        if !revealing && handoff == nil {
             envelope = CGSize(width: max(envelope.width, canvas.bounds.width), height: max(envelope.height, canvas.bounds.height))
         }
         envelope = NotchMotion.reservation(envelope, centring: size)
@@ -456,7 +499,14 @@ final class NotchWindowHost: NSObject, CAAnimationDelegate {
         isAnimating = true
         canvas.animate(animation, from: paths.first, motion: carried ?? NotchMotionTimeline(
             from: start, to: size, begin: animation.beginTime > 0 ? animation.beginTime : CACurrentMediaTime(),
-            steady: steady, offset: startOffset))
+            steady: steady, offset: startOffset, floor: floor))
+        // Zenith fork: the pill it takes over from, as it looked, leaving as a page does.
+        // Zenith fork: taken over at its own shape (the welcome), the look stays whole until
+        // the same page beneath it is fully in, so nothing on screen changes.
+        if let handoff, let handoffLook {
+            canvas.showLeavingLook(handoffLook, size: handoff,
+                                   holds: abs(handoff.width - size.width) < 0.5 && abs(handoff.height - size.height) < 0.5)
+        }
         CATransaction.commit()
         // The window already has its new frame; its layers go out at once,
         // not at the end of this turn of the run loop, so the screen never
@@ -1071,7 +1121,12 @@ final class NotchPanel: NSPanel, NotchWaveHold {
         visibilityDidChange?()
     }
 
+    /// Zenith fork: kept off screen while macOS zooms the desktop back in
+    /// after an unlock (ZenithDesktopZoom); the island then appears in place.
+    var heldOffScreen = false
+
     override func orderFrontRegardless() {
+        guard !heldOffScreen else { return } // Zenith fork
         super.orderFrontRegardless()
         visibilityDidChange?()
     }
@@ -1538,17 +1593,67 @@ private final class NotchCanvas: NSView {
 
     /// The running resize headed for `size` from `time` on, as Core Animation
     /// times it, or nil when it has not reached the screen or cannot carry on.
-    func carriedMotion(to size: CGSize, at time: CFTimeInterval) -> NotchMotionTimeline? {
+    func carriedMotion(to size: CGSize, at time: CFTimeInterval, floor: CGSize? = nil) -> NotchMotionTimeline? {
         // The motion is stamped with the moment it reached the screen.
         guard let timeline = motionTimeline, let began = silhouette.animation(forKey: Self.motionKey)?.beginTime,
               began > 0, began <= time else { return nil }
-        return timeline.rebased(to: began).continued(to: size, at: time)
+        return timeline.rebased(to: began).continued(to: size, at: time, floor: floor) // Zenith fork: floor
     }
+
+    /// Zenith fork: another island's look at `size` (the lock screen's
+    /// padlock pill), over the content where that island stood, leaving as a
+    /// page does (ZenithContentRide.outgoing) while the island grows from it.
+    func showLeavingLook(_ image: NSImage, size: CGSize, holds: Bool = false) {
+        leavingLook?.removeFromSuperview()
+        let view = NSImageView(frame: CGRect(x: islandX(size), y: 0, width: size.width, height: size.height))
+        view.image = image
+        view.imageScaling = .scaleAxesIndependently
+        view.wantsLayer = true
+        addSubview(view, positioned: .above, relativeTo: host)
+        leavingLook = view
+        // Zenith fork: at the shape it takes over (the welcome over the
+        // welcome), the look stays whole over the page riding in beneath it,
+        // and goes once that page is fully in.
+        if holds {
+            DispatchQueue.main.asyncAfter(deadline: .now() + ZenithContentRide.Timing.opening.duration + 0.1) {
+                [weak self, weak view] in
+                guard let self, let view, self.leavingLook === view else { return }
+                view.removeFromSuperview()
+                self.leavingLook = nil
+            }
+            return
+        }
+        guard let layer = view.layer else { return }
+        let timing = ZenithContentRide.Timing.opening
+        let count = max(1, Int((timing.outgoingFade * Self.rideRate).rounded(.up)))
+        let times = (0...count).map { timing.outgoingFade * Double($0) / Double(count) }
+        let timeline = motionTimeline
+        let start = timeline?.begin ?? CACurrentMediaTime()
+        let layers = times.map {
+            ZenithContentRide.outgoing(at: $0, islandWidth: timeline?.shape(at: start + $0).width ?? size.width,
+                                       pageWidth: size.width, timing: timing)
+        }
+        let opacity = CAKeyframeAnimation(keyPath: "opacity")
+        opacity.values = layers.map(\.opacity)
+        opacity.keyTimes = times.map { NSNumber(value: $0 / timing.outgoingFade) }
+        opacity.duration = timing.outgoingFade
+        opacity.fillMode = .forwards
+        opacity.isRemovedOnCompletion = false
+        layer.add(opacity, forKey: "notch.leaving.opacity")
+        DispatchQueue.main.asyncAfter(deadline: .now() + timing.outgoingFade + 0.1) { [weak self, weak view] in
+            guard let self, let view, self.leavingLook === view else { return }
+            view.removeFromSuperview()
+            self.leavingLook = nil
+        }
+    }
+
+    private var leavingLook: NSImageView?
 
     func animate(_ animation: CAAnimation, from: CGPath?, motion: NotchMotionTimeline? = nil) {
         motionStart = nil
         motionStartOffset = 0
         motionTimeline = motion
+        motionDuration = (animation as? CAKeyframeAnimation)?.duration // Zenith fork
         silhouette.path = silhouettePath(for: contentSize)
         silhouetteSize = contentSize
         edge.path = silhouette.path
@@ -1563,9 +1668,23 @@ private final class NotchCanvas: NSView {
             borderAnimation.delegate = nil
             edge.add(borderAnimation, forKey: Self.motionKey)
         }
+        rideMotionChanged() // Zenith fork: the content rides this motion
+#if VORSSAINT_DEVELOPMENT
+        if ZenithMotionTrace.enabled, let motion {
+            let frames = motion.frames()
+            func text(_ size: CGSize) -> String { ZenithMotionTrace.text("%.1fx%.1f", size.width, size.height) }
+            let sizes = stride(from: 0, to: frames.sizes.count, by: 2).map { text(frames.sizes[$0]) }.joined(separator: " ")
+            ZenithMotionTrace.log("install start=\(text(motion.start)) target=\(text(motion.target)) floor=\(text(motion.floor))"
+                                  + " steady=\(motion.steady) offset=\(motion.offset) duration=\(ZenithMotionTrace.text("%.3f", frames.duration))"
+                                  + " keyframes=\(frames.sizes.count) widest=\(ZenithMotionTrace.text("%.1f", frames.sizes.map(\.width).max() ?? 0))"
+                                  + " tallest=\(ZenithMotionTrace.text("%.1f", frames.sizes.map(\.height).max() ?? 0))"
+                                  + " window=\(text(bounds.size)) sizes@60=[\(sizes)]")
+        }
+#endif
     }
     func stopMotion() {
         motionTimeline = nil
+        setMotionSolid(0) // Zenith fork: back to the glass at rest
         silhouette.removeAnimation(forKey: Self.motionKey)
         edge.removeAnimation(forKey: Self.motionKey)
         backdropDisplayLink?.invalidate()
@@ -1586,7 +1705,7 @@ private final class NotchCanvas: NSView {
     /// frame as it began to open or settled after closing. Under glass the
     /// fill gives way as the backdrop's resting black does.
     func updateCanvasBlack() {
-        let alpha = usesGlass ? CGFloat(backdropPresentation.restingBlack) : 1
+        let alpha = usesGlass ? CGFloat(max(backdropPresentation.restingBlack, backdropPresentation.motionSolid)) : 1 // Zenith fork
         let color = NSColor.black.withAlphaComponent(alpha).cgColor
         guard layer?.backgroundColor != color else { return }
         CATransaction.begin()
@@ -1603,7 +1722,32 @@ private final class NotchCanvas: NSView {
         backdropTicks += 1
         guard let timeline = motionTimeline else { synchronizeBackdrop(); return }
         let time = max(target, timeline.begin)
-        setBackdropContour(inCanvas(silhouettePath(for: timeline.size(at: time), offset: timeline.offset(at: time))))
+        // Zenith fork: glass is close to solid while the island moves, so its swing reads.
+        if usesGlass, let duration = motionDuration {
+            setMotionSolid(NotchMotionSurface.solidity(elapsed: time - timeline.begin, duration: duration))
+        }
+        setBackdropContour(inCanvas(silhouettePath(for: timeline.shape(at: time), offset: timeline.offset(at: time)))) // Zenith fork
+#if VORSSAINT_DEVELOPMENT
+        if ZenithMotionTrace.enabled {
+            let shown = visibleSize ?? .zero, expected = timeline.shape(at: CACurrentMediaTime())
+            ZenithMotionTrace.log(ZenithMotionTrace.text("frame t=%.3f onScreen=%.1fx%.1f expected=%.1fx%.1f opacity=%.2f",
+                                         CACurrentMediaTime() - timeline.begin, shown.width, shown.height,
+                                         expected.width, expected.height,
+                                         contentVisibility.presentation()?.opacity ?? contentVisibility.opacity))
+        }
+#endif
+    }
+
+    /// Zenith fork: the running motion's settling time, and the glass's solidity.
+    private var motionDuration: TimeInterval?
+
+    private func setMotionSolid(_ value: Double) {
+        let value = value < 0.01 ? 0 : value
+        guard abs(backdropPresentation.motionSolid - value) > 0.005 || (value == 0 && backdropPresentation.motionSolid != 0) else { return }
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) { backdropPresentation.motionSolid = value }
+        updateCanvasBlack()
     }
 
     /// The size shown while a resize is being prepared, before its motion.
@@ -1644,10 +1788,17 @@ private final class NotchCanvas: NSView {
 
     deinit { backdropDisplayLink?.invalidate() }
 
-    func transitionContent(_ kind: NotchContentTransition, shapeSnaps: Bool = false) {
+    /// `leaving` says whether a page is on screen to leave: a panel revealed
+    /// from hidden still holds its last frame, which must not ride out.
+    func transitionContent(_ kind: NotchContentTransition, shapeSnaps: Bool = false, leaving: Bool = true) {
         guard kind != .none else { return }
+        // Zenith fork: everything that moves rides the shape (ZenithContentRide).
+        if !shapeSnaps, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            beginRide(kind, leaving: leaving)
+            return
+        }
+        // Reduce Motion, or a shape that snaps into place: plain fades.
         let currentOpacity = contentVisibility.presentation()?.opacity ?? contentVisibility.opacity
-        let presentedArrival = self.presentedArrival
         contentVisibility.removeAnimation(forKey: "notch.opacity")
         host.layer?.removeAnimation(forKey: kCATransition)
         endArrival()
@@ -1655,26 +1806,18 @@ private final class NotchCanvas: NSView {
         CATransaction.setDisableActions(true)
         if kind == .replace {
             contentVisibility.opacity = 1
-            // Zenith fork: an open page swapping for another morphs (ZenithMorph);
-            // a closed strip's reading, and Reduce Motion, keep the plain fade.
-            let morphs = ZenithMorph.morphs(height: contentSize.height)
-                && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
             let transition = CATransition()
             transition.type = .fade
-            transition.duration = morphs ? ZenithMorph.layerCrossfade : 0.18 // Zenith fork
+            transition.duration = ZenithContentRide.reducedFade // Zenith fork
             transition.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             host.layer?.add(transition, forKey: kCATransition)
-            if morphs { beginMorph() } // Zenith fork
         } else {
             // Mask only the content pixels. A black overlay would obscure the
             // glass; alphaValue would remove the hosting view's AX/hit frame.
             let animation = CAKeyframeAnimation(keyPath: "opacity")
             let start: Float = kind == .dismiss || currentOpacity == 1 ? 0 : currentOpacity
-            // Give the silhouette a head start before revealing full-width
-            // content; content arriving small and out of focus can show
-            // sooner than sharp content could. Reversals continue from the
-            // opacity already on screen. A shape that snaps into place only
-            // needs its first frames drawn.
+            // A shape that snaps into place only needs its first frames drawn;
+            // reversals continue from the opacity already on screen.
             let keyTimes: [NSNumber] = kind == .dismiss ? [0, 0.65, 1] : shapeSnaps ? [0, 0.25, 1] : [0, 0.35, 1]
             let duration: CFTimeInterval = kind == .dismiss ? 0.40 : shapeSnaps ? 0.2 : 0.45
             animation.values = [start, start, 1]
@@ -1683,8 +1826,8 @@ private final class NotchCanvas: NSView {
             animation.calculationMode = .linear
             animation.timingFunctions = [CAMediaTimingFunction(name: .linear), CAMediaTimingFunction(name: .easeOut)]
             if kind == .depart {
-                // Departing content shrinks with the shape and stays hidden
-                // until the view has swapped it out, however late that is.
+                // Departing content stays hidden until the view has swapped
+                // it out, however late that is.
                 animation.values = [currentOpacity, 0]
                 animation.keyTimes = [0, 1]
                 animation.duration = 0.16
@@ -1695,18 +1838,18 @@ private final class NotchCanvas: NSView {
             }
             contentVisibility.opacity = 1
             contentVisibility.add(animation, forKey: "notch.opacity")
-            // A fade is not motion; a shape that snaps into place brings no
-            // blur or growth, and departing content only leaves.
-            if !shapeSnaps, kind != .depart {
-                beginArrival(opening: kind == .reveal, keyTimes: keyTimes, duration: duration,
-                             resuming: start > 0 ? presentedArrival ?? (blur: 0, scale: 1) : nil)
-            }
         }
         CATransaction.commit()
     }
 
     func finishDeparture() {
         guard departsContent else { return }
+        // Zenith fork: the swapped content arrives as any page does; the
+        // ride's own delay gives the view its moment to reach the screen.
+        if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            beginRide(.reveal, leaving: false)
+            return
+        }
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         let animation = CABasicAnimation(keyPath: "opacity")
@@ -1732,21 +1875,36 @@ private final class NotchCanvas: NSView {
         endArrival()
     }
 
-    /// Content arrives out of focus, and an opening page a little small, and
-    /// both settle with the island, as the phone's island brings its content in.
-    private struct Arrival {
+    /// Zenith fork: content riding the island's shape (ZenithContentRide).
+    /// The leaving page is Core Animation's snapshot, crossfading into the
+    /// arriving one in the same hosting layer; the mask's opacity, the blur
+    /// filter and the transform carry the two pages' fades, blurs, scales and
+    /// rise folded into one.
+    private struct Ride {
+        /// Host layer time at the ride's start, and how far into the arrival
+        /// it starts, for a reversal picking up from what is on screen.
         let begin: CFTimeInterval
-        let duration: CFTimeInterval
-        let scale: CGFloat
-        /// The hosting layer's width the growth was centred for.
+        let skipped: TimeInterval
+        /// The leaving page's own width, nil when nothing leaves; and
+        /// whether a page arrives, which a departure leaves for later.
+        let fromWidth: CGFloat?
+        let arrives: Bool
+        /// Opening or closing: when each page fades, how far the leaving one grows.
+        let timing: ZenithContentRide.Timing
+        /// The hosting layer's width the transform was laid out for.
         var width: CGFloat = 0
+
+        /// How long the opacity and blur run.
+        var length: TimeInterval { arrives ? max(timing.duration - skipped, 1.0 / 120) : timing.outgoingFade }
     }
 
     private static let arrivalBlurName = "notchArrival"
     private static let arrivalBlurKey = "notch.arrival.blur"
     private static let arrivalScaleKey = "notch.arrival.scale"
-    private var arrival: Arrival?
+    private var ride: Ride?
     private var arrivalGeneration = 0
+    /// Frames per second the ride is sampled at, ProMotion's.
+    private static let rideRate = 120.0
 
     /// Core Animation's own blur, which the window server renders with the
     /// rest of the island; a Core Image filter would need the hosting view's
@@ -1761,91 +1919,168 @@ private final class NotchCanvas: NSView {
         return filter
     }
 
-    /// The blur and growth on screen while content is still arriving.
-    private var presentedArrival: (blur: CGFloat, scale: CGFloat)? {
-        guard arrival != nil || host.layer?.animation(forKey: Self.arrivalBlurKey) != nil,
-              let presentation = host.layer?.presentation() else { return nil }
-        let blur = presentation.value(forKeyPath: "filters.\(Self.arrivalBlurName).inputRadius") as? NSNumber
-        return (CGFloat(blur?.doubleValue ?? 0), presentation.transform.m11)
-    }
-
-    private func beginArrival(opening: Bool, keyTimes: [NSNumber], duration: CFTimeInterval,
-                              resuming: (blur: CGFloat, scale: CGFloat)?) {
+    private func beginRide(_ kind: NotchContentTransition, leaving: Bool) {
         guard let layer = host.layer else { return }
+        let currentOpacity = Double(contentVisibility.presentation()?.opacity ?? contentVisibility.opacity)
+        // A page only leaves from a settled screen: one still arriving or
+        // leaving picks up from the opacity it shows instead.
+        let settled = currentOpacity > 0.99 && ride == nil && !departsContent
+        let leaves = leaving && settled
+        let arrives = kind != .depart
+        contentVisibility.removeAnimation(forKey: "notch.opacity")
+        layer.removeAnimation(forKey: kCATransition)
+        endArrival()
         arrivalGeneration += 1
         let generation = arrivalGeneration
+        // Closing lets the page leave with the shrinking island; opening and
+        // swaps let it go fast for the page arriving.
+        let timing: ZenithContentRide.Timing = kind == .dismiss || kind == .depart ? .closing : .opening
+        let skipped = arrives && !leaves ? ZenithContentRide.resumeTime(opacity: settled ? 0 : currentOpacity, timing: timing) : 0
         let begin = layer.convertTime(CACurrentMediaTime(), from: nil)
-        let radius = resuming?.blur ?? (opening ? 12 : 6)
-        if radius > 0, let filter = Self.makeArrivalBlur() {
-            layer.filters = [filter]
-            let blur = CAKeyframeAnimation(keyPath: "filters.\(Self.arrivalBlurName).inputRadius")
-            blur.values = [radius, opening ? radius / 2 : radius, 0]
-            blur.keyTimes = keyTimes
-            blur.timingFunctions = [CAMediaTimingFunction(name: .linear), CAMediaTimingFunction(name: .easeOut)]
-            blur.beginTime = begin
-            blur.duration = duration
-            layer.add(blur, forKey: Self.arrivalBlurKey)
+        ride = Ride(begin: begin, skipped: skipped, fromWidth: leaves || !arrives ? contentSize.width : nil, arrives: arrives,
+                    timing: timing)
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        if leaves && arrives {
+            let transition = CATransition()
+            transition.type = .fade
+            transition.duration = timing.outgoingFade
+            let curve = ZenithContentRide.crossfadeControlPoints
+            transition.timingFunction = CAMediaTimingFunction(controlPoints: curve.0, curve.1, curve.2, curve.3)
+            layer.add(transition, forKey: kCATransition)
         }
-        let scale = resuming?.scale ?? (opening ? 0.86 : 1)
-        if scale != 1 {
-            arrival = Arrival(begin: begin, duration: duration, scale: scale)
-            installArrivalScale()
+        // A departure leaves from the opacity it shows, and stays gone.
+        let length = ride?.length ?? timing.duration
+        let count = max(1, Int((length * Self.rideRate).rounded(.up)))
+        let times = (0...count).map { length * Double($0) / Double(count) }
+        let frames = rideFrames(at: times, islandWidths: times.map { _ in contentSize.width })
+        let keyTimes = times.map { NSNumber(value: $0 / length) }
+        let opacity = CAKeyframeAnimation(keyPath: "opacity")
+        opacity.values = frames.map { arrives ? $0.opacity : $0.opacity * currentOpacity }
+        opacity.keyTimes = keyTimes
+        opacity.calculationMode = .linear
+        opacity.duration = length
+        if !arrives {
+            opacity.fillMode = .forwards
+            opacity.isRemovedOnCompletion = false
+            opacity.setValue(true, forKey: Self.departureKey)
         }
-        // A filter left in place, even at no radius, keeps an extra render pass.
-        DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self] in
-            guard let self, self.arrivalGeneration == generation else { return }
-            self.endArrival()
-        }
-    }
-
-    /// Zenith fork: the page swap's blur and dip, on the arrival's own blur
-    /// filter and transform key, so whatever ends an arrival ends it too.
-    /// Both peak early, as the crossfade passes its middle, and settle sharp.
-    private func beginMorph() {
-        guard let layer = host.layer else { return }
-        arrivalGeneration += 1
-        let generation = arrivalGeneration
-        let begin = layer.convertTime(CACurrentMediaTime(), from: nil)
-        let keyTimes = [0, NSNumber(value: ZenithMorph.layerPeak), 1]
+        contentVisibility.opacity = 1
+        contentVisibility.add(opacity, forKey: "notch.opacity")
         if let filter = Self.makeArrivalBlur() {
             layer.filters = [filter]
             let blur = CAKeyframeAnimation(keyPath: "filters.\(Self.arrivalBlurName).inputRadius")
-            blur.values = [0, ZenithMorph.blur, 0]
+            blur.values = frames.map(\.blur)
             blur.keyTimes = keyTimes
-            blur.timingFunctions = ZenithMorph.layerTimings
-            blur.beginTime = begin
-            blur.duration = ZenithMorph.layerDuration
+            blur.calculationMode = .linear
+            // Started by Core Animation as it commits, with the page laid out
+            // later in this same pass; timed from the request, the page's own
+            // layout had used up the blur and growth before it ever showed.
+            blur.duration = length
+            if !arrives {
+                blur.fillMode = .forwards
+                blur.isRemovedOnCompletion = false
+            }
             layer.add(blur, forKey: Self.arrivalBlurKey)
         }
-        let dip = CAKeyframeAnimation(keyPath: "transform")
-        dip.values = [CATransform3DIdentity, arrivalTransform(scale: ZenithMorph.scale, in: layer), CATransform3DIdentity]
-            .map { NSValue(caTransform3D: $0) }
-        dip.keyTimes = keyTimes
-        dip.timingFunctions = ZenithMorph.layerTimings
-        dip.beginTime = begin
-        dip.duration = ZenithMorph.layerDuration
-        layer.add(dip, forKey: Self.arrivalScaleKey)
-        DispatchQueue.main.asyncAfter(deadline: .now() + ZenithMorph.layerDuration) { [weak self] in
+        installRideTransform()
+        CATransaction.commit()
+#if VORSSAINT_DEVELOPMENT
+        ZenithMotionTrace.log("ride \(kind) leaves=\(leaves) arrives=\(arrives) skipped=\(ZenithMotionTrace.text("%.3f", skipped))"
+                              + " from=\(ride?.fromWidth.map { ZenithMotionTrace.text("%.1f", $0) } ?? "-") to=\(ZenithMotionTrace.text("%.1f", contentSize.width))")
+#endif
+        guard arrives else { return }
+        scheduleRideEnd(generation: generation)
+    }
+
+    /// When the ride reached the screen: Core Animation stamps its opacity's
+    /// start as it commits. Nil until then.
+    private var rideStart: CFTimeInterval? {
+        guard let began = contentVisibility.animation(forKey: "notch.opacity")?.beginTime, began > 0 else { return nil }
+        return began
+    }
+
+    /// A filter left in place, even at no radius, keeps an extra render pass.
+    /// The transform keeps riding while the island still swings.
+    private func scheduleRideEnd(generation: Int) {
+        guard let ride else { return }
+        let now = CACurrentMediaTime()
+        let start = rideStart ?? now
+        let motionEnd = motionTimeline.map { $0.begin + $0.frames().duration - start } ?? 0
+        let remaining = max(ride.length, motionEnd) - (now - start)
+        DispatchQueue.main.asyncAfter(deadline: .now() + max(0, remaining) + 0.05) { [weak self] in
             guard let self, self.arrivalGeneration == generation else { return }
             self.endArrival()
         }
     }
 
-    /// Content grows from the island's top centre, which moves within the
-    /// hosting layer whenever the reserved area changes width, so the
-    /// growth is centred again for each width.
-    private func installArrivalScale() {
-        guard var arrival, let layer = host.layer,
-              layer.convertTime(CACurrentMediaTime(), from: nil) < arrival.begin + arrival.duration else { return }
-        arrival.width = layer.bounds.width
-        self.arrival = arrival
-        let growth = CABasicAnimation(keyPath: "transform")
-        growth.fromValue = NSValue(caTransform3D: arrivalTransform(scale: arrival.scale, in: layer))
-        growth.toValue = NSValue(caTransform3D: CATransform3DIdentity)
-        growth.timingFunction = CAMediaTimingFunction(controlPoints: 0.22, 1, 0.36, 1)
-        growth.beginTime = arrival.begin
-        growth.duration = arrival.duration
-        layer.add(growth, forKey: Self.arrivalScaleKey)
+    /// The folded pages at `times` into the ride, after what it skipped, the
+    /// arriving page's scale only ever growing.
+    private func rideFrames(at times: [TimeInterval], islandWidths: [CGFloat]) -> [ZenithContentRide.Composite] {
+        guard let ride else { return times.map { _ in ZenithContentRide.Composite(opacity: 1, crossfade: 1, blur: 0, scale: 1, offset: 0) } }
+        guard ride.arrives else {
+            return zip(times, islandWidths).map { time, width in
+                let leaving = ZenithContentRide.outgoing(at: time, islandWidth: width, pageWidth: ride.fromWidth ?? width,
+                                                         timing: ride.timing)
+                return ZenithContentRide.Composite(opacity: leaving.opacity, crossfade: 0, blur: leaving.blur,
+                                                   scale: leaving.scale, offset: 0)
+            }
+        }
+        return ZenithContentRide.frames(at: times, islandWidths: islandWidths, from: ride.fromWidth, to: contentSize.width,
+                                        timing: ride.timing, skipped: ride.skipped)
+    }
+
+    /// The content's scale and rise, following the island as drawn: its
+    /// running motion when there is one, else its size at rest. Laid out for
+    /// the hosting layer's width, and again whenever that width changes.
+    private func installRideTransform() {
+        guard var ride, let layer = host.layer else { return }
+        ride.width = layer.bounds.width
+        self.ride = ride
+        // On the media clock, from when the ride reached the screen, or from
+        // now when it has yet to: it then starts as it commits.
+        let started = rideStart
+        let origin = started ?? CACurrentMediaTime()
+        let now = CACurrentMediaTime()
+        let rideLength = ride.length
+        let motionEnd = motionTimeline.map { $0.begin + $0.frames().duration } ?? 0
+        let length = max(rideLength, motionEnd - origin, now - origin + 1 / Self.rideRate)
+        let count = max(1, Int((length * Self.rideRate).rounded(.up)))
+        let times = (0...count).map { length * Double($0) / Double(count) }
+        let flipped = layer.contentsAreFlipped()
+        let timeline = motionTimeline
+        let widths = times.map { timeline?.shape(at: origin + $0).width ?? contentSize.width }
+        let frames = rideFrames(at: times, islandWidths: widths)
+        var values = frames.map { frame -> NSValue in
+            let scaled = arrivalTransform(scale: frame.scale, in: layer)
+            let rise = CATransform3DMakeTranslation(0, flipped ? frame.offset : -frame.offset, 0)
+            return NSValue(caTransform3D: CATransform3DConcat(scaled, rise))
+        }
+        // An arriving page ends exactly at rest, so nothing moves when the
+        // ride is taken off.
+        if ride.arrives, !values.isEmpty { values[values.count - 1] = NSValue(caTransform3D: CATransform3DIdentity) }
+        let transform = CAKeyframeAnimation(keyPath: "transform")
+        transform.values = values
+        transform.keyTimes = times.map { NSNumber(value: $0 / length) }
+        transform.calculationMode = .linear
+        transform.beginTime = started.map { layer.convertTime($0, from: nil) } ?? 0
+        transform.duration = length
+        if !ride.arrives {
+            transform.fillMode = .forwards
+            transform.isRemovedOnCompletion = false
+        }
+        layer.add(transform, forKey: Self.arrivalScaleKey)
+    }
+
+    /// The content rides a new resize: its transform follows that motion,
+    /// and it stays until the motion settles.
+    private func rideMotionChanged() {
+        guard ride != nil else { return }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        installRideTransform()
+        CATransaction.commit()
+        if ride?.arrives == true { scheduleRideEnd(generation: arrivalGeneration) }
     }
 
     private func arrivalTransform(scale: CGFloat, in layer: CALayer) -> CATransform3D {
@@ -1950,7 +2185,7 @@ private final class NotchCanvas: NSView {
 
     private func endArrival() {
         arrivalGeneration += 1
-        arrival = nil
+        ride = nil // Zenith fork
         guard let layer = host.layer else { return }
         CATransaction.begin()
         CATransaction.setDisableActions(true)
@@ -1994,7 +2229,7 @@ private final class NotchCanvas: NSView {
         if host.frame != hostFrame { host.frame = hostFrame }
         contentVisibility.frame = host.bounds
         layoutMascotBridge()
-        if let arrival, arrival.width != host.layer?.bounds.width { installArrivalScale() }
+        if let ride, ride.width != host.layer?.bounds.width { installRideTransform() } // Zenith fork
         var backdropFrame = NotchStage.frame(stage, in: bounds)
         backdropFrame.origin.x = hostFrame.minX
         if backdrop.frame != backdropFrame { backdrop.frame = backdropFrame }
@@ -2028,3 +2263,40 @@ final class NotchActivationButton: NSButton {
 private final class NotchHostingView: NSHostingView<AnyView> {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
+
+#if VORSSAINT_DEVELOPMENT
+/// Zenith fork, Developer builds only: a log of each island motion the host
+/// installs (its keyframe sizes) and of every frame the display link sees
+/// while it runs (the size on screen against the expected one, and the
+/// content's opacity), to check the live motion against the approved reel.
+/// Off unless `defaults write id.satuvisual.zenith.dev zenithMotionTrace -bool
+/// true`; written to ~/Library/Logs/ZenithDeveloper/island-motion.log.
+enum ZenithMotionTrace {
+    static var enabled: Bool { UserDefaults.standard.bool(forKey: "zenithMotionTrace") }
+
+    /// Numbers for the log, the same in every region.
+    static func text(_ format: String, _ arguments: CVarArg...) -> String {
+        String(format: format, locale: Locale(identifier: "en_US_POSIX"), arguments: arguments)
+    }
+
+    private static let url: URL = {
+        let folder = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Logs/ZenithDeveloper", isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        return folder.appendingPathComponent("island-motion.log")
+    }()
+
+    static func log(_ line: @autoclosure () -> String) {
+        guard enabled else { return }
+        let text = Self.text("%.4f ", CACurrentMediaTime()) + line() + "\n"
+        guard let data = text.data(using: .utf8) else { return }
+        if let handle = try? FileHandle(forWritingTo: url) {
+            handle.seekToEndOfFile()
+            handle.write(data)
+            try? handle.close()
+        } else {
+            try? data.write(to: url)
+        }
+    }
+}
+#endif

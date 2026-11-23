@@ -12,10 +12,10 @@ import SwiftUI
 //
 // SwiftUI swaps (a module's own sub-views, the tab pill) use
 // `AnyTransition.zenithMorph` with `ZenithMorph.animation`. The island's page
-// swaps run in its window host, where Core Animation crossfades the hosting
-// layer while the silhouette springs; the host draws the same blur and dip
-// there with the `layer…` values, so both read as one motion. Reduce Motion
-// leaves a plain cross-fade in either place.
+// swaps run in its window host, where the content rides the shape
+// (`ZenithContentRide`); SwiftUI swaps follow the same sequence: the old view
+// fades and blurs out over 0.12 s, then the new one eases in from a blur, a
+// few points up. Reduce Motion leaves a plain cross-fade in either place.
 
 enum ZenithMorph {
     /// Peak blur on the way out and in, in points.
@@ -33,40 +33,40 @@ enum ZenithMorph {
         reduceMotion ? .easeInOut(duration: ZenithMotion.fast) : animation
     }
 
-    /// The window host's page swap: the blur and dip run over
-    /// `layerDuration`, peaking `layerPeak` of the way through, while the
-    /// hosting layer crossfades over `layerCrossfade`.
-    static let layerDuration: CFTimeInterval = 0.34
-    static let layerPeak: Double = 0.3
-    static let layerCrossfade: CFTimeInterval = 0.22
-    /// Into the peak fast, out of it on the Style Kit's reveal curve.
-    static var layerTimings: [CAMediaTimingFunction] {
-        [CAMediaTimingFunction(name: .easeOut), CAMediaTimingFunction(controlPoints: 0.22, 1, 0.36, 1)]
-    }
-
-    /// Whether a swap at a surface of `height` is an open page changing,
-    /// which morphs, rather than a closed strip's reading, which only fades.
-    static func morphs(height: CGFloat) -> Bool {
-        ZenithIslandSilhouette.openness(height: height) >= 0.5
+    /// The leaving view's fade, and the arriving view's delayed ease.
+    static var leaving: Animation { .linear(duration: ZenithContentRide.outgoingFade) }
+    static var arriving: Animation {
+        .timingCurve(0.42, 0, 0.58, 1, duration: ZenithContentRide.incomingFade).delay(ZenithContentRide.incomingDelay)
     }
 }
 
-/// Content `amount` of the way out: 0 in place, 1 gone.
+/// Content `amount` of the way out: 0 in place, 1 gone; `rise` points up at 1.
 private struct ZenithMorphEffect: ViewModifier {
     let amount: CGFloat
+    let blur: CGFloat
+    var rise: CGFloat = 0
 
     func body(content: Content) -> some View {
         content
-            .blur(radius: ZenithMorph.blur * amount)
+            .blur(radius: blur * amount)
             .opacity(Double(1 - amount))
-            .scaleEffect(1 - (1 - ZenithMorph.scale) * amount)
+            .offset(y: -rise * amount)
     }
 }
 
 extension AnyTransition {
-    /// Out: blur 0 → 10, opacity 1 → 0, scale 1 → 0.97. In: the reverse.
+    /// Out: blur 0 → 8 and gone over 0.12 s. In, from 0.05 s over 0.3 s:
+    /// blur 12 → 0, 8 points up to its place, opacity 0 → 1.
     static var zenithMorph: AnyTransition {
-        .modifier(active: ZenithMorphEffect(amount: 1), identity: ZenithMorphEffect(amount: 0))
+        .asymmetric(
+            insertion: .modifier(active: ZenithMorphEffect(amount: 1, blur: ZenithContentRide.incomingBlur,
+                                                           rise: ZenithContentRide.incomingRise),
+                                 identity: ZenithMorphEffect(amount: 0, blur: ZenithContentRide.incomingBlur,
+                                                             rise: ZenithContentRide.incomingRise))
+                .animation(ZenithMorph.arriving),
+            removal: .modifier(active: ZenithMorphEffect(amount: 1, blur: ZenithContentRide.outgoingBlur),
+                               identity: ZenithMorphEffect(amount: 0, blur: ZenithContentRide.outgoingBlur))
+                .animation(ZenithMorph.leaving))
     }
 
     /// The morph, or a plain fade under Reduce Motion.
