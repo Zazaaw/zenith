@@ -14,6 +14,7 @@ enum SettingsPage: Hashable {
     case lockScreen // Zenith fork: the island's lock screen, a page of its own
     case remote // Zenith fork: lock and check status from an iPhone, a page of its own
     case faceUnlock // Zenith fork: unlock by looking at the Mac, a page of its own
+    case batteries // Zenith fork: every device's battery and when to warn, under Monitor
 }
 
 /// Stable, non-localized identities for destinations inside shared Settings
@@ -74,6 +75,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
     case zenithLockScreenTerminal, zenithLockScreenLyrics, zenithLockScreenMusic
     case zenithRemote
     case zenithFaceUnlock
+    case zenithBatteries, zenithBatteriesAlerts, zenithBatteriesIPhone
 
     var page: SettingsPage {
         switch self {
@@ -105,6 +107,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
         case .zenithLockScreen, .zenithLockScreenTerminal, .zenithLockScreenLyrics, .zenithLockScreenMusic: return .lockScreen
         case .zenithRemote: return .remote
         case .zenithFaceUnlock: return .faceUnlock
+        case .zenithBatteries, .zenithBatteriesAlerts, .zenithBatteriesIPhone: return .batteries
         case .zenithDropZones, .zenithWatermark: return .shelf
         case .zenithDesignOverlay, .zenithBeautify: return .screenshot
         case .zenithQR: return .clipboard
@@ -521,7 +524,7 @@ enum FeatureVisibilitySupport {
         case .radialMenu: return [.radialMenu]
         case .commandBar: return [.commandBar]
         case .general, .features, .shortcuts, .advanced, .about, .releaseNotes, .support,
-             .workspaces, .remote, .faceUnlock: // Zenith fork
+             .workspaces, .remote, .faceUnlock, .batteries: // Zenith fork
             return []
         }
     }

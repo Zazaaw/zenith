@@ -74,7 +74,10 @@ struct ZenithAboutPage: View {
                 .padding(.top, 36)
                 // Zenith fork: face unlock's credits (Glance, MIT; ArcFace, non-commercial).
                 ZenithAboutReveal(order: 7, waitsForScroll: true) { _ in
-                    FaceUnlockCredits()
+                    VStack(alignment: .leading, spacing: 10) {
+                        FaceUnlockCredits()
+                        BatteriesCredits() // Zenith fork: the Batteries droplet, MIT
+                    }
                 }
                 .padding(.top, 36)
             }

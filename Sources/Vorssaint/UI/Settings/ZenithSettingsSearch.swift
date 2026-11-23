@@ -28,6 +28,7 @@ enum ZenithSettingsSearch {
         .page(.lockScreen): ["lock screen", "lockscreen", "layar kunci", "kunci layar", "layar terkunci"],
         .page(.remote): ZenithRemoteSearch.aliases,
         .page(.faceUnlock): FaceUnlockSearch.aliases,
+        .page(.batteries): BatteriesSearch.aliases,
         .page(.about): ["tentang", "tentang aplikasi", "versi", "version", "Satu Visual", "Zenith"],
     ]
 
@@ -53,6 +54,7 @@ enum ZenithSettingsSearch {
         let lockIsland = ZenithStrings.lockIsland(language) // the padlock island's switches
         let remote = ZenithStrings.remote(language) // iPhone Remote
         let face = ZenithStrings.faceUnlock(language) // Face Unlock
+        let batteries = ZenithStrings.batteries(language) // Batteries
         let widgets = ZenithStrings.lockScreenWidgets(language)
         let terminal = ZenithStrings.lockScreenTerminal(language)
         let terminalTitle = ZenithStrings.lockScreenTerminalTitle(language)
@@ -157,6 +159,19 @@ enum ZenithSettingsSearch {
                             face.livenessLevel, face.animation, face.faces, face.addFace, face.password,
                             face.passwordStored, face.passwordMissing, face.reset, face.lab, face.openLab, face.notes],
                  aliases: FaceUnlockSearch.aliases),
+            // Batteries: the switch and the devices, when to warn, the iPhone and the Watch.
+            page(.zenithBatteries, title: batteries.enable, icon: "battery.75percent",
+                 keywords: [batteries.title, batteries.look, batteries.layout, batteries.rings, batteries.list,
+                            batteries.devices, batteries.hide, batteries.hidden],
+                 aliases: BatteriesSearch.aliases),
+            page(.zenithBatteriesAlerts, title: batteries.lowBatteryAlert, icon: "bell.badge",
+                 keywords: [batteries.warnAt, batteries.checkEvery, batteries.airPodsScanning],
+                 aliases: ["low battery", "battery alert", "AirPods", "peringatan baterai", "baterai lemah",
+                           "baterai habis", "batre lemah", "batre habis"]),
+            page(.zenithBatteriesIPhone, title: batteries.iOSSection, icon: "iphone",
+                 keywords: [batteries.readIOS, batteries.needsTools, batteries.install, "libimobiledevice"],
+                 aliases: ["iPhone battery", "iPad", "Apple Watch", "watch", "baterai iPhone", "baterai HP", "batre HP",
+                           "jam tangan", "baterai jam"]),
             // Dynamic Island › Activity: the fork's cards.
             section(.zenithCommandActivity, in: .activity, title: commands.section, icon: "terminal",
                     keywords: [commands.toggle, commands.showAfter, commands.showFolder, commands.ignore, commands.hook],
