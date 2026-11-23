@@ -172,6 +172,10 @@ final class FaceUnlockSession: ObservableObject, FaceUnlockCredentials, FaceUnlo
     }
 
     func refresh() {
+#if VORSSAINT_DEVELOPMENT
+        // Zenith fork: the catalog keeps its posed state.
+        if IslandCatalog.isRendering { return }
+#endif
         deps.main { self.hasPassword = self.deps.passwordFile.exists() }
     }
 
@@ -321,3 +325,14 @@ protocol FaceUnlockPasswordTyping: AnyObject {
     /// Types the UTF-8 password into the focused field and presses Return. Blocking.
     func type(_ password: Data) throws
 }
+
+#if VORSSAINT_DEVELOPMENT
+// Zenith fork: sample state for the island catalog's Settings renders
+// (`--render-island-catalog`): a password on file, the session locked. No
+// key, password or keychain is touched. The release build does not have it.
+extension FaceUnlockSession {
+    func catalogPose(hasPassword: Bool) {
+        self.hasPassword = hasPassword
+    }
+}
+#endif

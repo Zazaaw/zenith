@@ -20,7 +20,7 @@ extension CatalogShots {
             lockIsland("lock-island-charging") { $0.charging = true; $0.percent = 82 },
             lockIsland("lock-island-focus") { $0.charging = true; $0.percent = 82; $0.focus = "Work" },
             lockIsland("lock-island-farewell", open: true) { $0.moment = .farewell },
-            lockIsland("lock-island-remote") { $0.moment = .remoteLock(device: "Faiz’s iPhone") }, // Zenith fork: remote lock
+            lockIsland("lock-island-remote") { $0.moment = .remoteLock(device: "Alex’s iPhone") }, // Zenith fork: remote lock
             lockIsland("lock-island-remote-long") { $0.moment = .remoteLock(device: CatalogShots.longDevice) },
             // Zenith fork: unlocked, the welcome grown in the padlock island before the
             // desktop island takes it over, and the bare notch it leaves into.
@@ -41,7 +41,7 @@ extension CatalogShots {
 
     /// Zenith fork: the welcome as the padlock island grows it on unlocking.
     static var lockWelcome: ZenithWelcomeBurst {
-        ZenithWelcomeBurst(title: "Welcome back, Faiz", subtitle: "Locked for 2h 14m", photo: nil, initials: "FA")
+        ZenithWelcomeBurst(title: "Welcome back, Alex", subtitle: "Locked for 2h 14m", photo: nil, initials: "A")
     }
 
     /// `frozen` draws the island that far into its entrance from `entrance`, still.
@@ -60,7 +60,7 @@ extension CatalogShots {
             model.gates.music = true
             model.padlockOpen = open
             let island = ZenithLockIslandModel()
-            island.firstName = "Faiz"
+            island.firstName = "Alex"
             pose(island)
             island.entrance = entrance
             let view = ZenithLockScreenIsland(model: model, island: island, size: surface.size, cameraWidth: camera.width,
@@ -103,6 +103,15 @@ enum CatalogMotion {
         Sequence(id: "motion-face-success-welcome", from: "lock-island-face-success", to: "lock-island-welcome"),
         // Zenith fork: the minimal style's success straight into the welcome, never through the pill.
         Sequence(id: "motion-face-minimal-success-welcome", from: "lock-island-face-minimal-success", to: "lock-island-welcome"),
+        // Zenith fork: the README's GIFs: the scan landing, a page swap and the ways back.
+        Sequence(id: "motion-face-scanning-success", from: "lock-island-face-scanning", to: "lock-island-face-success"),
+        Sequence(id: "motion-swap-calendar", from: "page-home", to: "page-calendar-month"),
+        Sequence(id: "motion-calendar-close", from: "page-calendar-month", to: "closed-idle"),
+        Sequence(id: "motion-calendar-home", from: "page-calendar-month", to: "page-home"),
+        Sequence(id: "motion-notice-close", from: "notice-volume", to: "closed-idle"),
+        Sequence(id: "motion-burst-close", from: "burst-prayer", to: "closed-idle"),
+        Sequence(id: "motion-charging", from: "closed-idle", to: "burst-charging"),
+        Sequence(id: "motion-charging-close", from: "burst-charging", to: "closed-idle"),
     ]
 
     /// Zenith fork: the padlock island's own entrance as the Mac locks, drawn
@@ -118,7 +127,7 @@ enum CatalogMotion {
 
     static let entrances: [Entrance] = [
         Entrance(id: "motion-lock-entrance-farewell", from: "compact-music", open: true) { $0.moment = .farewell },
-        Entrance(id: "motion-lock-entrance-remote", from: "compact-music") { $0.moment = .remoteLock(device: "Faiz’s iPhone") },
+        Entrance(id: "motion-lock-entrance-remote", from: "compact-music") { $0.moment = .remoteLock(device: "Alex’s iPhone") },
         Entrance(id: "motion-lock-entrance-rest", from: "compact-music") { _ in },
         // Zenith fork: as the Mac locks now, from the bare notch, whatever face unlock shows.
         Entrance(id: "motion-lock-entrance-notch-farewell", from: "lock-island-bare", open: true) { $0.moment = .farewell },
@@ -132,6 +141,21 @@ enum CatalogMotion {
     /// `ZENITH_MOTION_LENGTH` override them, as for a 120 fps check.
     static let fps = ProcessInfo.processInfo.environment["ZENITH_MOTION_FPS"].flatMap(Double.init) ?? 30
     static let length: TimeInterval = ProcessInfo.processInfo.environment["ZENITH_MOTION_LENGTH"].flatMap(Double.init) ?? 1
+    /// Zenith fork: `ZENITH_MOTION_BACKDROP=wallpaper` draws the frames over a
+    /// band of the sample wallpaper (under the sample menu bar off the lock
+    /// screen), as wide as the README's island pictures, for its GIFs.
+    static let overWallpaper = ProcessInfo.processInfo.environment["ZENITH_MOTION_BACKDROP"] == "wallpaper"
+    /// The band's height in points, at least; `ZENITH_MOTION_HEIGHT`, so
+    /// sequences cut into one GIF share it.
+    static let bandHeight = ProcessInfo.processInfo.environment["ZENITH_MOTION_HEIGHT"].flatMap(Double.init) ?? 0
+
+    /// The wallpaper band for a canvas, drawn once per sequence.
+    private static func backdrop(_ canvas: CGSize, scale: CGFloat, menuBar: Bool) -> CGImage? {
+        let renderer = ImageRenderer(content: CatalogBackdrop(size: canvas, menuBar: menuBar)
+            .environment(\.colorScheme, .dark))
+        renderer.scale = scale
+        return renderer.cgImage
+    }
 
     /// Renders every sequence whose id starts with `prefix`; the failures' ids.
     static func render(prefix: String, into folder: URL) -> [String] {
@@ -266,7 +290,13 @@ enum CatalogMotion {
         print("samples \(sequence.id) floor \(Int(floor.width))x\(Int(floor.height)): " + samples.joined(separator: ", "))
         var incomingFloor: CGFloat = 0
         let reach = timeline.frames().sizes.reduce(CGSize.zero) { CGSize(width: max($0.width, $1.width), height: max($0.height, $1.height)) }
-        let canvas = CGSize(width: (reach.width + 160).rounded(.up), height: (reach.height + 60).rounded(.up))
+        var canvas = CGSize(width: (reach.width + 160).rounded(.up), height: (reach.height + 60).rounded(.up))
+        var wallpaper: CGImage?
+        if overWallpaper {
+            canvas = CGSize(width: max(canvas.width, CatalogShots.bandWidth), height: max(bandHeight, (reach.height + 56).rounded(.up)))
+            wallpaper = backdrop(canvas, scale: scale, menuBar: !sequence.id.hasPrefix("motion-lock")
+                                 && !sequence.id.hasPrefix("motion-face") && !sequence.id.hasPrefix("motion-unlock"))
+        }
         let count = Int(length * fps)
         return (0...count).compactMap { index in
             let time = Double(index) / fps
@@ -278,8 +308,17 @@ enum CatalogMotion {
             // Points, from the top left.
             context.translateBy(x: 0, y: pixels.height)
             context.scaleBy(x: scale, y: -scale)
-            context.setFillColor(CGColor(red: 0.42, green: 0.45, blue: 0.5, alpha: 1))
-            context.fill(CGRect(origin: .zero, size: canvas))
+            if let wallpaper {
+                // Drawn upright in the flipped space, as `place` does.
+                context.saveGState()
+                context.translateBy(x: 0, y: canvas.height)
+                context.scaleBy(x: 1, y: -1)
+                context.draw(wallpaper, in: CGRect(origin: .zero, size: canvas))
+                context.restoreGState()
+            } else {
+                context.setFillColor(CGColor(red: 0.42, green: 0.45, blue: 0.5, alpha: 1))
+                context.fill(CGRect(origin: .zero, size: canvas))
+            }
             // The island's path is drawn from its own origin, then moved to the centre.
             var centre = CGAffineTransform(translationX: (canvas.width - shape.width) / 2, y: 0)
             let local = NotchShape(attached: true, radius: NotchLayout.surfaceRadius(height: shape.height))

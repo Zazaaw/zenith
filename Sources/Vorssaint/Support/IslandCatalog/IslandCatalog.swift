@@ -60,7 +60,9 @@ enum IslandCatalog {
         }
         var manifest: [[String: Any]] = []
         var failures: [String] = []
-        for shot in CatalogShots.all where only.map({ shot.id.hasPrefix($0) }) ?? true {
+        // Zenith fork: `--only readme…` draws the README's pictures instead.
+        let shots = only?.hasPrefix("readme") == true ? CatalogShots.readme : CatalogShots.all
+        for shot in shots where only.map({ shot.id.hasPrefix($0) }) ?? true {
             let url = folder.appendingPathComponent(shot.id + ".png")
             if let entry = CatalogRenderer.render(shot, to: url) {
                 manifest.append(entry)
@@ -141,6 +143,9 @@ struct CatalogShot {
         case island
         /// A whole screen, drawn by the view itself.
         case screen
+        /// Zenith fork: a titled window around the view (Settings), with its
+        /// title bar and toolbar, rounded and shadowed.
+        case window
     }
 
     let id: String
@@ -167,6 +172,7 @@ enum CatalogRenderer {
         shot.setup()
         let (view, size) = shot.draw()
         guard size.width >= 1, size.height >= 1 else { shot.teardown(); return nil }
+        if shot.kind == .window { return renderWindow(shot, view: view, size: size, to: url) }
         let host = NSHostingView(rootView: view
             .frame(width: size.width, height: size.height, alignment: .top)
             .environment(\.colorScheme, .dark)
@@ -191,6 +197,65 @@ enum CatalogRenderer {
         do { try data.write(to: url) } catch { return nil }
         return ["id": shot.id, "kind": shot.kind.rawValue, "width": size.width, "height": size.height,
                 "pixelsWide": bitmap.pixelsWide]
+    }
+
+    /// Zenith fork: the view as the content of a titled window, never shown,
+    /// drawn with its frame (title bar, toolbar, sidebar), then given the
+    /// window's rounded corners and shadow on a clear background.
+    private static func renderWindow(_ shot: CatalogShot, view: AnyView, size: CGSize, to url: URL) -> [String: Any]? {
+        NSApp.appearance = NSAppearance(named: .darkAqua)
+        let host = NSHostingController(rootView: view.environment(\.locale, Locale(identifier: "en_US")))
+        host.sizingOptions = []
+        let window = SettingsWindow(contentViewController: host)
+        window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
+        window.appearance = NSAppearance(named: .darkAqua)
+        window.isReleasedWhenClosed = false
+        window.title = L10n.shared.s.settingsTitle
+        window.setContentSize(size)
+        defer {
+            window.contentViewController = nil
+            window.close()
+            shot.teardown()
+        }
+        guard let frameView = window.contentView?.superview else { return nil }
+        frameView.layoutSubtreeIfNeeded()
+        spin(shot.settle)
+        frameView.layoutSubtreeIfNeeded()
+        spin(0.1)
+        guard let bitmap = frameView.bitmapImageRepForCachingDisplay(in: frameView.bounds) else { return nil }
+        frameView.cacheDisplay(in: frameView.bounds, to: bitmap)
+        guard let image = bitmap.cgImage else { return nil }
+        let scale = CGFloat(bitmap.pixelsWide) / frameView.bounds.width
+        let margin: CGFloat = 40, radius: CGFloat = 12
+        let points = CGSize(width: frameView.bounds.width + margin * 2, height: frameView.bounds.height + margin * 2)
+        guard let context = CGContext(data: nil, width: Int(points.width * scale), height: Int(points.height * scale),
+                                      bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        context.scaleBy(x: scale, y: scale)
+        let frame = CGRect(x: margin, y: margin, width: frameView.bounds.width, height: frameView.bounds.height)
+        let rounded = CGPath(roundedRect: frame, cornerWidth: radius, cornerHeight: radius, transform: nil)
+        context.saveGState()
+        context.setShadow(offset: CGSize(width: 0, height: -12), blur: 36, color: CGColor(gray: 0, alpha: 0.45))
+        context.addPath(rounded)
+        context.setFillColor(CGColor(gray: 0.12, alpha: 1))
+        context.fillPath()
+        context.restoreGState()
+        context.saveGState()
+        context.addPath(rounded)
+        context.clip()
+        context.draw(image, in: frame)
+        context.restoreGState()
+        // The window's hairline edge.
+        context.addPath(CGPath(roundedRect: frame.insetBy(dx: 0.25, dy: 0.25), cornerWidth: radius, cornerHeight: radius,
+                               transform: nil))
+        context.setStrokeColor(CGColor(gray: 1, alpha: 0.14))
+        context.setLineWidth(0.5)
+        context.strokePath()
+        guard let output = context.makeImage(),
+              let data = NSBitmapImageRep(cgImage: output).representation(using: .png, properties: [:]) else { return nil }
+        do { try data.write(to: url) } catch { return nil }
+        return ["id": shot.id, "kind": shot.kind.rawValue, "width": points.width, "height": points.height,
+                "pixelsWide": output.width]
     }
 
     static func spin(_ seconds: TimeInterval) {
