@@ -210,7 +210,9 @@ struct ZenithPreviewDesktop<Content: View>: View {
             let scale = geo.size.width / screenWidth
             let height = geo.size.height / max(scale, 0.01)
             ZStack(alignment: .top) {
-                background
+                // Held to the screen, so a wallpaper filled past it does not make
+                // the screen taller than the card and push content off its foot.
+                background.frame(width: screenWidth, height: height).clipped()
                 if menuBar { ZenithPreviewMenuBar(showsZenithItem: showsZenithItem) }
                 content()
             }
