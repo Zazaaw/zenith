@@ -28,6 +28,9 @@ struct PortManagerView: View {
                 .buttonStyle(.plain).help(strings.refresh)
             }
             .padding(.horizontal, 14).padding(.top, 10).padding(.bottom, 8)
+            PortManagerPreviewCard() // Zenith fork
+                .zenithToolsPreviewWidth()
+                .padding(.horizontal, 14).padding(.bottom, 10)
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                 TextField(strings.filter, text: $service.query).textFieldStyle(.plain)

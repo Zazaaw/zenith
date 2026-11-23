@@ -27,6 +27,14 @@ struct CleanerSettings: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // Zenith fork: the preview card, its states following the tool shown.
+            CleanerPreviewCard(selection: whatsAppEnabled
+                ? Binding(get: { tool == .whatsApp ? 1 : 0 }, set: { tool = $0 == 1 ? .whatsApp : .system })
+                : nil)
+                .zenithToolsPreviewWidth()
+                .padding(.horizontal, 24)
+                .padding(.top, 14)
+                .padding(.bottom, whatsAppEnabled ? 0 : 6)
             if whatsAppEnabled {
                 Picker("", selection: $tool) {
                     Label(l10n.s.cleanerName, systemImage: "sparkles")
