@@ -23,7 +23,16 @@ struct RootView: View {
         @Bindable var model = model
         ZStack(alignment: .bottom) {
             K.bg.ignoresSafeArea()
-            Ambient().ignoresSafeArea()
+            if model.pairing != nil {
+                // The aura's mood depends on how long ago the Mac was heard.
+                TimelineView(.everyMinute) { context in
+                    StateAura(mood: model.mood(now: context.date))
+                }
+                .ignoresSafeArea()
+                .readsTilt()
+                .transition(.opacity)
+            }
+            Ambient(parallax: model.pairing == nil ? 0 : 5).ignoresSafeArea()
             if model.pairing == nil {
                 Group {
                     if onboarded {

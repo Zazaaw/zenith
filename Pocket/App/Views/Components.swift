@@ -5,23 +5,18 @@ import PocketKit
 import SwiftUI
 
 /// Dot grid and line grid with a few lit cells, each fading toward an
-/// opposite corner, behind every screen.
+/// opposite corner, behind every screen. With `parallax`, the dot grid
+/// drifts that many points against the phone's lean (`Tilt`; the caller
+/// keeps it running with `.readsTilt()`), opposite to the state aura.
 struct Ambient: View {
+    var parallax: CGFloat = 0
+
     var body: some View {
         ZStack {
-            Canvas { context, size in
-                let step: CGFloat = 18
-                var y: CGFloat = 1
-                while y < size.height {
-                    var x: CGFloat = 1
-                    while x < size.width {
-                        context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 1.6, height: 1.6)), with: .color(K.dot))
-                        x += step
-                    }
-                    y += step
-                }
-            }
-            .mask(LinearGradient(colors: [.white, .clear], startPoint: .topLeading, endPoint: UnitPoint(x: 0.7, y: 0.55)))
+            dots
+                // Drawn a little past the edges, so the drift never shows one.
+                .padding(parallax == 0 ? 0 : -parallax * 2)
+                .modifier(TiltShift(distance: -parallax))
             Canvas { context, size in
                 let cell: CGFloat = 44
                 var path = Path()
@@ -40,6 +35,22 @@ struct Ambient: View {
         .opacity(0.9)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+
+    private var dots: some View {
+        Canvas { context, size in
+            let step: CGFloat = 18
+            var y: CGFloat = 1
+            while y < size.height {
+                var x: CGFloat = 1
+                while x < size.width {
+                    context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 1.6, height: 1.6)), with: .color(K.dot))
+                    x += step
+                }
+                y += step
+            }
+        }
+        .mask(LinearGradient(colors: [.white, .clear], startPoint: .topLeading, endPoint: UnitPoint(x: 0.7, y: 0.55)))
     }
 }
 
