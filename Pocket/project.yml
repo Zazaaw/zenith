@@ -1,0 +1,69 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Satu Visual
+#
+# Zenith Pocket, the iPhone (and later Apple Watch) companion of Zenith.
+# `xcodegen generate` turns this into Pocket.xcodeproj, which is not
+# committed. Install on a phone with ./install.sh.
+
+name: Pocket
+options:
+  bundleIdPrefix: id.satuvisual.zenith
+  developmentLanguage: en
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+
+packages:
+  PocketKit:
+    path: PocketKit
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    # Set by install.sh (POCKET_TEAM or the team Xcode knows).
+    DEVELOPMENT_TEAM: ""
+
+targets:
+  Pocket:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+    dependencies:
+      - package: PocketKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: id.satuvisual.zenith.pocket
+        PRODUCT_NAME: Pocket
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ENABLE_PREVIEWS: YES
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Pocket
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSRequiresIPhoneOS: true
+        UILaunchScreen:
+          UIColorName: ""
+        UIUserInterfaceStyle: Dark
+        UIStatusBarStyle: UIStatusBarStyleLightContent
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIAppFonts:
+          - PlusJakartaSans-Medium.ttf
+          - PlusJakartaSans-ExtraBold.ttf
+        NSCameraUsageDescription: Pocket uses the camera to scan the pairing code Zenith shows on your Mac.
+        CFBundleURLTypes:
+          - CFBundleURLName: id.satuvisual.zenith.pocket.pair
+            CFBundleURLSchemes: [zenith-pocket]
+        UIBackgroundModes: [fetch]
+        BGTaskSchedulerPermittedIdentifiers:
+          - id.satuvisual.zenith.pocket.report
+    scheme: {}
+
+  # PocketWatch (watchOS 26, embedded in Pocket) comes later; it will share
+  # PocketKit and its PocketPresentation.
