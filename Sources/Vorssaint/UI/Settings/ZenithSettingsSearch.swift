@@ -27,6 +27,7 @@ enum ZenithSettingsSearch {
         .page(.workspaces): ["workspace", "ruang kerja", "mode kerja", "preset kerja", "profil kerja"],
         .page(.lockScreen): ["lock screen", "lockscreen", "layar kunci", "kunci layar", "layar terkunci"],
         .page(.remote): ZenithRemoteSearch.aliases,
+        .page(.pocket): PocketSearch.aliases,
         .page(.faceUnlock): FaceUnlockSearch.aliases,
         .page(.batteries): BatteriesSearch.aliases,
         .page(.about): ["tentang", "tentang aplikasi", "versi", "version", "Satu Visual", "Zenith"],
@@ -53,6 +54,7 @@ enum ZenithSettingsSearch {
         let lockPage = ZenithStrings.lockScreenPage(language)
         let lockIsland = ZenithStrings.lockIsland(language) // the padlock island's switches
         let remote = ZenithStrings.remote(language) // iPhone Remote
+        let pocket = ZenithStrings.pocket(language) // iPhone & Watch
         let face = ZenithStrings.faceUnlock(language) // Face Unlock
         let batteries = ZenithStrings.batteries(language) // Batteries
         let widgets = ZenithStrings.lockScreenWidgets(language)
@@ -150,6 +152,19 @@ enum ZenithSettingsSearch {
                  keywords: [remote.title, remote.checklist, remote.remoteLogin, remote.tailscale, remote.devices,
                             remote.shortcut, remote.test, remote.hardening, remote.recent],
                  aliases: ZenithRemoteSearch.aliases),
+            // iPhone & Watch: Zenith Pocket's switch, relay, pairing and sharing.
+            page(.zenithPocket, title: pocket.enable, icon: "macbook.and.iphone",
+                 keywords: [pocket.title], aliases: PocketSearch.aliases),
+            page(.zenithPocketRelay, title: pocket.relay, icon: "server.rack",
+                 keywords: [pocket.projectURL, pocket.anonKey],
+                 aliases: ["supabase", "relay", "anon key", "project url", "server", "kunci publik"]),
+            page(.zenithPocketPairing, title: pocket.pairing, icon: "qrcode",
+                 keywords: [pocket.pairPhone, pocket.scanTitle, pocket.unpair],
+                 aliases: ["pair", "pasangkan", "pasang hp", "sambungkan hp", "qr", "scan qr hp", "scan",
+                           "unpair", "lepas pasangan"]),
+            page(.zenithPocketSharing, title: pocket.sharing, icon: "square.and.arrow.up",
+                 keywords: [pocket.shareWallpaper, pocket.shareAgents, pocket.shareNowPlaying, pocket.allowAnswers],
+                 aliases: ["wallpaper hp", "claude di hp", "jawab claude", "approve from phone", "berbagi"]),
             // Face Unlock: unlock by looking at the Mac.
             page(.zenithFaceUnlock, title: face.enable, icon: "faceid",
                  keywords: [face.title, face.setUp, face.session, face.sessionOpen, face.sessionLocked, face.lockNow,

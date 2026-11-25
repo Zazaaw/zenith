@@ -20,9 +20,11 @@ extension PocketDefaults {
 
     /// The contract's defaults, registered at launch so the service and
     /// Settings (AppStorage included) read the same values.
+    static let initial: [String: Any] = [enabled: false, shareWallpaper: true, shareAgents: true,
+                                         shareNowPlaying: true, allowAnswers: false]
+
     static func register(in defaults: UserDefaults = .standard) {
-        defaults.register(defaults: [enabled: false, shareWallpaper: true, shareAgents: true,
-                                     shareNowPlaying: true, allowAnswers: false])
+        defaults.register(defaults: initial)
     }
 }
 
