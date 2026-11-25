@@ -38,7 +38,7 @@ enum PocketClaudeRules {
 
     static func awayWaitLine(_ minutes: Int) -> String {
         minutes == 0 ? "Away mode now waits until you're back."
-            : "Away mode now waits up to \(minutes >= 60 ? "\(minutes / 60) h" : "\(minutes) min") for a reply."
+            : "Away mode now waits up to \(awayDuration(minutes)) for a reply."
     }
     /// Done this long ago, a session reads as ended rather than waiting.
     static let idleAfter: TimeInterval = 30 * 60
@@ -52,7 +52,12 @@ enum PocketClaudeRules {
 
     static let sharingOff = "Sharing Claude Code is off on this Mac."
     static let hooksNeeded = "Connect or update Claude Code's hooks in Zenith first: Settings, Dynamic Island, AI agents."
-    static let awayOnLine = "Away mode is on. A finished turn waits up to 10 minutes for your reply."
+    static func awayOnLine(_ minutes: Int) -> String {
+        let wait = minutes == 0 ? "until you're back" : "up to \(awayDuration(minutes))"
+        return "Away mode is on. A finished turn waits \(wait) for your reply, and the Mac stays awake."
+    }
+
+    static func awayDuration(_ minutes: Int) -> String { minutes >= 60 ? "\(minutes / 60) h" : "\(minutes) min" }
     static let awayOffLine = "Away mode is off. Claude stops as usual."
     static let awayIsOff = "Turn on Away mode first."
     static let emptyReply = "Write something to send."

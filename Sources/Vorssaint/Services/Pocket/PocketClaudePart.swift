@@ -3,6 +3,7 @@
 
 import Combine
 import Foundation
+import IOKit.pwr_mgt
 
 /// Zenith fork: Claude Code in detail for Zenith Pocket, and replying to it
 /// from the phone.
@@ -19,7 +20,9 @@ import Foundation
 /// accept a reply, and hands a checked reply over as `<session>.<pid>.reply`.
 /// Away mode lasts while Zenith runs, but its file only while the link is up,
 /// so a Mac asleep or unpaired never holds Claude. Unlocking the Mac turns it
-/// off: the person is back. Used on the main thread.
+/// off: the person is back. While it is on, the Mac doesn't idle to sleep (or
+/// a reply could never arrive); the screen still sleeps and locks as usual.
+/// Used on the main thread.
 final class PocketClaudePart: PocketPart {
     /// Away mode, kept across link restarts (sleep, a network change) while Zenith runs.
     private static var away = false
@@ -40,6 +43,8 @@ final class PocketClaudePart: PocketPart {
     private var waiting: [String: PocketClaudeRules.Waiting] = [:]
     private var awaySource: DispatchSourceFileSystemObject?
     private var expiry: Timer?
+    /// Keeps the Mac from idling to sleep while Away mode is on; 0 = none.
+    private var awake = IOPMAssertionID(0)
     private let io = DispatchQueue(label: "id.satuvisual.zenith.pocket.claude", qos: .utility)
 
     func start(_ context: PocketPartContext) {
@@ -116,6 +121,7 @@ final class PocketClaudePart: PocketPart {
         closeAwayFolder()
         // Nothing can answer now: a holding hook lets its turn end.
         if let url = Self.awayURL { try? FileManager.default.removeItem(at: url.appendingPathComponent("on")) }
+        holdAwake(false)
         messages = [:]
         readTurns = [:]
         waiting = [:]
@@ -163,7 +169,7 @@ final class PocketClaudePart: PocketPart {
         }
         Self.away = on
         writeAwayFlag()
-        answer(id, true, on ? PocketClaudeRules.awayOnLine : PocketClaudeRules.awayOffLine)
+        answer(id, true, on ? PocketClaudeRules.awayOnLine(PocketClaudeRules.awayMinutes()) : PocketClaudeRules.awayOffLine)
         context?.changed()
     }
 
@@ -184,6 +190,7 @@ final class PocketClaudePart: PocketPart {
     }
 
     private func writeAwayFlag() {
+        holdAwake(Self.away && sharing)
         guard let url = Self.awayURL else { return }
         let flag = url.appendingPathComponent("on")
         if Self.away && sharing {
@@ -192,6 +199,21 @@ final class PocketClaudePart: PocketPart {
             if PrivateFileStore.createDirectory(at: url) { PrivateFileStore.write(Data("\(seconds)\n".utf8), to: flag) }
         } else {
             try? FileManager.default.removeItem(at: flag)
+        }
+    }
+
+    /// Idle system sleep only: the display sleeps and the screen locks as
+    /// usual (and unlocking ends Away mode); a closed lid still sleeps.
+    private func holdAwake(_ on: Bool) {
+        if on, awake == 0 {
+            var id = IOPMAssertionID(0)
+            let made = IOPMAssertionCreateWithName(kIOPMAssertionTypePreventUserIdleSystemSleep as CFString,
+                                                   IOPMAssertionLevel(kIOPMAssertionLevelOn),
+                                                   "Zenith Pocket Away mode: waiting for a reply from the phone" as CFString, &id)
+            if made == kIOReturnSuccess { awake = id }
+        } else if !on, awake != 0 {
+            IOPMAssertionRelease(awake)
+            awake = 0
         }
     }
 

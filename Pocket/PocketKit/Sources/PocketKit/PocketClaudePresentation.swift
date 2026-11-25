@@ -20,7 +20,7 @@ extension PocketPresentation {
         guard on else { return "Claude stops as usual. Turn it on before you leave the Mac." }
         let wait = minutes ?? 10
         let span = wait == 0 ? "until you're back (a day at most)" : "up to \(duration(minutes: wait))"
-        return "A finished turn waits \(span) for your reply. Unlocking the Mac turns it off."
+        return "A finished turn waits \(span) for your reply. The Mac stays awake and can be locked; unlocking it turns Away off."
     }
     public static let claudeReplyLimit = 4000
 
