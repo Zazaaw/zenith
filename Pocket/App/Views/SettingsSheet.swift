@@ -4,11 +4,13 @@
 import PocketKit
 import SwiftUI
 
-/// The paired Mac, the link, and unpairing.
+/// The paired Mac, the link, the look, and unpairing.
 struct SettingsSheet: View {
     @Environment(PocketModel.self) private var model
     @Environment(\.dismiss) private var dismiss
+    @AppStorage(ThemeChoice.key) private var theme = ThemeChoice.system
     @State private var confirmUnpair = false
+    @Namespace private var themePill
 
     var body: some View {
         ZStack {
@@ -19,6 +21,7 @@ struct SettingsSheet: View {
                         Spacer()
                         Button("Done") { dismiss() }
                             .font(K.sans(15, bold: true)).foregroundStyle(K.fg)
+                            .pressable()
                     }
                     .padding(.horizontal, 24).padding(.top, 18)
                     Hero(eyebrow: "Settings", badge: linkBadge,
@@ -26,10 +29,12 @@ struct SettingsSheet: View {
                                                   rest: "", tone: .plain))
                     VStack(alignment: .leading, spacing: 10) {
                         SectionLabel(text: "Mac")
+                            .blurFade(index: 2)
                         Rows {
                             Row(symbol: "laptopcomputer", title: model.pairing?.macName ?? "Mac", meta: heardLine) { EmptyView() }
                             Row(symbol: "dot.radiowaves.left.and.right", title: "Relay", meta: linkLine, divider: false) { EmptyView() }
                         }
+                        .blurFade(index: 3)
                         if let problem = model.relayProblem {
                             Text(problem).font(K.mono(11)).foregroundStyle(K.amber).padding(.horizontal, 4)
                         }
@@ -38,8 +43,14 @@ struct SettingsSheet: View {
                         Text("Unpairing deletes the key on this iPhone. To pair again, show the code in Zenith once more.")
                             .font(K.sans(13)).foregroundStyle(K.faint).fixedSize(horizontal: false, vertical: true)
                             .padding(.horizontal, 4)
+                        SectionLabel(text: "Appearance").padding(.top, 22)
+                        themePicker
                         SectionLabel(text: "About").padding(.top, 22)
                         Text("Zenith Pocket \(version), by Satu Visual. Free software under the GPL. Plus Jakarta Sans under the SIL Open Font License.")
+                            .font(K.sans(13)).foregroundStyle(K.faint).fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal, 4)
+                        SectionLabel(text: "Acknowledgements").padding(.top, 22)
+                        Text("The splash's glass is ported from glass-icon-reveal by zanwei, under the MIT License.")
                             .font(K.sans(13)).foregroundStyle(K.faint).fixedSize(horizontal: false, vertical: true)
                             .padding(.horizontal, 4)
                     }
@@ -51,9 +62,35 @@ struct SettingsSheet: View {
         }
         .foregroundStyle(K.fg)
         .presentationBackground(K.bg)
+        .preferredColorScheme(theme.scheme)
         .confirmationDialog("Unpair from \(model.pairing?.macName ?? "this Mac")?", isPresented: $confirmUnpair, titleVisibility: .visible) {
             Button("Unpair", role: .destructive) { model.unpair() }
         }
+    }
+
+    /// System, Light or Dark, as a segmented capsule whose ink pill slides.
+    private var themePicker: some View {
+        HStack(spacing: 0) {
+            ForEach(ThemeChoice.allCases) { choice in
+                let selected = theme == choice
+                Button {
+                    Haptics.select()
+                    withAnimation(Motion.spring) { theme = choice }
+                } label: {
+                    Text(choice.title).font(K.sans(14, bold: true))
+                        .foregroundStyle(selected ? K.inverse : K.muted)
+                        .frame(maxWidth: .infinity).frame(height: 38)
+                        .background {
+                            if selected { Capsule().fill(K.fg).matchedGeometryEffect(id: "theme", in: themePill) }
+                        }
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(PressStyle(haptic: false))
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+        }
+        .padding(4)
+        .surface(radius: 23)
     }
 
     private var linkBadge: PocketBadge {

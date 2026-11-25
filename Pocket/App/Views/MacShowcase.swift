@@ -11,6 +11,7 @@ struct MacShowcase: View {
     let state: PocketMacState?
     let wallpaper: UIImage?
     let now: Date
+    @Environment(\.colorScheme) private var scheme
 
     private let width: CGFloat = 330
     private let height: CGFloat = 212
@@ -23,18 +24,25 @@ struct MacShowcase: View {
                 island
                 if let session = runningProject { window(session) }
                 dock
-                if state?.locked == true { lockScreen }
+                if state?.locked == true { lockScreen.transition(.opacity.combined(with: .blurReplace)) }
             }
+            .animation(Motion.reveal, value: state?.locked)
+            .animation(Motion.island, value: state?.questions.first?.id)
             .frame(width: width, height: height)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .padding(7)
             .background(RoundedRectangle(cornerRadius: 17, style: .continuous).fill(Color(white: 0.09)))
             .overlay(RoundedRectangle(cornerRadius: 17, style: .continuous).strokeBorder(Color.white.opacity(0.12), lineWidth: 1))
+            // The base: dark aluminium in dark, silver in light.
             UnevenRoundedRectangle(bottomLeadingRadius: 10, bottomTrailingRadius: 10, style: .continuous)
-                .fill(LinearGradient(colors: [Color(white: 0.30), Color(white: 0.16)], startPoint: .top, endPoint: .bottom))
+                .fill(LinearGradient(colors: scheme == .dark ? [Color(white: 0.30), Color(white: 0.16)] : [Color(white: 0.88), Color(white: 0.72)],
+                                     startPoint: .top, endPoint: .bottom))
                 .frame(width: 380, height: 12)
-                .overlay(alignment: .top) { Capsule().fill(Color(white: 0.12)).frame(width: 56, height: 3.5) }
+                .overlay(alignment: .top) {
+                    Capsule().fill(Color(white: scheme == .dark ? 0.12 : 0.62)).frame(width: 56, height: 3.5)
+                }
         }
+        .shadow(color: .black.opacity(scheme == .dark ? 0.4 : 0.14), radius: 26, y: 16)
         .accessibilityElement()
         .accessibilityLabel(state?.locked == true ? "Your Mac, locked" : "Your Mac's screen")
     }
