@@ -354,6 +354,7 @@ struct PocketSettingsPage: View {
                     rowTitle(text.allowAnswers, caption: text.allowAnswersCaption)
                 }
             }
+            PocketMacSettingsRows()
         }
         .zenithSectionAnchor(.zenithPocketSharing)
     }
