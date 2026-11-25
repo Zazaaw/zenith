@@ -59,7 +59,7 @@ struct ClaudeView: View {
                     if let said = session.lastMessage { ClaudeSaidCard(session: session, text: said, now: now).blurFade() }
                     ReplyComposer(session: session, away: claude.away, now: now).id(session.id)
                 }
-                ClaudeAwayRow(away: claude.away, minutes: claude.awayMinutes, now: now)
+                awayRow(claude)
                 if session.state == .waiting || session.state == .done, !session.steps.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         SectionLabel(text: "This turn", trailing: PocketPresentation.claudeFiles(session))
@@ -67,12 +67,21 @@ struct ClaudeView: View {
                     }
                 }
             } else {
-                ClaudeAwayRow(away: claude.away, minutes: claude.awayMinutes, now: now)
+                awayRow(claude)
             }
             cards(session, claude.usage)
         }
         .padding(.horizontal, 20).padding(.top, 4)
         .animation(Motion.spring, value: session?.id)
+    }
+
+    /// The Away switch; while on, the turns it holds count down in it, and a
+    /// tap on one shows that session.
+    private func awayRow(_ claude: PocketClaude) -> some View {
+        ClaudeAwayRow(away: claude.away, minutes: claude.awayMinutes, held: claude.sessions.filter(\.acceptsReply),
+                      now: now) { id in
+            withAnimation(Motion.spring) { chosen = id }
+        }
     }
 
     /// The turn's files beside the 5-hour allowance.
@@ -331,13 +340,21 @@ struct ClaudeUsageCard: View {
     }
 }
 
-/// Away mode: while on, a turn that ends waits on the Mac for a reply from here.
+/// Away mode: while on, a turn that ends waits on the Mac for a reply from
+/// here. Off, a compact row with the switch; on, a card: each turn it holds
+/// with a ring counting down its wait, how long to wait, and that the Mac
+/// stays awake.
 struct ClaudeAwayRow: View {
     @Environment(PocketModel.self) private var model
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let away: Bool
     /// The chosen wait; nil from a Zenith that can't choose one.
     let minutes: Int?
+    /// The sessions whose turn waits for a reply now.
+    var held: [PocketClaude.Session] = []
     let now: Date
+    /// Shows a held session in the tab.
+    var choose: (String) -> Void = { _ in }
     /// What was asked, until the Mac's state or answer says otherwise.
     @State private var asked: Bool?
     @State private var askedMinutes: Int?
@@ -345,16 +362,37 @@ struct ClaudeAwayRow: View {
     var body: some View {
         let on = asked ?? away
         let wait = askedMinutes ?? minutes
-        VStack(alignment: .leading, spacing: 12) {
+        let shape = RoundedRectangle(cornerRadius: on ? 22 : 18, style: .continuous)
+        VStack(alignment: .leading, spacing: on ? 14 : 12) {
             row(on: on, wait: wait)
-            if on, let wait {
-                choices(wait).transition(.opacity.combined(with: .move(edge: .top)))
+            if on {
+                VStack(alignment: .leading, spacing: 14) {
+                    holds
+                    if let wait {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("HOW LONG CLAUDE WAITS").font(K.sans(10, bold: true)).tracking(1).foregroundStyle(K.faint)
+                            choices(wait)
+                        }
+                    }
+                    awakeNote
+                }
+                .transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: -8)).animation(Motion.reveal.delay(0.08)),
+                                        removal: .opacity.animation(Motion.quick)))
             }
         }
-        .padding(.horizontal, 14).padding(.vertical, 12)
-        .background(K.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(K.border, lineWidth: 1))
-        .animation(Motion.toggle, value: on)
+        .padding(.horizontal, on ? 16 : 14).padding(.vertical, on ? 16 : 12)
+        .background {
+            shape.fill(K.card)
+                .overlay {
+                    // Away's colour washes down from the top while it's on.
+                    shape.fill(LinearGradient(colors: [K.emerald.opacity(0.13), K.emerald.opacity(0)],
+                                              startPoint: .top, endPoint: .center))
+                        .opacity(on ? 1 : 0)
+                }
+        }
+        .overlay(shape.strokeBorder(on ? K.emerald.opacity(0.32) : K.border, lineWidth: 1))
+        .clipShape(shape)
+        .animation(Motion.respecting(reduceMotion, Motion.spring), value: on)
         .onChange(of: away) { _, _ in asked = nil }
         .onChange(of: minutes) { _, _ in askedMinutes = nil }
         .onChange(of: model.toast) { _, toast in
@@ -363,16 +401,23 @@ struct ClaudeAwayRow: View {
     }
 
     private func row(on: Bool, wait: Int?) -> some View {
-        HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(K.border, lineWidth: 1)
+        HStack(alignment: on ? .top : .center, spacing: 12) {
+            RoundedRectangle(cornerRadius: on ? 12 : 9, style: .continuous)
+                .strokeBorder(on ? K.emerald.opacity(0.3) : K.border, lineWidth: 1)
+                .background(on ? K.emerald.opacity(0.14) : .clear, in: RoundedRectangle(cornerRadius: on ? 12 : 9, style: .continuous))
                 .overlay(Image(systemName: on ? "figure.walk.departure" : "desktopcomputer")
-                    .font(.system(size: 13, weight: .medium)).foregroundStyle(on ? K.emerald : K.muted)
+                    .font(.system(size: on ? 16 : 13, weight: on ? .semibold : .medium))
+                    .foregroundStyle(on ? K.emerald : K.muted)
                     .contentTransition(.symbolEffect(.replace)))
-                .frame(width: 32, height: 32)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Away mode").font(K.sans(15, bold: true))
+                .frame(width: on ? 40 : 32, height: on ? 40 : 32)
+            VStack(alignment: .leading, spacing: on ? 4 : 2) {
+                HStack(spacing: 8) {
+                    Text(on ? "You're away" : "Away mode").font(K.sans(on ? 18 : 15, bold: true))
+                        .contentTransition(.opacity)
+                    if on { Status(badge: PocketBadge("On", .good)).transition(.scale(scale: 0.8).combined(with: .opacity)) }
+                }
                 Text(PocketPresentation.awayCaption(on: on, minutes: wait))
-                    .font(K.mono(11)).foregroundStyle(K.faint).fixedSize(horizontal: false, vertical: true)
+                    .font(K.mono(11)).foregroundStyle(on ? K.muted : K.faint).fixedSize(horizontal: false, vertical: true)
                     .contentTransition(.opacity)
             }
             Spacer(minLength: 8)
@@ -381,6 +426,83 @@ struct ClaudeAwayRow: View {
                 .tint(K.emerald)
                 .disabled(!model.canControl(now: now))
         }
+    }
+
+    /// Each held turn with a ring that empties as its wait runs out, ticking
+    /// each second while there is one; a quiet line until a turn ends.
+    @ViewBuilder private var holds: some View {
+        if held.isEmpty {
+            HStack(spacing: 10) {
+                Image(systemName: "hourglass").font(.system(size: 12, weight: .semibold)).foregroundStyle(K.faint)
+                    .frame(width: 34)
+                Text("No turn is waiting yet. The next one that ends waits here for you.")
+                    .font(K.sans(13)).foregroundStyle(K.muted).fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.vertical, 2)
+        } else {
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                VStack(spacing: 8) {
+                    ForEach(held) { session in hold(session, now: context.date) }
+                }
+            }
+        }
+    }
+
+    private func hold(_ session: PocketClaude.Session, now: Date) -> some View {
+        let share = PocketPresentation.claudeWaitShare(session, now: now) ?? 0
+        let clock = PocketPresentation.claudeWaitClock(session, now: now) ?? "0:00"
+        let ends = session.replyDeadline ?? session.waitingSince?.addingTimeInterval(PocketPresentation.claudeReplyWindow)
+        // The last two minutes turn amber.
+        let tint = (ends.map { $0.timeIntervalSince(now) < 120 } ?? false) ? K.amber : K.emerald
+        return Button {
+            Haptics.select()
+            choose(session.id)
+        } label: {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle().stroke(K.track, lineWidth: 3.5)
+                    Circle().trim(from: 0, to: share)
+                        .stroke(tint, style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                        .animation(reduceMotion ? nil : .linear(duration: 1), value: share)
+                    Text(clock).font(K.mono(clock.count > 5 ? 8.5 : 10.5, .semibold)).monospacedDigit()
+                        .foregroundStyle(K.fg)
+                        .contentTransition(.numericText(countsDown: true))
+                        .animation(Motion.quick, value: clock)
+                        .minimumScaleFactor(0.7).lineLimit(1)
+                        .padding(.horizontal, 5)
+                }
+                .frame(width: 46, height: 46)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(session.project).font(K.sans(14, bold: true)).foregroundStyle(K.fg).lineLimit(1)
+                    Text(PocketPresentation.claudeWaitLeft(session, now: now) ?? "Claude stopped waiting")
+                        .font(K.mono(11)).foregroundStyle(K.faint).lineLimit(1)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "arrowshape.turn.up.left.fill").font(.system(size: 11, weight: .bold)).foregroundStyle(K.faint)
+            }
+            .padding(10)
+            .background(K.bg.opacity(0.7), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(K.border, lineWidth: 1))
+            .contentShape(Rectangle())
+        }
+        .pressable(haptic: false)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(session.project), \(PocketPresentation.claudeWaitLeft(session, now: now) ?? "not waiting")")
+        .accessibilityHint("Shows this session to reply")
+    }
+
+    /// Away keeps the Mac up, which is worth saying where the switch is.
+    private var awakeNote: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "sun.max.fill").font(.system(size: 11, weight: .semibold)).foregroundStyle(K.amber)
+            Text("Your Mac stays awake while you're away").font(K.sans(12, bold: true)).foregroundStyle(K.fg)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12).padding(.vertical, 9)
+        .background(K.amber.opacity(0.10), in: Capsule())
+        .overlay(Capsule().strokeBorder(K.amber.opacity(0.22), lineWidth: 1))
+        .accessibilityElement(children: .combine)
     }
 
     /// How long a finished turn waits: 10m · 30m · 1h · 2h · Until I'm back.
@@ -402,9 +524,7 @@ struct ClaudeAwayRow: View {
                     .accessibilityAddTraits(chosen ? .isSelected : [])
                 }
             }
-            .padding(.leading, 44)
         }
-        .scrollClipDisabled()
     }
 
     private func pick(_ choice: Int) {

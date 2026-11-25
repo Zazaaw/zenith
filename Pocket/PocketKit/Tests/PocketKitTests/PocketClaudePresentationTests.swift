@@ -85,4 +85,28 @@ private func session(_ state: PocketClaude.Session.State, steps: [PocketClaude.S
         #expect(PocketPresentation.claudeFocus(claude, chosen: "gone")?.id == "a")
         #expect(PocketPresentation.claudeFocus(nil, chosen: nil) == nil)
     }
+
+    @Test func waitRing() {
+        // No deadline from the Mac: the default ten minutes, three gone.
+        let open = session(.waiting, accepts: true, waitingFor: 180)
+        #expect(abs((PocketPresentation.claudeWaitShare(open, now: now) ?? 0) - 0.7) < 0.0001)
+        #expect(PocketPresentation.claudeWaitClock(open, now: now) == "7:00")
+        // The Mac's deadline: a 30-minute wait with 90.5 s left.
+        var held = session(.waiting, accepts: true, waitingFor: 1709.5)
+        held.replyDeadline = now.addingTimeInterval(90.5)
+        #expect(abs((PocketPresentation.claudeWaitShare(held, now: now) ?? 0) - 90.5 / 1800) < 0.0001)
+        #expect(PocketPresentation.claudeWaitClock(held, now: now) == "1:31", "rounds up, never 0:00 while it waits")
+        // Until I'm back: hours on the clock.
+        held.replyDeadline = now.addingTimeInterval(3723)
+        #expect(PocketPresentation.claudeWaitClock(held, now: now) == "1:02:03")
+        // Past the deadline, or not held: nothing to count.
+        held.replyDeadline = now.addingTimeInterval(-1)
+        #expect(PocketPresentation.claudeWaitShare(held, now: now) == nil)
+        #expect(PocketPresentation.claudeWaitClock(held, now: now) == nil)
+        #expect(PocketPresentation.claudeWaitShare(session(.waiting, waitingFor: 10), now: now) == nil)
+        // A deadline without a start counts against the default window, capped at full.
+        var late = session(.waiting, accepts: true)
+        late.replyDeadline = now.addingTimeInterval(1200)
+        #expect(PocketPresentation.claudeWaitShare(late, now: now) == 1)
+    }
 }

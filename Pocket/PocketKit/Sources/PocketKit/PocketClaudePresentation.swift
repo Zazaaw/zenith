@@ -150,17 +150,37 @@ extension PocketPresentation {
 
     /// "Claude waits 7m more" while a reply can still reach it.
     public static func claudeWaitLeft(_ session: PocketClaude.Session, now: Date) -> String? {
+        guard let left = claudeWait(session, now: now)?.left else { return nil }
+        return left < 60 ? "Claude waits less than a minute more" : "Claude waits \(duration(minutes: Int(left / 60))) more"
+    }
+
+    /// How much of its wait a held turn has left: 1 as it begins, near 0 as
+    /// the hook lets go; nil once a reply can't reach it. The Away card's ring.
+    public static func claudeWaitShare(_ session: PocketClaude.Session, now: Date) -> Double? {
+        guard let wait = claudeWait(session, now: now), wait.total > 0 else { return nil }
+        return min(1, wait.left / wait.total)
+    }
+
+    /// The held turn's time left as a clock ("6:42", "1:02:03"), rounded up
+    /// so it never reads 0:00 while a reply still reaches Claude.
+    public static func claudeWaitClock(_ session: PocketClaude.Session, now: Date) -> String? {
+        claudeWait(session, now: now).map { clock($0.left.rounded(.up)) }
+    }
+
+    /// Seconds a held turn has left and the whole wait it was given.
+    private static func claudeWait(_ session: PocketClaude.Session, now: Date) -> (left: TimeInterval, total: TimeInterval)? {
         guard session.acceptsReply else { return nil }
-        let left: TimeInterval
+        let left: TimeInterval, total: TimeInterval
         if let deadline = session.replyDeadline {
             left = deadline.timeIntervalSince(now)
+            total = session.waitingSince.map { deadline.timeIntervalSince($0) } ?? claudeReplyWindow
         } else if let since = session.waitingSince {
             left = claudeReplyWindow - now.timeIntervalSince(since)
+            total = claudeReplyWindow
         } else {
             return nil
         }
-        guard left > 0 else { return nil }
-        return left < 60 ? "Claude waits less than a minute more" : "Claude waits \(duration(minutes: Int(left / 60))) more"
+        return left > 0 ? (left, max(total, left)) : nil
     }
 
     /// Whether a draft may be sent: something to say, within the limit.
