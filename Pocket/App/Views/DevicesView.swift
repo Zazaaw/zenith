@@ -93,29 +93,44 @@ struct DevicesView: View {
 }
 
 /// One battery as a ring round its device's symbol, the percentage rolling
-/// up underneath; a bolt while it charges.
+/// up underneath. The ring fills from empty when it first shows; while it
+/// charges, liquid rises inside it to the level and a bolt sits on top;
+/// when low, it pulses softly in the alert colour.
 struct BatteryRing: View {
     let item: PocketBatteryItem
     var size: CGFloat = 58
+    var showsPercent = true
     @State private var shown: Double = 0
+    /// On screen (not scrolled away): the liquid and the pulse move only then.
+    @State private var visible = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         let tone = PocketPresentation.itemTone(item)
         let tint = tone == .quiet ? K.faint : (tone == .plain ? K.emerald : K.color(tone))
         let value = Double(item.percent ?? 0) / 100
+        let line = max(4.5, size * 0.078)
+        let low = PocketPresentation.isLow(item)
+        let moving = visible && !reduceMotion && scenePhase == .active
         VStack(spacing: 8) {
             ZStack {
-                Circle().stroke(K.track, lineWidth: 4.5)
+                if low { LowPulse(tint: K.red, moving: moving).transition(.opacity) }
+                if item.charging {
+                    LiquidFill(level: shown, tint: K.emerald, moving: moving)
+                        .padding(line + 2)
+                        .transition(.opacity)
+                }
+                Circle().stroke(K.track, lineWidth: line)
                 Circle().trim(from: 0, to: shown)
-                    .stroke(tint, style: StrokeStyle(lineWidth: 4.5, lineCap: .round))
+                    .stroke(tint, style: StrokeStyle(lineWidth: line, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 Image(systemName: PocketPresentation.symbolName(item))
                     .font(.system(size: size * 0.3, weight: .medium))
                     .foregroundStyle(K.fg)
                 if item.charging {
                     Image(systemName: "bolt.fill")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.system(size: max(9, size * 0.15), weight: .bold))
                         .foregroundStyle(K.emerald)
                         .padding(3)
                         .background(K.card, in: Circle())
@@ -124,20 +139,24 @@ struct BatteryRing: View {
                 }
             }
             .frame(width: size, height: size)
-            if let percent = item.percent {
-                RollingNumber(value: percent) { "\($0)%" }
-                    .font(K.mono(13, .semibold)).foregroundStyle(tone == .quiet ? K.faint : K.fg)
-            } else {
-                Text("—").font(K.mono(13, .semibold)).foregroundStyle(K.faint)
+            if showsPercent {
+                if let percent = item.percent {
+                    RollingNumber(value: percent) { "\($0)%" }
+                        .font(K.mono(13, .semibold)).foregroundStyle(tone == .quiet ? K.faint : (low ? K.red : K.fg))
+                } else {
+                    Text("—").font(K.mono(13, .semibold)).foregroundStyle(K.faint)
+                }
             }
         }
+        .onScrollVisibilityChange(threshold: 0.05) { visible = $0 }
         .onAppear {
-            withAnimation(Motion.respecting(reduceMotion, Motion.fill).delay(0.2)) { shown = value }
+            withAnimation(Motion.respecting(reduceMotion, Motion.fill).delay(reduceMotion ? 0 : 0.2)) { shown = value }
         }
-        .onChange(of: value) { _, next in withAnimation(Motion.fill) { shown = next } }
+        .onChange(of: value) { _, next in withAnimation(Motion.respecting(reduceMotion, Motion.fill)) { shown = next } }
         .animation(Motion.spring, value: item.charging)
+        .animation(Motion.reveal, value: low)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(item.name), \(item.percent.map { "\($0) percent" } ?? "unknown")\(item.charging ? ", charging" : "")")
+        .accessibilityLabel("\(item.name), \(item.percent.map { "\($0) percent" } ?? "unknown")\(item.charging ? ", charging" : low ? ", low" : "")")
     }
 }
 
