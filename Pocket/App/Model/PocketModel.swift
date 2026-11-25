@@ -83,6 +83,7 @@ final class PocketModel {
 
     init() {
         pairing = PairingStore.load()
+        WatchBridge.shared.start(model: self, pairing: pairing)
         if let cached = WallpaperCache.load() {
             wallpaperHash = cached.hash
             wallpaper = UIImage(data: cached.jpeg)
@@ -216,6 +217,7 @@ final class PocketModel {
         stop()
         forgetMac()
         pairing = next
+        WatchBridge.shared.pairingChanged(next)
         tab = .home
         if active { start(next) }
     }
@@ -228,6 +230,7 @@ final class PocketModel {
         Task { try? await PocketLink(pairing: pairing, me: .phone).putBox(pairing.phoneBoxID, PocketDeviceReport(devices: [])) }
         PairingStore.delete()
         self.pairing = nil
+        WatchBridge.shared.pairingChanged(nil)
         forgetMac()
         showingSettings = false
     }
@@ -304,6 +307,7 @@ final class PocketModel {
         heardAt = max(heard, heardAt ?? heard)
         stateIsLive = live
         loading = false
+        WatchBridge.shared.stateChanged(next, sentAt: sentAt, heardAt: heardAt ?? heard)
         mac.record(next.health, at: heard)
         if next.awakeUntil == nil { awakeChoice = nil }
         if let hash = next.wallpaperHash {
@@ -454,6 +458,7 @@ final class PocketModel {
     private func sendReport() {
         guard let pocketLink, let pairing, let report = PhoneBattery.report() else { return }
         phone = report.devices.first
+        WatchBridge.shared.phoneChanged(phone)
         let live = link == .live
         Task {
             if live { _ = try? await pocketLink.send(.report(report)) }

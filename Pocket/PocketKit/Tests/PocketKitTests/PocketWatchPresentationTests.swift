@@ -36,6 +36,13 @@ private func mac(percent: Int = 47, charging: Bool = false, claude: PocketClaude
         #expect(PocketWatchContext(dictionary: try PocketWatchContext(pairing: nil).dictionary())?.pairing == nil, "unpaired")
     }
 
+    @Test func passesACommandThroughTheIPhone() throws {
+        let message = try PocketWatchContext.commandMessage(.claudeReply(sessionID: "s1", text: "Run the tests."))
+        #expect(PropertyListSerialization.propertyList(message, isValidFor: .binary))
+        #expect(PocketWatchContext.command(from: message) == .claudeReply(sessionID: "s1", text: "Run the tests."))
+        #expect(PocketWatchContext.command(from: [PocketWatchContext.helloKey: true]) == nil)
+    }
+
     @Test func keepsTheNewestSnapshot() {
         let old = PocketWatchSnapshot(state: mac(percent: 40), sentAt: now, heardAt: now)
         let new = PocketWatchSnapshot(state: mac(percent: 41), sentAt: now, heardAt: now.addingTimeInterval(30))

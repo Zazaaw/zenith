@@ -60,6 +60,24 @@ public struct PocketWatchContext: Codable, Hashable, Sendable {
         self = context
     }
 
+    // MARK: Messages
+
+    /// The Watch asks for the context (it has no pairing yet, or just opened).
+    public static let helloKey = "hello"
+    /// A command the Watch couldn't send itself, for the iPhone to pass on.
+    public static let commandKey = "command"
+    /// The iPhone's answer to a passed-on command: whether it went out.
+    public static let sentKey = "sent"
+
+    public static func commandMessage(_ command: PocketCommand) throws -> [String: Any] {
+        [commandKey: try encoder.encode(command)]
+    }
+
+    public static func command(from message: [String: Any]) -> PocketCommand? {
+        guard let data = message[commandKey] as? Data else { return nil }
+        return try? decoder.decode(PocketCommand.self, from: data)
+    }
+
     /// For the snapshot file the Watch app writes for its complications.
     public static func encode<T: Encodable>(_ value: T) throws -> Data { try encoder.encode(value) }
     public static func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T { try decoder.decode(type, from: data) }
