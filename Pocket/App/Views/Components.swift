@@ -15,7 +15,7 @@ struct Ambient: View {
                 while y < size.height {
                     var x: CGFloat = 1
                     while x < size.width {
-                        context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 1.6, height: 1.6)), with: .color(.white.opacity(0.22)))
+                        context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 1.6, height: 1.6)), with: .color(K.dot))
                         x += step
                     }
                     y += step
@@ -29,10 +29,10 @@ struct Ambient: View {
                 while x <= size.width { path.move(to: CGPoint(x: x, y: 0)); path.addLine(to: CGPoint(x: x, y: size.height)); x += cell }
                 var y: CGFloat = 0
                 while y <= size.height { path.move(to: CGPoint(x: 0, y: y)); path.addLine(to: CGPoint(x: size.width, y: y)); y += cell }
-                context.stroke(path, with: .color(.white.opacity(0.07)), lineWidth: 1)
+                context.stroke(path, with: .color(K.gridLine), lineWidth: 1)
                 for (cx, cy) in [(6, 15), (7, 16), (5, 17), (8, 14)] {
                     let rect = CGRect(x: CGFloat(cx) * cell, y: CGFloat(cy) * cell, width: cell, height: cell)
-                    context.fill(Path(rect), with: .color(.white.opacity(0.035)))
+                    context.fill(Path(rect), with: .color(K.wash))
                 }
             }
             .mask(LinearGradient(colors: [.clear, .white], startPoint: UnitPoint(x: 0.3, y: 0.45), endPoint: .bottomTrailing))
@@ -75,14 +75,13 @@ struct SectionLabel: View {
     }
 }
 
-/// A card of rows separated by hairlines.
+/// A card of rows separated by hairlines, on the theme's surface.
 struct Rows<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
         VStack(spacing: 0) { content }
-            .background(K.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(K.border, lineWidth: 1))
+            .surface(radius: 18)
     }
 }
 
@@ -97,7 +96,7 @@ struct Row<Trailing: View>: View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
                 RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(K.border, lineWidth: 1)
-                    .background(Color.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                    .background(K.wash, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
                     .overlay(Image(systemName: symbol).font(.system(size: 13, weight: .medium)).foregroundStyle(K.muted))
                     .frame(width: 32, height: 32)
                 VStack(alignment: .leading, spacing: 2) {
@@ -113,19 +112,30 @@ struct Row<Trailing: View>: View {
     }
 }
 
-/// A thin progress capsule.
+/// A thin progress capsule that fills from empty when it appears and
+/// glides to each new value.
 struct Meter: View {
     let value: Double
     let tint: Color
     var height: CGFloat = 6
+    @State private var shown: Double = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         GeometryReader { geometry in
-            Capsule().fill(Color.white.opacity(0.1)).overlay(alignment: .leading) {
-                Capsule().fill(tint).frame(width: geometry.size.width * min(1, max(0, value)))
+            Capsule().fill(K.track).overlay(alignment: .leading) {
+                Capsule().fill(tint).frame(width: geometry.size.width * min(1, max(0, shown)))
             }
         }
         .frame(height: height)
+        .onAppear {
+            withAnimation(Motion.respecting(reduceMotion, Motion.fill).delay(reduceMotion ? 0 : 0.15)) { shown = value }
+        }
+        .onChange(of: value) { _, next in
+            withAnimation(Motion.respecting(reduceMotion, Motion.fill)) { shown = next }
+        }
+        .accessibilityElement()
+        .accessibilityValue("\(Int((min(1, max(0, value)) * 100).rounded())) percent")
     }
 }
 
@@ -153,15 +163,19 @@ struct Hero: View {
                         Image(systemName: "gearshape").font(.system(size: 15, weight: .medium)).foregroundStyle(K.muted)
                             .frame(width: 32, height: 32).contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
+                    .pressable()
                     .accessibilityLabel("Settings")
                 }
             }
             .frame(minHeight: 32)
             .padding(.top, 8)
+            .blurFade(index: 0)
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(Text(sentence.lead))\(Text(sentence.value).foregroundStyle(tint))\(Text(sentence.after))")
                     .font(K.sans(32, bold: true))
+                    // Digits in the value roll when it changes (47% → 48%).
+                    .contentTransition(.numericText())
+                    .animation(Motion.spring, value: sentence)
                 if !sentence.rest.isEmpty {
                     Text(sentence.rest).font(K.sans(32)).foregroundStyle(K.muted)
                 }
@@ -170,22 +184,27 @@ struct Hero: View {
             .fixedSize(horizontal: false, vertical: true)
             .padding(.top, 12)
             .accessibilityElement(children: .combine)
+            .blurFade(index: 1)
             if let meter {
                 HStack(spacing: 10) {
                     Meter(value: meter, tint: tint)
                     if let meterNote { Text(meterNote).font(K.mono(11)).foregroundStyle(K.faint).fixedSize() }
                 }
                 .padding(.top, 16)
+                .blurFade(index: 2)
             }
             if let footnote {
                 Text(footnote).font(K.mono(11)).foregroundStyle(K.faint).padding(.top, meter == nil ? 12 : 8)
+                    .contentTransition(.opacity)
+                    .blurFade(index: 3)
             }
         }
         .padding(.horizontal, 24)
     }
 }
 
-/// A full-width button in the kit's two weights: white fill, or outlined.
+/// A full-width button in the kit's two weights: solid ink (white in dark,
+/// black in light), or a quiet track fill. Presses dip and tap.
 struct PillButton: View {
     let title: String
     var primary = false
@@ -197,11 +216,12 @@ struct PillButton: View {
     var body: some View {
         Button(action: action) {
             Text(title).font(K.sans(15, bold: true))
-                .foregroundStyle(primary ? Color.black : K.fg)
+                .foregroundStyle(primary ? K.inverse : K.fg)
                 .frame(maxWidth: .infinity).padding(.vertical, compact ? 10 : 11)
-                .background(primary ? Color.white : Color.white.opacity(0.12), in: Capsule())
+                .background(primary ? K.fg : K.track, in: Capsule())
+                .contentShape(Capsule())
                 .opacity(isEnabled ? 1 : 0.4)
         }
-        .buttonStyle(.plain)
+        .pressable()
     }
 }
