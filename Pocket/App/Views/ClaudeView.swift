@@ -3,6 +3,7 @@
 
 import PocketKit
 import SwiftUI
+import UIKit
 
 /// The Claude tab: what Claude Code is doing right now as a sentence, the
 /// session switcher, this turn's live timeline, what Claude said and the
@@ -137,6 +138,10 @@ struct ClaudeSaidCard: View {
     let session: PocketClaude.Session
     let text: String
     let now: Date
+    @State private var reading = false
+
+    /// A reply longer than this shows as a preview with "Read all".
+    private var isLong: Bool { text.count > 420 || text.filter { $0 == "\n" }.count > 7 }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -148,8 +153,33 @@ struct ClaudeSaidCard: View {
                 }
             }
             Text(Self.markdown(text)).font(K.sans(15)).foregroundStyle(K.fg).lineSpacing(3)
+                .lineLimit(isLong ? 8 : nil)
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
+                // The preview fades out at its last lines instead of stopping hard.
+                .mask {
+                    if isLong {
+                        LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.7),
+                                               .init(color: .black.opacity(0), location: 1)], startPoint: .top, endPoint: .bottom)
+                    } else {
+                        Rectangle()
+                    }
+                }
+            if isLong {
+                Button {
+                    Haptics.tap()
+                    reading = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Text("Read all").font(K.sans(13, bold: true))
+                        Image(systemName: "arrow.up.left.and.arrow.down.right").font(.system(size: 11, weight: .bold))
+                    }
+                    .foregroundStyle(K.fg)
+                    .padding(.horizontal, 14).padding(.vertical, 8)
+                    .background(K.track, in: Capsule())
+                }
+                .pressable()
+            }
             if session.filesChanged > 0 {
                 HStack(spacing: 8) {
                     Status(badge: PocketBadge(PocketPresentation.claudeFiles(session), .info))
@@ -161,12 +191,82 @@ struct ClaudeSaidCard: View {
         .padding(16).frame(maxWidth: .infinity, alignment: .leading)
         .background(K.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(K.border, lineWidth: 1))
+        .sheet(isPresented: $reading) {
+            ClaudeMessageSheet(session: session, text: text, now: now)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     /// Claude writes Markdown: bold, code and links read as such, the rest as written.
     static func markdown(_ text: String) -> AttributedString {
         (try? AttributedString(markdown: text, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
             ?? AttributedString(text)
+    }
+}
+
+/// Claude's whole reply, to read at leisure: paragraphs and lists as Claude
+/// wrote them, selectable, with a copy button.
+struct ClaudeMessageSheet: View {
+    let session: PocketClaude.Session
+    let text: String
+    let now: Date
+    @Environment(\.dismiss) private var dismiss
+    @State private var copied = false
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack {
+                        Text(session.project.uppercased()).font(K.sans(11, bold: true)).tracking(1.1).foregroundStyle(K.faint)
+                        Spacer()
+                        if let since = session.waitingSince {
+                            Text(PocketPresentation.ago(since, now: now)).font(K.mono(11)).foregroundStyle(K.faint)
+                        }
+                    }
+                    ForEach(Array(paragraphs.enumerated()), id: \.offset) { index, paragraph in
+                        Text(ClaudeSaidCard.markdown(paragraph))
+                            .font(paragraph.hasPrefix("```") ? K.mono(13) : K.sans(16))
+                            .foregroundStyle(K.fg).lineSpacing(4)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .blurFade(index: min(index, 12))
+                    }
+                }
+                .padding(20)
+            }
+            .background(K.bg)
+            .navigationTitle("Claude said")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(copied ? "Copied" : "Copy") {
+                        UIPasteboard.general.string = text
+                        Haptics.success()
+                        withAnimation(Motion.quick) { copied = true }
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } }
+            }
+        }
+    }
+
+    /// Blank lines split paragraphs; a fenced code block stays one piece.
+    private var paragraphs: [String] {
+        var result: [String] = []
+        var current: [String] = []
+        var inCode = false
+        for line in text.components(separatedBy: "\n") {
+            if line.hasPrefix("```") { inCode.toggle() }
+            if line.trimmingCharacters(in: .whitespaces).isEmpty && !inCode {
+                if !current.isEmpty { result.append(current.joined(separator: "\n")); current = [] }
+            } else {
+                current.append(line)
+            }
+        }
+        if !current.isEmpty { result.append(current.joined(separator: "\n")) }
+        return result
     }
 }
 

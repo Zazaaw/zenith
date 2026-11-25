@@ -14,8 +14,6 @@ struct SplashView: View {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var start = Date()
-    @State private var starCenter: CGPoint?
-    @State private var canvasOrigin: CGPoint = .zero
     @State private var finished = false
     @State private var stillShown = false
 
@@ -29,19 +27,21 @@ struct SplashView: View {
             let t = reduceMotion ? 10 : max(0, context.date.timeIntervalSince(start))
             let T = t * Self.speed
             let glassDone = T >= look.end
-            ZStack {
-                if glassDone || starCenter == nil {
-                    K.bg.ignoresSafeArea()
-                } else if let starCenter {
-                    GlassReveal(time: T, center: CGPoint(x: starCenter.x - canvasOrigin.x, y: starCenter.y - canvasOrigin.y),
-                                starSize: Self.starSize, look: look)
-                        .ignoresSafeArea()
+            // The star has one place for the whole splash, the screen's centre:
+            // the glass draws it there and the still star takes over in the
+            // same spot, so it never jumps; only the text arrives below it.
+            GeometryReader { geo in
+                let center = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
+                ZStack {
+                    if glassDone {
+                        K.bg
+                    } else {
+                        GlassReveal(time: T, center: center, starSize: Self.starSize, look: look)
+                    }
+                    layout(t: t, glassDone: glassDone, center: center, height: geo.size.height)
                 }
-                Color.clear
-                    .ignoresSafeArea()
-                    .onGeometryChange(for: CGPoint.self) { $0.frame(in: .global).origin } action: { canvasOrigin = $0 }
-                layout(t: t, glassDone: glassDone)
             }
+            .ignoresSafeArea()
         }
         .opacity(reduceMotion && !stillShown ? 0 : 1)
         .contentShape(Rectangle())
@@ -72,32 +72,29 @@ struct SplashView: View {
 
     /// The approved layout: the star, the wordmark, the link's line, and the
     /// credit at the bottom. The text rises in as the glass lets go.
-    private func layout(t: Double, glassDone: Bool) -> some View {
+    private func layout(t: Double, glassDone: Bool, center: CGPoint, height: CGFloat) -> some View {
         let release = GlassLook(dark: scheme == .dark).present / Self.speed
         let word = reduceMotion ? 1 : Motion.revealCurve((t - release - 0.05) / 0.55)
         let line = reduceMotion ? 1 : Motion.revealCurve((t - release - 0.3) / 0.55)
         return ZStack {
+            StarShape()
+                .fill(K.fg, style: FillStyle(eoFill: true))
+                .frame(width: Self.starSize, height: Self.starSize)
+                .position(center)
+                .opacity(glassDone ? 1 : 0)
+            // The text hangs from the star's bottom edge; the star stays put.
             VStack(spacing: 22) {
-                StarShape()
-                    .fill(K.fg, style: FillStyle(eoFill: true))
-                    .frame(width: Self.starSize, height: Self.starSize)
-                    .opacity(glassDone ? 1 : 0)
-                    .onGeometryChange(for: CGPoint.self) {
-                        let frame = $0.frame(in: .global)
-                        return CGPoint(x: frame.midX, y: frame.midY)
-                    } action: { starCenter = $0 }
                 Text("\(Text("Zenith ").font(K.sans(34, bold: true)).foregroundStyle(K.fg))\(Text("Pocket").font(K.sans(34)).foregroundStyle(K.muted))")
                     .tracking(-1)
                     .opacity(word).blur(radius: 8 * (1 - word)).offset(y: 10 * (1 - word))
                 status(t: t)
                     .opacity(line).offset(y: 6 * (1 - line))
             }
-            VStack {
-                Spacer()
-                Text("by Satu Visual").font(K.sans(12, bold: true)).tracking(1).foregroundStyle(K.faint)
-                    .opacity(line)
-                    .padding(.bottom, 24)
-            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .padding(.top, center.y + Self.starSize / 2 + 22)
+            Text("by Satu Visual").font(K.sans(12, bold: true)).tracking(1).foregroundStyle(K.faint)
+                .opacity(line)
+                .position(x: center.x, y: height - 58)
         }
     }
 

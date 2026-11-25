@@ -44,7 +44,7 @@ public struct PocketClaude: Codable, Hashable, Sendable {
         public var state: State
         public var turnStartedAt: Date?
         public var waitingSince: Date?
-        /// The end of Claude's last message, trimmed by the Mac (≤ 600 characters).
+        /// Claude's last message, whole up to 12 000 characters (longer ones keep their end).
         public var lastMessage: String?
         /// The latest steps of this turn, oldest first (≤ 8).
         public var steps: [Step]

@@ -176,11 +176,14 @@ enum PocketClaudeTests {
                      "a tail that starts mid-line drops that line")
 
         suite.expect(Rules.ending("short") == "short", "a short reply stays whole")
-        let words = (0..<300).map { "word\($0)" }.joined(separator: " ")
+        let wordCount = Rules.maximumMessage / 5 + 500
+        let words = (0..<wordCount).map { "word\($0)" }.joined(separator: " ")
         let end = Rules.ending(words)
-        suite.expect(end.count <= Rules.maximumMessage && end.hasPrefix("…word") && end.hasSuffix("word299"),
-                     "a long reply keeps its end, from a word's start, at most 600 characters")
-        let solid = String(repeating: "x", count: 2_000)
+        suite.expect(end.count <= Rules.maximumMessage && end.hasPrefix("…word") && end.hasSuffix("word\(wordCount - 1)"),
+                     "a reply over the limit keeps its end, from a word's start")
+        let typical = (0..<1_100).map { "word\($0)" }.joined(separator: " ")
+        suite.expect(Rules.ending(typical) == typical, "a long but ordinary reply (≈ 9 000 characters) stays whole")
+        let solid = String(repeating: "x", count: Rules.maximumMessage + 1_000)
         suite.expect(Rules.ending(solid).count == Rules.maximumMessage, "a reply without spaces is cut to the limit")
     }
 

@@ -11,7 +11,9 @@ import Foundation
 enum PocketClaudeRules {
     static let maximumSessions = 8
     static let maximumSteps = 8
-    static let maximumMessage = 600
+    /// Enough for nearly any reply in full; the phone shows a preview and
+    /// opens the rest on demand. Longer ones keep their end.
+    static let maximumMessage = 12_000
     static let maximumReply = 4000
     /// Done this long ago, a session reads as ended rather than waiting.
     static let idleAfter: TimeInterval = 30 * 60
