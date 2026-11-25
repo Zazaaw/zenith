@@ -42,6 +42,10 @@ final class BatteriesMonitor: ObservableObject {
     private var savedAt: Date?
     private var symbolAvailability: [String: Bool] = [:]
     private var airPods: BatteriesAirPodsScanner?
+    /// Zenith fork: the paired phone's last report (Zenith Pocket), and the
+    /// last scan as reconciled, so a report joins without a scan of its own.
+    private var pocketReport: [PocketDeviceReport.Device] = []
+    private var lastScan: (devices: [BatteryDevice], date: Date)?
 
     // Used from the scan queue and the iPhone branch of a scan.
     private let batteryService = BatteriesBatteryService()
@@ -91,6 +95,7 @@ final class BatteriesMonitor: ObservableObject {
         airPods?.stop()
         airPods = nil
         allDevices = []
+        lastScan = nil
         store.devices = []
         store.lastUpdated = nil
         store.pendingLowAlert = nil
@@ -308,22 +313,43 @@ final class BatteriesMonitor: ObservableObject {
         // Reconciled before deduplicating, or the dropped copy would come
         // back from the registry as a missing device.
         let reconciled = registry.reconcile(current: result.devices, now: result.date)
-        let devices = BatteriesMerge.ordered(BatteriesMerge.deduplicated(reconciled)).map { device -> BatteryDevice in
+        self.registry = registry
+        lastScan = (reconciled, result.date)
+        present(reconciled, scanDate: result.date)
+        store.lastUpdated = result.date
+        if store.iOSTools != result.tools { store.iOSTools = result.tools }
+        save(self.registry ?? registry, now: result.date)
+    }
+
+    /// Zenith fork: the phone's own report, from Zenith Pocket. Main thread.
+    func setPocketReport(_ devices: [PocketDeviceReport.Device]) {
+        guard devices != pocketReport else { return }
+        pocketReport = devices
+        guard running, let lastScan else { return }
+        present(lastScan.devices, scanDate: lastScan.date)
+    }
+
+    /// One scan's devices, the phone's report joined after the registry
+    /// (so it never comes back as a last-known entry of its own), in order.
+    private func present(_ reconciled: [BatteryDevice], scanDate: Date) {
+        let joined = PocketBatteries.merged(scan: reconciled, scanDate: scanDate, report: pocketReport, now: Date())
+        let devices = BatteriesMerge.ordered(BatteriesMerge.deduplicated(joined)).map { device -> BatteryDevice in
             var device = device
             device.symbolOverride = BatteriesSymbols.override(for: device, isAvailable: symbolIsAvailable)
             return device
         }
         let shown = devices.filter { !config.hidden.contains($0.id) }
+        var registry = self.registry ?? BatteriesRegistry()
         var alerted = registry.alerted
-        let alert = BatteriesAlerts.evaluate(shown, threshold: config.threshold, muted: config.muted, alerted: &alerted)
+        // A device only the phone reports has no registry entry to keep its
+        // alert, so it would alert again after every scan: it stays quiet.
+        let alert = BatteriesAlerts.evaluate(shown.filter { !PocketBatteries.isPocketID($0.id) },
+                                             threshold: config.threshold, muted: config.muted, alerted: &alerted)
         registry.alerted = alerted
         self.registry = registry
 
         publish(devices)
-        store.lastUpdated = result.date
-        if store.iOSTools != result.tools { store.iOSTools = result.tools }
         if let alert { store.pendingLowAlert = alert }
-        save(registry, now: result.date)
     }
 
     private func publish(_ devices: [BatteryDevice]) {
