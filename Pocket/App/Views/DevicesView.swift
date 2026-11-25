@@ -7,10 +7,12 @@ import SwiftUI
 /// Every battery Pocket knows: the Mac's, this iPhone's, and the
 /// accessories Zenith reads on the Mac. The first four as rings, like the
 /// iPhone's Batteries widget; AirPods (one entry per bud and case) together
-/// on their own card; then every device as a row.
+/// on their own card; then every device as a row. A tap on any of them
+/// opens that battery's sheet.
 struct DevicesView: View {
     @Environment(PocketModel.self) private var model
     let now: Date
+    @State private var selected: PocketBatteryItem?
 
     var body: some View {
         let items = model.batteryItems
@@ -28,16 +30,21 @@ struct DevicesView: View {
             } else {
                 HStack(spacing: 0) {
                     ForEach(Array(items.prefix(4).enumerated()), id: \.element.id) { index, item in
-                        BatteryRing(item: item)
-                            .frame(maxWidth: .infinity)
-                            .blurFade(index: index, base: 0.15)
+                        Button { selected = item } label: {
+                            BatteryRing(item: item)
+                                .frame(maxWidth: .infinity)
+                                .contentShape(Rectangle())
+                        }
+                        .pressable()
+                        .accessibilityHint("Shows this battery")
+                        .blurFade(index: index, base: 0.15)
                     }
                 }
                 .padding(.vertical, 18).padding(.horizontal, 8)
                 .surface()
                 .padding(.horizontal, 20).padding(.top, 24)
                 if buds.count > 1 {
-                    BudsCard(items: buds)
+                    BudsCard(items: buds) { selected = $0 }
                         .padding(.horizontal, 20).padding(.top, 12)
                         .blurFade(index: 5)
                 }
@@ -47,14 +54,21 @@ struct DevicesView: View {
                     })
                     Rows {
                         ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                            row(item, divider: index < items.count - 1)
-                                .blurFade(index: index, base: 0.25)
+                            Button { selected = item } label: {
+                                row(item, divider: index < items.count - 1).contentShape(Rectangle())
+                            }
+                            .pressable()
+                            .accessibilityHint("Shows this battery")
+                            .blurFade(index: index, base: 0.25)
                         }
                     }
                 }
                 .padding(.horizontal, 20).padding(.top, 22)
                 .animation(Motion.spring, value: items)
             }
+        }
+        .sheet(item: $selected) { item in
+            BatteryDetailSheet(initial: item).environment(model)
         }
     }
 
@@ -164,6 +178,7 @@ struct BatteryRing: View {
 /// the case side by side, each a ring with its own level.
 private struct BudsCard: View {
     let items: [PocketBatteryItem]
+    let select: (PocketBatteryItem) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -176,11 +191,16 @@ private struct BudsCard: View {
             }
             HStack(spacing: 0) {
                 ForEach(items) { item in
-                    VStack(spacing: 6) {
-                        BatteryRing(item: item, size: 50)
-                        Text(Self.part(item)).font(K.sans(10, bold: true)).tracking(1).foregroundStyle(K.faint)
+                    Button { select(item) } label: {
+                        VStack(spacing: 6) {
+                            BatteryRing(item: item, size: 50)
+                            Text(Self.part(item)).font(K.sans(10, bold: true)).tracking(1).foregroundStyle(K.faint)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
                     }
-                    .frame(maxWidth: .infinity)
+                    .pressable()
+                    .accessibilityHint("Shows this battery")
                 }
             }
         }
