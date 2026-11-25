@@ -149,6 +149,14 @@ extension CatalogShots {
             settings("readme-settings-remote", page: .remote, preferences: [DefaultsKey.zenithRemoteEnabled: true]) {
                 S.remote()
             },
+            // Zenith fork: iPhone & Watch paired over the contract's sample devices, then showing its code.
+            settings("readme-settings-pocket", page: .pocket, preferences: [PocketDefaults.enabled: true], height: 1450) {
+                PocketStore.shared.catalogPose(pairing: false)
+            },
+            settings("readme-settings-pocket-pairing", page: .pocket, preferences: [PocketDefaults.enabled: true],
+                     height: 1200) {
+                PocketStore.shared.catalogPose(pairing: true)
+            },
             // Zenith fork: Batteries over the contract's sample readings, libimobiledevice missing,
             // the whole page in one tall window.
             settings("readme-settings-batteries", page: .batteries, height: 1500) {
@@ -196,6 +204,31 @@ extension BatteriesStore {
         self.devices = devices
         iOSTools = tools
         lastUpdated = Date()
+    }
+}
+
+extension PocketStore {
+    /// Zenith fork: a made-up relay, paired with the contract's sample
+    /// devices or showing a fresh code. The service's handlers are let go, so
+    /// nothing reaches a relay while the shot settles.
+    @MainActor func catalogPose(pairing: Bool) {
+        saveRelayHandler = nil
+        startPairingHandler = nil
+        cancelPairingHandler = nil
+        unpairHandler = nil
+        let relay = PocketRelayConfig(url: URL(string: "https://your-project.supabase.co")!,
+                                      anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiJ9.c2FtcGxlLXNpZ25hdHVyZQ")
+        self.relay = relay
+        problem = nil
+        if pairing {
+            phase = .pairing(PocketPairing.make(relay: relay, macName: "Studio Mac"))
+            link = .connecting
+            devices = []
+        } else {
+            phase = .paired(lastSeen: CatalogSamples.now.addingTimeInterval(-45))
+            link = .live
+            devices = PocketStore.sampleDevices
+        }
     }
 }
 
