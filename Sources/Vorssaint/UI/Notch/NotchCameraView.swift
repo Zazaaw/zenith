@@ -18,28 +18,18 @@ struct NotchCameraView: View {
     }
 
     var body: some View {
-        Group {
+        ZStack {
             // Zenith fork: a page about to start its mirror is already the
             // mirror's dark page, so "Open camera" never flashes first.
             if service.isEmbeddedPresented || startsByItself {
                 // The preview takes the whole page; its camera picker and stop
                 // button sit in the island's top row, clear of the image.
-                CameraPreviewView(size: NotchLayout.cameraPreviewSize(in: size), showsCameraMenu: false,
-                                  revealsGently: true) // Zenith fork
+                CameraPreviewView(size: size, showsCameraMenu: false, revealsGently: true) // Zenith fork
             } else {
-                HStack(spacing: 16) {
-                    Image(systemName: "web.camera").font(.system(size: 30, weight: .light))
-                        .foregroundStyle(.secondary).accessibilityHidden(true)
-                        .frame(width: 56, height: 56)
-                        .zenithIslandCard(cornerRadius: ZenithRadius.panel) // Zenith fork: a hairline well
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(text.cameraHint).font(.callout).foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Button(text.startCamera, action: service.showEmbedded)
-                            .buttonStyle(ZenithIslandPrimaryButtonStyle()) // Zenith fork: the page's one solid step
-                    }
+                ViewThatFits(in: .vertical) {
+                    startCard
+                    ScrollView { startCard }
                 }
-                .padding(.horizontal, 12)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -52,6 +42,22 @@ struct NotchCameraView: View {
             service.hideEmbedded()
             autoStartAttempted = false // Zenith fork: the next visit starts it again
         }
+    }
+
+    private var startCard: some View {
+        HStack(spacing: 16) {
+            Image(systemName: "web.camera").font(.system(size: 30, weight: .light))
+                .foregroundStyle(.secondary).accessibilityHidden(true)
+                .frame(width: 56, height: 56)
+                .zenithIslandCard(cornerRadius: ZenithRadius.panel) // Zenith fork: a hairline well
+            VStack(alignment: .leading, spacing: 8) {
+                Text(text.cameraHint).font(.callout).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button(text.startCamera, action: service.showEmbedded)
+                    .buttonStyle(ZenithIslandPrimaryButtonStyle()) // Zenith fork: the page's one solid step
+            }
+        }
+        .padding(.horizontal, 12)
     }
 }
 

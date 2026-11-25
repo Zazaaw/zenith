@@ -234,8 +234,8 @@ enum CatalogSamples {
             "# branch.head feat/island-catalog",
             "# branch.upstream origin/feat/island-catalog",
             "# branch.ab +2 -0",
-            "1 M. N... 100644 100644 100644 aaaaaaa bbbbbbb Sources/Vorssaint/UI/Notch/NotchView.swift",
-            "1 .M N... 100644 100644 100644 aaaaaaa bbbbbbb Sources/Vorssaint/Services/Notch/NotchService.swift",
+            "1 M. N... 100644 100644 100644 aaaaaaa bbbbbbb Sources/Zenith/UI/Notch/NotchView.swift",
+            "1 .M N... 100644 100644 100644 aaaaaaa bbbbbbb Sources/Zenith/Services/Notch/NotchService.swift",
             "1 A. N... 000000 100644 100644 0000000 bbbbbbb Tools/IslandCatalog/render.sh",
             "? docs/island-catalog.md",
         ]

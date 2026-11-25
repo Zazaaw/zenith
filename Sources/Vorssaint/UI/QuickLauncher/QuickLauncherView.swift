@@ -243,6 +243,7 @@ struct QuickLauncherView: View {
         let index = launcher.visibleItems.firstIndex(of: item)
         let isSelected = !launcher.isEditing && index != nil && index == launcher.selectedIndex
         let isHovered = hoveredItem == item
+        let micWarning = item == .micMute ? (micMute.warning?.message ?? "") : ""
 
         Button {
             if launcher.isEditing {
@@ -300,10 +301,11 @@ struct QuickLauncherView: View {
                     } else {
                         if isActive(item) {
                             if notchSize != nil { // Zenith fork: a glowing status dot in the island
-                                ZenithStatusDot(color: ZenithStatus.success, live: true).offset(x: 5, y: -5)
+                                ZenithStatusDot(color: micWarning.isEmpty ? ZenithStatus.success : ZenithStatus.warning,
+                                                live: true).offset(x: 5, y: -5)
                             } else {
                                 Circle()
-                                    .fill(Color.green)
+                                    .fill(micWarning.isEmpty ? Color.green : Color.orange)
                                     .frame(width: 8, height: 8)
                                     .offset(x: 3, y: -3)
                             }
@@ -349,6 +351,8 @@ struct QuickLauncherView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title(for: item))
+        .accessibilityValue(micWarning)
+        .help(micWarning)
         .onHover { hovering in
             hoveredItem = hovering ? item : (hoveredItem == item ? nil : hoveredItem)
             if hovering, !launcher.isEditing {
@@ -539,7 +543,7 @@ struct QuickLauncherView: View {
         switch item {
         case .keepAwake: return keepAwake.isActive ? "bolt.fill" : "bolt"
         case .toggles: return "togglepower"
-        case .micMute: return micMute.isMuted ? "mic.slash.fill" : "mic"
+        case .micMute: return micMute.controlSymbol
         case .screenOCR: return "text.viewfinder"
         case .colorPicker: return "eyedropper"
         case .clipboard: return "doc.on.clipboard"

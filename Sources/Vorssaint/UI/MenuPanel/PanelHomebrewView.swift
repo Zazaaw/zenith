@@ -208,11 +208,19 @@ struct PanelHomebrewView: View {
 
     private var installedControls: some View {
         VStack(alignment: .leading, spacing: 7) {
-            ZenithPanelSegmented(selection: $filter, options: [ // Zenith fork
-                (PanelHomebrewFilter.all, "\(l10n.s.homebrewAll) \(homebrew.installed.count)"),
-                (PanelHomebrewFilter.cask, "\(l10n.s.homebrewCasks) \(installedCaskCount)"),
-                (PanelHomebrewFilter.formula, "\(l10n.s.homebrewFormulas) \(installedFormulaCount)"),
-            ])
+            // Zenith fork: our segmented chips while they fit; upstream's picker
+            // (native segments, then radio buttons) when the counts make them too wide.
+            ViewThatFits(in: .horizontal) {
+                ZenithPanelSegmented(selection: $filter, options: [
+                    (PanelHomebrewFilter.all, "\(l10n.s.homebrewAll) \(homebrew.installed.count)"),
+                    (PanelHomebrewFilter.cask, "\(l10n.s.homebrewCasks) \(installedCaskCount)"),
+                    (PanelHomebrewFilter.formula, "\(l10n.s.homebrewFormulas) \(installedFormulaCount)"),
+                ])
+                .fixedSize(horizontal: true, vertical: false)
+                PanelHomebrewFilterPicker(selection: $filter, strings: l10n.s,
+                                          totalCount: homebrew.installed.count,
+                                          caskCount: installedCaskCount, formulaCount: installedFormulaCount)
+            }
 
             HStack(spacing: 7) {
                 Button {
@@ -788,14 +796,6 @@ struct PanelHomebrewView: View {
 private enum PanelHomebrewMode: String, CaseIterable, Identifiable {
     case search
     case installed
-
-    var id: String { rawValue }
-}
-
-private enum PanelHomebrewFilter: String, CaseIterable, Identifiable {
-    case all
-    case cask
-    case formula
 
     var id: String { rawValue }
 }

@@ -201,7 +201,7 @@ struct NotchAudioControls: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(NotchButtonStyle(cornerRadius: 6))
-        .disabled(mixer.systemOutputMuted == nil)
+        .disabled(!mixer.canToggleOutputMute)
         .accessibilityLabel(mixer.systemOutputMuted == true ? l10n.s.actionUnmute : l10n.s.actionMute)
     }
 
@@ -602,10 +602,11 @@ private struct NotchMicButton: View {
     @ObservedObject private var service = MicMuteService.shared
     @ObservedObject private var l10n = L10n.shared
     var body: some View {
-        NotchActionTile(symbol: service.isMuted ? "mic.slash.fill" : "mic.fill",
+        NotchActionTile(symbol: service.controlSymbol,
                         title: service.isMuted ? l10n.s.micUnmuteName : l10n.s.micMuteName,
                         active: service.isMuted, accent: .alert, iconHex: NotchControlItem.microphone.zenithIconHex, // Zenith fork
                         action: service.toggle)
+            .accessibilityValue(service.warning?.message ?? "")
     }
 }
 
