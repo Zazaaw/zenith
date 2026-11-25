@@ -39,6 +39,12 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Pocket uses the camera to scan the pairing code Zenith shows on your Mac.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Pocket asks for Face ID before a reply reaches Claude Code on your Mac.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Pocket listens while you dictate a reply to Claude Code.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Pocket turns what you dictate into the text of your reply to Claude Code.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>PlusJakartaSans-Medium.ttf</string>

@@ -346,8 +346,9 @@ final class PocketModel {
         answering.insert(question.id)
     }
 
+    /// Internal so each tab's own model file (PocketModel+…) can send its commands.
     @discardableResult
-    private func send(_ command: PocketCommand) -> Bool {
+    func send(_ command: PocketCommand) -> Bool {
         guard canControl(), let pocketLink else {
             show(controlProblem() ?? PocketPresentation.unreachable, ok: false)
             return false
