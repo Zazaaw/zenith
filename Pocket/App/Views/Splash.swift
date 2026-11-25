@@ -1,0 +1,166 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Satu Visual
+
+import SwiftUI
+
+/// Once per launch: a liquid metal droplet springs in over the Satu Visual
+/// star, holds while the light turns round it, lets go and leaves the star;
+/// "Zenith Pocket" and the link's line rise under it, then the app fades in.
+/// A tap skips it; Reduce Motion makes it a plain fade.
+struct SplashView: View {
+    let onDone: () -> Void
+
+    @Environment(PocketModel.self) private var model
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var start = Date()
+    @State private var starCenter: CGPoint?
+    @State private var canvasOrigin: CGPoint = .zero
+    @State private var finished = false
+    @State private var stillShown = false
+
+    /// The glass runs half again as fast as its own timeline, as on the web.
+    private static let speed = 1.5
+    private static let starSize: CGFloat = 92
+
+    var body: some View {
+        let look = GlassLook(dark: scheme == .dark)
+        TimelineView(.animation(paused: reduceMotion)) { context in
+            let t = reduceMotion ? 10 : max(0, context.date.timeIntervalSince(start))
+            let T = t * Self.speed
+            let glassDone = T >= look.end
+            ZStack {
+                if glassDone || starCenter == nil {
+                    K.bg.ignoresSafeArea()
+                } else if let starCenter {
+                    GlassReveal(time: T, center: CGPoint(x: starCenter.x - canvasOrigin.x, y: starCenter.y - canvasOrigin.y),
+                                starSize: Self.starSize, look: look)
+                        .ignoresSafeArea()
+                }
+                Color.clear
+                    .ignoresSafeArea()
+                    .onGeometryChange(for: CGPoint.self) { $0.frame(in: .global).origin } action: { canvasOrigin = $0 }
+                layout(t: t, glassDone: glassDone)
+            }
+        }
+        .opacity(reduceMotion && !stillShown ? 0 : 1)
+        .contentShape(Rectangle())
+        .onTapGesture { finish() }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Zenith Pocket, by Satu Visual")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Opens Pocket")
+        .task {
+            if reduceMotion {
+                withAnimation(.easeOut(duration: 0.3)) { stillShown = true }
+                try? await Task.sleep(for: .seconds(1.2))
+            } else {
+                start = Date()
+                try? await Task.sleep(for: .seconds(look.end / Self.speed))
+                Haptics.soft()
+                try? await Task.sleep(for: .seconds(1.15))
+            }
+            finish()
+        }
+    }
+
+    private func finish() {
+        guard !finished else { return }
+        finished = true
+        onDone()
+    }
+
+    /// The approved layout: the star, the wordmark, the link's line, and the
+    /// credit at the bottom. The text rises in as the glass lets go.
+    private func layout(t: Double, glassDone: Bool) -> some View {
+        let release = GlassLook(dark: scheme == .dark).present / Self.speed
+        let word = reduceMotion ? 1 : Motion.revealCurve((t - release - 0.05) / 0.55)
+        let line = reduceMotion ? 1 : Motion.revealCurve((t - release - 0.3) / 0.55)
+        return ZStack {
+            VStack(spacing: 22) {
+                StarShape()
+                    .fill(K.fg, style: FillStyle(eoFill: true))
+                    .frame(width: Self.starSize, height: Self.starSize)
+                    .opacity(glassDone ? 1 : 0)
+                    .onGeometryChange(for: CGPoint.self) {
+                        let frame = $0.frame(in: .global)
+                        return CGPoint(x: frame.midX, y: frame.midY)
+                    } action: { starCenter = $0 }
+                Text("\(Text("Zenith ").font(K.sans(34, bold: true)).foregroundStyle(K.fg))\(Text("Pocket").font(K.sans(34)).foregroundStyle(K.muted))")
+                    .tracking(-1)
+                    .opacity(word).blur(radius: 8 * (1 - word)).offset(y: 10 * (1 - word))
+                status(t: t)
+                    .opacity(line).offset(y: 6 * (1 - line))
+            }
+            VStack {
+                Spacer()
+                Text("by Satu Visual").font(K.sans(12, bold: true)).tracking(1).foregroundStyle(K.faint)
+                    .opacity(line)
+                    .padding(.bottom, 24)
+            }
+        }
+    }
+
+    /// "Connecting to <Mac>" with a pulsing dot, "Connected to <Mac>" once
+    /// the link is live, or "Pair with your Mac" before there is one.
+    private func status(t: Double) -> some View {
+        let name = model.state?.macName ?? model.pairing?.macName
+        let live = model.link == .live
+        let text = name.map { live ? "Connected to \($0)" : "Connecting to \($0)" } ?? "Pair with your Mac"
+        let pulse = live || reduceMotion ? 1 : 0.35 + 0.65 * abs(sin(t * 3))
+        return HStack(spacing: 8) {
+            Circle().fill(name == nil ? K.faint : K.emerald).frame(width: 6, height: 6).opacity(pulse)
+            Text(text).font(K.mono(12)).foregroundStyle(K.faint).lineLimit(1)
+        }
+        .padding(.horizontal, 24)
+    }
+}
+
+/// The Satu Visual star, from logo-satu-visual.svg (the path make-icon.swift
+/// draws), fitted into the shorter side and centred. Fill it even-odd: the
+/// small X at its heart is a hole.
+struct StarShape: Shape {
+    private static let size: CGFloat = 203.603
+    private static let d = "M115.551 68.1172L163.717 19.9512L183.449 39.6826L135.08 88.0518H203.603V115.956H135.485L183.651 164.122L163.92 183.854L115.551 135.484V203.603H87.6465V135.485L39.4805 183.651L19.749 163.92L67.7119 115.956H0V88.0518H68.1172L19.9512 39.8857L39.6826 20.1533L87.6465 68.1172V0H115.551V68.1172ZM102.168 93.5625L86.2012 77.5957L78.3271 85.4707L94.2939 101.437L78.3271 117.404L86.2012 125.278L102.168 109.311L118.136 125.278L126.01 117.404L110.042 101.437L126.01 85.4707L118.136 77.5957L102.168 93.5625Z"
+
+    /// Parsed once: the absolute M, L, H, V and Z commands the logo uses.
+    private static let unit: Path = {
+        var tokens: [String] = []
+        var number = ""
+        for c in d {
+            if c.isLetter {
+                if !number.isEmpty { tokens.append(number); number = "" }
+                tokens.append(String(c))
+            } else if c == " " || c == "," {
+                if !number.isEmpty { tokens.append(number); number = "" }
+            } else {
+                number.append(c)
+            }
+        }
+        if !number.isEmpty { tokens.append(number) }
+        var path = Path()
+        var i = 0
+        var point = CGPoint.zero
+        var command = ""
+        func next() -> CGFloat { defer { i += 1 }; return CGFloat(Double(tokens[i]) ?? 0) }
+        while i < tokens.count {
+            if tokens[i].first?.isLetter == true { command = tokens[i]; i += 1 }
+            switch command {
+            case "M": point = CGPoint(x: next(), y: next()); path.move(to: point); command = "L"
+            case "L": point = CGPoint(x: next(), y: next()); path.addLine(to: point)
+            case "H": point.x = next(); path.addLine(to: point)
+            case "V": point.y = next(); path.addLine(to: point)
+            case "Z": path.closeSubpath()
+            default: i += 1
+            }
+        }
+        return path
+    }()
+
+    func path(in rect: CGRect) -> Path {
+        let side = min(rect.width, rect.height)
+        let scale = side / Self.size
+        return Self.unit.applying(CGAffineTransform(scaleX: scale, y: scale)
+            .concatenating(CGAffineTransform(translationX: rect.midX - side / 2, y: rect.midY - side / 2)))
+    }
+}

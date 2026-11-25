@@ -48,10 +48,9 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSRequiresIPhoneOS: true
+        # The splash's background, light or dark, so launch flows into it.
         UILaunchScreen:
-          UIColorName: ""
-        UIUserInterfaceStyle: Dark
-        UIStatusBarStyle: UIStatusBarStyleLightContent
+          UIColorName: LaunchBackground
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UIAppFonts:
           - PlusJakartaSans-Medium.ttf

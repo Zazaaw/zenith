@@ -10,16 +10,32 @@ import SwiftUI
 struct PocketApp: App {
     @State private var model = PocketModel()
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage(ThemeChoice.key) private var theme = ThemeChoice.system
+    /// The splash plays once per launch, not on every return to the app.
+    @State private var splashDone = false
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .environment(model)
-                .preferredColorScheme(.dark)
-                // The iPhone Camera app opens Zenith's QR code here.
-                .onOpenURL { url in
-                    if !model.open(url) { model.show("That isn't a Zenith pairing code.", ok: false) }
+            ZStack {
+                // The app arrives as the splash leaves, so its entrances
+                // play in the crossfade instead of under the splash.
+                if splashDone {
+                    RootView()
+                        .transition(.opacity)
+                } else {
+                    SplashView {
+                        withAnimation(.easeOut(duration: 0.5)) { splashDone = true }
+                    }
+                    .transition(.opacity.combined(with: .scale(scale: 1.04)))
+                    .zIndex(1)
                 }
+            }
+            .environment(model)
+            .preferredColorScheme(theme.scheme)
+            // The iPhone Camera app opens Zenith's QR code here.
+            .onOpenURL { url in
+                if !model.open(url) { model.show("That isn't a Zenith pairing code.", ok: false) }
+            }
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
