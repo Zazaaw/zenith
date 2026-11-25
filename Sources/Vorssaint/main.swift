@@ -19,6 +19,7 @@ if IslandCatalog.isRequested(by: CommandLine.arguments) {
 #endif
 Defaults.register()
 BatteriesConfig.registerDefaults() // Zenith fork: Batteries' defaults, the muted Mac included
+PocketDefaults.register() // Zenith fork: Zenith Pocket's switches
 let configuredFeatureKeys = SettingsBackup.applyConfigFileAtLaunch()
 NotchControlItem.keyboardLightIsSupported = { BrightnessService.keyboardLightIsSupported }
 MouseAccelerationGuard.runIfRequestedAndExit()

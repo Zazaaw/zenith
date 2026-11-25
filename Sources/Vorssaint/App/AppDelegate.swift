@@ -75,6 +75,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         WakaTimeService.shared.syncGoalMonitoring()
         VercelService.shared.syncFailureAlerts() // Zenith fork
         RemoteControlService.shared.syncWithPreferences() // Zenith fork: the iPhone remote, when it is on
+        PocketService.shared.syncWithPreferences() // Zenith fork: Zenith Pocket, when it is on and paired
         FaceUnlockRecognition.install() // Zenith fork: face unlock's recognizer, idle until a scan
         FaceUnlockRuntime.shared.launch() // Zenith fork: face unlock, listening only while it is on
         // Before any window exists, so nothing is ever built with the wrong
