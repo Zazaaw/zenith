@@ -67,7 +67,7 @@ final class PocketModel {
     /// A code scanned (or opened) while already paired, waiting for a yes.
     var replacement: PocketPairing?
 
-    private var pocketLink: PocketLink?
+    private(set) var pocketLink: PocketLink?
     private var generation = 0
     private var active = false
     private var poll: Task<Void, Never>?
@@ -347,7 +347,7 @@ final class PocketModel {
     }
 
     @discardableResult
-    private func send(_ command: PocketCommand) -> Bool {
+    func send(_ command: PocketCommand) -> Bool {
         guard canControl(), let pocketLink else {
             show(controlProblem() ?? PocketPresentation.unreachable, ok: false)
             return false
