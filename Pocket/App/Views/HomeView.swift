@@ -104,7 +104,7 @@ struct HomeView: View {
                         tint: micMuted ? K.red : nil, dimmed: !reachable) {
                 model.send(.muteMic(!micMuted))
             }
-            QuickAction(symbol: "paperplane", title: "Send", tint: nil, dimmed: false) {
+            QuickAction(symbol: "paperplane", title: "Send", tint: nil, dimmed: false, bouncesOnTap: true) {
                 showingSend = true
             }
         }
@@ -267,20 +267,29 @@ struct HomeView: View {
 
 /// One of Home's four quick actions: a small tile with a symbol and a word,
 /// tinted (with its colour named in the word) while its state is on.
+/// The symbol bounces when the Mac confirms the change (the word changes
+/// with the state it reports), or on the tap itself for one that opens a sheet.
 private struct QuickAction: View {
     let symbol: String
     let title: String
     let tint: Color?
     let dimmed: Bool
+    var bouncesOnTap = false
     let action: () -> Void
+    @State private var taps = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            if bouncesOnTap { taps += 1 }
+            action()
+        } label: {
             VStack(spacing: 8) {
                 Image(systemName: symbol)
                     .font(.system(size: 18, weight: .medium))
                     .foregroundStyle(tint ?? K.fg)
                     .contentTransition(.symbolEffect(.replace))
+                    .symbolEffect(.bounce, options: .nonRepeating, value: reduceMotion ? "" : "\(title)\(taps)")
                     .frame(height: 22)
                 Text(title).font(K.sans(12, bold: true))
                     .foregroundStyle(tint ?? K.muted)
