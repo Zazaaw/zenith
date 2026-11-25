@@ -155,6 +155,8 @@ struct Meter: View {
 /// The hero every tab opens with: the eyebrow and its status, then the
 /// sentence, bold up to the value (in its status colour) and regular grey
 /// after, at the same size; a quiet meter and a freshness line when known.
+/// In a tab, its eyebrow and badge carry on in TabScroll's compact header
+/// once the sentence (which fades as it leaves the top) has scrolled away.
 struct Hero: View {
     let eyebrow: String
     let badge: PocketBadge?
@@ -163,6 +165,7 @@ struct Hero: View {
     var meterNote: String?
     var footnote: String?
     var onSettings: (() -> Void)?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let tint = K.color(sentence.tone)
@@ -198,6 +201,15 @@ struct Hero: View {
             .padding(.top, 12)
             .accessibilityElement(children: .combine)
             .blurFade(index: 1)
+            // Leaving the top, the sentence fades, softens and settles back
+            // a little, handing over to the tab's compact header.
+            .scrollTransition(.interactive.threshold(.visible(0.9)), axis: .vertical) { [still = reduceMotion] content, phase in
+                let out = Double(-min(0, phase.value))
+                return content
+                    .opacity(1 - out * 0.8)
+                    .blur(radius: still ? 0 : out * 6)
+                    .scaleEffect(still ? 1 : 1 - out * 0.04, anchor: .bottomLeading)
+            }
             if let meter {
                 HStack(spacing: 10) {
                     Meter(value: meter, tint: tint)
@@ -213,6 +225,15 @@ struct Hero: View {
             }
         }
         .padding(.horizontal, 24)
+        // Tells a tab's scroll view (TabScroll) what its compact header shows
+        // and where the hero ends.
+        .background {
+            GeometryReader { geometry in
+                Color.clear.preference(key: HeroSummaryKey.self, value: HeroSummary(
+                    eyebrow: eyebrow, badge: badge,
+                    bottom: geometry.frame(in: .named(HeroSummary.space)).maxY))
+            }
+        }
     }
 }
 

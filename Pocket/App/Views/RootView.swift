@@ -93,12 +93,11 @@ struct RootView: View {
     private var tabs: some View {
         TimelineView(.everyMinute) { context in
             ZStack {
-                ScrollView {
+                // Offline, the banner takes the top; the compact header sits under it.
+                TabScroll(headerInset: network.online ? 0 : 40, refresh: { await model.refreshNow() }) {
                     page(shownTab, now: context.date)
                         .padding(.bottom, 24)
                 }
-                .scrollIndicators(.hidden)
-                .refreshable { await model.refreshNow() }
                 .environment(\.firstOpen, shownFirst)
                 .id(shownTab)
                 .transition(TabSlide(direction: direction))
