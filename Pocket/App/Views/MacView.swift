@@ -38,7 +38,7 @@ struct MacView: View {
                     .transition(.opacity)
             }
             VStack(alignment: .leading, spacing: 22) {
-                MacHealthTiles(health: reachable ? state?.health : nil, reachable: reachable)
+                MacHealthTiles(health: reachable ? state?.health : nil, reachable: reachable, history: model.mac.history)
                     .blurFade(index: 1)
                 MacControls(now: now)
                     .blurFade(index: 2)

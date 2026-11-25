@@ -81,6 +81,44 @@ private let relay = PocketRelayConfig(url: URL(string: "https://example.supabase
     }
 }
 
+@Suite struct SparklineTests {
+    private func samples(_ values: [Double], every seconds: TimeInterval = 4) -> [(at: Date, value: Double)] {
+        values.enumerated().map { (at: now.addingTimeInterval(Double($0.offset) * seconds), value: $0.element) }
+    }
+
+    @Test func fitsTheReadings() {
+        let line = PocketMacPresentation.sparkline(samples([10, 50, 30]), count: 5, minimumSpan: 10, bounds: 0...100)
+        #expect(line.count == 5)
+        #expect(line.first == 0 && line[2] == 1 && line.last == 0.5, "lowest at the floor, highest at the top")
+        #expect(abs(line[1] - 0.5) < 0.0001, "in between samples, interpolated in time")
+    }
+
+    @Test func aSteadyMacDrawsACalmLine() {
+        let flat = PocketMacPresentation.sparkline(samples([40, 40, 40]), count: 4, minimumSpan: 20, bounds: 0...100)
+        #expect(flat == [0.5, 0.5, 0.5, 0.5])
+        let noise = PocketMacPresentation.sparkline(samples([40, 42]), count: 2, minimumSpan: 20, bounds: 0...100)
+        #expect(abs(noise[0] - 0.45) < 0.0001 && abs(noise[1] - 0.55) < 0.0001, "two points of noise stay small")
+        let low = PocketMacPresentation.sparkline(samples([1, 3]), count: 2, minimumSpan: 20, bounds: 0...100)
+        #expect(low[0] == 0.05 && abs(low[1] - 0.15) < 0.0001, "the scale stays within its bounds")
+    }
+
+    @Test func evenInTimeNotInSamples() {
+        // Two quick samples, then one a minute later.
+        let uneven: [(at: Date, value: Double)] = [(now, 0.0), (now.addingTimeInterval(1), 100.0), (now.addingTimeInterval(61), 100.0)]
+        let line = PocketMacPresentation.sparkline(uneven, count: 3, minimumSpan: 1, bounds: 0...100)
+        #expect(line == [0, 1, 1])
+        let unsorted = PocketMacPresentation.sparkline([uneven[2], uneven[0], uneven[1]], count: 3, minimumSpan: 1, bounds: 0...100)
+        #expect(unsorted == line)
+    }
+
+    @Test func tooLittleToDraw() {
+        #expect(PocketMacPresentation.sparkline(samples([30]), count: 8, minimumSpan: 10, bounds: 0...100).isEmpty)
+        #expect(PocketMacPresentation.sparkline(samples([30, .nan]), count: 8, minimumSpan: 10, bounds: 0...100).isEmpty)
+        let same = PocketMacPresentation.sparkline([(now, 20), (now, 60)], count: 3, minimumSpan: 10, bounds: 0...100)
+        #expect(same.count == 3 && Set(same).count == 1, "samples at one moment draw one reading")
+    }
+}
+
 @Suite struct SendToMacTests {
     @Test func slotsGoRoundRobin() {
         #expect(PocketMacPresentation.nextSlot(after: nil) == 0)

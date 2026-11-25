@@ -238,6 +238,7 @@ final class PocketModel {
         islandQuestion = nil; dismissedQuestions = []
         wallpaper = nil; wallpaperHash = nil
         WallpaperCache.clear()
+        mac.clearHistory()
     }
 
     // MARK: From the Mac
@@ -303,6 +304,7 @@ final class PocketModel {
         heardAt = max(heard, heardAt ?? heard)
         stateIsLive = live
         loading = false
+        mac.record(next.health, at: heard)
         if next.awakeUntil == nil { awakeChoice = nil }
         if let hash = next.wallpaperHash {
             if hash != wallpaperHash { fetchWallpaper(hash) }

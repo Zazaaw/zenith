@@ -7,24 +7,35 @@ import UIKit
 
 // MARK: - Health
 
-/// CPU, temperature (or memory) and disk as three tiles whose numbers roll
-/// and meters slide, with the network under them.
+/// CPU, temperature (or memory) and disk as three tiles whose numbers roll;
+/// CPU and temperature draw their last ten minutes as a sparkline (a meter
+/// until there are two readings), disk a meter; the network under them.
 struct MacHealthTiles: View {
     let health: PocketHealth?
     let reachable: Bool
+    /// The readings the phone kept, oldest first.
+    var history: [MacStore.HealthSample] = []
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var onScreen = true
+
+    /// Points per sparkline: enough for a curve, few enough to glide.
+    private static let points = 28
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 if let health {
                     tile("CPU", value: Double(health.cpuPercent), text: "\(health.cpuPercent)%",
-                         meter: Double(health.cpuPercent) / 100, tint: K.color(PocketMacPresentation.cpuTone(health.cpuPercent)))
+                         meter: Double(health.cpuPercent) / 100, tint: K.color(PocketMacPresentation.cpuTone(health.cpuPercent)),
+                         spark: line({ $0.cpu }, span: 20, bounds: 0...100))
                     if let celsius = health.temperature {
                         tile("Temp", value: celsius, text: "\(Int(celsius))°", meter: celsius / 105,
-                             tint: K.color(PocketMacPresentation.temperatureTone(celsius)))
+                             tint: K.color(PocketMacPresentation.temperatureTone(celsius)),
+                             spark: line({ $0.temperature }, span: 8, bounds: 0...110))
                     } else if let memory = health.memoryPercent {
                         tile("Memory", value: Double(memory), text: "\(memory)%", meter: Double(memory) / 100,
-                             tint: memory < 85 ? K.blue : K.amber)
+                             tint: memory < 85 ? K.blue : K.amber, spark: line({ $0.memory }, span: 10, bounds: 0...100))
                     }
                     if let free = health.diskFree, let total = health.diskTotal, total > 0 {
                         tile("Disk free", value: Double(free / 1_000_000_000), text: PocketMacPresentation.bytes(free),
@@ -39,6 +50,8 @@ struct MacHealthTiles: View {
                     }
                 }
             }
+            .fixedSize(horizontal: false, vertical: true)
+            .onScrollVisibilityChange(threshold: 0.1) { onScreen = $0 }
             if let line = networkLine {
                 Text(line).font(K.mono(11)).foregroundStyle(K.faint).padding(.horizontal, 4)
                     .contentTransition(.numericText())
@@ -56,14 +69,34 @@ struct MacHealthTiles: View {
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
-    private func tile(_ label: String, value: Double, text: String, meter: Double, tint: Color) -> some View {
+    /// A reading's sparkline heights from the history; empty until there are two.
+    private func line(_ value: (MacStore.HealthSample) -> Double?, span: Double, bounds: ClosedRange<Double>) -> [Double] {
+        let samples: [(at: Date, value: Double)] = history.compactMap { sample in value(sample).map { (at: sample.at, value: $0) } }
+        return PocketMacPresentation.sparkline(samples, count: Self.points, minimumSpan: span, bounds: bounds)
+    }
+
+    private func tile(_ label: String, value: Double, text: String, meter: Double, tint: Color,
+                      spark: [Double] = []) -> some View {
         VStack(alignment: .leading, spacing: 7) {
             Text(label.uppercased()).font(K.sans(10, bold: true)).tracking(1).foregroundStyle(K.faint).lineLimit(1)
             Text(text).font(K.mono(19, .semibold)).lineLimit(1).minimumScaleFactor(0.7)
                 .countingNumber(value)
-            Meter(value: meter, tint: tint, height: 4)
-                .animation(Motion.spring, value: meter)
+            Spacer(minLength: 0)
+            ZStack(alignment: .bottom) {
+                if spark.isEmpty {
+                    Meter(value: meter, tint: tint, height: 4)
+                        .animation(Motion.spring, value: meter)
+                        .transition(.opacity)
+                } else {
+                    Sparkline(heights: spark, tint: tint, pulses: onScreen && !reduceMotion)
+                        .padding(.horizontal, -3)
+                        .transition(.opacity.combined(with: .scale(scale: 0.9, anchor: .bottom)))
+                }
+            }
+            .frame(height: 28, alignment: .bottom)
+            .animation(Motion.reveal, value: spark.isEmpty)
         }
+        .frame(maxHeight: .infinity, alignment: .top)
         .macCard(padding: 12)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(label) \(text)")

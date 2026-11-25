@@ -71,6 +71,34 @@ final class MacStore {
     }
 
     func setDropping(_ value: Bool) { dropping = value }
+
+    // MARK: Health history
+
+    /// One health reading as it arrived, for the tiles' sparklines.
+    struct HealthSample: Equatable {
+        let at: Date
+        let cpu: Double
+        let temperature: Double?
+        let memory: Double?
+    }
+
+    /// The last ten minutes of readings, oldest first, kept in memory only.
+    private(set) var history: [HealthSample] = []
+
+    static let historySpan: TimeInterval = 10 * 60
+
+    /// Notes the health in a state the phone just took in. The same state
+    /// read twice (box and channel) counts once.
+    func record(_ health: PocketHealth?, at time: Date) {
+        guard let health else { return }
+        if let last = history.last, time.timeIntervalSince(last.at) < 1 { return }
+        history.append(HealthSample(at: time, cpu: Double(health.cpuPercent), temperature: health.temperature,
+                                    memory: health.memoryPercent.map(Double.init)))
+        let cutoff = time.addingTimeInterval(-Self.historySpan)
+        if let first = history.firstIndex(where: { $0.at >= cutoff }), first > 0 { history.removeFirst(first) }
+    }
+
+    func clearHistory() { if !history.isEmpty { history = [] } }
 }
 
 extension PocketModel {

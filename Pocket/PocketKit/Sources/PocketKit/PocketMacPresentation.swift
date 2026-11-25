@@ -133,6 +133,39 @@ public enum PocketMacPresentation {
         guard let last else { return 0 }
         return (last + 1) % PocketPairing.dropSlots
     }
+
+    // MARK: Sparklines
+
+    /// A reading's recent history as `count` heights in 0…1, evenly spaced in
+    /// time from the first sample to the last, for a health tile's sparkline.
+    /// The scale fits the readings but never spans less than `minimumSpan`,
+    /// so a steady Mac draws a calm line rather than its noise blown up, and
+    /// it stays within `bounds`. Empty with fewer than two samples.
+    public static func sparkline(_ samples: [(at: Date, value: Double)], count: Int, minimumSpan: Double,
+                                 bounds: ClosedRange<Double>) -> [Double] {
+        let points = samples.filter { $0.value.isFinite }.sorted { $0.at < $1.at }
+        guard points.count >= 2, count >= 2, let first = points.first, let last = points.last else { return [] }
+        let values = points.map(\.value)
+        let low = values.min() ?? 0, high = values.max() ?? 0
+        let span = min(bounds.upperBound - bounds.lowerBound, max(minimumSpan, high - low))
+        let floor = min(max((low + high - span) / 2, bounds.lowerBound), bounds.upperBound - span)
+        let duration = last.at.timeIntervalSince(first.at)
+        var heights: [Double] = []
+        var index = 0
+        for step in 0..<count {
+            var value = last.value
+            if duration > 0 {
+                let time = first.at.addingTimeInterval(duration * Double(step) / Double(count - 1))
+                while index < points.count - 2, points[index + 1].at < time { index += 1 }
+                let a = points[index], b = points[index + 1]
+                let gap = b.at.timeIntervalSince(a.at)
+                let share = gap > 0 ? min(1, max(0, time.timeIntervalSince(a.at) / gap)) : 1
+                value = a.value + (b.value - a.value) * share
+            }
+            heights.append(span > 0 ? min(1, max(0, (value - floor) / span)) : 0.5)
+        }
+        return heights
+    }
 }
 
 extension PocketDrop {
