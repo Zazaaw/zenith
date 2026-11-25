@@ -6,8 +6,8 @@ import SwiftUI
 
 /// The tab bar as Zenith's island, in Liquid Glass: the selected tab is a
 /// solid pill with its name (black in light, white in dark) that slides
-/// between tabs, with a dot where something needs a look (amber on Claude,
-/// red on Devices when a battery is low).
+/// between tabs, with a dot where something needs a look (amber and pulsing
+/// on Claude while it waits or asks, red on Devices when a battery is low).
 ///
 /// When Claude asks for permission, or finishes a turn and waits, the same
 /// piece of glass morphs into a card that says so; folding it away morphs
@@ -83,7 +83,8 @@ struct IslandBar: View {
 
     private var bar: some View {
         let attention = PocketPresentation.attention(model.state, phone: model.phone)
-        let claudeDot = attention.agents || model.waitingSession() != nil
+        let asking = model.claude?.sessions.contains { $0.state == .asking } ?? false
+        let claudeDot = attention.agents || asking || model.waitingSession() != nil
         return HStack(spacing: 0) {
             ForEach(Self.items, id: \.0) { tab, symbol, title in
                 let selected = model.tab == tab
@@ -109,13 +110,14 @@ struct IslandBar: View {
                         }
                     }
                     .overlay(alignment: .topTrailing) {
-                        if !selected && tab == .claude && claudeDot { dot(K.amber) }
+                        if !selected && tab == .claude && claudeDot { dot(K.amber, pulsing: true) }
                         if !selected && tab == .devices && attention.devices { dot(K.red) }
                     }
                     .contentShape(Capsule())
                 }
                 .buttonStyle(PressStyle(haptic: false))
                 .accessibilityLabel(title)
+                .accessibilityValue(!selected && tab == .claude && claudeDot ? "Claude is waiting for you" : "")
                 .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }
@@ -123,8 +125,8 @@ struct IslandBar: View {
         .animation(Motion.respecting(reduceMotion, Motion.spring), value: model.tab)
     }
 
-    private func dot(_ color: Color) -> some View {
-        Circle().fill(color).frame(width: 7, height: 7).shadow(color: color.opacity(0.8), radius: 4).offset(x: -10, y: 6)
+    private func dot(_ color: Color, pulsing: Bool = false) -> some View {
+        AttentionDot(color: color, pulsing: pulsing).offset(x: -10, y: 6)
             .transition(.scale.combined(with: .opacity))
     }
 
@@ -202,6 +204,33 @@ struct IslandBar: View {
         }
         .pressable()
         .accessibilityLabel("Close")
+    }
+}
+
+/// A tab's "needs a look" dot. Pulsing, a ring swells out of it and fades
+/// every couple of seconds, like a heartbeat; still under Reduce Motion.
+/// The ring runs in its own keyframe timeline, so the bar's springs and the
+/// dot's own entrance don't bend it.
+private struct AttentionDot: View {
+    let color: Color
+    var pulsing = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Circle().fill(color).frame(width: 7, height: 7)
+            .shadow(color: color.opacity(0.8), radius: 4)
+            .background {
+                if pulsing && !reduceMotion {
+                    Circle().strokeBorder(color, lineWidth: 1.5)
+                        .frame(width: 7, height: 7)
+                        .keyframeAnimator(initialValue: 0.0, repeating: true) { ring, t in
+                            ring.scaleEffect(1 + 1.6 * t).opacity(0.9 * (1 - t))
+                        } keyframes: { _ in
+                            LinearKeyframe(1.0, duration: 1.3, timingCurve: .easeOut)
+                            LinearKeyframe(1.0, duration: 0.8)
+                        }
+                }
+            }
     }
 }
 
