@@ -355,6 +355,8 @@ if (( TEST )); then
         Sources/Vorssaint/UI/Settings/ZenithLockScreenSettingsTab.swift
         Sources/Vorssaint/UI/ZenithTokens.swift
         Sources/Vorssaint/UI/ZenithSwitch.swift
+        Sources/Vorssaint/UI/MenuPanel/ZenithPanelChrome.swift
+        Sources/Vorssaint/UI/Notch/ZenithCameraReveal.swift
         Sources/Vorssaint/UI/Notch/ZenithIslandChrome.swift
         Sources/Vorssaint/UI/Notch/ZenithIslandKit.swift
         Sources/Vorssaint/UI/Notch/ZenithIslandShape.swift

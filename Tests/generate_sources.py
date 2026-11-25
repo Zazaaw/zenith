@@ -670,9 +670,15 @@ def main():
           + "}\n}\n")
     fan_control = "Sources/Vorssaint/Services/FanControl/FanControlService.swift"
     fan_panel = "Sources/Vorssaint/UI/MenuPanel"
+    # Zenith fork: the panel chrome the fan card draws with reads PanelSurface,
+    # whose home (Theme.swift) also holds app-only views.
+    write("ZenithPanelSurface.swift", "import AppKit\nimport SwiftUI\n"
+          + declaration("Sources/Vorssaint/UI/Theme.swift", "enum PanelSurface {"))
     write("FanControlCard.swift", (ROOT / fan_panel / "FanControlCurveEditor.swift").read_text()
           + "\nextension FanControlResumeContract {\ntypealias FanControlService = Service\n"
           + declaration(fan_panel + "/FanControlSection.swift", "struct FanControlCardContent:")
+          # Zenith fork: the card's beta tag lives with the panel's other badges.
+          + declaration(fan_panel + "/MenuPanelView.swift", "struct PanelBetaBadge:")
           + "struct Section {\nlet service: Service\n@Binding var modeRaw: String\n"
           + declaration(fan_panel + "/FanControlSection.swift", "    private var modeBinding:")
               .replace("private var modeBinding:", "var modeBinding:", 1)
