@@ -5,6 +5,7 @@ import AppKit
 import Combine
 import ImageIO
 import IOKit.ps
+import Security
 import SystemConfiguration
 import UniformTypeIdentifiers
 
@@ -55,6 +56,7 @@ final class PocketService {
 
     private var liveWork: DispatchWorkItem?
     private var boxWork: DispatchWorkItem?
+    private var heartbeatWork: DispatchWorkItem?
     private var prayerTimer: Timer?
     private var prayerTimerAt: Date?
     private var sentInputs: PocketMacInputs?
@@ -209,8 +211,22 @@ final class PocketService {
     }
 
     private func unpair() {
+        if let pairing { Self.scrub(pairing) }
         forgetPairing()
         syncWithPreferences()
+    }
+
+    /// Overwrites the pairing's boxes with random bytes, so the phone that
+    /// still holds the old key reads nothing from now on (the relay would
+    /// otherwise keep the last state until its 30-day sweep).
+    private static func scrub(_ pairing: PocketPairing) {
+        let boxes = PocketBoxClient(relay: pairing.relay)
+        for id in [pairing.macBoxID, pairing.wallpaperBoxID, pairing.phoneBoxID] {
+            var noise = [UInt8](repeating: 0, count: 48)
+            _ = SecRandomCopyBytes(kSecRandomDefault, noise.count, &noise)
+            let sealed = Data(noise).base64EncodedString()
+            Task { try? await boxes.put(id: id, sealed: sealed) }
+        }
     }
 
     /// The pairing, its key and everything learnt through it go.
@@ -277,6 +293,7 @@ final class PocketService {
         Task { await link.stop() }
         liveWork?.cancel(); liveWork = nil
         boxWork?.cancel(); boxWork = nil
+        heartbeatWork?.cancel(); heartbeatWork = nil
         prayerTimer?.invalidate(); prayerTimer = nil; prayerTimerAt = nil
         sinks.removeAll()
         unobserve()
@@ -500,7 +517,8 @@ final class PocketService {
                                             percent: reading.chargePercent) == .charging
         battery = PocketStateBuilder.battery(percent: reading.chargePercent, charging: charging,
                                              minutesToFull: charging ? ZenithPowerEstimate.minutesToFull() : nil,
-                                             secondsToEmpty: reading.timeRemainingSeconds)
+                                             secondsToEmpty: reading.timeRemainingSeconds,
+                                             pluggedIn: reading.externalConnected)
     }
 
     // MARK: Publishing
@@ -565,6 +583,13 @@ final class PocketService {
         boxSharing = sharing
         boxAt = now
         boxFailedAt = nil
+        heartbeatWork?.cancel()
+        let beat = DispatchWorkItem {
+            PocketService.shared.heartbeatWork = nil
+            PocketService.shared.flush(force: true)
+        }
+        heartbeatWork = beat
+        DispatchQueue.main.asyncAfter(deadline: .now() + PocketCadence.heartbeat, execute: beat)
         let state = PocketStateBuilder.state(inputs, sharing: sharing, now: now)
         let id = link.pairing.macBoxID
         let generation = self.generation

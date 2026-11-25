@@ -110,6 +110,13 @@ enum PocketTests {
         suite.expect(draining?.minutesRemaining == 91 && draining?.charging == false, "on battery counts to empty")
         let held = PocketStateBuilder.battery(percent: 80, charging: false, minutesToFull: nil, secondsToEmpty: nil)
         suite.expect(held?.minutesRemaining == nil && held?.charging == false, "held at a limit counts nothing")
+        let heldPlugged = PocketStateBuilder.battery(percent: 80, charging: false, minutesToFull: nil, secondsToEmpty: 9_000, pluggedIn: true)
+        suite.expect(heldPlugged?.pluggedIn == true && heldPlugged?.minutesRemaining == nil,
+                     "plugged in and held says so, and does not count down a time to empty")
+        let unplugged = PocketStateBuilder.battery(percent: 60, charging: false, minutesToFull: nil, secondsToEmpty: 3_600, pluggedIn: false)
+        suite.expect(unplugged?.pluggedIn == false && unplugged?.minutesRemaining == 60, "on battery still counts to empty")
+        suite.expect(PocketCadence.heartbeat >= 10 * 60 && PocketCadence.heartbeat > PocketCadence.boxInterval,
+                     "the quiet rewrite is rare, and rarer than the busiest box cadence")
         suite.expect(PocketStateBuilder.battery(percent: nil, charging: false, minutesToFull: nil, secondsToEmpty: nil) == nil
                         && PocketStateBuilder.battery(percent: 140, charging: false, minutesToFull: nil, secondsToEmpty: nil) == nil,
                      "no level, no battery")

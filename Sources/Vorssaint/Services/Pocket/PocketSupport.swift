@@ -108,11 +108,13 @@ enum PocketStateBuilder {
     /// empty on battery; plugged in and held (a charge limit, Optimized
     /// Battery Charging) it is neither charging nor counting.
     static func battery(percent: Int?, charging: Bool, minutesToFull: Int?,
-                        secondsToEmpty: TimeInterval?) -> PocketMacState.Battery? {
+                        secondsToEmpty: TimeInterval?, pluggedIn: Bool? = nil) -> PocketMacState.Battery? {
         guard let percent, (0...100).contains(percent) else { return nil }
-        let minutes = charging ? minutesToFull : secondsToEmpty.map { Int(($0 / 60).rounded()) }
+        // Plugged in and held, there is nothing to count down to.
+        let minutes = charging ? minutesToFull
+            : pluggedIn == true ? nil : secondsToEmpty.map { Int(($0 / 60).rounded()) }
         return PocketMacState.Battery(percent: percent, charging: charging,
-                                      minutesRemaining: minutes.flatMap { $0 > 0 ? $0 : nil })
+                                      minutesRemaining: minutes.flatMap { $0 > 0 ? $0 : nil }, pluggedIn: pluggedIn)
     }
 
     /// Today's coding time, the daily goal when one is set, and the language
@@ -203,6 +205,9 @@ enum PocketCadence {
     static let debounce: TimeInterval = 2
     static let minimumLiveInterval: TimeInterval = 5
     static let boxInterval: TimeInterval = 60
+    /// With nothing changing, the box is still rewritten this often, so the
+    /// phone can tell a quiet Mac (fresh box) from one that is off or asleep.
+    static let heartbeat: TimeInterval = 15 * 60
 
     static func liveDelay(now: Date, lastSent: Date?) -> TimeInterval {
         guard let lastSent else { return debounce }

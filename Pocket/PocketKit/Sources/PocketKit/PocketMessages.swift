@@ -14,8 +14,12 @@ public struct PocketMacState: Codable, Hashable, Sendable {
         public var charging: Bool
         /// Minutes to full while charging, or left while on battery.
         public var minutesRemaining: Int?
-        public init(percent: Int, charging: Bool, minutesRemaining: Int? = nil) {
-            self.percent = percent; self.charging = charging; self.minutesRemaining = minutesRemaining
+        /// On power. With `charging` false this is a Mac held at a charge
+        /// limit, which the phone says as "plugged in", not "on battery".
+        /// Optional so a state from an older Zenith still reads.
+        public var pluggedIn: Bool?
+        public init(percent: Int, charging: Bool, minutesRemaining: Int? = nil, pluggedIn: Bool? = nil) {
+            self.percent = percent; self.charging = charging; self.minutesRemaining = minutesRemaining; self.pluggedIn = pluggedIn
         }
     }
 
