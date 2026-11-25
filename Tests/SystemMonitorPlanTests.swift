@@ -11,6 +11,7 @@ enum SystemMonitorPlanTests {
         var menuPanelNeeds = SystemMonitorPanelNeeds.none
         var notchDetailNeeds = SystemMonitorPanelNeeds.none
         var lockScreenNeeds = SystemMonitorPanelNeeds.none // Zenith fork
+        var pocketNeeds = SystemMonitorPanelNeeds.none // Zenith fork: Zenith Pocket
         var fullMonitorVisible = false
         var notchVisible = false
         var notchAccessoryMonitoring = false
@@ -60,6 +61,17 @@ enum SystemMonitorPlanTests {
                      && !locked.needDisk && !locked.needCPUCores,
                      "the lock screen's readout reads CPU and nothing it does not show")
         monitor.lockScreenNeeds = .none
+        // Zenith fork: an open Zenith Pocket reads what its Mac tab shows, nothing more.
+        defaults.set(true, forKey: AppFeature.monitorMemory.availabilityKey)
+        defaults.set(true, forKey: AppFeature.monitorNetwork.availabilityKey)
+        monitor.pocketNeeds = SystemMonitorPanelNeeds(network: true, cpu: true, memory: true, cpuTemperature: true)
+        let pocket = monitor.currentPlan(defaults: defaults)
+        suite.expect(pocket.needCPU && pocket.needMemory && pocket.needNetwork && pocket.needCPUTemperature
+                     && !pocket.needGPUUsage && !pocket.needDisk && !pocket.needConnectedDevices && !pocket.needCPUCores,
+                     "Pocket reads CPU, its temperature, memory and network")
+        monitor.pocketNeeds = .none
+        defaults.removeObject(forKey: AppFeature.monitorMemory.availabilityKey)
+        defaults.removeObject(forKey: AppFeature.monitorNetwork.availabilityKey)
         defaults.removeObject(forKey: AppFeature.monitorCPU.availabilityKey)
         monitor.fullMonitorVisible = true
         let preview = monitor.currentPlan(defaults: defaults)

@@ -307,6 +307,7 @@ struct MetricsTests {
             ("pocket", { PocketTests.run(suite) }), // Zenith fork: Zenith Pocket's Mac side
             ("pocket-settings", { PocketSettingsTests.run(suite) }), // Zenith fork: Settings → iPhone & Watch
             ("pocket-watchtower", { PocketWatchtowerTests.run(suite) }), // Zenith fork: sites and the safety of the person's work
+            ("pocket-mac", { PocketMacTests.run(suite) }), // Zenith fork: Zenith Pocket's Mac tab
         ]
         var selected = Set<String>()
         var listOnly = false

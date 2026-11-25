@@ -8,6 +8,11 @@ enum PocketParts {
         // One line per part, e.g. `PocketClaudePart(),`.
         let parts: [PocketPart] = [
             PocketWatchtowerPart(),
+            PocketHealthPart(),
+            PocketSoundPart(),
+            PocketMediaPart(),
+            PocketToolsPart(),
+            PocketDropPart(),
         ]
         return parts
     }
