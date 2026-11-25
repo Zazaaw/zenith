@@ -736,7 +736,8 @@ if (( TEST )); then
 fi
 
 echo "▸ Compiling ($BUILD_CONFIGURATION) against $(basename "$SDK")…"
-APP_SOURCES=(Sources/Vorssaint/**/*.swift)
+# Zenith fork: Pocket's shared core (pairing, seal, relay) is compiled in.
+APP_SOURCES=(Sources/Vorssaint/**/*.swift Pocket/PocketKit/Sources/PocketKit/*.swift)
 if (( ! DEV )); then
     # A release starts from an empty build directory, so nothing an earlier
     # build left behind (an old icon catalog, a staged bundle) can reach it.
