@@ -17,7 +17,6 @@ struct MacView: View {
     @State private var sheet: MacSheet?
 
     /// The Mac forgets an open phone after 150 s without a word.
-    private static let presenceEvery: Duration = .seconds(60)
 
     var body: some View {
         let state = model.state
@@ -75,18 +74,8 @@ struct MacView: View {
             .animation(Motion.spring, value: state?.sound == nil)
             .animation(Motion.spring, value: state?.health?.top.isEmpty)
         }
-        // Restarted when the channel joins, so the Mac hears it at once.
-        .task(id: model.link == .live && scenePhase == .active) {
-            guard model.link == .live, scenePhase == .active else { return }
-            while !Task.isCancelled {
-                model.watchMac(true)
-                try? await Task.sleep(for: Self.presenceEvery)
-            }
-        }
-        .onDisappear { model.watchMac(false) }
-        .onChange(of: scenePhase) { _, phase in
-            if phase != .active { model.watchMac(false) }
-        }
+        // Presence is the app's (PocketModel): an open Pocket keeps the Mac
+        // sampling health and sound, so switching tabs doesn't flap it.
         .sheet(item: $sheet) { sheet in
             Group {
                 switch sheet {

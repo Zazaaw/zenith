@@ -255,8 +255,9 @@ public struct PocketDrop: Codable, Hashable, Sendable {
     public var data: Data
     public init(name: String, kind: Kind, data: Data) { self.name = name; self.kind = kind; self.data = data }
     /// A drop's sealed box must stay under the relay's limit (350 000
-    /// characters of base64), so its data stays under this many bytes.
-    public static let maxBytes = 240_000
+    /// characters). The data is base64 inside the JSON and base64 again once
+    /// sealed, so it stays under this many bytes (see `fitBytes`).
+    public static let maxBytes = 180_000
 }
 
 extension PocketPairing {

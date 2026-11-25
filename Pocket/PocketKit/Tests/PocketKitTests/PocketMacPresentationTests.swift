@@ -99,6 +99,6 @@ private let relay = PocketRelayConfig(url: URL(string: "https://example.supabase
         #expect(sealed.count < 350_000)
         let estimate = PocketDrop.sealedLength(dataBytes: PocketDrop.fitBytes, nameLength: drop.name.count)
         #expect(abs(estimate - sealed.count) < 2_000, "the estimate tracks the real thing (\(estimate) vs \(sealed.count))")
-        #expect(PocketDrop.sealedLength(dataBytes: PocketDrop.maxBytes) > 350_000)
+        #expect(PocketDrop.sealedLength(dataBytes: PocketDrop.maxBytes) < 350_000, "the contract's ceiling itself fits the relay")
     }
 }

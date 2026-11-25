@@ -137,10 +137,9 @@ public enum PocketMacPresentation {
 
 extension PocketDrop {
     /// The most a drop's data may weigh so its sealed box stays under the
-    /// relay's 350 000 characters. `maxBytes` is the contract's ceiling, but
-    /// the data is base64 in the JSON and the sealed box is base64 again
-    /// (4/3 twice, plus escaped slashes), so the phone aims under this.
-    public static let fitBytes = 180_000
+    /// relay's 350 000 characters: the data is base64 in the JSON and the
+    /// sealed box is base64 again (4/3 twice, plus escaped slashes).
+    public static let fitBytes = maxBytes
 
     /// The characters a sealed drop of `dataBytes` takes, as the relay sees it.
     public static func sealedLength(dataBytes: Int, nameLength: Int = 40) -> Int {
