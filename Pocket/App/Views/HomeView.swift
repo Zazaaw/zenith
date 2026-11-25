@@ -24,13 +24,12 @@ struct HomeView: View {
                  meterNote: freshness.isReachable ? state?.battery.map(PocketPresentation.batteryNote) : nil,
                  footnote: footnote(freshness),
                  onSettings: { model.showingSettings = true })
+            // The showcase brings its own entrance (it rises and settles).
             MacShowcase(state: state, wallpaper: model.wallpaper, now: now)
-                .scaleEffect(0.9)
-                .frame(height: 214)
                 .frame(maxWidth: .infinity)
-                .padding(.top, 18)
+                .padding(.top, 14)
                 .opacity(freshness.isReachable ? 1 : 0.6)
-                .blurFade(delay: 0.2, distance: 16)
+                .animation(Motion.reveal, value: freshness.isReachable)
             if let days = model.expiryDaysLeft(now: now) {
                 ExpiryCard(days: days)
                     .padding(.horizontal, 20).padding(.top, 14)
