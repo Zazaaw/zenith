@@ -13,6 +13,7 @@ enum SettingsPage: Hashable {
     case workspaces // Zenith fork: part of the app, no hub feature gates it
     case lockScreen // Zenith fork: the island's lock screen, a page of its own
     case remote // Zenith fork: lock and check status from an iPhone, a page of its own
+    case pocket // Zenith fork: Zenith Pocket, the iPhone and Watch companion, beside iPhone Remote
     case faceUnlock // Zenith fork: unlock by looking at the Mac, a page of its own
     case batteries // Zenith fork: every device's battery and when to warn, under Monitor
 }
@@ -74,6 +75,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
     case zenithDropZones, zenithWatermark, zenithDesignOverlay, zenithBeautify, zenithQR, zenithMenuBarHider
     case zenithLockScreenTerminal, zenithLockScreenLyrics, zenithLockScreenMusic
     case zenithRemote
+    case zenithPocket, zenithPocketRelay, zenithPocketPairing, zenithPocketSharing
     case zenithFaceUnlock
     case zenithBatteries, zenithBatteriesAlerts, zenithBatteriesIPhone
 
@@ -106,6 +108,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
             return .notch
         case .zenithLockScreen, .zenithLockScreenTerminal, .zenithLockScreenLyrics, .zenithLockScreenMusic: return .lockScreen
         case .zenithRemote: return .remote
+        case .zenithPocket, .zenithPocketRelay, .zenithPocketPairing, .zenithPocketSharing: return .pocket
         case .zenithFaceUnlock: return .faceUnlock
         case .zenithBatteries, .zenithBatteriesAlerts, .zenithBatteriesIPhone: return .batteries
         case .zenithDropZones, .zenithWatermark: return .shelf
@@ -524,7 +527,7 @@ enum FeatureVisibilitySupport {
         case .radialMenu: return [.radialMenu]
         case .commandBar: return [.commandBar]
         case .general, .features, .shortcuts, .advanced, .about, .releaseNotes, .support,
-             .workspaces, .remote, .faceUnlock, .batteries: // Zenith fork
+             .workspaces, .remote, .pocket, .faceUnlock, .batteries: // Zenith fork
             return []
         }
     }

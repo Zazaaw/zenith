@@ -579,6 +579,9 @@ enum SettingsDirectory {
                 SettingsDirectoryItem(page: .remote, title: ZenithStrings.remote(language).title,
                                       icon: "iphone.radiowaves.left.and.right",
                                       keywords: ZenithRemoteSearch.keywords(language)),
+                // Zenith fork: Zenith Pocket, the iPhone and Watch companion, right after iPhone Remote.
+                SettingsDirectoryItem(page: .pocket, title: ZenithStrings.pocket(language).title,
+                                      icon: "macbook.and.iphone", keywords: PocketSearch.keywords(language)),
                 // Zenith fork: face unlock, a page of its own (no hub feature).
                 SettingsDirectoryItem(page: .faceUnlock, title: ZenithStrings.faceUnlock(language).title,
                                       icon: "faceid", keywords: FaceUnlockSearch.keywords(language)),
