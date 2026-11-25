@@ -4,18 +4,28 @@
 import PocketKit
 import SwiftUI
 
-/// This turn's steps, oldest first, on a thread: each blur-fades in as it
-/// arrives, the running one pulses and its clock ticks, edits show their lines.
+/// This turn's steps, oldest first, on a thread: the first ones blur-fade in
+/// in turn, a step that arrives later rises in at once as the thread grows
+/// down to it, the oldest folds away, the running one pulses and its clock
+/// ticks, and edits show their lines.
 struct ClaudeTimeline: View {
     let steps: [PocketClaude.Step]
     let now: Date
+    /// Steps on screen from the start stagger in; later ones need no wait.
+    @State private var settled = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(steps.enumerated()), id: \.element.id) { index, step in
                 ClaudeStepRow(step: step, last: index == steps.count - 1, now: now)
-                    .blurFade(index: index)
+                    .blurFade(delay: settled ? 0 : Double(index) * Motion.stagger, distance: settled ? 14 : 10)
+                    .transition(.asymmetric(insertion: .identity,
+                                            removal: .opacity.combined(with: .scale(scale: 0.96, anchor: .top))))
             }
+        }
+        .task {
+            try? await Task.sleep(for: .seconds(0.6))
+            settled = true
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -34,7 +44,11 @@ struct ClaudeStepRow: View {
         HStack(alignment: .top, spacing: 12) {
             VStack(spacing: 0) {
                 marker
-                if !last { Rectangle().fill(K.border).frame(width: 1.5).frame(maxHeight: .infinity) }
+                // The thread grows down to the next step as it arrives.
+                Rectangle().fill(K.border).frame(width: 1.5).frame(maxHeight: .infinity)
+                    .scaleEffect(x: 1, y: last ? 0 : 1, anchor: .top)
+                    .opacity(last ? 0 : 1)
+                    .animation(Motion.reveal, value: last)
             }
             .frame(width: 26)
             VStack(alignment: .leading, spacing: 3) {
@@ -65,8 +79,12 @@ struct ClaudeStepRow: View {
             Image(systemName: step.phase == .failed ? "xmark" : Self.symbol(step.tool))
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(tint)
+                .contentTransition(.symbolEffect(.replace))
+                // A step that finishes gives a small nod.
+                .symbolEffect(.bounce, value: step.phase == .running)
         }
         .frame(width: 26, height: 26)
+        .animation(Motion.quick, value: step.phase)
     }
 
     /// A running step's clock ticks every second; the others only age.

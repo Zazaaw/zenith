@@ -29,14 +29,16 @@ struct ReplyComposer: View {
             ScrollView(.horizontal) {
                 HStack(spacing: 8) {
                     ForEach(PocketPresentation.claudeTemplates, id: \.title) { template in
+                        let picked = draft == template.text
                         Button {
                             Haptics.select()
-                            draft = template.text
+                            withAnimation(Motion.quick) { draft = template.text }
                         } label: {
-                            Text(template.title).font(K.sans(13, bold: true)).foregroundStyle(K.fg)
+                            Text(template.title).font(K.sans(13, bold: true)).foregroundStyle(picked ? K.inverse : K.fg)
                                 .padding(.horizontal, 14).padding(.vertical, 9)
-                                .background(K.card, in: Capsule())
-                                .overlay(Capsule().strokeBorder(K.border, lineWidth: 1))
+                                .background(picked ? K.fg : K.card, in: Capsule())
+                                .overlay(Capsule().strokeBorder(picked ? .clear : K.border, lineWidth: 1))
+                                .animation(Motion.quick, value: picked)
                         }
                         .pressable()
                     }
@@ -75,22 +77,34 @@ struct ReplyComposer: View {
                     Circle().fill(K.fg).frame(width: 36, height: 36)
                         .overlay {
                             if sending != nil {
-                                ProgressView().tint(K.bg)
+                                ProgressView().tint(K.bg).transition(.scale.combined(with: .opacity))
                             } else {
                                 Image(systemName: "arrow.up").font(.system(size: 15, weight: .bold)).foregroundStyle(K.bg)
+                                    .transition(.scale.combined(with: .opacity))
                             }
                         }
                         .opacity(open && fits ? 1 : 0.35)
+                        // Ready to go: the button springs up to full size.
+                        .scaleEffect(open && fits ? 1 : 0.86)
+                        .animation(Motion.spring, value: open && fits)
+                        .animation(Motion.spring, value: sending == nil)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressStyle(haptic: false))
                 .disabled(!open || !fits)
                 .accessibilityLabel("Send to Claude")
             }
             .padding(.leading, 16).padding(.trailing, 6).padding(.vertical, 6)
-            .background(K.card, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .background {
+                RoundedRectangle(cornerRadius: 24, style: .continuous).fill(K.card)
+                    // Focused, the field lifts a little off the page.
+                    .shadow(color: .black.opacity(focused ? 0.10 : 0), radius: 18, y: 8)
+            }
             .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .strokeBorder(focused ? K.fg.opacity(0.35) : K.border, lineWidth: 1))
-            .animation(Motion.quick, value: focused)
+                .strokeBorder(focused ? K.fg.opacity(0.35) : K.border, lineWidth: focused ? 1.5 : 1))
+            .animation(Motion.spring, value: focused)
+            .animation(Motion.quick, value: draft.filter { $0 == "\n" }.count)
+            .contentShape(Rectangle())
+            .onTapGesture { if open { focused = true } }
 
             HStack(spacing: 6) {
                 Image(systemName: blocker == nil ? "faceid" : "info.circle").font(.system(size: 11)).foregroundStyle(K.faint)
