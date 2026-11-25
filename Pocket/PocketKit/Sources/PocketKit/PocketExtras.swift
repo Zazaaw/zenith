@@ -200,11 +200,15 @@ public struct PocketSites: Codable, Hashable, Sendable {
         public var deployState: String?
         public var deployedAt: Date?
         public var certificateExpiresAt: Date?
+        /// When the site entered its current status, as far as the Mac saw
+        /// it ("down since 9.40"); nil when not known.
+        public var since: Date? = nil
         public init(url: String, name: String, status: Status, httpStatus: Int? = nil, latencyMs: Int? = nil, checkedAt: Date? = nil,
-                    host: String? = nil, deployState: String? = nil, deployedAt: Date? = nil, certificateExpiresAt: Date? = nil) {
+                    host: String? = nil, deployState: String? = nil, deployedAt: Date? = nil, certificateExpiresAt: Date? = nil,
+                    since: Date? = nil) {
             self.url = url; self.name = name; self.status = status; self.httpStatus = httpStatus; self.latencyMs = latencyMs
             self.checkedAt = checkedAt; self.host = host; self.deployState = deployState; self.deployedAt = deployedAt
-            self.certificateExpiresAt = certificateExpiresAt
+            self.certificateExpiresAt = certificateExpiresAt; self.since = since
         }
     }
     public var sites: [Site]
@@ -230,9 +234,14 @@ public struct PocketSafety: Codable, Hashable, Sendable {
     public var timeMachineConfigured: Bool?
     public var lastBackup: Date?
     public var diskFreePercent: Int?
-    public init(repos: [Repo] = [], scannedAt: Date? = nil, timeMachineConfigured: Bool? = nil, lastBackup: Date? = nil, diskFreePercent: Int? = nil) {
+    /// How many repos need the person in all, when `repos` was capped.
+    public var reposAtRisk: Int? = nil
+    /// The scanned folder as the person sees it, e.g. "~/Developer".
+    public var folder: String? = nil
+    public init(repos: [Repo] = [], scannedAt: Date? = nil, timeMachineConfigured: Bool? = nil, lastBackup: Date? = nil, diskFreePercent: Int? = nil,
+                reposAtRisk: Int? = nil, folder: String? = nil) {
         self.repos = repos; self.scannedAt = scannedAt; self.timeMachineConfigured = timeMachineConfigured
-        self.lastBackup = lastBackup; self.diskFreePercent = diskFreePercent
+        self.lastBackup = lastBackup; self.diskFreePercent = diskFreePercent; self.reposAtRisk = reposAtRisk; self.folder = folder
     }
 }
 

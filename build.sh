@@ -344,6 +344,7 @@ if (( TEST )); then
         Pocket/PocketKit/Sources/PocketKit/*.swift
         Sources/Vorssaint/Services/Pocket/PocketContract.swift
         Sources/Vorssaint/Services/Pocket/PocketSupport.swift
+        Sources/Vorssaint/Services/Pocket/PocketWatchtowerSupport.swift
         Sources/Vorssaint/Services/Prompter/PrompterSupport.swift
         Sources/Vorssaint/Services/Workspaces/WorkspaceSupport.swift
         Sources/Vorssaint/Services/Notifications/ZenithReplySupport.swift
@@ -717,6 +718,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Notch/BatteriesIslandSupport.swift
         Sources/Vorssaint/Core/ZenithBatteriesIslandStrings.swift
         Sources/Vorssaint/Core/ZenithPocketStrings.swift
+        Sources/Vorssaint/Core/ZenithPocketWatchtowerStrings.swift
         Sources/Vorssaint/UI/Settings/PocketSettingsSupport.swift
         Tests/*.swift
         build/generated-tests/*.swift

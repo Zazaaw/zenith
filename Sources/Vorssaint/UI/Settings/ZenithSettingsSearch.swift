@@ -55,6 +55,7 @@ enum ZenithSettingsSearch {
         let lockIsland = ZenithStrings.lockIsland(language) // the padlock island's switches
         let remote = ZenithStrings.remote(language) // iPhone Remote
         let pocket = ZenithStrings.pocket(language) // iPhone & Watch
+        let watchtower = ZenithStrings.pocketWatchtower(language)
         let face = ZenithStrings.faceUnlock(language) // Face Unlock
         let batteries = ZenithStrings.batteries(language) // Batteries
         let widgets = ZenithStrings.lockScreenWidgets(language)
@@ -165,6 +166,8 @@ enum ZenithSettingsSearch {
             page(.zenithPocketSharing, title: pocket.sharing, icon: "square.and.arrow.up",
                  keywords: [pocket.shareWallpaper, pocket.shareAgents, pocket.shareNowPlaying, pocket.allowAnswers],
                  aliases: ["wallpaper hp", "claude di hp", "jawab claude", "approve from phone", "berbagi"]),
+            page(.zenithPocketWatchtower, title: watchtower.title, icon: "binoculars",
+                 keywords: PocketWatchtowerSearch.keywords(language), aliases: PocketWatchtowerSearch.aliases),
             // Face Unlock: unlock by looking at the Mac.
             page(.zenithFaceUnlock, title: face.enable, icon: "faceid",
                  keywords: [face.title, face.setUp, face.session, face.sessionOpen, face.sessionLocked, face.lockNow,

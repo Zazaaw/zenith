@@ -75,7 +75,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
     case zenithDropZones, zenithWatermark, zenithDesignOverlay, zenithBeautify, zenithQR, zenithMenuBarHider
     case zenithLockScreenTerminal, zenithLockScreenLyrics, zenithLockScreenMusic
     case zenithRemote
-    case zenithPocket, zenithPocketRelay, zenithPocketPairing, zenithPocketSharing
+    case zenithPocket, zenithPocketRelay, zenithPocketPairing, zenithPocketSharing, zenithPocketWatchtower
     case zenithFaceUnlock
     case zenithBatteries, zenithBatteriesAlerts, zenithBatteriesIPhone
 
@@ -108,7 +108,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
             return .notch
         case .zenithLockScreen, .zenithLockScreenTerminal, .zenithLockScreenLyrics, .zenithLockScreenMusic: return .lockScreen
         case .zenithRemote: return .remote
-        case .zenithPocket, .zenithPocketRelay, .zenithPocketPairing, .zenithPocketSharing: return .pocket
+        case .zenithPocket, .zenithPocketRelay, .zenithPocketPairing, .zenithPocketSharing, .zenithPocketWatchtower: return .pocket
         case .zenithFaceUnlock: return .faceUnlock
         case .zenithBatteries, .zenithBatteriesAlerts, .zenithBatteriesIPhone: return .batteries
         case .zenithDropZones, .zenithWatermark: return .shelf
