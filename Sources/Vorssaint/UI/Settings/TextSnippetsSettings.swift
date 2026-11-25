@@ -27,6 +27,7 @@ struct TextSnippetsSettings: View {
 
     var body: some View {
         Form {
+            ZenithPreviewFormSection { ZenithTextSnippetsPreviewCard() } // Zenith fork: the preview card
             Section {
                 Toggle(text.enable, isOn: $enabled)
                     .onChange(of: enabled) { _, _ in
@@ -92,6 +93,7 @@ struct TextSnippetsSettings: View {
             } header: {
                 Text(text.libraryTitle)
             }
+            .zenithPreviewTarget("snippets.library") // Zenith fork
 
             // The library beeps under secure input whether or not trigger
             // expansion is on, so either toggle earns the explanation. It
@@ -129,8 +131,10 @@ struct TextSnippetsSettings: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             }
+            .zenithPreviewTarget("snippets.list") // Zenith fork
         }
         .formStyle(.grouped)
+        .zenithPreviewJumps() // Zenith fork
         .observesSecureInput(isActive: enabled || libraryEnabled)
         .sheet(isPresented: $creating) {
             SnippetEditor(text: text,

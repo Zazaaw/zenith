@@ -28,6 +28,8 @@ struct ZenithAboutPage: View {
                 ZenithAboutReveal(order: 0) { _ in
                     ZenithAboutHero()
                 }
+                AboutPreviewCard()
+                    .padding(.top, 22)
                 ZenithAboutReveal(order: 1) { shown in
                     ZenithAboutHeadline(active: visible && shown)
                 }
@@ -198,7 +200,8 @@ private struct ZenithAboutHero: View {
 }
 
 /// Zenith's own icon from the bundle, else the Satu Visual badge it is made from.
-private struct ZenithAboutAppIcon: View {
+/// The preview cards of About and Advanced draw it too.
+struct ZenithAboutAppIcon: View {
     let size: CGFloat
 
     private static let icon: NSImage? = Bundle.main.image(forResource: "AppIcon")

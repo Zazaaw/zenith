@@ -20,6 +20,10 @@ struct HomebrewSettings: View {
             pageHeader
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
+            HomebrewPreviewCard() // Zenith fork
+                .zenithToolsPreviewWidth()
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
             Divider()
             Group {
                 if homebrew.brewPath == nil {

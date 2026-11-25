@@ -35,6 +35,10 @@ struct UninstallerView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            UninstallerPreviewCard() // Zenith fork
+                .zenithToolsPreviewWidth()
+                .padding(.horizontal, 24)
+                .padding(.top, 14)
             content
             UninstallerHomebrewLastLog(compact: false)
         }

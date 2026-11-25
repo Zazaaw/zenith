@@ -29,6 +29,11 @@ struct QuickToolsSettings: View {
     @AppStorage(DefaultsKey.cleaningModeKeepScreenVisible) private var cleaningModeKeepScreenVisible = false
 
     var body: some View {
+        // Zenith fork: the preview card stays above the sections, so it is in
+        // view when a sidebar row or a search scrolls the page to its feature.
+        VStack(spacing: 0) {
+        QuickToolsPreviewCard()
+            .zenithToolsPreviewPinned()
         Form {
             if AppFeature.quickLauncher.isAvailable {
                 Section {
@@ -342,6 +347,7 @@ struct QuickToolsSettings: View {
             }
         }
         .formStyle(.grouped)
+        } // Zenith fork
     }
 
     @ViewBuilder private var microphoneStatus: some View {

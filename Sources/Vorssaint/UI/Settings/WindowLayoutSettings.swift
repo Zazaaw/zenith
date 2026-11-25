@@ -41,6 +41,7 @@ struct WindowLayoutSettings: View {
 
     var body: some View {
         Form {
+            ZenithScreenPreviewSection(group: .windowLayout) // Zenith fork
             if AppFeature.windowLayout.isAvailable {
                 Section {
                     Toggle(text.showInPanel, isOn: $showInPanel)

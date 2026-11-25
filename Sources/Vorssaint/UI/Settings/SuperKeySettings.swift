@@ -31,6 +31,7 @@ struct SuperKeySettings: View {
 
     var body: some View {
         Form {
+            ZenithPreviewFormSection { ZenithSuperKeyPreviewCard() } // Zenith fork: the preview card
             Section(text.pageTitle) {
                 Toggle(text.enableToggle, isOn: $enabled)
                     .onChange(of: enabled) { _, value in
@@ -67,6 +68,7 @@ struct SuperKeySettings: View {
                         .foregroundStyle(ZenithStatus.success)
                 }
             }
+            .zenithPreviewTarget("superKey.main") // Zenith fork
 
             Section(text.soloSection) {
                 Picker(text.soloSection, selection: soloBinding) {
@@ -82,6 +84,7 @@ struct SuperKeySettings: View {
                     .foregroundStyle(.secondary)
             }
             .disabled(!enabled)
+            .zenithPreviewTarget("superKey.solo") // Zenith fork
 
             if enabled {
                 MouseExceptionsList(scope: .superKey)
@@ -94,6 +97,7 @@ struct SuperKeySettings: View {
             }
         }
         .formStyle(.grouped)
+        .zenithPreviewJumps() // Zenith fork
     }
 
     /// The whole feature in one line: the key you hold, and the keys it stands

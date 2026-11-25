@@ -64,54 +64,28 @@ struct ZenithLockScreenSettings: View {
     }
 
     /// The preview, and beside it the layer it draws, what it outlines, and
-    /// the padlock sounds, which belong to the lock screen as a whole.
+    /// the padlock sounds, which belong to the lock screen as a whole. Zenith
+    /// fork: the shared preview card every Settings page opens with.
     private var previewCard: some View {
-        HStack(alignment: .top, spacing: 18) {
+        let modes: [ZenithLockScreenPreviewMode] = [.minimal, .full]
+        return ZenithSettingsPreviewCard(
+            id: "lockScreen", caption: page.previewWallpaper,
+            states: [page.previewMinimal, page.previewFull],
+            selection: Binding(get: { modes.firstIndex(of: previewMode) ?? 0 }, set: { index in
+                let mode = modes[min(max(index, 0), modes.count - 1)]
+                previewOverride = mode == (tab == .full ? .full : .minimal) ? nil : mode
+            }),
+            highlight: partName(tab.previewPart), aspectRatio: Self.screenRatio) {
             ZenithLockScreenPreview(mode: previewMode, highlight: tab.previewPart) { part in
                 select(ZenithLockScreenSettingsTab(part: part))
             }
-            // Sized from its width, so the card's height is the screen's shape.
-            .aspectRatio(Self.screenRatio, contentMode: .fit)
-            .clipShape(RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
-            .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
-            .frame(maxWidth: .infinity)
-
+        } footer: {
             VStack(alignment: .leading, spacing: 10) {
-                Text(page.preview)
-                    .font(.system(size: 15, weight: .semibold))
-                    .accessibilityAddTraits(.isHeader)
-                Picker(page.preview, selection: Binding(get: { previewMode }, set: { mode in
-                    previewOverride = mode == (tab == .full ? .full : .minimal) ? nil : mode
-                })) {
-                    Text(page.previewMinimal).tag(ZenithLockScreenPreviewMode.minimal)
-                    Text(page.previewFull).tag(ZenithLockScreenPreviewMode.full)
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .fixedSize()
-                Group {
-                    Text(page.previewWallpaper)
-                    Text(page.previewClick)
-                }
-                .font(ZenithType.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                Label(page.highlighting(partName(tab.previewPart)), systemImage: "hand.point.up.left")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color.accentColor)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 10)
                 ZenithLockScreenDivider()
                 ZenithLockScreenTitledSwitch(title: locked.sounds, isOn: $lockSounds, expands: true)
                     .help(locked.soundsHint)
             }
-            .frame(width: 184, alignment: .leading)
-            .frame(maxHeight: .infinity, alignment: .top)
         }
-        // The column takes the preview's height, so the sounds sit at its foot.
-        .fixedSize(horizontal: false, vertical: true)
-        .padding(16)
-        .zenithLockScreenCardSurface()
     }
 
     /// This Mac's screen, width over height; a MacBook's when none is known.

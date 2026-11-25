@@ -61,6 +61,7 @@ struct MouseSettings: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 SettingsPageHeader(title: l10n.s.tabMouse, subtitle: FeatureStrings.settingsPages(l10n.language).mouseDescription)
+                ZenithMousePreviewCard() // Zenith fork: the preview card
                 if !legendFeatures.isEmpty {
                     legendCard
                 }

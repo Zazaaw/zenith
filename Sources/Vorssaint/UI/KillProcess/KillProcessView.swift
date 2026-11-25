@@ -57,6 +57,8 @@ struct KillProcessView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
+            KillProcessPreviewCard() // Zenith fork
+                .zenithToolsPreviewWidth()
             Form {
                 Section {
                     Toggle(strings.groupToggle, isOn: groupBinding)

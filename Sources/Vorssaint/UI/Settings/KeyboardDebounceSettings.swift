@@ -21,6 +21,7 @@ struct KeyboardDebounceSettings: View {
 
     var body: some View {
         Form {
+            ZenithPreviewFormSection { ZenithKeyDebouncePreviewCard() } // Zenith fork: the preview card
             Section(l10n.s.keyDebounceName) {
                 Toggle(l10n.s.keyDebounceEnable, isOn: $enabled)
                     .onChange(of: enabled) { _, value in
@@ -49,6 +50,7 @@ struct KeyboardDebounceSettings: View {
                     }
                 }
                 .disabled(!enabled)
+                .zenithPreviewTarget("keyDebounce.window") // Zenith fork
             }
 
             Section(l10n.s.keyDebouncePerKeySection) {
@@ -114,6 +116,7 @@ struct KeyboardDebounceSettings: View {
             }
         }
         .formStyle(.grouped)
+        .zenithPreviewJumps() // Zenith fork
         .onAppear {
             globalWindow = Defaults.sanitizedKeyboardDebounceWindow(globalWindow)
             selectedWindow = Defaults.sanitizedKeyboardDebounceWindow(selectedWindow)

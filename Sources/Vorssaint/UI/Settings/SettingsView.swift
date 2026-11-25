@@ -785,6 +785,9 @@ struct ReleaseNotesSettings: View {
             SettingsPageHeader(title: l10n.s.obWhatsNewTitle, subtitle: versionLine)
                 .padding(.horizontal, 24)
                 .padding(.top, 24)
+            ReleaseNotesPreviewCard(notes: notes) // Zenith fork
+                .zenithToolsPreviewWidth()
+                .padding(.horizontal, 24)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
@@ -920,6 +923,9 @@ struct SupportSettings: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 18) {
+                SupportPreviewCard() // Zenith fork
+                    .frame(maxWidth: 760)
+                    .padding(.bottom, 6)
                 ZStack {
                     Circle()
                         .fill(Theme.spaceGradient)

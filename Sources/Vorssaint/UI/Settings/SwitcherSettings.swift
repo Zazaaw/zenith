@@ -56,6 +56,10 @@ struct SwitcherSettings: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 SettingsPageHeader(title: l10n.s.tabSwitcher, subtitle: pages.switcherDescription)
+                if AppFeature.switcher.isAvailable { // Zenith fork: the preview card, on the layout in use
+                    ZenithScreenPreviewCard(group: .switcher, current: layout == .simple ? .switcherSimple
+                                            : layout == .icons ? .switcherIcons : .switcherWindows)
+                }
                 if AppFeature.switcher.isAvailable {
                     switcherCard
                         .settingsSectionAnchor(.switcher, cornerRadius: ZenithRadius.panel)

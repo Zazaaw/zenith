@@ -25,6 +25,9 @@ struct BatteriesSettingsPage: View {
     @State private var muted = BatteriesDevicePreferences.muted()
     @State private var hidden = BatteriesDevicePreferences.hidden()
     @State private var hiddenNames = BatteriesDevicePreferences.hiddenNames()
+    /// Zenith fork: the preview card's state, which follows the section opened.
+    @State private var previewState = ZenithBatteriesPreviewCard.page
+    @ObservedObject private var router = SettingsRouter.shared
 
     private let text = ZenithStrings.batteries(.enUS)
     private static let formula = "libimobiledevice"
@@ -33,7 +36,10 @@ struct BatteriesSettingsPage: View {
         BatteriesDevicePreferences.split(store.devices, hidden: hidden)
     }
 
+    private static let lookID = "zenith.preview.look" // Zenith fork
+
     var body: some View {
+        ScrollViewReader { proxy in // Zenith fork: the preview card scrolls to its settings
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 SettingsPageHeader(title: text.title, subtitle: text.subtitle) {
@@ -41,11 +47,17 @@ struct BatteriesSettingsPage: View {
                         .help(text.enableHint)
                 }
                 .zenithSectionAnchor(.zenithBatteries)
+                // Zenith fork: the shared preview card.
+                ZenithBatteriesPreviewCard(state: $previewState) {
+                    withAnimation(.easeInOut(duration: 0.3)) { proxy.scrollTo(Self.lookID, anchor: .center) }
+                } openAlerts: {
+                    router.request(FeatureSettingsDestination(.batteries, sectionAnchor: .zenithBatteriesAlerts))
+                }
                 Rectangle().fill(ZenithSurface.hairline).frame(height: 1)
                 // Kept in view while Batteries is off, greyed, so the page
                 // reads the same whichever way the switch is.
                 VStack(alignment: .leading, spacing: 22) {
-                    lookSection
+                    lookSection.id(Self.lookID)
                     devicesSection
                     alertSection
                     iOSSection
@@ -57,10 +69,13 @@ struct BatteriesSettingsPage: View {
             .frame(maxWidth: .infinity)
             .padding(22)
         }
+        }
         .onAppear {
             reload()
             store.refreshNow()
+            followRoute()
         }
+        .onChange(of: router.requestID) { _, _ in followRoute() }
         .onChange(of: enabled) { _, _ in store.refreshNow() }
         .onChange(of: layout) { _, _ in store.refreshNow() }
         .onChange(of: threshold) { _, _ in store.refreshNow() }
@@ -69,6 +84,18 @@ struct BatteriesSettingsPage: View {
         .onChange(of: readIOSDevices) { _, _ in store.refreshNow() }
         .onChange(of: installStatus?.result) { _, result in
             if result == .succeeded { store.refreshNow() }
+        }
+    }
+
+    /// Zenith fork: a sidebar row or search landing on the alerts shows the
+    /// Battery Low card; any other landing, the page.
+    private func followRoute() {
+        guard router.destination.page == .batteries else { return }
+        if router.destination.sectionAnchor == .zenithBatteriesAlerts {
+            // The compact form belongs to the alerts too, so it stays.
+            if previewState == ZenithBatteriesPreviewCard.page { previewState = ZenithBatteriesPreviewCard.low }
+        } else {
+            previewState = ZenithBatteriesPreviewCard.page
         }
     }
 

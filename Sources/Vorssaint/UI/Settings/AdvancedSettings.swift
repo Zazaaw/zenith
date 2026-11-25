@@ -19,12 +19,25 @@ struct AdvancedSettings: View {
     @State private var pendingImport: [String: Any]?
     @State private var showImportConfirm = false
     @State private var showConfigFileConfirm = false
+    /// Zenith fork: the part the preview card outlines, the last one clicked.
+    @State private var previewPart = AdvancedPreviewPart.backup
 
     private var backup: BackupFeatureStrings {
         FeatureStrings.backup(l10n.language)
     }
 
     var body: some View {
+        // Zenith fork: the preview card above the sections; a part clicked in
+        // it scrolls to its section.
+        ScrollViewReader { proxy in
+        VStack(spacing: 0) {
+        AdvancedPreviewCard(highlighted: previewPart) { part in
+            previewPart = part
+            withAnimation(ZenithMotion.respecting(ZenithMotion.reveal())) {
+                proxy.scrollTo(part.sectionID, anchor: .top)
+            }
+        }
+        .zenithToolsPreviewPinned()
         Form {
             Section(backup.title) {
                 Text(backup.description)
@@ -75,6 +88,7 @@ struct AdvancedSettings: View {
                         .foregroundStyle(ZenithStatus.warning)
                 }
             }
+            .id(AdvancedPreviewPart.backup.sectionID) // Zenith fork
 
             Section(l10n.s.advancedResetSection) {
                 Text(l10n.s.advancedResetDescription)
@@ -98,6 +112,7 @@ struct AdvancedSettings: View {
                         .foregroundStyle(ZenithStatus.warning)
                 }
             }
+            .id(AdvancedPreviewPart.permissions.sectionID) // Zenith fork
 
             Section(l10n.s.advancedUninstallSection) {
                 Text(l10n.s.advancedUninstallDescription)
@@ -111,8 +126,11 @@ struct AdvancedSettings: View {
                 }
                 .disabled(working)
             }
+            .id(AdvancedPreviewPart.uninstall.sectionID) // Zenith fork
         }
         .formStyle(.grouped)
+        }
+        } // Zenith fork
         .alert(l10n.s.advancedClearConfirmTitle, isPresented: $showClearConfirm) {
             Button(l10n.s.uninstallerCancel, role: .cancel) {}
             Button(l10n.s.advancedClearButton, role: .destructive) {

@@ -800,21 +800,24 @@ enum FeatureCatalogTests {
         // A lazy stack on the Monitor page re-measures and re-anchors its rows
         // without settling once the Bars options make the menu bar card taller,
         // which hangs Settings on the first scroll. The same kind of source
-        // check: it keeps the eager stack and the preview above the scroll
-        // view, not the scrolling itself.
+        // check: it keeps the eager stack and the live preview, not the
+        // scrolling itself.
         let monitorSettingsSource = (try? String(
             contentsOfFile: "Sources/Vorssaint/UI/Settings/MonitorSettings.swift",
             encoding: .utf8)) ?? ""
         let compactMonitorBody = compactMember("var body: some View {", in: monitorSettingsSource)
-        let monitorPreviewAboveScroll: Bool = {
-            guard let preview = compactMonitorBody.range(of: "MenuBarMetricsPreview()"),
-                  let scroll = compactMonitorBody.range(of: "ScrollView{VStack(") else { return false }
-            return preview.upperBound <= scroll.lowerBound
-        }()
+        // Zenith fork: the live preview is the first picture of the page's
+        // preview card, under its title like every page's card.
+        let monitorPicturesSource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/UI/Settings/ZenithScreenPictures.swift",
+            encoding: .utf8)) ?? ""
+        let monitorPreviewInCard = compactMonitorBody.contains("ScrollView{VStack(")
+            && compactMonitorBody.contains("ZenithScreenPreviewCard(group:.monitor)")
+            && monitorPicturesSource.contains("MenuBarMetricsPreview()")
         suite.expect(compactMonitorBody.hasPrefix("VStack(spacing:0){")
-                && monitorPreviewAboveScroll
+                && monitorPreviewInCard
                 && !compactMonitorBody.contains("LazyVStack("),
-               "the Monitor page lays its rows out eagerly, with the live preview above its scroll view")
+               "the Monitor page lays its rows out eagerly, with the live preview in its preview card")
         suite.expect(AppFeature.diskImageInstaller.group == .clipboardFiles
                 && AppFeature.diskImageInstaller.enabledKeys.isEmpty
                 && AppFeature.diskImageInstaller.permissions == [.appManagement]

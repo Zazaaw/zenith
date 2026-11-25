@@ -26,6 +26,7 @@ struct GeneralSettings: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 SettingsPageHeader(title: l10n.s.tabGeneral, subtitle: text.pageDescription)
+                ZenithScreenPreviewCard(group: .general, current: .look) // Zenith fork
                 basicsCard
                 appearanceCard
                 if AppFeature.keepAwake.isAvailable {
