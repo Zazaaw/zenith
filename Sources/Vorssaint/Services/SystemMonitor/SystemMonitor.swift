@@ -148,6 +148,7 @@ final class SystemMonitor: ObservableObject {
     private var notchVisible = false
     private var notchDetailNeeds: SystemMonitorPanelNeeds = .none
     private var lockScreenNeeds: SystemMonitorPanelNeeds = .none // Zenith fork
+    private var pocketNeeds: SystemMonitorPanelNeeds = .none // Zenith fork: Zenith Pocket
     private var notchAccessoryMonitoring = false
     private var menuBarActive = false
     private var alertsActive = false
@@ -299,6 +300,19 @@ final class SystemMonitor: ObservableObject {
         runOnMain { [weak self] in
             guard let self, self.lockScreenNeeds != needs else { return }
             self.lockScreenNeeds = needs
+            self.stopTimerIfIdle()
+            self.ensureTimer()
+            if needs.any { self.refresh(suppressImmediateGPU: true) }
+        }
+    }
+
+    /// Zenith fork: Zenith Pocket, while a phone has it open. A background
+    /// consumer like the alerts: it keeps the slow strides (temperature every
+    /// 15 s), so an open phone never makes the monitor sample as for a panel.
+    func setPocketNeeds(_ needs: SystemMonitorPanelNeeds) {
+        runOnMain { [weak self] in
+            guard let self, self.pocketNeeds != needs else { return }
+            self.pocketNeeds = needs
             self.stopTimerIfIdle()
             self.ensureTimer()
             if needs.any { self.refresh(suppressImmediateGPU: true) }
@@ -497,7 +511,7 @@ final class SystemMonitor: ObservableObject {
     private var fullMonitorVisible: Bool { panelClients > 0 }
 
     private var shouldRun: Bool { fullMonitorVisible || menuPanelNeeds.any || notchDetailNeeds.any || notchVisible || notchAccessoryMonitoring || menuBarActive || alertsActive
-        || lockScreenNeeds.any } // Zenith fork
+        || lockScreenNeeds.any || pocketNeeds.any } // Zenith fork
 
     private func shouldSample(defaults: UserDefaults = .standard) -> Bool {
         shouldRun && currentPlan(defaults: defaults).any
@@ -560,7 +574,8 @@ final class SystemMonitor: ObservableObject {
     }
 
     private func currentPlan(defaults: UserDefaults) -> SamplingPlan {
-        let menuPanelNeeds = self.menuPanelNeeds.merging(notchDetailNeeds).merging(lockScreenNeeds) // Zenith fork: lock screen
+        let menuPanelNeeds = self.menuPanelNeeds.merging(notchDetailNeeds).merging(lockScreenNeeds)
+            .merging(pocketNeeds) // Zenith fork: lock screen, Zenith Pocket
         var plan = SamplingPlan()
         let hasInternalBattery = PowerSampler.hasInternalBattery
         let panelNeedsSystem = fullMonitorVisible || menuPanelNeeds.system
