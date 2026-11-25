@@ -5,18 +5,11 @@ import PocketKit
 import SwiftUI
 
 /// Dot grid and line grid with a few lit cells, each fading toward an
-/// opposite corner, behind every screen. With `parallax`, the dot grid
-/// drifts that many points against the phone's lean (`Tilt`; the caller
-/// keeps it running with `.readsTilt()`), opposite to the state aura.
+/// opposite corner, behind every screen.
 struct Ambient: View {
-    var parallax: CGFloat = 0
-
     var body: some View {
         ZStack {
             dots
-                // Drawn a little past the edges, so the drift never shows one.
-                .padding(parallax == 0 ? 0 : -parallax * 2)
-                .modifier(TiltShift(distance: -parallax))
             Canvas { context, size in
                 let cell: CGFloat = 44
                 var path = Path()

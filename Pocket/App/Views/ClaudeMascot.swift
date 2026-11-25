@@ -98,7 +98,6 @@ struct ClaudeMascot: View {
         .contentShape(Circle().scale(0.7))
         .onTapGesture(perform: tapped)
         .onScrollVisibilityChange(threshold: 0.05) { onScreen = $0 }
-        .readsTilt()
         .onAppear { settle(animated: false) }
         .onChange(of: mood) { old, new in changed(from: old, to: new) }
         .task(id: Loop(mood: mood, lively: lively)) {
@@ -117,7 +116,7 @@ struct ClaudeMascot: View {
                 .fill(LinearGradient(colors: dark ? [Self.pearlLight, Self.pearlShade] : [Color(white: 0.22), Color(white: 0.04)],
                                      startPoint: .top, endPoint: .bottom), style: FillStyle(eoFill: true))
             MascotFace(left: left, right: right, gaze: gaze, lids: lids,
-                       ink: dark ? Self.ink : Color(white: 0.97), leans: !reduceMotion)
+                       ink: dark ? Self.ink : Color(white: 0.97))
                 // The eyes stay on the star, wherever they look.
                 .mask(StarShape().fill(style: FillStyle(eoFill: true)))
         }
@@ -357,21 +356,16 @@ private struct MascotFace: View {
     let gaze: CGPoint
     let lids: CGFloat
     let ink: Color
-    let leans: Bool
 
     var body: some View {
-        let tilt = leans ? CGPoint(x: Tilt.shared.x * 0.022, y: Tilt.shared.y * 0.01) : .zero
         GeometryReader { geo in
             let side = geo.size.width
             ZStack {
                 eye(left, right: false)
                 eye(right, right: true)
             }
-            // Two offsets, so the tilt's steady stream never cuts a glance short.
             .offset(x: gaze.x * side, y: gaze.y * side)
             .animation(Motion.spring, value: gaze)
-            .offset(x: tilt.x * side, y: tilt.y * side)
-            .animation(.interactiveSpring(response: 0.25, dampingFraction: 0.86), value: tilt)
         }
     }
 

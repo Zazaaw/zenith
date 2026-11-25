@@ -29,10 +29,9 @@ struct RootView: View {
                     StateAura(mood: model.mood(now: context.date))
                 }
                 .ignoresSafeArea()
-                .readsTilt()
                 .transition(.opacity)
             }
-            Ambient(parallax: model.pairing == nil ? 0 : 5).ignoresSafeArea()
+            Ambient().ignoresSafeArea()
             if model.pairing == nil {
                 Group {
                     if onboarded {

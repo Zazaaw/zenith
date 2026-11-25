@@ -48,7 +48,6 @@ struct StateAura: View {
             }
         }
         .animation(reduceMotion ? .easeOut(duration: 0.3) : .easeInOut(duration: 1.6), value: mood)
-        .modifier(TiltShift(distance: 10))
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
@@ -122,21 +121,5 @@ private struct Glow: View {
                 .easeInOut(duration: breath / 2).delay(out ? delay : 0)
             }
         }
-    }
-}
-
-/// Moves content a few points with the phone's lean (`Tilt`), smoothed so
-/// it glides rather than steps. A negative `distance` moves it the other
-/// way. Only this modifier re-reads the tilt, so what it wraps isn't redrawn.
-struct TiltShift: ViewModifier {
-    var distance: CGFloat
-
-    func body(content: Content) -> some View {
-        // No distance, no reading: nothing to redraw as the phone moves.
-        let (x, y) = distance == 0 ? (0, 0) : (Tilt.shared.x, Tilt.shared.y)
-        // Quarter points: the hand's tremor doesn't restart the glide.
-        let dx = ((x * distance) * 4).rounded() / 4
-        let dy = ((-y * distance) * 4).rounded() / 4
-        content.animation(.smooth(duration: 0.4)) { $0.offset(x: dx, y: dy) }
     }
 }

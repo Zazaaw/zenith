@@ -40,16 +40,13 @@ struct MacShowcase: View {
         ZStack(alignment: .bottom) {
             FloorShadow(width: Self.baseWidth * 0.86, dark: dark)
                 .offset(y: 4)
-            TiltStage {
-                VStack(spacing: 0) {
-                    lid
-                    base
-                }
+            VStack(spacing: 0) {
+                lid
+                base
             }
             .padding(.bottom, 12)
         }
         .frame(height: Self.height)
-        .background { if visible && !reduceMotion { Color.clear.readsTilt() } }
         .onScrollVisibilityChange(threshold: 0.05) { visible = $0 }
         // The entrance: up from below, the lid tipping forward into place.
         .opacity(settled ? 1 : 0)
@@ -286,7 +283,7 @@ struct MacShowcase: View {
         return shape
             .fill(LinearGradient(colors: dark ? [Color(white: 0.30), Color(white: 0.15)] : [Color(white: 0.9), Color(white: 0.7)],
                                  startPoint: .top, endPoint: .bottom))
-            .overlay { Specular(strength: dark ? 0.22 : 0.5, travel: 0.7).clipShape(shape) }
+            .overlay { Specular(strength: dark ? 0.22 : 0.5).clipShape(shape) }
             .overlay(alignment: .top) {
                 Capsule().fill(Color(white: dark ? 0.12 : 0.6)).frame(width: 54, height: 3.5)
             }
