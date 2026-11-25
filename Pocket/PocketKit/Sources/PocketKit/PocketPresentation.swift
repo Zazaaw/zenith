@@ -480,7 +480,7 @@ public enum PocketPresentation {
         switch command {
         case .lock?: return "Your Mac is locked."
         case .keepAwake(let minutes)?: return keepAwakeLine(minutes)
-        case .media?, .answer?, .refresh?, nil: return "Done."
+        default: return "Done."
         }
     }
 

@@ -64,7 +64,7 @@ public struct PocketPairing: Codable, Hashable, Sendable {
     /// The Mac's wallpaper thumbnail, kept apart because it is the large one.
     public var wallpaperBoxID: String { derive("box/wallpaper") }
 
-    private func derive(_ purpose: String) -> String {
+    func derive(_ purpose: String) -> String {
         var hasher = SHA256()
         hasher.update(data: Data("zenith-pocket/v1/".utf8))
         hasher.update(data: Data(purpose.utf8))

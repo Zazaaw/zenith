@@ -12,8 +12,8 @@ struct IslandBar: View {
     @Environment(PocketModel.self) private var model
 
     private static let items: [(PocketModel.Tab, String, String)] = [
-        (.home, "house.fill", "Home"), (.control, "switch.2", "Control"),
-        (.agents, "sparkles", "Agents"), (.devices, "battery.75percent", "Devices"),
+        (.home, "house.fill", "Home"), (.claude, "sparkles", "Claude"),
+        (.mac, "macbook", "Mac"), (.devices, "battery.75percent", "Devices"),
     ]
 
     var body: some View {
@@ -50,7 +50,7 @@ struct IslandBar: View {
                             .foregroundStyle(Color.white.opacity(0.55))
                             .frame(width: 52, height: 44)
                             .overlay(alignment: .topTrailing) {
-                                if tab == .agents && attention.agents { dot(K.amber) }
+                                if tab == .claude && attention.agents { dot(K.amber) }
                                 if tab == .devices && attention.devices { dot(K.red) }
                             }
                             .contentShape(Rectangle())
@@ -99,7 +99,7 @@ struct IslandBar: View {
             }
             .contentShape(Rectangle())
             .onTapGesture {
-                model.tab = .agents
+                model.tab = .claude
                 model.collapseIsland()
             }
             AnswerButtons(question: question, compact: true)

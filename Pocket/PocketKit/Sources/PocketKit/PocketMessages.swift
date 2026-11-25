@@ -69,6 +69,10 @@ public struct PocketMacState: Codable, Hashable, Sendable {
         public var playing: Bool
         public var elapsed: TimeInterval?
         public var duration: TimeInterval?
+        public var album: String? = nil
+        /// SHA-256 of the artwork JPEG kept in `artworkBoxID`, when shared.
+        public var artworkHash: String? = nil
+        public var app: String? = nil
         public init(title: String, artist: String, playing: Bool, elapsed: TimeInterval? = nil, duration: TimeInterval? = nil) {
             self.title = title; self.artist = artist; self.playing = playing; self.elapsed = elapsed; self.duration = duration
         }
@@ -101,6 +105,13 @@ public struct PocketMacState: Codable, Hashable, Sendable {
     /// SHA-256 of the wallpaper thumbnail in its own box, so the phone only
     /// downloads it when it changed.
     public var wallpaperHash: String?
+    // The second round (PocketExtras.swift). Optional, so older states still read.
+    public var claude: PocketClaude? = nil
+    public var health: PocketHealth? = nil
+    public var sound: PocketSound? = nil
+    public var tools: PocketTools? = nil
+    public var sites: PocketSites? = nil
+    public var safety: PocketSafety? = nil
 
     public init(macName: String, battery: Battery? = nil, locked: Bool = false, awakeUntil: Date? = nil,
                 coding: Coding? = nil, nextPrayer: Prayer? = nil, questions: [AgentQuestion] = [],
@@ -147,6 +158,31 @@ public enum PocketCommand: Codable, Hashable, Sendable {
     case answer(questionID: String, allow: Bool)
     /// Ask the Mac to publish its state now (the app just opened).
     case refresh
+
+    // The second round. A Mac that doesn't know one yet answers ok: false.
+    /// The phone is open and watching (true) or went away (false); the Mac
+    /// samples what only an open phone needs (health, sound) while it watches.
+    case presence(watching: Bool)
+    /// Away mode: hold finished Claude turns for a reply from the phone.
+    case setAway(Bool)
+    /// A reply to a Claude Code session waiting in Away mode.
+    case claudeReply(sessionID: String, text: String)
+    case setVolume(Int)
+    case setOutput(id: String)
+    case muteMic(Bool)
+    case seek(seconds: TimeInterval)
+    case openWorkspace(id: String)
+    /// minutes nil = stop the timer.
+    case timer(minutes: Int?, label: String?)
+    case pauseTimer(Bool)
+    case stopDevServer(port: Int)
+    case quitProcess(pid: Int32)
+    /// Puts text on the Mac's clipboard.
+    case sendText(String)
+    /// Opens a link in the Mac's default browser (http/https only).
+    case openURL(String)
+    /// A file waits in drop slot `slot`; the Mac saves it to ~/Downloads/Pocket.
+    case collectDrop(slot: Int)
 
     public enum MediaAction: String, Codable, Sendable { case playPause, next, previous }
 }

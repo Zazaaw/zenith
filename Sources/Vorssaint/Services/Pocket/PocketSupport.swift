@@ -208,6 +208,8 @@ enum PocketCadence {
     /// With nothing changing, the box is still rewritten this often, so the
     /// phone can tell a quiet Mac (fresh box) from one that is off or asleep.
     static let heartbeat: TimeInterval = 15 * 60
+    /// An open phone says so every minute; this long without it, it's gone.
+    static let presenceLapse: TimeInterval = 150
 
     static func liveDelay(now: Date, lastSent: Date?) -> TimeInterval {
         guard let lastSent else { return debounce }
@@ -315,8 +317,13 @@ enum PocketCommands {
             return .answer(questionID: questionID, allow: allow)
         case .refresh:
             return .refresh
+        default:
+            // The second round's commands land with their features.
+            return .refuse(notYet)
         }
     }
+
+    static let notYet = "This version of Zenith can't do that yet."
 
     /// The media key a player that Zenith's adapter cannot reach still hears
     /// (NX_KEYTYPE_PLAY / FAST / REWIND, as RadialMenuMediaKey has them).

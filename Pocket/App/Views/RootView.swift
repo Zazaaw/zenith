@@ -21,8 +21,8 @@ struct RootView: View {
                         Group {
                             switch model.tab {
                             case .home: HomeView(now: context.date)
-                            case .control: ControlView(now: context.date)
-                            case .agents: AgentsView(now: context.date)
+                            case .claude: ClaudeView(now: context.date)
+                            case .mac: MacView(now: context.date)
                             case .devices: DevicesView(now: context.date)
                             }
                         }

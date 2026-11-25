@@ -43,6 +43,14 @@ final class PocketService {
 
     // While the link runs.
     private var link: PocketLink?
+    /// The second round's parts (`PocketParts`), alive while the link is.
+    private var parts: [PocketPart] = []
+    /// A part changed since the last live send / box write.
+    private var partsDirty = false
+    private var partsBoxDirty = false
+    /// Whether a phone has Pocket open (its `.presence`), with the moment it lapses.
+    private var watching = false
+    private var watchingWork: DispatchWorkItem?
     private var generation = 0
     private var sinks: Set<AnyCancellable> = []
     private var observers: [(NotificationCenter, NSObjectProtocol)] = []
@@ -261,6 +269,7 @@ final class PocketService {
         startPower()
         observe()
         bindSources()
+        startParts(pairing: pairing, link: link)
         Task {
             await link.start(onLive: { envelope in
                 DispatchQueue.main.async { PocketService.shared.receive(envelope, generation: generation) }
@@ -296,6 +305,7 @@ final class PocketService {
         heartbeatWork?.cancel(); heartbeatWork = nil
         prayerTimer?.invalidate(); prayerTimer = nil; prayerTimerAt = nil
         sinks.removeAll()
+        stopParts()
         unobserve()
         stopPower()
         sentInputs = nil; sentSharing = nil; sentAt = nil
@@ -352,13 +362,70 @@ final class PocketService {
         stateMayHaveChanged()
     }
 
+    // MARK: Parts
+
+    private func startParts(pairing: PocketPairing, link: PocketLink) {
+        parts = PocketParts.make()
+        let context = PocketPartContext(
+            pairing: pairing, link: link,
+            changed: { PocketService.onMain { PocketService.shared.partChanged() } },
+            reply: { id, ok, message in PocketService.onMain { PocketService.shared.reply(id, ok: ok, message) } })
+        parts.forEach { $0.start(context) }
+    }
+
+    private func stopParts() {
+        parts.forEach { $0.stop() }
+        parts = []
+        watchingWork?.cancel(); watchingWork = nil
+        watching = false
+        partsDirty = false
+        partsBoxDirty = false
+    }
+
+    private func partChanged() {
+        guard link != nil else { return }
+        partsDirty = true
+        partsBoxDirty = true
+        stateMayHaveChanged()
+    }
+
+    /// An open phone repeats its presence every minute; without it the Mac
+    /// stops sampling after `presenceLapse`.
+    private func setWatching(_ open: Bool) {
+        watchingWork?.cancel(); watchingWork = nil
+        if open {
+            let lapse = DispatchWorkItem { PocketService.shared.setWatching(false) }
+            watchingWork = lapse
+            DispatchQueue.main.asyncAfter(deadline: .now() + PocketCadence.presenceLapse, execute: lapse)
+        }
+        guard open != watching else { return }
+        watching = open
+        parts.forEach { $0.setWatching(open) }
+        if open { flush(force: false) }
+    }
+
+    /// The first round's state, then each part's field.
+    private func buildState(_ inputs: PocketMacInputs, now: Date) -> PocketMacState {
+        var state = PocketStateBuilder.state(inputs, sharing: sharing, now: now)
+        for part in parts { part.fill(&state) }
+        return state
+    }
+
     // MARK: Commands
 
     private func run(_ command: PocketCommand, id: UUID) {
+        // Presence comes once a minute from an open phone; it doesn't count
+        // against the command limit.
+        if case .presence(let open) = command {
+            setWatching(open)
+            reply(id, ok: true)
+            return
+        }
         guard limiter.allow(at: Date()) else {
             reply(id, ok: false, RemoteText.tooMany)
             return
         }
+        for part in parts where part.handle(command, id: id) { return }
         let allowAnswers = UserDefaults.standard.bool(forKey: PocketDefaults.allowAnswers)
         switch PocketCommands.plan(command, allowAnswers: allowAnswers) {
         case .lock:
@@ -541,8 +608,9 @@ final class PocketService {
         let now = Date()
         let inputs = gatherInputs(now: now)
         schedulePrayer(inputs.nextPrayer?.at)
-        if store.link == .live, inputs != sentInputs || sharing != sentSharing {
-            let state = PocketStateBuilder.state(inputs, sharing: sharing, now: now)
+        if store.link == .live, inputs != sentInputs || sharing != sentSharing || partsDirty {
+            let state = buildState(inputs, now: now)
+            partsDirty = false
             sentInputs = inputs
             sentSharing = sharing
             sentAt = now
@@ -554,6 +622,10 @@ final class PocketService {
     private func considerBox(_ inputs: PocketMacInputs, now: Date, force: Bool) {
         var decision: PocketCadence.BoxDecision = force ? .now : PocketCadence.box(inputs, sharing: sharing, written: boxInputs,
                                                         sharingWritten: boxSharing, writtenAt: boxAt, now: now)
+        // A part's change reaches the box on the ordinary cadence, at most once a minute.
+        if decision == .none, partsBoxDirty {
+            decision = .after(max(0, PocketCadence.boxInterval - now.timeIntervalSince(boxAt ?? .distantPast)))
+        }
         // A relay that just refused waits out the interval before the next try.
         if let failed = boxFailedAt, decision != .none {
             let wait = PocketCadence.boxInterval - now.timeIntervalSince(failed)
@@ -590,7 +662,8 @@ final class PocketService {
         }
         heartbeatWork = beat
         DispatchQueue.main.asyncAfter(deadline: .now() + PocketCadence.heartbeat, execute: beat)
-        let state = PocketStateBuilder.state(inputs, sharing: sharing, now: now)
+        partsBoxDirty = false
+        let state = buildState(inputs, now: now)
         let id = link.pairing.macBoxID
         let generation = self.generation
         Task {

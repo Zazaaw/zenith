@@ -25,7 +25,7 @@ final class PocketModel {
 
     /// The tabs, in the island bar's order.
     enum Tab: Int, CaseIterable, Identifiable {
-        case home, control, agents, devices
+        case home, claude, mac, devices
         var id: Int { rawValue }
     }
 

@@ -69,7 +69,7 @@ struct HomeView: View {
                     if let question {
                         if cells > 0 { Rectangle().fill(K.border).frame(height: 1) }
                         Button {
-                            model.tab = .agents
+                            model.tab = .claude
                         } label: {
                             HStack(spacing: 12) {
                                 VStack(alignment: .leading, spacing: 3) {
