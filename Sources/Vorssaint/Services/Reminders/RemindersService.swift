@@ -44,6 +44,7 @@ final class RemindersService: ObservableObject {
     private var timer: Timer?
     private var observers: [NSObjectProtocol] = []
     private var requesting = false
+    private var requestStore: EKEventStore?
 
     private init() {
         access = LockScreenWidgetAccess(reminders: EKEventStore.authorizationStatus(for: .reminder))
@@ -65,10 +66,13 @@ final class RemindersService: ObservableObject {
     func requestAccess() {
         guard !requesting, refreshAccess() == .notDetermined else { return }
         requesting = true
+        // Held here, not captured: the store must outlive the request, and
+        // the completion handler is @Sendable while EKEventStore is not.
         let store = EKEventStore()
-        store.requestFullAccessToReminders { [weak self, store] _, _ in
-            _ = store
+        requestStore = store
+        store.requestFullAccessToReminders { [weak self] _, _ in
             Task { @MainActor [weak self] in
+                self?.requestStore = nil
                 self?.requesting = false
                 self?.refreshAccess()
             }
