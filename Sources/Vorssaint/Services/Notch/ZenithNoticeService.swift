@@ -268,7 +268,7 @@ final class ZenithNoticeCenter: ObservableObject {
         let side = ZenithNoticeLayout.glyph + 2
         let request = QLThumbnailGenerator.Request(fileAt: url, size: CGSize(width: side, height: side), scale: scale,
                                                    representationTypes: .thumbnail)
-        QLThumbnailGenerator.shared.generateBestRepresentation(for: request) { representation, _ in
+        QLThumbnailGenerator.shared.generateBestRepresentation(for: request) { [weak self] representation, _ in
             guard let image = representation?.cgImage else { return }
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
