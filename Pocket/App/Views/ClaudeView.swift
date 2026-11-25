@@ -55,7 +55,7 @@ struct ClaudeView: View {
                     if let said = session.lastMessage { ClaudeSaidCard(session: session, text: said, now: now).blurFade() }
                     ReplyComposer(session: session, away: claude.away, now: now).id(session.id)
                 }
-                ClaudeAwayRow(away: claude.away, now: now)
+                ClaudeAwayRow(away: claude.away, minutes: claude.awayMinutes, now: now)
                 if session.state == .waiting || session.state == .done, !session.steps.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         SectionLabel(text: "This turn", trailing: PocketPresentation.claudeFiles(session))
@@ -63,7 +63,7 @@ struct ClaudeView: View {
                     }
                 }
             } else {
-                ClaudeAwayRow(away: claude.away, now: now)
+                ClaudeAwayRow(away: claude.away, minutes: claude.awayMinutes, now: now)
             }
             cards(session, claude.usage)
         }
@@ -331,12 +331,34 @@ struct ClaudeUsageCard: View {
 struct ClaudeAwayRow: View {
     @Environment(PocketModel.self) private var model
     let away: Bool
+    /// The chosen wait; nil from a Zenith that can't choose one.
+    let minutes: Int?
     let now: Date
     /// What was asked, until the Mac's state or answer says otherwise.
     @State private var asked: Bool?
+    @State private var askedMinutes: Int?
 
     var body: some View {
         let on = asked ?? away
+        let wait = askedMinutes ?? minutes
+        VStack(alignment: .leading, spacing: 12) {
+            row(on: on, wait: wait)
+            if on, let wait {
+                choices(wait).transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(.horizontal, 14).padding(.vertical, 12)
+        .background(K.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(K.border, lineWidth: 1))
+        .animation(Motion.toggle, value: on)
+        .onChange(of: away) { _, _ in asked = nil }
+        .onChange(of: minutes) { _, _ in askedMinutes = nil }
+        .onChange(of: model.toast) { _, toast in
+            if toast?.ok == false { asked = nil; askedMinutes = nil }
+        }
+    }
+
+    private func row(on: Bool, wait: Int?) -> some View {
         HStack(spacing: 12) {
             RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(K.border, lineWidth: 1)
                 .overlay(Image(systemName: on ? "figure.walk.departure" : "desktopcomputer")
@@ -345,9 +367,9 @@ struct ClaudeAwayRow: View {
                 .frame(width: 32, height: 32)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Away mode").font(K.sans(15, bold: true))
-                Text(on ? "A finished turn waits up to 10 minutes for your reply. Unlocking the Mac turns it off."
-                        : "Claude stops as usual. Turn it on before you leave the Mac.")
+                Text(PocketPresentation.awayCaption(on: on, minutes: wait))
                     .font(K.mono(11)).foregroundStyle(K.faint).fixedSize(horizontal: false, vertical: true)
+                    .contentTransition(.opacity)
             }
             Spacer(minLength: 8)
             Toggle("Away mode", isOn: Binding(get: { on }, set: set))
@@ -355,12 +377,39 @@ struct ClaudeAwayRow: View {
                 .tint(K.emerald)
                 .disabled(!model.canControl(now: now))
         }
-        .padding(.horizontal, 14).padding(.vertical, 12)
-        .background(K.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(K.border, lineWidth: 1))
-        .onChange(of: away) { _, _ in asked = nil }
-        .onChange(of: model.toast) { _, toast in
-            if asked != nil, toast?.ok == false { asked = nil }
+    }
+
+    /// How long a finished turn waits: 10m · 30m · 1h · 2h · Until I'm back.
+    private func choices(_ wait: Int) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(PocketPresentation.awayChoices, id: \.self) { choice in
+                    let chosen = choice == wait
+                    Button { pick(choice) } label: {
+                        Text(PocketPresentation.awayChoiceLabel(choice))
+                            .font(K.sans(13, bold: chosen))
+                            .foregroundStyle(chosen ? K.emerald : K.muted)
+                            .padding(.horizontal, 12).padding(.vertical, 7)
+                            .background(chosen ? K.emerald.opacity(0.14) : K.bg, in: Capsule())
+                            .overlay(Capsule().strokeBorder(chosen ? K.emerald.opacity(0.4) : K.border, lineWidth: 1))
+                    }
+                    .pressable(haptic: false)
+                    .disabled(!model.canControl(now: now))
+                    .accessibilityAddTraits(chosen ? .isSelected : [])
+                }
+            }
+            .padding(.leading, 44)
+        }
+        .scrollClipDisabled()
+    }
+
+    private func pick(_ choice: Int) {
+        guard choice != (askedMinutes ?? minutes), model.setAwayWait(choice) else { return }
+        Haptics.tap()
+        withAnimation(Motion.toggle) { askedMinutes = choice }
+        Task {
+            try? await Task.sleep(for: .seconds(PocketModel.resultTimeout + 2))
+            if askedMinutes == choice { askedMinutes = nil }
         }
     }
 

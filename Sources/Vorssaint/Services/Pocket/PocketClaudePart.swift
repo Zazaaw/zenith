@@ -64,14 +64,21 @@ final class PocketClaudePart: PocketPart {
         guard sharing else { return }
         let now = Date()
         let holding = Set(waiting.filter { PocketClaudeRules.holds($0.value, now: now, alive: Self.alive) }.keys)
-        state.claude = PocketClaudeRules.claude(sessions: ClaudeHooksService.shared.sessions, messages: messages,
-                                                waiting: holding, usage: usage, away: Self.away, now: now)
+        var claude = PocketClaudeRules.claude(sessions: ClaudeHooksService.shared.sessions, messages: messages,
+                                              waiting: holding, usage: usage, away: Self.away, now: now)
+        claude.awayMinutes = PocketClaudeRules.awayMinutes()
+        for index in claude.sessions.indices where holding.contains(claude.sessions[index].id) {
+            claude.sessions[index].replyDeadline = waiting[claude.sessions[index].id]?.deadline
+        }
+        state.claude = claude
     }
 
     func handle(_ command: PocketCommand, id: UUID) -> Bool {
         switch command {
         case .setAway(let on):
             setAway(on, id: id)
+        case .setAwayWait(let minutes):
+            setAwayWait(minutes, id: id)
         case .claudeReply(let session, let text):
             reply(text, to: session, id: id)
         default:
@@ -160,6 +167,15 @@ final class PocketClaudePart: PocketPart {
         context?.changed()
     }
 
+    private func setAwayWait(_ minutes: Int, id: UUID) {
+        guard PocketClaudeRules.isAwayChoice(minutes) else { return answer(id, false, PocketClaudeRules.badAwayWait) }
+        UserDefaults.standard.set(minutes, forKey: PocketClaudeRules.awayMinutesKey)
+        // A turn already holding keeps its own deadline; the next one waits the new time.
+        writeAwayFlag()
+        answer(id, true, PocketClaudeRules.awayWaitLine(minutes))
+        context?.changed()
+    }
+
     private func unlocked() {
         guard Self.away else { return }
         Self.away = false
@@ -171,7 +187,9 @@ final class PocketClaudePart: PocketPart {
         guard let url = Self.awayURL else { return }
         let flag = url.appendingPathComponent("on")
         if Self.away && sharing {
-            if PrivateFileStore.createDirectory(at: url) { PrivateFileStore.write(Data("1\n".utf8), to: flag) }
+            // The script reads the wait, in seconds, from the flag itself.
+            let seconds = PocketClaudeRules.awaySeconds(PocketClaudeRules.awayMinutes())
+            if PrivateFileStore.createDirectory(at: url) { PrivateFileStore.write(Data("\(seconds)\n".utf8), to: flag) }
         } else {
             try? FileManager.default.removeItem(at: flag)
         }

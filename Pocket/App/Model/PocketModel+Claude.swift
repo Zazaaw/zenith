@@ -14,6 +14,10 @@ extension PocketModel {
     @discardableResult
     func setAway(_ on: Bool) -> Bool { send(.setAway(on)) }
 
+    /// How long a finished turn waits in Away mode; 0 = until the person is back.
+    @discardableResult
+    func setAwayWait(_ minutes: Int) -> Bool { send(.setAwayWait(minutes: minutes)) }
+
     /// Sends a reply to a session waiting in Away mode. Checked here as on
     /// the Mac: something to say, within the limit.
     @discardableResult

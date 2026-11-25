@@ -54,6 +54,8 @@ public struct PocketClaude: Codable, Hashable, Sendable {
         /// True while this session's Stop hook is holding for a reply from the
         /// phone (Away mode): `.claudeReply` for it will reach Claude.
         public var acceptsReply: Bool
+        /// When this session's hook stops waiting for a reply (Away mode).
+        public var replyDeadline: Date? = nil
         public init(id: String, project: String, state: State, turnStartedAt: Date? = nil, waitingSince: Date? = nil,
                     lastMessage: String? = nil, steps: [Step] = [], filesChanged: Int = 0, added: Int = 0, removed: Int = 0,
                     acceptsReply: Bool = false) {
@@ -82,6 +84,9 @@ public struct PocketClaude: Codable, Hashable, Sendable {
     public var usage: Usage?
     /// Away mode: the Mac holds a finished turn for a reply from the phone.
     public var away: Bool
+    /// How long a finished turn waits in Away mode, in minutes; 0 = until the
+    /// person is back (a day at most). nil from a Zenith that can't choose.
+    public var awayMinutes: Int? = nil
     public init(sessions: [Session] = [], usage: Usage? = nil, away: Bool = false) {
         self.sessions = sessions; self.usage = usage; self.away = away
     }

@@ -30,8 +30,12 @@ enum ClaudeHooksSupport {
     static let scriptName = "zenith-claude-hook.sh"
     /// Zenith fork: Away mode's folder, beside `Agents` (whose foreign files are swept).
     static let awayFolderName = "PocketAway"
-    /// The longest a finished turn waits for a reply from the phone.
-    static let awayWait = 600
+    /// The longest a finished turn may wait for a reply from the phone: a day,
+    /// for "until I'm back". The wait itself is the number of seconds in
+    /// `<away>/on`, which Zenith writes from the person's choice.
+    static let awayWait = 86_400
+    /// The wait when `<away>/on` says nothing usable (or comes from before the choice).
+    static let awayDefaultWait = 600
     static let maxFileSize = 4096
     /// Files read in one look; more than that were left while the app was away.
     static let maxFilesPerScan = 400
@@ -489,7 +493,8 @@ enum ClaudeHooksSupport {
     ///
     /// Zenith fork, Away mode: only when `<away>/on` exists and the event is
     /// `Stop`, the script then announces `<away>/<session>.waiting` ("pid
-    /// deadline") and looks once a second, at most `awayWait` times, for
+    /// deadline") and looks once a second, for as many seconds as `<away>/on`
+    /// holds (`awayDefaultWait` when unusable, never more than `awayWait`), for
     /// `<away>/<session>.<pid>.reply`, which Zenith writes as the complete
     /// `{"decision":"block","reason":…}` answer. Found, it prints that file,
     /// so Claude carries on with the reply. Away turned off, Zenith's folder
@@ -507,7 +512,7 @@ enum ClaudeHooksSupport {
         # is. Prompts, commands, arguments, file contents and messages are never kept.
         # It uses no network and always exits 0. Once Zenith's folder is gone it does
         # nothing at all. Only with Zenith Pocket's Away mode on does a finished turn
-        # wait (at most \#(awayWait) seconds) for a reply sent from the paired iPhone, and
+        # wait (as long as Pocket asks, a day at most) for a reply sent from the paired iPhone, and
         # print it for Claude Code; otherwise it prints nothing.
         d=\#(shellQuoted(folder))
         a=\#(shellQuoted(awayFolder(beside: folder)))
@@ -625,12 +630,16 @@ enum ClaudeHooksSupport {
         case "$i" in ""|*[!A-Za-z0-9_-]*) exit 0 ;; esac
         w="$a/$i.waiting"
         r="$a/$i.$$.reply"
-        e=$(( $(/bin/date +%s) + \#(awayWait) ))
+        l=$(/bin/cat "$a/on" 2>/dev/null)
+        case "$l" in ""|*[!0-9]*) l=\#(awayDefaultWait) ;; esac
+        [ "$l" -ge 60 ] 2>/dev/null || l=\#(awayDefaultWait)
+        [ "$l" -le \#(awayWait) ] || l=\#(awayWait)
+        e=$(( $(/bin/date +%s) + l ))
         /bin/rm -f "$r" 2>/dev/null
         printf '%s %s\n' "$$" "$e" > "$w.$$.tmp" 2>/dev/null && /bin/mv -f "$w.$$.tmp" "$w" 2>/dev/null || exit 0
         trap '/bin/rm -f "$w" "$r" 2>/dev/null; exit 0' HUP INT TERM
         n=0
-        while [ "$n" -lt \#(awayWait) ] && [ -f "$a/on" ] && [ -d "$d" ]; do
+        while [ "$n" -lt "$l" ] && [ -f "$a/on" ] && [ -d "$d" ]; do
           if [ -f "$r" ]; then
             /bin/cat "$r" 2>/dev/null
             /bin/rm -f "$r" "$w" 2>/dev/null

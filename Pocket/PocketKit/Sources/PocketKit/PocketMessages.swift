@@ -165,6 +165,8 @@ public enum PocketCommand: Codable, Hashable, Sendable {
     case presence(watching: Bool)
     /// Away mode: hold finished Claude turns for a reply from the phone.
     case setAway(Bool)
+    /// How long Away mode holds a finished turn: minutes, 0 = until I'm back.
+    case setAwayWait(minutes: Int)
     /// A reply to a Claude Code session waiting in Away mode.
     case claudeReply(sessionID: String, text: String)
     case setVolume(Int)

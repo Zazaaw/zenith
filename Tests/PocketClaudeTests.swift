@@ -271,7 +271,7 @@ enum PocketClaudeTests {
                      "a Stop handler from before Away mode reads as needing an update")
         suite.expect(Settings.installing(command: command, into: before) == installed,
                      "connecting again brings the longer timeout, without doubling anything")
-        let decimal = installed.replacingOccurrences(of: "\"timeout\": \(Settings.stopTimeout)", with: "\"timeout\": 900.5")
+        let decimal = installed.replacingOccurrences(of: "\"timeout\": \(Settings.stopTimeout)", with: "\"timeout\": \(Settings.stopTimeout).5")
         suite.expect(Settings.state(of: decimal, command: command) == .connected, "a longer timeout set by hand is fine")
     }
 
@@ -359,6 +359,7 @@ enum PocketClaudeTests {
         suite.expect(((try? manager.contentsOfDirectory(atPath: away.path)) ?? []).isEmpty,
                      "without Away mode nothing is announced")
 
+        // A flag from before the choice ("1") waits the default.
         try? Data("1\n".utf8).write(to: flag)
         // Away on, any other event: as before.
         if let hook = Hook(script: script, payload: #"{"session_id":"abc-1","cwd":"/x","hook_event_name":"PreToolUse","tool_name":"Read","tool_input":{"file_path":"/x/a.md"}}"#) {
@@ -372,7 +373,7 @@ enum PocketClaudeTests {
             let announced = waitFor(5) { manager.fileExists(atPath: waitingFile.path) }
             let held = (try? String(contentsOf: waitingFile, encoding: .utf8)).flatMap(Rules.waiting)
             suite.expect(announced && held?.pid == hook.process.processIdentifier && hook.process.isRunning
-                         && (held.map { abs($0.deadline.timeIntervalSinceNow - TimeInterval(Support.awayWait)) < 10 } ?? false),
+                         && (held.map { abs($0.deadline.timeIntervalSinceNow - TimeInterval(Support.awayDefaultWait)) < 10 } ?? false),
                          "with Away mode a finished turn announces its pid and deadline and holds")
             // A reply for another pid (a turn that ended) is never read.
             let stray = away.appendingPathComponent(Rules.replyName(session: "abc-1", pid: 1))
@@ -402,6 +403,22 @@ enum PocketClaudeTests {
             hook.kill()
         }
         _ = events()
+
+        // The chosen wait comes from the flag, capped at a day.
+        for (written, expected) in [("1800", 1800), ("999999", Support.awayWait)] {
+            let file = away.appendingPathComponent("abc-1.waiting")
+            try? manager.removeItem(at: file)
+            try? Data("\(written)\n".utf8).write(to: flag)
+            if let hook = Hook(script: script, payload: stop) {
+                _ = waitFor(5) { manager.fileExists(atPath: file.path) }
+                let held = (try? String(contentsOf: file, encoding: .utf8)).flatMap(Rules.waiting)
+                suite.expect(held.map { abs($0.deadline.timeIntervalSinceNow - TimeInterval(expected)) < 10 } ?? false,
+                             "a flag of \(written) s holds a finished turn \(expected) s")
+                hook.kill()
+                _ = waitFor(5) { !manager.fileExists(atPath: file.path) }
+            }
+            _ = events()
+        }
 
         // Zenith's folder gone (the feature off) while it holds: same.
         try? Data("1\n".utf8).write(to: flag)

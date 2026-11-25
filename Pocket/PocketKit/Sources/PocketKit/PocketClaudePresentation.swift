@@ -6,8 +6,22 @@ import Foundation
 /// The Claude tab's words: what a session is doing as a sentence, its steps'
 /// times, the turn and usage lines, and why a reply can't go yet.
 extension PocketPresentation {
-    /// Away mode's wait on the Mac (`ClaudeHooksSupport.awayWait`).
+    /// Away mode's wait when the Mac doesn't say (an older Zenith).
     public static let claudeReplyWindow: TimeInterval = 10 * 60
+    /// The waits the phone offers; 0 is "until I'm back".
+    public static let awayChoices = [10, 30, 60, 120, 0]
+
+    public static func awayChoiceLabel(_ minutes: Int) -> String {
+        minutes == 0 ? "Until I'm back" : duration(minutes: minutes)
+    }
+
+    /// The Away row's caption for the chosen wait.
+    public static func awayCaption(on: Bool, minutes: Int?) -> String {
+        guard on else { return "Claude stops as usual. Turn it on before you leave the Mac." }
+        let wait = minutes ?? 10
+        let span = wait == 0 ? "until you're back (a day at most)" : "up to \(duration(minutes: wait))"
+        return "A finished turn waits \(span) for your reply. Unlocking the Mac turns it off."
+    }
     public static let claudeReplyLimit = 4000
 
     /// Quick replies: what the chip says and what it writes.
@@ -136,8 +150,15 @@ extension PocketPresentation {
 
     /// "Claude waits 7m more" while a reply can still reach it.
     public static func claudeWaitLeft(_ session: PocketClaude.Session, now: Date) -> String? {
-        guard session.acceptsReply, let since = session.waitingSince else { return nil }
-        let left = claudeReplyWindow - now.timeIntervalSince(since)
+        guard session.acceptsReply else { return nil }
+        let left: TimeInterval
+        if let deadline = session.replyDeadline {
+            left = deadline.timeIntervalSince(now)
+        } else if let since = session.waitingSince {
+            left = claudeReplyWindow - now.timeIntervalSince(since)
+        } else {
+            return nil
+        }
         guard left > 0 else { return nil }
         return left < 60 ? "Claude waits less than a minute more" : "Claude waits \(duration(minutes: Int(left / 60))) more"
     }

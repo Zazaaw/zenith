@@ -15,6 +15,31 @@ enum PocketClaudeRules {
     /// opens the rest on demand. Longer ones keep their end.
     static let maximumMessage = 12_000
     static let maximumReply = 4000
+
+    /// Away mode's wait, as the person chose it on the phone: minutes, 0 =
+    /// until they're back. Kept on this Mac only.
+    static let awayMinutesKey = "zenithPocketAwayMinutes"
+    static let defaultAwayMinutes = 10
+    static let awayChoices = [10, 30, 60, 120, 0]
+    static let badAwayWait = "That Away wait isn't one Zenith offers."
+
+    static func isAwayChoice(_ minutes: Int) -> Bool { awayChoices.contains(minutes) }
+
+    static func awayMinutes(_ defaults: UserDefaults = .standard) -> Int {
+        guard defaults.object(forKey: awayMinutesKey) != nil else { return defaultAwayMinutes }
+        let minutes = defaults.integer(forKey: awayMinutesKey)
+        return isAwayChoice(minutes) ? minutes : defaultAwayMinutes
+    }
+
+    /// What the flag file holds for the script: 0 ("until I'm back") is a day.
+    static func awaySeconds(_ minutes: Int) -> Int {
+        minutes == 0 ? ClaudeHooksSupport.awayWait : min(ClaudeHooksSupport.awayWait, max(60, minutes * 60))
+    }
+
+    static func awayWaitLine(_ minutes: Int) -> String {
+        minutes == 0 ? "Away mode now waits until you're back."
+            : "Away mode now waits up to \(minutes >= 60 ? "\(minutes / 60) h" : "\(minutes) min") for a reply."
+    }
     /// Done this long ago, a session reads as ended rather than waiting.
     static let idleAfter: TimeInterval = 30 * 60
     /// How much of a transcript's end is read for the last reply.
