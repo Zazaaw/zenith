@@ -149,17 +149,29 @@ struct MacSound: View {
     @State private var lastSent = Date.distantPast
     @State private var trailing: Task<Void, Never>?
     @State private var settle: Task<Void, Never>?
+    /// The level to give back when the speaker is unmuted here.
+    @State private var restore: Double?
 
     private static let sendEvery: TimeInterval = 0.25
 
     var body: some View {
         let shown = draft ?? Double(sound.muted ? 0 : sound.volume)
+        let silent = shown.rounded() == 0
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
-                Image(systemName: PocketMacPresentation.volumeSymbol(Int(shown.rounded()), muted: draft == nil && sound.muted))
-                    .font(.system(size: 14, weight: .semibold)).foregroundStyle(K.muted)
-                    .frame(width: 22)
-                    .contentTransition(.symbolEffect(.replace))
+                Button { toggleMute(silent: silent, level: shown) } label: {
+                    Image(systemName: PocketMacPresentation.volumeSymbol(Int(shown.rounded()), muted: draft == nil && sound.muted))
+                        .font(.system(size: 14, weight: .semibold)).foregroundStyle(silent ? K.red : K.muted)
+                        .contentTransition(.symbolEffect(.replace.downUp.byLayer))
+                        .symbolEffect(.bounce.down, value: silent)
+                        .frame(width: 30, height: 30)
+                        .background(silent ? K.red.opacity(0.12) : .clear, in: Circle())
+                        .contentShape(Circle())
+                        .animation(Motion.quick, value: silent)
+                }
+                .buttonStyle(PressStyle(haptic: false))
+                .padding(.leading, -4)
+                .accessibilityLabel(silent ? "Unmute" : "Mute")
                 slider(shown)
                 Text("\(Int(shown.rounded()))").font(K.mono(13, .semibold)).monospacedDigit()
                     .frame(width: 30, alignment: .trailing)
@@ -190,32 +202,73 @@ struct MacSound: View {
         }
     }
 
+    /// The speaker mutes (volume to 0) and gives back the level it had.
+    private func toggleMute(silent: Bool, level: Double) {
+        Haptics.press()
+        settle?.cancel()
+        if silent {
+            let back = restore ?? (sound.volume > 0 ? Double(sound.volume) : 30)
+            restore = nil
+            withAnimation(Motion.spring) { draft = back }
+            send(back, final: true)
+        } else {
+            restore = level
+            withAnimation(Motion.spring) { draft = 0 }
+            send(0, final: true)
+        }
+    }
+
+    /// A track with a thumb: it fattens under the finger, follows it on a
+    /// tight spring, shows its tenths while dragging and ticks at each one,
+    /// a firmer tap at either end.
     private func slider(_ value: Double) -> some View {
         GeometryReader { geometry in
-            let fraction = value / 100
-            Capsule().fill(K.fg.opacity(0.1))
-                .overlay(alignment: .leading) {
-                    Capsule().fill(K.fg).frame(width: max(dragging ? 10 : 6, geometry.size.width * fraction))
-                }
-                .frame(height: dragging ? 10 : 6)
-                .frame(maxHeight: .infinity)
-                .contentShape(Rectangle())
-                .gesture(DragGesture(minimumDistance: 0)
-                    .onChanged { drag in
-                        let next = (min(1, max(0, drag.location.x / max(1, geometry.size.width))) * 100).rounded()
-                        if !dragging { dragging = true; Haptics.tap() }
-                        if let draft, Int(draft) / 10 != Int(next) / 10 { Haptics.select() }
-                        draft = next
-                        send(next, final: false)
+            let fraction = min(1, max(0, value / 100))
+            let width = geometry.size.width
+            let thumb: CGFloat = dragging ? 22 : 16
+            let track: CGFloat = dragging ? 10 : 6
+            ZStack(alignment: .leading) {
+                Capsule().fill(K.fg.opacity(0.1)).frame(height: track)
+                Capsule().fill(K.fg).frame(width: max(track, thumb / 2 + (width - thumb) * fraction), height: track)
+                // The tenths, shown while dragging: the detents the finger feels.
+                HStack(spacing: 0) {
+                    ForEach(1..<10, id: \.self) { tenth in
+                        Spacer(minLength: 0)
+                        Circle().fill(Double(tenth) / 10 <= fraction ? K.bg.opacity(0.55) : K.fg.opacity(0.22))
+                            .frame(width: 2.5, height: 2.5)
                     }
-                    .onEnded { _ in
-                        dragging = false
-                        if let draft { send(draft, final: true) }
-                    })
-                .animation(Motion.spring, value: dragging)
-                .animation(dragging ? nil : Motion.spring, value: fraction)
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, thumb / 2)
+                .opacity(dragging ? 1 : 0)
+                Circle().fill(K.card)
+                    .overlay(Circle().strokeBorder(K.fg.opacity(0.12), lineWidth: 1))
+                    .shadow(color: .black.opacity(0.18), radius: dragging ? 6 : 3, y: dragging ? 3 : 1.5)
+                    .frame(width: thumb, height: thumb)
+                    .offset(x: (width - thumb) * fraction)
+            }
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 0)
+                .onChanged { drag in
+                    let next = (min(1, max(0, (drag.location.x - thumb / 2) / max(1, width - thumb))) * 100).rounded()
+                    let before = draft ?? value
+                    if !dragging { dragging = true; Haptics.tap() }
+                    if Int(before) / 10 != Int(next) / 10 || (next != before && (next == 0 || next == 100)) {
+                        if next == 0 || next == 100 { Haptics.press() } else { Haptics.select() }
+                    }
+                    if next > 0 { restore = nil }
+                    draft = next
+                    send(next, final: false)
+                }
+                .onEnded { _ in
+                    dragging = false
+                    if let draft { send(draft, final: true) }
+                })
+            .animation(Motion.spring, value: dragging)
+            .animation(dragging ? .interactiveSpring(response: 0.18, dampingFraction: 0.86) : Motion.spring, value: fraction)
         }
-        .frame(height: 24)
+        .frame(height: 26)
         .accessibilityElement()
         .accessibilityLabel("Volume")
         .accessibilityValue("\(Int(value.rounded()))%")
