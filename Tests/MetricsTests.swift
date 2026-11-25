@@ -305,6 +305,7 @@ struct MetricsTests {
             ("face-unlock-liveness", { FaceUnlockLivenessTests.run(suite) }), // Zenith fork: Glance's liveness self-test
             ("batteries-settings", { BatteriesSettingsTests.run(suite) }), // Zenith fork: Settings → Batteries
             ("pocket", { PocketTests.run(suite) }), // Zenith fork: Zenith Pocket's Mac side
+            ("pocket-claude", { PocketClaudeTests.run(suite) }), // Zenith fork: Claude Code on the phone, Away mode
             ("pocket-settings", { PocketSettingsTests.run(suite) }), // Zenith fork: Settings → iPhone & Watch
         ]
         var selected = Set<String>()
