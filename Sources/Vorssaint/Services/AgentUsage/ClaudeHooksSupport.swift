@@ -16,12 +16,22 @@ import Foundation
 ///
 /// Privacy: the script keeps the session's id, the folder's name, the event,
 /// the tool, a file's name (never its path) or a program's name (never its
-/// arguments), and how many lines an edit adds and removes. Prompts, commands,
-/// file contents and notification messages are read by the script only to
-/// count or to pick a name, and never written anywhere.
+/// arguments), how many lines an edit adds and removes, and, when a turn
+/// ends, where Claude Code keeps the session's transcript (so Zenith Pocket
+/// can show the end of Claude's reply). Prompts, commands, file contents and
+/// notification messages are read by the script only to count or to pick a
+/// name, and never written anywhere.
+///
+/// Zenith Pocket's Away mode: while `<container>/PocketAway/on` exists, the
+/// script holds a finished turn (`Stop`) for a reply from the phone, at most
+/// `awayWait` seconds; see `hookScript`.
 enum ClaudeHooksSupport {
     static let folderName = "Agents"
     static let scriptName = "zenith-claude-hook.sh"
+    /// Zenith fork: Away mode's folder, beside `Agents` (whose foreign files are swept).
+    static let awayFolderName = "PocketAway"
+    /// The longest a finished turn waits for a reply from the phone.
+    static let awayWait = 600
     static let maxFileSize = 4096
     /// Files read in one look; more than that were left while the app was away.
     static let maxFilesPerScan = 400
@@ -95,6 +105,8 @@ enum ClaudeHooksSupport {
         var removed: Int?
         /// Claude Code's notification type, never its message.
         var notice: String?
+        /// Zenith fork: where the session's transcript is, on `stop` only.
+        var transcript: String?
 
         /// Events written in the same instant apply in the order they happen.
         var rank: Int {
@@ -133,7 +145,19 @@ enum ClaudeHooksSupport {
         if kind == .notification {
             event.notice = (object["notice"] as? String).flatMap { $0.isEmpty ? nil : String($0.prefix(40)) }
         }
+        if kind == .stop {
+            event.transcript = (object["transcript"] as? String).flatMap(transcriptPath)
+        }
         return event
+    }
+
+    /// Zenith fork: a transcript path as Claude Code gives it: absolute, a
+    /// `.jsonl` file, no `..` and no control characters; nil otherwise.
+    static func transcriptPath(_ path: String) -> String? {
+        guard path.hasPrefix("/"), path.hasSuffix(".jsonl"), path.utf8.count <= 1024,
+              !path.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) }),
+              !path.split(separator: "/").contains("..") else { return nil }
+        return path
     }
 
     static func isValidID(_ id: String) -> Bool {
@@ -225,6 +249,8 @@ enum ClaudeHooksSupport {
         var phase: Phase
         var added: Int?
         var removed: Int?
+        /// Zenith fork: when the tool started, for Zenith Pocket's timeline.
+        var startedAt: Date?
 
         var writes: Bool { ClaudeHooksSupport.writingTools.contains(tool) }
 
@@ -269,6 +295,8 @@ enum ClaudeHooksSupport {
         var finished: Date?
         var waitingSince: Date?
         var counter = 0
+        /// Zenith fork: the transcript the last `stop` named.
+        var transcript: String?
 
         var shownSteps: [Step] { Array(steps.suffix(ClaudeHooksSupport.shownSteps)) }
 
@@ -342,7 +370,7 @@ enum ClaudeHooksSupport {
                 session.state = .working
                 session.waitingSince = nil
                 session.steps.append(Step(id: id, tool: tool, target: event.target, phase: .running,
-                                          added: event.added, removed: event.removed))
+                                          added: event.added, removed: event.removed, startedAt: event.time))
                 if session.steps.count > ClaudeHooksSupport.keptSteps {
                     session.steps.removeFirst(session.steps.count - ClaudeHooksSupport.keptSteps)
                 }
@@ -356,7 +384,7 @@ enum ClaudeHooksSupport {
                 } else {
                     session.counter += 1
                     session.steps.append(Step(id: event.toolID ?? "step-\(session.counter)", tool: tool,
-                                              target: event.target, phase: phase))
+                                              target: event.target, phase: phase, startedAt: event.time))
                 }
                 if case .waiting = session.state { session.state = .working; session.waitingSince = nil }
             case .notification:
@@ -367,6 +395,7 @@ enum ClaudeHooksSupport {
                 session.state = .done
                 session.finished = event.time
                 session.waitingSince = nil
+                if let transcript = event.transcript { session.transcript = transcript }
                 for index in session.steps.indices where session.steps[index].phase == .running {
                     session.steps[index].phase = .done
                 }
@@ -446,26 +475,47 @@ enum ClaudeHooksSupport {
         "'" + text.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 
+    /// Zenith fork: Away mode's folder for a hook folder: its sibling.
+    static func awayFolder(beside folder: String) -> String {
+        (folder as NSString).deletingLastPathComponent + "/" + awayFolderName
+    }
+
     /// The script Claude Code runs on every hook, writing into `folder`.
     /// One `awk` reads the JSON (no `jq`, no network), a temporary file is
     /// renamed into place so the app never reads half of one, nothing is
     /// printed and it always exits 0. Measured at about 5 ms for a usual
     /// event; a 2 MB file written at once takes about 0.2 s to count. Once the
     /// folder is gone (the feature is off) it only looks for it.
+    ///
+    /// Zenith fork, Away mode: only when `<away>/on` exists and the event is
+    /// `Stop`, the script then announces `<away>/<session>.waiting` ("pid
+    /// deadline") and looks once a second, at most `awayWait` times, for
+    /// `<away>/<session>.<pid>.reply`, which Zenith writes as the complete
+    /// `{"decision":"block","reason":…}` answer. Found, it prints that file,
+    /// so Claude carries on with the reply. Away turned off, Zenith's folder
+    /// gone or the time up, it prints nothing and the turn ends as usual.
+    /// The reply carries the waiting script's pid, so a late one is never
+    /// read by a later turn.
     static func hookScript(folder: String) -> String {
         #"""
         #!/bin/sh
         # zenith-claude-hook: tells Zenith's Dynamic Island what Claude Code is doing.
         # Added by Zenith (Settings > Dynamic Island > AI agents). It reads the hook's
         # JSON on stdin and leaves a few fields in Zenith's folder: the session, the
-        # folder's name, the event, the tool, a file's name or a program's name, and
-        # how many lines an edit adds and removes. Prompts, commands, arguments, file
-        # contents and messages are never kept. It prints nothing, uses no network and
-        # always exits 0. Once Zenith's folder is gone it does nothing at all.
+        # folder's name, the event, the tool, a file's name or a program's name, how
+        # many lines an edit adds and removes, and where a finished turn's transcript
+        # is. Prompts, commands, arguments, file contents and messages are never kept.
+        # It uses no network and always exits 0. Once Zenith's folder is gone it does
+        # nothing at all. Only with Zenith Pocket's Away mode on does a finished turn
+        # wait (at most \#(awayWait) seconds) for a reply sent from the paired iPhone, and
+        # print it for Claude Code; otherwise it prints nothing.
         d=\#(shellQuoted(folder))
+        a=\#(shellQuoted(awayFolder(beside: folder)))
         [ -d "$d" ] || exit 0
         t="$d/.$$.tmp"
-        /usr/bin/awk '
+        s=""
+        [ -f "$a/on" ] && s="$a/.$$.sid"
+        ZENITH_SID="$s" /usr/bin/awk '
         function value(k,   re, v) {
           re = "\"" k "\"[ \t\r\n]*:[ \t\r\n]*\"([^\"\\\\]|\\\\.)*\""
           if (!match(s, re)) return ""
@@ -562,8 +612,34 @@ enum ClaudeHooksSupport {
               o = o ",\"added\":" lines(value("content")) ",\"removed\":0"
           }
           if (k == "notification") o = o ",\"notice\":\"" word(value("notification_type"), "a-z_", 40) "\""
+          if (k == "stop") {
+            tp = value("transcript_path")
+            if (tp ~ /^\/.*\.jsonl$/ && length(tp) <= 1024) o = o ",\"transcript\":\"" tp "\""
+            if (ENVIRON["ZENITH_SID"] != "") { print id > (ENVIRON["ZENITH_SID"]); close(ENVIRON["ZENITH_SID"]) }
+          }
           print o "}"
         }' > "$t" 2>/dev/null && /bin/mv -f "$t" "$d/$$.json" 2>/dev/null || /bin/rm -f "$t" 2>/dev/null
+        [ -n "$s" ] || exit 0
+        i=$(/bin/cat "$s" 2>/dev/null)
+        /bin/rm -f "$s" 2>/dev/null
+        case "$i" in ""|*[!A-Za-z0-9_-]*) exit 0 ;; esac
+        w="$a/$i.waiting"
+        r="$a/$i.$$.reply"
+        e=$(( $(/bin/date +%s) + \#(awayWait) ))
+        /bin/rm -f "$r" 2>/dev/null
+        printf '%s %s\n' "$$" "$e" > "$w.$$.tmp" 2>/dev/null && /bin/mv -f "$w.$$.tmp" "$w" 2>/dev/null || exit 0
+        trap '/bin/rm -f "$w" "$r" 2>/dev/null; exit 0' HUP INT TERM
+        n=0
+        while [ "$n" -lt \#(awayWait) ] && [ -f "$a/on" ] && [ -d "$d" ]; do
+          if [ -f "$r" ]; then
+            /bin/cat "$r" 2>/dev/null
+            /bin/rm -f "$r" "$w" 2>/dev/null
+            exit 0
+          fi
+          /bin/sleep 1
+          n=$((n + 1))
+        done
+        /bin/rm -f "$w" 2>/dev/null
         exit 0
 
         """#

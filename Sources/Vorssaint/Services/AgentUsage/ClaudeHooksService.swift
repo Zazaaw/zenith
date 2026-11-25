@@ -14,8 +14,9 @@ import Foundation
 /// own: a ✓ running out, a wait no longer worth the closed island, a session
 /// going stale.
 ///
-/// It runs while the island shows the AI section with Claude on. Off, the
-/// folder goes too, and the script, finding no folder, writes nothing.
+/// It runs while the island shows the AI section with Claude on, or while
+/// Zenith Pocket shares Claude Code with a paired phone. Off, the folder goes
+/// too, and the script, finding no folder, writes nothing.
 final class ClaudeHooksService: ObservableObject {
     static let shared = ClaudeHooksService()
 
@@ -31,6 +32,13 @@ final class ClaudeHooksService: ObservableObject {
     private let queue = DispatchQueue(label: "com.vorssaint.zenith.claude-hooks", qos: .utility)
     /// Main thread: published values are accepted only while running.
     private var active = false
+    /// Zenith fork, main thread: who wants the sessions. The island (its AI
+    /// section with Claude), and Zenith Pocket while it shares Claude Code.
+    /// The closed island's strip, its chime and the day's recap stay the island's.
+    private var islandWants = false
+    private var pocketWants = false
+    /// `islandWants`, as `queue` reads it.
+    private var recordsRecap = false
 
     // Owned by `queue`.
     private var source: DispatchSourceFileSystemObject?
@@ -63,13 +71,34 @@ final class ClaudeHooksService: ObservableObject {
 
     /// Called with every island preference sync.
     func syncWithPreferences() {
-        guard ClaudeHooksSupport.isEnabled() else {
-            stop()
+        islandWants = ClaudeHooksSupport.isEnabled()
+        apply()
+    }
+
+    /// The island stopped, or the section or Claude went off.
+    func stop() {
+        islandWants = false
+        apply()
+    }
+
+    /// Zenith fork: Zenith Pocket shares Claude Code (true) or stopped (false).
+    func setPocketWants(_ wants: Bool) {
+        guard wants != pocketWants else { return }
+        pocketWants = wants
+        apply()
+    }
+
+    private func apply() {
+        guard islandWants || pocketWants else {
+            stopWatching()
             return
         }
+        if !islandWants, strip != nil { strip = nil }
         let folder = Self.folderURL
+        let island = islandWants
         active = true
         queue.async { [self] in
+            recordsRecap = island
             Self.refreshScriptIfInstalled()
             if source == nil || self.folder != folder {
                 closeWatcher()
@@ -80,8 +109,7 @@ final class ClaudeHooksService: ObservableObject {
         }
     }
 
-    /// The island stopped, or the section or Claude went off.
-    func stop() {
+    private func stopWatching() {
         active = false
         if !sessions.isEmpty { sessions = [] }
         if strip != nil { strip = nil }
@@ -161,7 +189,7 @@ final class ClaudeHooksService: ObservableObject {
         for event in ClaudeHooksSupport.ordered(read) {
             tracker.apply(event, now: now)
             // The day's recap counts turns (prompts) and the sessions they were in.
-            if event.kind == .prompt {
+            if event.kind == .prompt, recordsRecap {
                 RecapService.record(.agent(session: event.session, prompt: true, at: event.time))
             }
         }
@@ -179,6 +207,7 @@ final class ClaudeHooksService: ObservableObject {
         DispatchQueue.main.async { [weak self] in
             guard let self, self.active else { return }
             if self.sessions != sessions { self.sessions = sessions }
+            let strip = self.islandWants ? strip : nil
             if self.strip != strip {
                 let before = self.strip
                 self.strip = strip

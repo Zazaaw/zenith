@@ -347,6 +347,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Pocket/PocketWatchtowerSupport.swift
         Sources/Vorssaint/Services/Pocket/PocketMacSupport.swift
         Sources/Vorssaint/Core/ZenithPocketMacStrings.swift
+        Sources/Vorssaint/Services/Pocket/PocketClaudeSupport.swift
         Sources/Vorssaint/Services/Prompter/PrompterSupport.swift
         Sources/Vorssaint/Services/Workspaces/WorkspaceSupport.swift
         Sources/Vorssaint/Services/Notifications/ZenithReplySupport.swift

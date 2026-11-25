@@ -7,6 +7,7 @@ enum PocketParts {
     static func make() -> [PocketPart] {
         // One line per part, e.g. `PocketClaudePart(),`.
         let parts: [PocketPart] = [
+            PocketClaudePart(),
             PocketWatchtowerPart(),
             PocketHealthPart(),
             PocketSoundPart(),

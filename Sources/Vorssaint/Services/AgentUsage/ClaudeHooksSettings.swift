@@ -19,6 +19,15 @@ enum ClaudeHooksSettings {
     static let backupSuffix = ".zenith-backup"
     /// A hook that takes longer is cancelled by Claude Code. Zenith's takes a few milliseconds.
     static let timeout = 5
+    /// Zenith fork: `Stop` may hold a finished turn for Zenith Pocket's reply
+    /// (`ClaudeHooksSupport.awayWait`), with a minute to spare. Without Away
+    /// mode it returns at once, as every other event does.
+    static let stopTimeout = ClaudeHooksSupport.awayWait + 60
+
+    /// The timeout Zenith's handler on `event` carries.
+    static func timeout(for event: String) -> Int {
+        event == "Stop" ? stopTimeout : timeout
+    }
 
     /// The events Zenith listens to and whether each takes a matcher.
     static let events: [(name: String, matcher: Bool)] = [
@@ -41,7 +50,7 @@ enum ClaudeHooksSettings {
     }
 
     /// The handler group added to every event.
-    static func group(command: String, matcher: Bool) -> ClaudeSettingsJSON {
+    static func group(command: String, matcher: Bool, timeout: Int = timeout) -> ClaudeSettingsJSON {
         var members: [ClaudeSettingsJSON.Member] = []
         if matcher { members.append(.init("matcher", .string("*"))) }
         members.append(.init("hooks", .array([.object([
@@ -55,7 +64,7 @@ enum ClaudeHooksSettings {
     /// Exactly what a connection merges into the file, for the alert that asks first.
     static func fragment(command: String) -> String {
         let hooks = ClaudeSettingsJSON.object(events.map { event in
-            .init(event.name, .array([group(command: command, matcher: event.matcher)]))
+            .init(event.name, .array([group(command: command, matcher: event.matcher, timeout: timeout(for: event.name))]))
         })
         return ClaudeSettingsJSON.object([.init("hooks", hooks)]).serialized()
     }
@@ -80,12 +89,16 @@ enum ClaudeHooksSettings {
         let hooks = root["hooks"]
         var ours = 0, current = 0
         for event in events {
-            let commands = (hooks?[event.name]?.arrayValue ?? []).flatMap { group in
-                (group["hooks"]?.arrayValue ?? []).compactMap { $0["command"]?.stringValue }
-            }
-            let mine = commands.filter { $0.contains(marker) }
+            let handlers = (hooks?[event.name]?.arrayValue ?? []).flatMap { group in group["hooks"]?.arrayValue ?? [] }
+            let mine = handlers.filter { $0["command"]?.stringValue?.contains(marker) == true }
             if !mine.isEmpty { ours += 1 }
-            if mine == [command] { current += 1 }
+            // Zenith fork: a handler whose timeout is too short for this event
+            // (a Stop from before Away mode) needs connecting again.
+            let long = mine.allSatisfy { handler in
+                guard case .number(let text)? = handler["timeout"], let seconds = Double(text) else { return false }
+                return seconds >= Double(timeout(for: event.name))
+            }
+            if mine.compactMap({ $0["command"]?.stringValue }) == [command] && long { current += 1 }
         }
         // Handlers left on events Zenith no longer uses count too.
         let elsewhere = (hooks?.objectValue ?? []).contains { member in
@@ -110,7 +123,7 @@ enum ClaudeHooksSettings {
         for event in events {
             var groups = hooks[event.name] ?? .array([])
             guard case .array(var list) = groups else { return nil }
-            list.append(group(command: command, matcher: event.matcher))
+            list.append(group(command: command, matcher: event.matcher, timeout: timeout(for: event.name)))
             groups = .array(list)
             hooks[event.name] = groups
         }
