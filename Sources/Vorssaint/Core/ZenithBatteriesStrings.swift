@@ -46,6 +46,7 @@ struct ZenithBatteriesStrings {
     let usb = "USB"
     let wifi = "Wi-Fi"
     let viaIPhone = "Via iPhone"
+    let pocket = "Zenith Pocket"
 
     // Low battery alert.
     let lowBatteryAlert = "Low battery alert"

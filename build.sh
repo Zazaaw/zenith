@@ -341,6 +341,9 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Batteries/BatteriesContract.swift
         Sources/Vorssaint/Services/Batteries/BatteriesParsing.swift
         Sources/Vorssaint/Services/Batteries/BatteriesRules.swift
+        Pocket/PocketKit/Sources/PocketKit/*.swift
+        Sources/Vorssaint/Services/Pocket/PocketContract.swift
+        Sources/Vorssaint/Services/Pocket/PocketSupport.swift
         Sources/Vorssaint/Services/Prompter/PrompterSupport.swift
         Sources/Vorssaint/Services/Workspaces/WorkspaceSupport.swift
         Sources/Vorssaint/Services/Notifications/ZenithReplySupport.swift

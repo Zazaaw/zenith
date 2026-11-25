@@ -117,6 +117,7 @@ enum BatteriesDevicePreferences {
         case .usb: return text.usb
         case .wifi: return text.wifi
         case .viaIPhone: return text.viaIPhone
+        case .pocket: return text.pocket
         }
     }
 }

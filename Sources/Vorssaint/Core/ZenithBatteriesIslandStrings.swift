@@ -26,6 +26,7 @@ struct ZenithBatteriesIslandStrings {
     let usb = "USB"
     let wifi = "Wi-Fi"
     let viaIPhone = "Via iPhone"
+    let pocket = "Zenith Pocket"
     /// `{time}` is how long ago, as "2 h".
     let lastSeen = "Last seen {time} ago"
     let lessThanAMinute = "<1 min"
@@ -55,6 +56,7 @@ struct ZenithBatteriesIslandStrings {
         case .usb: return usb
         case .wifi: return wifi
         case .viaIPhone: return viaIPhone
+        case .pocket: return pocket
         }
     }
 

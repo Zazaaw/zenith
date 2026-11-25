@@ -110,7 +110,7 @@ enum BatteriesIslandTests {
         let value = BatteriesIslandSupport.accessibilityValue(device("a", 45, charging: true, unreachableFor: 7_200),
                                                               now: now, text: text)
         suite.expect(value == "45 percent, charging, not reachable, last seen 2 h ago", "VoiceOver reads it all: \(value)")
-        let sources: [BatterySource] = [.builtIn, .bluetooth, .usb, .wifi, .viaIPhone]
+        let sources: [BatterySource] = [.builtIn, .bluetooth, .usb, .wifi, .viaIPhone, .pocket]
         suite.expect(Set(sources.map(text.source)).count == sources.count, "every source has its own word")
         suite.expect(text.all.allSatisfy { !$0.isEmpty }, "no empty string")
         suite.expect(AppLanguage.allCases.allSatisfy { ZenithStrings.batteriesIsland($0).title == "Batteries" },

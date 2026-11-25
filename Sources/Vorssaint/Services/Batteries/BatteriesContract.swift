@@ -40,8 +40,10 @@ enum BatteryDeviceKind: String, Codable, Hashable, CaseIterable {
 }
 
 /// Where a reading came from, shown as the List layout's caption and in Settings.
+/// Zenith fork: `pocket` is the iPhone's (and its Watch's) own report through
+/// Zenith Pocket, over the internet rather than a cable or the local network.
 enum BatterySource: String, Codable, Hashable {
-    case builtIn, bluetooth, usb, wifi, viaIPhone
+    case builtIn, bluetooth, usb, wifi, viaIPhone, pocket
 }
 
 /// One device's battery. Mirrors the droplet's `DeviceBattery`.
