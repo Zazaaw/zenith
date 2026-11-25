@@ -117,7 +117,7 @@ public actor PocketRealtime {
         guard joined, let task else { throw PocketRelayError.notJoined }
         let frame: [String: Any] = [
             "topic": topic, "event": "broadcast", "ref": nextRef(), "join_ref": joinRef,
-            "payload": ["type": "broadcast", "event": "m", "payload": ["s": sealed]],
+            "payload": ["type": "broadcast", "event": PocketBroadcastFrame.event, "payload": PocketBroadcastFrame.payload(sealed)],
         ]
         try await task.send(.string(Self.json(frame)))
     }
@@ -242,7 +242,7 @@ public actor PocketRealtime {
             guard frame["ref"] as? String == joinRef else { return nil }
             return payload?["status"] as? String == "ok" ? .joined : .closed
         case "broadcast":
-            guard payload?["event"] as? String == "m",
+            guard payload?["event"] as? String == PocketBroadcastFrame.event,
                   let inner = payload?["payload"] as? [String: Any],
                   let sealed = inner["s"] as? String else { return nil }
             return .message(sealed)
