@@ -24,7 +24,7 @@ enum PocketClaudeRules {
     // MARK: What the phone is told
 
     static let sharingOff = "Sharing Claude Code is off on this Mac."
-    static let hooksNeeded = "Connect Claude Code in Zenith first: Settings, Dynamic Island, AI agents."
+    static let hooksNeeded = "Connect or update Claude Code's hooks in Zenith first: Settings, Dynamic Island, AI agents."
     static let awayOnLine = "Away mode is on. A finished turn waits up to 10 minutes for your reply."
     static let awayOffLine = "Away mode is off. Claude stops as usual."
     static let awayIsOff = "Turn on Away mode first."
