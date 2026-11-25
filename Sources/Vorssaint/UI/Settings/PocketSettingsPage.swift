@@ -47,6 +47,7 @@ struct PocketSettingsPage: View {
                 sharingSection
                     .disabled(!enabled)
                     .opacity(enabled ? 1 : 0.5)
+                PocketWatchtowerSection().disabled(!enabled).opacity(enabled ? 1 : 0.5)
             }
             .frame(maxWidth: 760)
             .frame(maxWidth: .infinity)
