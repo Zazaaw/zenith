@@ -38,6 +38,9 @@ final class PocketModel {
     static let quietAfter: TimeInterval = 8 * 60
     /// How long a command waits for the Mac's result.
     static let resultTimeout: TimeInterval = 10
+    /// While open, Pocket tells the Mac it is watching this often, so the Mac
+    /// samples what only an open phone needs and stops once the phone is quiet.
+    static let presenceEvery: TimeInterval = 60
 
     private(set) var pairing: PocketPairing?
     private(set) var link: PocketLink.Status = .offline
@@ -71,6 +74,7 @@ final class PocketModel {
     private var generation = 0
     private var active = false
     private var poll: Task<Void, Never>?
+    private var presence: Task<Void, Never>?
     private var pending: [UUID: PocketCommand] = [:]
     private var wallpaperHash: String?
     private var fetchingWallpaper: String?
@@ -122,7 +126,16 @@ final class PocketModel {
         guard active else { return }
         active = false
         unobserveBattery()
+        // The link closes after telling the Mac the phone stopped watching.
+        let leaving = pocketLink, watching = link == .live
+        pocketLink = nil
         stop()
+        if let leaving {
+            Task {
+                if watching { _ = try? await leaving.send(.command(.presence(watching: false))) }
+                await leaving.stop()
+            }
+        }
         guard let pairing else { return }
         // One last report for Zenith, then the background refresh takes over.
         let report = PhoneBattery.report()
@@ -157,11 +170,20 @@ final class PocketModel {
                 await self.check(generation: generation)
             }
         }
+        presence = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(PocketModel.presenceEvery))
+                guard !Task.isCancelled, let self, generation == self.generation, self.link == .live,
+                      let link = self.pocketLink else { return }
+                _ = try? await link.send(.command(.presence(watching: true)))
+            }
+        }
     }
 
     private func stop() {
         generation += 1
         poll?.cancel(); poll = nil
+        presence?.cancel(); presence = nil
         reportWork?.cancel(); reportWork = nil
         if let pocketLink { Task { await pocketLink.stop() } }
         pocketLink = nil
@@ -228,6 +250,7 @@ final class PocketModel {
         let report = PhoneBattery.report()
         Task {
             _ = try? await pocketLink.send(.command(.refresh))
+            _ = try? await pocketLink.send(.command(.presence(watching: true)))
             if let report { _ = try? await pocketLink.send(.report(report)) }
         }
     }
@@ -346,8 +369,10 @@ final class PocketModel {
         answering.insert(question.id)
     }
 
+    /// Sends a command the screens have no named method for (`.muteMic`,
+    /// `.refresh` …); false, with a toast saying why, when the Mac can't hear it.
     @discardableResult
-    private func send(_ command: PocketCommand) -> Bool {
+    func send(_ command: PocketCommand) -> Bool {
         guard canControl(), let pocketLink else {
             show(controlProblem() ?? PocketPresentation.unreachable, ok: false)
             return false
