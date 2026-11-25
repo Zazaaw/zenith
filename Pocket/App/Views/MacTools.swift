@@ -177,44 +177,183 @@ struct MacNextUp: View {
     }
 }
 
-// MARK: - Busiest, downloads, clips
+// MARK: - More: busiest, downloads, clips
+
+/// The lesser sections folded into one card, a row each that opens in place:
+/// what downloads, what was copied, the busiest apps. Shown only with
+/// something to say.
+struct MacMore: View {
+    let top: [PocketHealth.Process]
+    let downloads: [PocketTools.Download]
+    let clips: [String]
+
+    enum Part: Hashable { case downloads, clips, busiest }
+    @State private var open: Set<Part> = []
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var parts: [Part] {
+        var parts: [Part] = []
+        if !downloads.isEmpty { parts.append(.downloads) }
+        if !clips.isEmpty { parts.append(.clips) }
+        if !top.isEmpty { parts.append(.busiest) }
+        return parts
+    }
+
+    var body: some View {
+        let parts = parts
+        if !parts.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                SectionLabel(text: "More")
+                VStack(spacing: 0) {
+                    ForEach(Array(parts.enumerated()), id: \.element) { index, part in
+                        disclosure(part, last: index == parts.count - 1)
+                    }
+                }
+                .surface(radius: 18)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .animation(Motion.respecting(reduceMotion, Motion.spring), value: parts)
+            }
+            .transition(.opacity)
+        }
+    }
+
+    private func disclosure(_ part: Part, last: Bool) -> some View {
+        let isOpen = open.contains(part)
+        return VStack(spacing: 0) {
+            Button {
+                Haptics.select()
+                withAnimation(Motion.respecting(reduceMotion, Motion.spring)) {
+                    if isOpen { open.remove(part) } else { open.insert(part) }
+                }
+            } label: {
+                HStack(spacing: 12) {
+                    RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(K.border, lineWidth: 1)
+                        .background(K.wash, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                        .overlay(Image(systemName: symbol(part)).font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(part == .downloads ? K.purple : K.muted))
+                        .frame(width: 32, height: 32)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(title(part)).font(K.sans(15, bold: true)).foregroundStyle(K.fg).lineLimit(1)
+                        Text(meta(part)).font(K.mono(11)).foregroundStyle(K.faint).lineLimit(1)
+                            .contentTransition(.numericText())
+                            .animation(Motion.quick, value: meta(part))
+                    }
+                    Spacer(minLength: 8)
+                    if part == .downloads, let progress = downloads.first?.progress {
+                        ProgressRing(value: progress).frame(width: 18, height: 18)
+                    }
+                    Image(systemName: "chevron.down").font(.system(size: 12, weight: .bold)).foregroundStyle(K.faint)
+                        .rotationEffect(.degrees(isOpen ? 180 : 0))
+                }
+                .padding(.horizontal, 14).padding(.vertical, 12)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityValue(isOpen ? "open" : "closed")
+            if isOpen {
+                VStack(spacing: 0) {
+                    Rectangle().fill(K.border).frame(height: 1).padding(.leading, 14)
+                    content(part)
+                }
+                .transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: -6)).animation(Motion.reveal.delay(0.05)),
+                                        removal: .opacity.animation(Motion.quick)))
+            }
+            if !last { Rectangle().fill(K.border).frame(height: 1).padding(.leading, isOpen ? 0 : 58) }
+        }
+    }
+
+    @ViewBuilder
+    private func content(_ part: Part) -> some View {
+        switch part {
+        case .downloads: MacDownloadsList(downloads: downloads)
+        case .clips: MacClipsList(clips: clips)
+        case .busiest: MacBusiestList(top: top)
+        }
+    }
+
+    private func symbol(_ part: Part) -> String {
+        switch part {
+        case .downloads: return "arrow.down.circle"
+        case .clips: return "doc.on.clipboard"
+        case .busiest: return "flame"
+        }
+    }
+
+    private func title(_ part: Part) -> String {
+        switch part {
+        case .downloads: return "Downloading"
+        case .clips: return "Copied on Mac"
+        case .busiest: return "Busiest apps"
+        }
+    }
+
+    private func meta(_ part: Part) -> String {
+        switch part {
+        case .downloads:
+            guard let first = downloads.first else { return "" }
+            let percent = first.progress.map { " · \(Int($0 * 100))%" } ?? ""
+            return downloads.count == 1 ? first.name + percent : "\(downloads.count) files · " + first.name + percent
+        case .clips:
+            let count = min(clips.count, 5)
+            return count == 1 ? "1 item · tap to copy here" : "\(count) items · tap to copy here"
+        case .busiest:
+            guard let first = top.first else { return "" }
+            return first.name + " " + PocketMacPresentation.share(first.cpu) + " CPU"
+        }
+    }
+}
+
+/// A small ring for the first download's progress, on the folded row.
+private struct ProgressRing: View {
+    let value: Double
+
+    var body: some View {
+        ZStack {
+            Circle().stroke(K.track, lineWidth: 2.5)
+            Circle().trim(from: 0, to: min(1, max(0, value)))
+                .stroke(K.purple, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                .animation(Motion.fill, value: value)
+        }
+        .accessibilityHidden(true)
+    }
+}
 
 /// The busiest apps on the Mac, each one quittable after a confirmation.
-struct MacBusiest: View {
+struct MacBusiestList: View {
     @Environment(PocketModel.self) private var model
     let top: [PocketHealth.Process]
     @State private var quitting: PocketHealth.Process?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            SectionLabel(text: "Busiest", trailing: "CPU")
-            Rows {
-                ForEach(Array(top.enumerated()), id: \.element.pid) { index, process in
-                    HStack(spacing: 12) {
-                        Text(process.name).font(K.sans(14, bold: true)).lineLimit(1)
-                        Spacer(minLength: 8)
-                        Text(PocketMacPresentation.share(process.cpu)).font(K.mono(12)).foregroundStyle(K.muted)
-                            .monospacedDigit().contentTransition(.numericText(value: process.cpu))
-                        Button {
-                            Haptics.tap()
-                            quitting = process
-                        } label: {
-                            Text("Quit").font(K.sans(12, bold: true)).foregroundStyle(K.muted)
-                                .padding(.horizontal, 10).frame(height: 28)
-                                .background(K.fg.opacity(0.07), in: Capsule())
-                        }
-                        .buttonStyle(PressStyle())
-                        .accessibilityLabel("Quit \(process.name)")
+        VStack(spacing: 0) {
+            ForEach(Array(top.enumerated()), id: \.element.pid) { index, process in
+                HStack(spacing: 12) {
+                    Text(process.name).font(K.sans(14, bold: true)).lineLimit(1)
+                    Spacer(minLength: 8)
+                    Text(PocketMacPresentation.share(process.cpu)).font(K.mono(12)).foregroundStyle(K.muted)
+                        .monospacedDigit().contentTransition(.numericText(value: process.cpu))
+                    Button {
+                        Haptics.tap()
+                        quitting = process
+                    } label: {
+                        Text("Quit").font(K.sans(12, bold: true)).foregroundStyle(K.muted)
+                            .padding(.horizontal, 10).frame(height: 28)
+                            .background(K.fg.opacity(0.07), in: Capsule())
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 10)
-                    .overlay(alignment: .bottom) {
-                        if index < top.count - 1 { Rectangle().fill(K.border).frame(height: 1).padding(.leading, 14) }
-                    }
-                    .transition(.opacity)
+                    .buttonStyle(PressStyle())
+                    .accessibilityLabel("Quit \(process.name)")
                 }
+                .padding(.horizontal, 14).padding(.vertical, 10)
+                .overlay(alignment: .bottom) {
+                    if index < top.count - 1 { Rectangle().fill(K.border).frame(height: 1).padding(.leading, 14) }
+                }
+                .transition(.opacity)
             }
-            .animation(Motion.spring, value: top.map(\.pid))
         }
+        .animation(Motion.spring, value: top.map(\.pid))
         .confirmationDialog("Quit \(quitting?.name ?? "this app")?", isPresented: Binding(
             get: { quitting != nil }, set: { if !$0 { quitting = nil } }), titleVisibility: .visible) {
             Button("Quit", role: .destructive) {
@@ -228,62 +367,58 @@ struct MacBusiest: View {
     }
 }
 
-struct MacDownloads: View {
+struct MacDownloadsList: View {
     let downloads: [PocketTools.Download]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            SectionLabel(text: "Downloading")
-            VStack(alignment: .leading, spacing: 12) {
-                ForEach(downloads, id: \.name) { item in
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text(item.name).font(K.sans(13, bold: true)).lineLimit(1)
-                            Spacer()
-                            if let progress = item.progress {
-                                Text("\(Int(progress * 100))%").font(K.mono(11)).foregroundStyle(K.faint)
-                                    .countingNumber(progress * 100)
-                            }
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach(downloads, id: \.name) { item in
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text(item.name).font(K.sans(13, bold: true)).lineLimit(1)
+                        Spacer()
+                        if let progress = item.progress {
+                            Text("\(Int(progress * 100))%").font(K.mono(11)).foregroundStyle(K.faint)
+                                .countingNumber(progress * 100)
                         }
-                        Meter(value: item.progress ?? 0, tint: K.purple, height: 4)
-                            .animation(Motion.spring, value: item.progress)
-                            .opacity(item.progress == nil ? 0.4 : 1)
                     }
+                    Meter(value: item.progress ?? 0, tint: K.purple, height: 4)
+                        .animation(Motion.spring, value: item.progress)
+                        .opacity(item.progress == nil ? 0.4 : 1)
                 }
             }
-            .macCard()
         }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
 /// The Mac's latest copied text; a tap puts one on this iPhone's clipboard.
-struct MacClips: View {
+struct MacClipsList: View {
     @Environment(PocketModel.self) private var model
     let clips: [String]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            SectionLabel(text: "Copied on Mac", trailing: "tap to copy here")
-            Rows {
-                ForEach(Array(clips.prefix(5).enumerated()), id: \.offset) { index, clip in
-                    Button {
-                        UIPasteboard.general.string = clip
-                        Haptics.success()
-                        model.show("Copied to this iPhone.", ok: true)
-                    } label: {
-                        Text(clip).font(K.mono(12)).foregroundStyle(K.fg).lineLimit(2)
-                            .multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 14).padding(.vertical, 11)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(PressStyle())
-                    if index < min(clips.count, 5) - 1 { Rectangle().fill(K.border).frame(height: 1).padding(.leading, 14) }
+        VStack(spacing: 0) {
+            ForEach(Array(clips.prefix(5).enumerated()), id: \.offset) { index, clip in
+                Button {
+                    UIPasteboard.general.string = clip
+                    Haptics.success()
+                    model.show("Copied to this iPhone.", ok: true)
+                } label: {
+                    Text(clip).font(K.mono(12)).foregroundStyle(K.fg).lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 14).padding(.vertical, 11)
+                        .contentShape(Rectangle())
                 }
+                .buttonStyle(PressStyle())
+                if index < min(clips.count, 5) - 1 { Rectangle().fill(K.border).frame(height: 1).padding(.leading, 14) }
             }
         }
     }
 }
+
 
 // MARK: - Sheets
 

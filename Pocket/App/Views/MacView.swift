@@ -6,7 +6,8 @@ import SwiftUI
 
 /// The Mac tab: how the Mac runs ("Your Mac runs at 38%, cool and quiet."),
 /// lock and keep awake, what plays and how loud, Zenith's quick tools, the
-/// next event, Send to Mac, and the busiest apps.
+/// next event, Send to Mac, and More: downloads, clips and the busiest apps,
+/// folded into rows that open in place.
 ///
 /// While it shows, the phone tells the Mac it watches (every minute, as the
 /// Mac expects), so the Mac reads its health and sound only then.
@@ -59,15 +60,10 @@ struct MacView: View {
                 }
                 SendToMacCard { sheet = .send }
                     .blurFade(index: 4)
-                if let top = state?.health?.top, !top.isEmpty, reachable {
-                    MacBusiest(top: top).transition(.opacity)
-                }
-                if let downloads = tools?.downloads, !downloads.isEmpty {
-                    MacDownloads(downloads: downloads).transition(.opacity)
-                }
-                if let clips = tools?.clips, !clips.isEmpty {
-                    MacClips(clips: clips).transition(.opacity)
-                }
+                // The lesser sections, folded into one.
+                MacMore(top: reachable ? state?.health?.top ?? [] : [],
+                        downloads: tools?.downloads ?? [], clips: tools?.clips ?? [])
+                    .blurFade(index: 5)
             }
             .padding(.horizontal, 20).padding(.top, 20)
             .animation(Motion.spring, value: state?.nowPlaying?.title)
