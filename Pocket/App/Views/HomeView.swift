@@ -115,8 +115,9 @@ struct HomeView: View {
     @ViewBuilder
     private func today(_ state: PocketMacState) -> some View {
         let question = state.questions.first
+        let session = Self.activeSession(state)
         let cells = (state.coding != nil ? 1 : 0) + (state.nextPrayer != nil ? 1 : 0)
-        if cells > 0 || question != nil {
+        if cells > 0 || question != nil || session != nil {
             VStack(alignment: .leading, spacing: 10) {
                 SectionLabel(text: "Today", trailing: now.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)))
                 VStack(spacing: 0) {
@@ -137,29 +138,59 @@ struct HomeView: View {
                     }
                     if let question {
                         if cells > 0 { Rectangle().fill(K.border).frame(height: 1) }
-                        Button {
+                        ClaudeTodayRow(eyebrow: question.project, title: PocketPresentation.questionTitle(question),
+                                       meta: PocketPresentation.questionDetail(question)
+                                           ?? "asked " + PocketPresentation.ago(question.askedAt, now: now),
+                                       badge: PocketBadge("Your turn", .attention), glyph: "hand.raised.fill",
+                                       working: false, step: nil) {
                             model.tab = .claude
-                        } label: {
-                            HStack(spacing: 12) {
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text("CLAUDE · \(question.project.uppercased())").font(K.sans(10, bold: true)).tracking(1)
-                                        .foregroundStyle(K.faint).lineLimit(1)
-                                    Text(PocketPresentation.questionTitle(question)).font(K.sans(15, bold: true))
-                                }
-                                Spacer()
-                                Status(badge: PocketBadge("Your turn", .attention))
-                            }
-                            .padding(14)
-                            .contentShape(Rectangle())
                         }
-                        .pressable()
+                        .transition(.opacity)
+                    }
+                    if let session {
+                        if cells > 0 || question != nil { Rectangle().fill(K.border).frame(height: 1) }
+                        let line = Self.activity(session, now: now)
+                        ClaudeTodayRow(eyebrow: session.project, title: line.title, meta: line.meta,
+                                       badge: PocketPresentation.claudeBadge(session),
+                                       glyph: session.state == .working ? "sparkle" : "text.bubble.fill",
+                                       working: session.state == .working,
+                                       step: session.state == .working ? session.steps.last(where: { $0.phase == .running }) : nil) {
+                            model.tab = .claude
+                        }
+                        .transition(.opacity)
                     }
                 }
                 .surface()
+                .animation(Motion.spring, value: question?.id)
+                .animation(Motion.spring, value: session?.id)
+                .animation(Motion.spring, value: session?.state)
             }
             .padding(.horizontal, 20).padding(.top, 22)
             .blurFade(index: 7)
         }
+    }
+
+    /// The Claude Code session worth a line on Home: working, or done and
+    /// waiting for the next prompt (the Mac sends the one that most needs a
+    /// look first). A session asking permission already has its question row.
+    static func activeSession(_ state: PocketMacState) -> PocketClaude.Session? {
+        let asking = state.questions.first.map { $0.id.split(separator: "@").first.map(String.init) ?? $0.id }
+        return state.claude?.sessions.first { session in
+            (session.state == .working || session.state == .waiting) && session.id != asking
+        }
+    }
+
+    /// "Running the tests" over "4m into this turn"; "Finished its turn" over
+    /// "waiting for you · 3m ago".
+    static func activity(_ session: PocketClaude.Session, now: Date) -> (title: String, meta: String) {
+        if session.state == .waiting {
+            let since = session.waitingSince.map { " · " + PocketPresentation.ago($0, now: now) } ?? ""
+            return ("Finished its turn", "waiting for you" + since)
+        }
+        let sentence = PocketPresentation.claudeSentence(session, now: now)
+        let title = sentence.value.prefix(1).uppercased() + sentence.value.dropFirst()
+        let meta = sentence.rest.trimmingCharacters(in: CharacterSet(charactersIn: "."))
+        return (title, meta)
     }
 
     private func cell(_ label: String, _ value: String, _ note: String, bar: Double?) -> some View {
@@ -323,5 +354,64 @@ private struct ExpiryCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .surface(tint: K.amber)
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// A Claude Code line in Today, opening the Claude tab: a small glyph tile
+/// (breathing while Claude works), the project, what it is doing, and its
+/// status; a running step's clock ticks beside it.
+private struct ClaudeTodayRow: View {
+    let eyebrow: String
+    let title: String
+    let meta: String
+    let badge: PocketBadge
+    let glyph: String
+    let working: Bool
+    let step: PocketClaude.Step?
+    let action: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let tint = K.color(badge.tone)
+        Button(action: action) {
+            HStack(spacing: 12) {
+                RoundedRectangle(cornerRadius: 9, style: .continuous).fill(tint.opacity(0.12))
+                    .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(tint.opacity(0.22), lineWidth: 1))
+                    .overlay(
+                        Image(systemName: glyph).font(.system(size: 13, weight: .semibold)).foregroundStyle(tint)
+                            .symbolEffect(.breathe, options: .repeating, isActive: working && !reduceMotion)
+                            .contentTransition(.symbolEffect(.replace))
+                    )
+                    .frame(width: 32, height: 32)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("CLAUDE · \(eyebrow.uppercased())").font(K.sans(10, bold: true)).tracking(1)
+                        .foregroundStyle(K.faint).lineLimit(1)
+                    Text(title).font(K.sans(15, bold: true)).lineLimit(1)
+                        .contentTransition(.opacity)
+                    Text(meta).font(K.mono(11)).foregroundStyle(K.faint).lineLimit(1)
+                        .contentTransition(.numericText())
+                }
+                Spacer(minLength: 8)
+                VStack(alignment: .trailing, spacing: 5) {
+                    Status(badge: badge)
+                    if let step {
+                        // Only this clock ticks every second.
+                        TimelineView(.periodic(from: .now, by: 1)) { context in
+                            Text(PocketPresentation.claudeStepTime(step, now: context.date))
+                                .font(K.mono(11, .semibold)).foregroundStyle(tint)
+                                .contentTransition(.numericText(countsDown: false))
+                                .animation(Motion.spring, value: context.date)
+                        }
+                    }
+                }
+            }
+            .padding(14)
+            .contentShape(Rectangle())
+            .animation(Motion.spring, value: title)
+            .animation(Motion.spring, value: meta)
+        }
+        .pressable()
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Opens Claude")
     }
 }
