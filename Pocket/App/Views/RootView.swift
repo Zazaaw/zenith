@@ -4,9 +4,16 @@
 import PocketKit
 import SwiftUI
 
-/// Pairing until there is a Mac; then the four tabs over the island bar.
+/// The introduction and pairing until there is a Mac; then the four tabs,
+/// each in its own scroll view, over the Liquid Glass island bar.
 struct RootView: View {
     @Environment(PocketModel.self) private var model
+    @AppStorage("pocket.onboarded") private var onboarded = false
+    @State private var network = NetworkWatch()
+    /// The tab on screen. It trails `model.tab` by one beat so the slide
+    /// knows which way to go before the new tab is drawn.
+    @State private var shownTab: PocketModel.Tab = .home
+    @State private var direction: CGFloat = 1
 
     var body: some View {
         @Bindable var model = model
@@ -14,36 +21,45 @@ struct RootView: View {
             K.bg.ignoresSafeArea()
             Ambient().ignoresSafeArea()
             if model.pairing == nil {
-                PairView()
-            } else {
-                TimelineView(.everyMinute) { context in
-                    ScrollView {
-                        Group {
-                            switch model.tab {
-                            case .home: HomeView(now: context.date)
-                            case .claude: ClaudeView(now: context.date)
-                            case .mac: MacView(now: context.date)
-                            case .devices: DevicesView(now: context.date)
-                            }
-                        }
-                        .padding(.bottom, model.islandQuestion == nil ? 150 : 300)
+                Group {
+                    if onboarded {
+                        PairView(onIntro: { withAnimation(Motion.reveal) { onboarded = false } })
+                    } else {
+                        OnboardingView { withAnimation(Motion.reveal) { onboarded = true } }
                     }
-                    .scrollIndicators(.hidden)
                 }
-                IslandBar()
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 6)
+                .transition(.blurReplace)
+                if let toast = model.toast {
+                    ToastView(toast: toast)
+                        .padding(.horizontal, 24).padding(.bottom, 24)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .id(toast.id)
+                }
+            } else {
+                tabs
+                    .transition(.blurReplace)
             }
-            if let toast = model.toast {
-                ToastView(toast: toast)
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, model.pairing == nil ? 24 : (model.islandQuestion == nil ? 84 : 220))
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .id(toast.id)
+        }
+        .overlay(alignment: .top) {
+            if !network.online {
+                OfflineBanner()
+                    .padding(.top, 4)
+                    .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
         .foregroundStyle(K.fg)
-        .animation(.spring(duration: 0.35), value: model.toast)
+        .animation(Motion.toast, value: model.toast)
+        .animation(Motion.toast, value: network.online)
+        .animation(Motion.reveal, value: model.pairing == nil)
+        .onAppear { shownTab = model.tab }
+        .onChange(of: model.tab) { old, new in
+            direction = new.rawValue >= old.rawValue ? 1 : -1
+            withAnimation(Motion.spring) { shownTab = new }
+        }
+        .onChange(of: model.toast) { _, toast in
+            guard let toast else { return }
+            if toast.ok { Haptics.success() } else { Haptics.warning() }
+        }
         .sheet(isPresented: $model.showingSettings) {
             SettingsSheet().environment(model)
         }
@@ -55,24 +71,83 @@ struct RootView: View {
             Text("Pocket forgets \(model.pairing?.macName ?? "the Mac it's paired with") and shows this Mac instead.")
         }
     }
+
+    private var tabs: some View {
+        TimelineView(.everyMinute) { context in
+            ZStack {
+                ScrollView {
+                    page(shownTab, now: context.date)
+                        .padding(.bottom, 24)
+                }
+                .scrollIndicators(.hidden)
+                .refreshable { await model.refreshNow() }
+                .id(shownTab)
+                .transition(TabSlide(direction: direction))
+            }
+            // The island sits in the bottom inset: content scrolls up past
+            // it and shows through its glass, but never ends hidden under it.
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                VStack(spacing: 10) {
+                    if let toast = model.toast {
+                        ToastView(toast: toast)
+                            .padding(.horizontal, 4)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                            .id(toast.id)
+                    }
+                    IslandBar()
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 6)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func page(_ tab: PocketModel.Tab, now: Date) -> some View {
+        switch tab {
+        case .home: HomeView(now: now)
+        case .claude: ClaudeView(now: now)
+        case .mac: MacView(now: now)
+        case .devices: DevicesView(now: now)
+        }
+    }
 }
 
-/// A command's outcome, above the island bar.
+/// A command's outcome, above the island bar: a small card that springs up
+/// from the bar and sinks back after a few seconds.
 struct ToastView: View {
     let toast: PocketModel.Toast
 
     var body: some View {
+        let tint = toast.ok ? K.emerald : K.amber
         HStack(spacing: 10) {
             Image(systemName: toast.ok ? "checkmark" : "exclamationmark")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(toast.ok ? K.emerald : K.amber)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(tint)
+                .frame(width: 22, height: 22)
+                .background(tint.opacity(0.12), in: Circle())
+                .symbolEffect(.bounce, value: toast.id)
             Text(toast.text).font(K.sans(14)).foregroundStyle(K.fg).fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 16).padding(.vertical, 12)
-        .background(Color.black, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Color.white.opacity(0.10), lineWidth: 1))
-        .shadow(color: .black.opacity(0.6), radius: 18, y: 8)
+        .padding(.horizontal, 14).padding(.vertical, 11)
+        .surface(radius: 18)
+        .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// The phone itself has no network: said quietly at the top, since what
+/// Pocket shows is then only what it last heard.
+struct OfflineBanner: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "wifi.slash").font(.system(size: 11, weight: .semibold))
+            Text("You're offline. Pocket shows what it last heard.").font(K.mono(11))
+        }
+        .foregroundStyle(K.muted)
+        .padding(.horizontal, 14).padding(.vertical, 8)
+        .glassEffect(.regular, in: Capsule())
         .accessibilityElement(children: .combine)
     }
 }

@@ -4,78 +4,136 @@
 import PocketKit
 import SwiftUI
 
-/// The tab bar as Zenith's island: a black pill whose selected tab is a
-/// white pill with its name, with a dot where something needs a look (amber
-/// on Agents when Claude asks, red on Devices when a battery is low). When
-/// Claude asks, it opens into a card with the question.
+/// The tab bar as Zenith's island, in Liquid Glass: the selected tab is a
+/// solid pill with its name (black in light, white in dark) that slides
+/// between tabs, with a dot where something needs a look (amber on Claude,
+/// red on Devices when a battery is low).
+///
+/// When Claude asks for permission, or finishes a turn and waits, the same
+/// piece of glass morphs into a card that says so; folding it away morphs
+/// it back. Both shapes share one `glassEffectID`, so iOS melts one into
+/// the other instead of cross-fading two panes.
 struct IslandBar: View {
     @Environment(PocketModel.self) private var model
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Namespace private var glass
+    @Namespace private var pill
+    /// Waiting turns folded away here, by session and turn.
+    @State private var dismissedWaits: Set<String> = []
 
     private static let items: [(PocketModel.Tab, String, String)] = [
         (.home, "house.fill", "Home"), (.claude, "sparkles", "Claude"),
         (.mac, "macbook", "Mac"), (.devices, "battery.75percent", "Devices"),
     ]
 
-    var body: some View {
-        Group {
-            if let question = model.islandQuestion {
-                card(question)
-                    .transition(.scale(scale: 0.6, anchor: .bottom).combined(with: .opacity))
-            } else {
-                bar.transition(.scale(scale: 0.9, anchor: .bottom).combined(with: .opacity))
+    /// What the island is open on, if anything. A question outranks a wait.
+    private enum Open: Equatable {
+        case question(PocketMacState.AgentQuestion)
+        case waiting(PocketClaude.Session)
+
+        var id: String {
+            switch self {
+            case .question(let question): return "q:" + question.id
+            case .waiting(let session): return "w:" + IslandBar.waitKey(session)
             }
         }
-        .shadow(color: .black.opacity(0.7), radius: 24, y: 10)
-        .animation(.spring(duration: 0.45, bounce: 0.25), value: model.islandQuestion?.id)
-        .animation(.spring(duration: 0.35), value: model.tab)
+    }
+
+    private var open: Open? {
+        if let question = model.islandQuestion { return .question(question) }
+        if model.tab != .claude, let session = model.waitingSession(), !dismissedWaits.contains(Self.waitKey(session)) {
+            return .waiting(session)
+        }
+        return nil
+    }
+
+    nonisolated static func waitKey(_ session: PocketClaude.Session) -> String {
+        session.id + "@" + String(Int(session.waitingSince?.timeIntervalSince1970 ?? 0))
+    }
+
+    var body: some View {
+        let open = open
+        GlassEffectContainer(spacing: 18) {
+            switch open {
+            case .question(let question):
+                card { questionCard(question) }
+            case .waiting(let session):
+                card { waitingCard(session) }
+            case nil:
+                bar
+                    .glassEffect(.regular.interactive(), in: Capsule())
+                    .glassEffectID("island", in: glass)
+                    .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .bottom)))
+            }
+        }
+        .animation(Motion.respecting(reduceMotion, Motion.island), value: open?.id)
+        .onChange(of: open?.id) { old, new in
+            if new != nil && old == nil { Haptics.soft() }
+        }
+    }
+
+    /// The open island: the same glass, grown into a rounded card.
+    private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        content()
+            .padding(18)
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 34, style: .continuous))
+            .glassEffectID("island", in: glass)
+            .transition(.opacity.combined(with: .scale(scale: 0.85, anchor: .bottom)))
     }
 
     private var bar: some View {
         let attention = PocketPresentation.attention(model.state, phone: model.phone)
+        let claudeDot = attention.agents || model.waitingSession() != nil
         return HStack(spacing: 0) {
             ForEach(Self.items, id: \.0) { tab, symbol, title in
                 let selected = model.tab == tab
                 Button {
+                    guard !selected else { return }
+                    Haptics.select()
                     model.tab = tab
                 } label: {
-                    if selected {
-                        HStack(spacing: 7) {
-                            Image(systemName: symbol).font(.system(size: 16, weight: .semibold))
-                            Text(title).font(K.sans(14, bold: true))
+                    HStack(spacing: 7) {
+                        Image(systemName: symbol)
+                            .font(.system(size: selected ? 16 : 17, weight: selected ? .semibold : .medium))
+                        if selected {
+                            Text(title).font(K.sans(14, bold: true)).fixedSize()
+                                .transition(.opacity.combined(with: .scale(scale: 0.8, anchor: .leading)))
                         }
-                        .foregroundStyle(.black).padding(.horizontal, 16).frame(height: 44)
-                        .background(Color.white, in: Capsule())
-                    } else {
-                        Image(systemName: symbol).font(.system(size: 17, weight: .medium))
-                            .foregroundStyle(Color.white.opacity(0.55))
-                            .frame(width: 52, height: 44)
-                            .overlay(alignment: .topTrailing) {
-                                if tab == .claude && attention.agents { dot(K.amber) }
-                                if tab == .devices && attention.devices { dot(K.red) }
-                            }
-                            .contentShape(Rectangle())
                     }
+                    .foregroundStyle(selected ? K.inverse : K.muted)
+                    .padding(.horizontal, selected ? 16 : 0)
+                    .frame(minWidth: 52, minHeight: 44)
+                    .background {
+                        if selected {
+                            Capsule().fill(K.fg).matchedGeometryEffect(id: "pill", in: pill)
+                        }
+                    }
+                    .overlay(alignment: .topTrailing) {
+                        if !selected && tab == .claude && claudeDot { dot(K.amber) }
+                        if !selected && tab == .devices && attention.devices { dot(K.red) }
+                    }
+                    .contentShape(Capsule())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PressStyle(haptic: false))
                 .accessibilityLabel(title)
                 .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }
         .padding(6)
-        .background(Color.black, in: Capsule())
-        .overlay(Capsule().strokeBorder(Color.white.opacity(0.10), lineWidth: 1))
+        .animation(Motion.respecting(reduceMotion, Motion.spring), value: model.tab)
     }
 
     private func dot(_ color: Color) -> some View {
-        Circle().fill(color).frame(width: 7, height: 7).shadow(color: color, radius: 4).offset(x: -10, y: 6)
+        Circle().fill(color).frame(width: 7, height: 7).shadow(color: color.opacity(0.8), radius: 4).offset(x: -10, y: 6)
+            .transition(.scale.combined(with: .opacity))
     }
 
-    private func card(_ question: PocketMacState.AgentQuestion) -> some View {
+    // MARK: Cards
+
+    private func questionCard(_ question: PocketMacState.AgentQuestion) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 10) {
-                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(K.amber.opacity(0.18))
-                    .overlay(Image(systemName: "sparkle").font(.system(size: 15, weight: .bold)).foregroundStyle(K.amber))
-                    .frame(width: 36, height: 36)
+                badge
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Claude · \(question.project)").font(K.mono(11)).foregroundStyle(K.faint).lineLimit(1)
                     Text(PocketPresentation.questionTitle(question)).font(K.sans(17, bold: true))
@@ -85,14 +143,7 @@ struct IslandBar: View {
                 }
                 Spacer(minLength: 4)
                 VStack(alignment: .trailing, spacing: 6) {
-                    Button {
-                        model.collapseIsland()
-                    } label: {
-                        Image(systemName: "chevron.down").font(.system(size: 13, weight: .semibold)).foregroundStyle(K.muted)
-                            .frame(width: 28, height: 28).background(Color.white.opacity(0.08), in: Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Close")
+                    fold { model.collapseIsland() }
                     Text(PocketPresentation.ago(question.askedAt, now: Date()).replacingOccurrences(of: " ago", with: ""))
                         .font(K.mono(11)).foregroundStyle(K.faint)
                 }
@@ -104,9 +155,53 @@ struct IslandBar: View {
             }
             AnswerButtons(question: question, compact: true)
         }
-        .padding(18)
-        .background(Color.black, in: RoundedRectangle(cornerRadius: 34, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 34, style: .continuous).strokeBorder(Color.white.opacity(0.10), lineWidth: 1))
+    }
+
+    private func waitingCard(_ session: PocketClaude.Session) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 10) {
+                badge
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Claude · \(session.project)").font(K.mono(11)).foregroundStyle(K.faint).lineLimit(1)
+                    Text("Claude is waiting for you").font(K.sans(17, bold: true))
+                    if let message = session.lastMessage?.trimmingCharacters(in: .whitespacesAndNewlines), !message.isEmpty {
+                        Text(message).font(K.sans(14)).foregroundStyle(K.muted).lineLimit(2)
+                    }
+                }
+                Spacer(minLength: 4)
+                VStack(alignment: .trailing, spacing: 6) {
+                    fold { dismissedWaits.insert(Self.waitKey(session)) }
+                    if let since = session.waitingSince {
+                        Text(PocketPresentation.ago(since, now: Date()).replacingOccurrences(of: " ago", with: ""))
+                            .font(K.mono(11)).foregroundStyle(K.faint)
+                    }
+                }
+            }
+            HStack(spacing: 8) {
+                PillButton(title: "Later", compact: true) { dismissedWaits.insert(Self.waitKey(session)) }
+                PillButton(title: "Open Claude", primary: true, compact: true) {
+                    dismissedWaits.insert(Self.waitKey(session))
+                    model.tab = .claude
+                }
+            }
+        }
+    }
+
+    private var badge: some View {
+        RoundedRectangle(cornerRadius: 10, style: .continuous).fill(K.amber.opacity(0.16))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(K.amber.opacity(0.25), lineWidth: 1))
+            .overlay(Image(systemName: "sparkle").font(.system(size: 15, weight: .bold)).foregroundStyle(K.amber)
+                .symbolEffect(.breathe, options: .repeating))
+            .frame(width: 36, height: 36)
+    }
+
+    private func fold(_ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: "chevron.down").font(.system(size: 13, weight: .semibold)).foregroundStyle(K.muted)
+                .frame(width: 28, height: 28).background(K.track, in: Circle())
+        }
+        .pressable()
+        .accessibilityLabel("Close")
     }
 }
 
@@ -128,6 +223,8 @@ struct AnswerButtons: View {
             .disabled(busy || !model.canControl())
             Text(model.answers[question.id] ?? (busy ? "Asking your Mac…" : "Answering from Pocket isn't ready in Zenith yet."))
                 .font(K.mono(11)).foregroundStyle(K.faint).fixedSize(horizontal: false, vertical: true)
+                .contentTransition(.opacity)
+                .animation(Motion.quick, value: model.answers[question.id])
         }
     }
 }
