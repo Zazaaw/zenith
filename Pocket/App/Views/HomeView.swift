@@ -12,6 +12,7 @@ struct HomeView: View {
     let now: Date
     @State private var showingSites = false
     @State private var showingSafety = false
+    @State private var showingSend = false
 
     var body: some View {
         let state = model.state
@@ -50,6 +51,9 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showingSafety) {
             SafetySheet(safety: model.state?.safety).environment(model)
+        }
+        .sheet(isPresented: $showingSend) {
+            SendToMacSheet().environment(model)
         }
     }
 
@@ -100,8 +104,8 @@ struct HomeView: View {
                         tint: micMuted ? K.red : nil, dimmed: !reachable) {
                 model.send(.muteMic(!micMuted))
             }
-            QuickAction(symbol: "arrow.up.forward.app", title: "Send", tint: nil, dimmed: false) {
-                model.tab = .mac
+            QuickAction(symbol: "paperplane", title: "Send", tint: nil, dimmed: false) {
+                showingSend = true
             }
         }
     }
