@@ -28,10 +28,14 @@ struct ClaudeView: View {
                  footnote: PocketPresentation.updatedLine(freshness, now: now),
                  onSettings: { model.showingSettings = true })
                 .animation(Motion.reveal, value: session?.state)
+            ClaudeMascot(mood: ClaudeMascot.Mood(session?.state))
+                .frame(maxWidth: .infinity)
+                .padding(.top, 6)
+                .blurFade(delay: 0.12, distance: 16)
             if let claude {
                 content(claude, session)
             } else if state != nil {
-                notShared.padding(.horizontal, 20).padding(.top, 22)
+                notShared.padding(.horizontal, 20).padding(.top, 4)
             }
         }
     }
@@ -67,7 +71,7 @@ struct ClaudeView: View {
             }
             cards(session, claude.usage)
         }
-        .padding(.horizontal, 20).padding(.top, 20)
+        .padding(.horizontal, 20).padding(.top, 4)
         .animation(Motion.spring, value: session?.id)
     }
 
