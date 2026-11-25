@@ -75,7 +75,9 @@ struct ControlView: View {
         guard let state else { return .none }
         guard let until = state.awakeUntil, until > now else { return .some(nil) }
         if PocketPresentation.isIndefinite(until, now: now) { return .some(0) }
-        if let choice = model.awakeChoice, PocketModel.awakeChoices.contains(choice) { return .some(choice) }
+        // The length asked for here, unless the Mac was since set for longer.
+        if let choice = model.awakeChoice, PocketModel.awakeChoices.contains(choice),
+           let left = PocketPresentation.awakeMinutesLeft(until, now: now), left <= choice { return .some(choice) }
         return .none
     }
 

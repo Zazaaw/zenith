@@ -31,8 +31,11 @@ final class PocketModel {
 
     /// The keep-awake lengths offered; 0 is until turned off.
     static let awakeChoices = [15, 60, 240]
-    /// A Mac box older than this is read again while the app stays open.
-    static let boxPoll: TimeInterval = 5 * 60
+    /// While the app stays open, the Mac's box is read again this often.
+    static let boxPoll: TimeInterval = 3 * 60
+    /// A Mac that has said nothing for this long over a live channel is
+    /// asked for its state, so a quiet Mac never reads as offline.
+    static let quietAfter: TimeInterval = 8 * 60
     /// How long a command waits for the Mac's result.
     static let resultTimeout: TimeInterval = 10
 
@@ -151,7 +154,7 @@ final class PocketModel {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(PocketModel.boxPoll))
                 guard !Task.isCancelled, let self else { return }
-                await self.readMacBox(generation: generation)
+                await self.check(generation: generation)
             }
         }
     }
@@ -242,6 +245,14 @@ final class PocketModel {
         case .report, .command:
             break
         }
+    }
+
+    /// The box first; a live channel that has been quiet asks the Mac too.
+    private func check(generation: Int) async {
+        await readMacBox(generation: generation)
+        guard generation == self.generation, link == .live, let pocketLink,
+              Date().timeIntervalSince(heardAt ?? .distantPast) > Self.quietAfter else { return }
+        _ = try? await pocketLink.send(.command(.refresh))
     }
 
     private func readMacBox(generation: Int) async {

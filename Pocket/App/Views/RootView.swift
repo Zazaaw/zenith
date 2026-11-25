@@ -26,7 +26,7 @@ struct RootView: View {
                             case .devices: DevicesView(now: context.date)
                             }
                         }
-                        .padding(.bottom, 150)
+                        .padding(.bottom, model.islandQuestion == nil ? 150 : 300)
                     }
                     .scrollIndicators(.hidden)
                 }
