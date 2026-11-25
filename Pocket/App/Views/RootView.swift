@@ -14,6 +14,10 @@ struct RootView: View {
     /// knows which way to go before the new tab is drawn.
     @State private var shownTab: PocketModel.Tab = .home
     @State private var direction: CGFloat = 1
+    /// Tabs opened this launch: the first open plays every entrance in full,
+    /// later ones a quick fade (`firstOpen`).
+    @State private var seenTabs: Set<PocketModel.Tab> = []
+    @State private var shownFirst = true
 
     var body: some View {
         @Bindable var model = model
@@ -51,9 +55,14 @@ struct RootView: View {
         .animation(Motion.toast, value: model.toast)
         .animation(Motion.toast, value: network.online)
         .animation(Motion.reveal, value: model.pairing == nil)
-        .onAppear { shownTab = model.tab }
+        .onAppear {
+            shownTab = model.tab
+            seenTabs = [model.tab]
+        }
         .onChange(of: model.tab) { old, new in
             direction = new.rawValue >= old.rawValue ? 1 : -1
+            shownFirst = !seenTabs.contains(new)
+            seenTabs.insert(new)
             withAnimation(Motion.spring) { shownTab = new }
         }
         .onChange(of: model.toast) { _, toast in
@@ -81,6 +90,7 @@ struct RootView: View {
                 }
                 .scrollIndicators(.hidden)
                 .refreshable { await model.refreshNow() }
+                .environment(\.firstOpen, shownFirst)
                 .id(shownTab)
                 .transition(TabSlide(direction: direction))
             }

@@ -34,21 +34,34 @@ enum Motion {
     static func revealCurve(_ x: Double) -> Double { 1 - pow(1 - min(1, max(0, x)), 5) }
 }
 
+extension EnvironmentValues {
+    /// True while a screen opens for the first time this launch, so its
+    /// entrances play in full; a tab opened again gets a quick, light fade.
+    /// Outside the tabs (sheets, onboarding) it stays true.
+    @Entry var firstOpen: Bool = true
+}
+
 /// Fades content in while un-blurring it and drifting it up a few points:
-/// the Style Kit's signature entrance. `delay` staggers siblings.
+/// the Style Kit's signature entrance. `delay` staggers siblings. On a tab
+/// already seen this launch (`firstOpen` false) it is a short plain fade
+/// with the stagger squeezed, so coming back feels instant but not abrupt.
 struct BlurFade: ViewModifier {
     var delay: Double = 0
     var distance: CGFloat = 10
     @State private var shown = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.firstOpen) private var firstOpen
 
     func body(content: Content) -> some View {
+        let full = firstOpen && !reduceMotion
         content
             .opacity(shown ? 1 : 0)
-            .blur(radius: shown || reduceMotion ? 0 : 8)
-            .offset(y: shown || reduceMotion ? 0 : distance)
+            .blur(radius: shown || !full ? 0 : 8)
+            .offset(y: shown || reduceMotion ? 0 : (firstOpen ? distance : min(distance, 3)))
             .onAppear {
-                withAnimation(Motion.respecting(reduceMotion, Motion.reveal).delay(delay)) { shown = true }
+                let animation = full ? Motion.reveal.delay(delay)
+                    : .easeOut(duration: reduceMotion ? 0.2 : 0.26).delay(min(delay, 0.4) * 0.2)
+                withAnimation(animation) { shown = true }
             }
     }
 }
@@ -99,6 +112,7 @@ struct RollingNumber: View {
     @State private var shown = 0
     @State private var started = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.firstOpen) private var firstOpen
 
     var body: some View {
         Text(format(shown))
@@ -106,7 +120,8 @@ struct RollingNumber: View {
             .onAppear {
                 guard !started else { return }
                 started = true
-                if reduceMotion { shown = value; return }
+                // A tab opened again shows the number as it is.
+                if reduceMotion || !firstOpen { shown = value; return }
                 withAnimation(Motion.reveal.speed(0.6)) { shown = value }
             }
             .onChange(of: value) { _, next in

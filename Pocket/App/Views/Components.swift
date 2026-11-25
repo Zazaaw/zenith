@@ -112,14 +112,15 @@ struct Row<Trailing: View>: View {
     }
 }
 
-/// A thin progress capsule that fills from empty when it appears and
-/// glides to each new value.
+/// A thin progress capsule that fills from empty when it first appears
+/// (full at once on a tab opened again) and glides to each new value.
 struct Meter: View {
     let value: Double
     let tint: Color
     var height: CGFloat = 6
     @State private var shown: Double = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.firstOpen) private var firstOpen
 
     var body: some View {
         GeometryReader { geometry in
@@ -129,6 +130,7 @@ struct Meter: View {
         }
         .frame(height: height)
         .onAppear {
+            guard firstOpen else { shown = value; return }
             withAnimation(Motion.respecting(reduceMotion, Motion.fill).delay(reduceMotion ? 0 : 0.15)) { shown = value }
         }
         .onChange(of: value) { _, next in
