@@ -195,6 +195,20 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   `SettingsSidebarIcons.swift` (tanpa ikon Orbit: SF Symbol di squircle yang sama,
   warna grupnya). Header halaman (`ZenithPageTitle`) menggambar ikon Orbit 46 pt dari
   environment `settingsPageIcon`. Halaman Appearance masih placeholder.
+- **Chrome jendela Settings ala System Settings macOS 26 (branch `feat/sidebar-chrome`):**
+  `UI/Settings/SettingsWindowChrome.swift`. Jendela pakai full-size content, title bar transparan dan
+  tersembunyi, plus `NSToolbar` kosong bergaya unified: toolbar kosong itu yang membuat AppKit menaruh
+  tombol close/minimise/zoom asli di tengah title bar setinggi 52 pt, jadi pas di pojok kiri atas panel
+  sidebar (panel inset 8 pt, tidak ada frame tombol yang digeser manual). Hosting controller tanpa
+  sizing, scene bridging dan safe area (`SettingsWindow.prepare(host:)`), jadi `.toolbar` SwiftUI dan
+  judul "Zenith Settings" hilang (judul jendela tetap diisi untuk menu Window). Toggle sidebar (⌃⌘S),
+  Back dan Forward ada di baris atas panel; saat sidebar disembunyikan pindah ke strip atas konten di
+  sebelah tombol jendela, dan konten turun 32 pt. Area kosong baris atas panel dan strip atas konten
+  (`SettingsWindowDragArea`) menggeser jendela dan double-click mengikuti `AppleActionOnDoubleClick`
+  (`SettingsTitleBarDoubleClick` di `SettingsChromeSupport.swift`, ikut `TEST_SOURCES`). Strip atas konten
+  memudarkan halaman yang digulir ke bawah tepi jendela. Di full screen, jarak untuk tombol jendela
+  dilepas. Renderer katalog memakai konfigurasi jendela yang sama. Ukuran tersimpan sekarang termasuk
+  area title bar, jadi jendela lama terbuka sedikit lebih pendek sekali.
 - **Zona AirDrop di notch (selesai):** `Services/Notch/NotchAirDropSupport.swift`.
   Pilihan zona sekarang muncul untuk semua file: Files, AirDrop, dan Optimize media
   (hanya untuk media). `ShelfDropRoutingTests` disesuaikan dan tidak pernah memicu

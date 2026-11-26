@@ -6,6 +6,7 @@ import SwiftUI
 
 /// Settings window: the floating sidebar (SettingsSidebarView) beside the
 /// open page. The detail keeps each tool's existing settings and section anchor.
+/// Zenith fork: the window has no visible title bar; see SettingsWindowChrome.
 struct SettingsView: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var router = SettingsRouter.shared
@@ -15,6 +16,7 @@ struct SettingsView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var directoryCache = SettingsDirectoryCache()
     @State private var sidebarShown = true
+    @State private var isFullScreen = false // Zenith fork
 
     private var sidebarItems: [SettingsSidebarItem] {
         _ = directoryCache.navigation(
@@ -28,8 +30,11 @@ struct SettingsView: View {
     var body: some View {
         HStack(spacing: 0) {
             if sidebarShown {
-                SettingsSidebarView(cache: directoryCache)
-                    .padding([.leading, .top, .bottom], 8)
+                // Zenith fork: the panel runs up to the window's top, the
+                // window buttons and controls in its top row.
+                SettingsSidebarView(cache: directoryCache, isFullScreen: isFullScreen,
+                                    toggleSidebar: toggleSidebar)
+                    .padding([.leading, .top, .bottom], SettingsWindowChrome.panelInset)
                     .transition(.move(edge: .leading).combined(with: .opacity))
             }
             // Pages are asked for their ideal size on a page switch. `List`
@@ -50,38 +55,23 @@ struct SettingsView: View {
                 .environment(\.settingsPageIcon, pageIcon)
                 .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
             }
+            // Zenith fork: the page starts under the window's top; with the
+            // sidebar hidden it leaves room for the window buttons' row.
+            .padding(.top, sidebarShown ? 0
+                     : SettingsWindowChrome.topBarHeight - SettingsWindowChrome.contentDragHeight)
+            .overlay(alignment: .top) {
+                SettingsContentTopStrip(sidebarShown: sidebarShown, isFullScreen: isFullScreen,
+                                        toggleSidebar: toggleSidebar)
+            }
             .background { ZenithDotGrid() }
         }
         .background(Color(nsColor: .windowBackgroundColor))
-        .toolbar {
-            // The window is AppKit's, so the sidebar button is ours.
-            ToolbarItem(placement: .navigation) {
-                let strings = SettingsNavigationStrings.localized(l10n.language)
-                let title = sidebarShown ? strings.hideSidebar : strings.showSidebar
-                Button(action: toggleSidebar) {
-                    Label(title, systemImage: "sidebar.left")
-                }
-                .keyboardShortcut("s", modifiers: [.control, .command])
-                .help(title)
-            }
-            ToolbarItemGroup(placement: .navigation) {
-                let strings = SettingsNavigationStrings.localized(l10n.language)
-                Button {
-                    router.goBack(isPageVisible: isPageVisible)
-                } label: {
-                    Label(strings.back, systemImage: "chevron.backward")
-                }
-                .disabled(!router.canGoBack(isPageVisible: isPageVisible))
-                .help(strings.back)
-
-                Button {
-                    router.goForward(isPageVisible: isPageVisible)
-                } label: {
-                    Label(strings.forward, systemImage: "chevron.forward")
-                }
-                .disabled(!router.canGoForward(isPageVisible: isPageVisible))
-                .help(strings.forward)
-            }
+        // Zenith fork: the window buttons leave the panel's row in full screen.
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEnterFullScreenNotification)) { note in
+            if note.object is SettingsWindow { isFullScreen = true }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didExitFullScreenNotification)) { note in
+            if note.object is SettingsWindow { isFullScreen = false }
         }
         .frame(minWidth: 772, maxWidth: .infinity, minHeight: 528, maxHeight: .infinity)
         .onAppear { ensureVisiblePage() }

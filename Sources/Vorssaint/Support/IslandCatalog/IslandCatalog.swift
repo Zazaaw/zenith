@@ -212,9 +212,9 @@ enum CatalogRenderer {
         let appearance = NSAppearance(named: shot.light ? .aqua : shot.appearance)
         NSApp.appearance = appearance
         let host = NSHostingController(rootView: view.environment(\.locale, Locale(identifier: "en_US")))
-        host.sizingOptions = []
+        SettingsWindow.prepare(host: host)
         let window = SettingsWindow(contentViewController: host)
-        window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
+        window.applyZenithChrome()
         window.appearance = appearance
         window.isReleasedWhenClosed = false
         window.title = L10n.shared.s.settingsTitle

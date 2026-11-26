@@ -12,6 +12,7 @@ enum SettingsSidebarTests {
         reachability(suite)
         icons(suite)
         navigation(suite)
+        SettingsChromeTests.run(suite)
     }
 
     private static func sections(available: @escaping (AppFeature) -> Bool) -> [SettingsSidebarSection] {
@@ -147,5 +148,31 @@ enum SettingsSidebarTests {
                      "with three tiles the walk still finds its way between tiles and rows")
         suite.expect(move(nil, .down) == .page(.general) && move(.page(.about), .down) == .page(.notch),
                      "with nothing selected, or a row in a folded group, the walk starts over")
+    }
+}
+
+/// Zenith fork: the Settings window's chrome: what a double-click on the
+/// window's top does.
+enum SettingsChromeTests {
+    static func run(_ suite: TestSuite) {
+        doubleClick(suite)
+    }
+
+    private static func doubleClick(_ suite: TestSuite) {
+        typealias D = SettingsTitleBarDoubleClick
+        suite.expect(D.action(setting: "Maximize", legacyMinimize: false) == .zoom
+                        && D.action(setting: "Fill", legacyMinimize: false) == .zoom
+                        && D.action(setting: "Minimize", legacyMinimize: false) == .minimize
+                        && D.action(setting: "None", legacyMinimize: true) == .none,
+                     "a double-click on the window's top follows the system's choice")
+        suite.expect(D.action(setting: nil, legacyMinimize: false) == .zoom
+                        && D.action(setting: nil, legacyMinimize: true) == .minimize
+                        && D.action(setting: "Something new", legacyMinimize: false) == .zoom,
+                     "without the newer setting the older minimise flag decides, zoom by default")
+        let domain = "vorss.tests.settings-chrome.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: domain)!
+        defer { defaults.removePersistentDomain(forName: domain) }
+        defaults.set("Minimize", forKey: "AppleActionOnDoubleClick")
+        suite.expect(D.current(defaults) == .minimize, "the setting is read from the defaults given")
     }
 }
