@@ -25,3 +25,44 @@ enum SettingsTitleBarDoubleClick: Equatable {
                legacyMinimize: defaults.bool(forKey: "AppleMiniaturizeOnDoubleClick"))
     }
 }
+
+/// Zenith fork: the Mac account the sidebar's account card shows. Read from
+/// this Mac only (the login picture, full name, account type and computer
+/// name); nothing is logged or sent anywhere.
+struct SettingsAccountSummary: Equatable {
+    enum Kind: Equatable {
+        case admin, standard
+
+        /// English, like the rest of the sidebar's own chrome.
+        var title: String {
+            switch self {
+            case .admin: return "Admin"
+            case .standard: return "Standard"
+            }
+        }
+    }
+
+    var name: String
+    var kind: Kind?
+    var computer: String
+
+    var initials: String { ZenithLockScreenInitials.of(name) }
+
+    /// "Admin · MacBook Pro", leaving out whichever part is unknown.
+    var subtitle: String {
+        [kind?.title, computer.trimmingCharacters(in: .whitespacesAndNewlines)]
+            .compactMap { $0 }
+            .filter { !$0.isEmpty }
+            .joined(separator: " · ")
+    }
+
+    /// The full name, or the short login name when the account has none.
+    static func displayName(fullName: String, userName: String) -> String {
+        let full = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return full.isEmpty ? userName.trimmingCharacters(in: .whitespacesAndNewlines) : full
+    }
+
+    /// The fixed identity the offscreen renders show, so no picture of the
+    /// README carries a real account.
+    static let placeholder = SettingsAccountSummary(name: "Jane Appleseed", kind: .admin, computer: "MacBook Pro")
+}

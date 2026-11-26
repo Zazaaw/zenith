@@ -52,8 +52,8 @@ final class SettingsDirectoryCache {
 
 /// Zenith fork: the floating sidebar of the Settings window. A rounded panel
 /// inset from the window's edges and running up to its top: the window's own
-/// buttons and the sidebar, Back and Forward controls in its top row, the
-/// settings search under them, then four big
+/// buttons and the sidebar, Back and Forward controls in its top row, the Mac
+/// account and the settings search under them, then four big
 /// tiles (General, Appearance, Command Bar, Orbit), the groups under small
 /// uppercase headers, and the brand at its foot. Arrow keys move through the
 /// tiles and rows once the sidebar has focus; while the search field has it,
@@ -138,9 +138,12 @@ struct SettingsSidebarView: View {
 
         VStack(spacing: 0) {
             topRow
-            SettingsSidebarSearchField(query: $searchQuery, isFocused: $searchFocused)
+            SettingsAccountCard()
                 .padding(.horizontal, 10)
                 .padding(.top, 2)
+            SettingsSidebarSearchField(query: $searchQuery, isFocused: $searchFocused)
+                .padding(.horizontal, 10)
+                .padding(.top, 8)
                 .padding(.bottom, 4)
             list(searchResults: searchResults)
             ZenithSidebarFooter()

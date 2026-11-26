@@ -209,6 +209,15 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   memudarkan halaman yang digulir ke bawah tepi jendela. Di full screen, jarak untuk tombol jendela
   dilepas. Renderer katalog memakai konfigurasi jendela yang sama. Ukuran tersimpan sekarang termasuk
   area title bar, jadi jendela lama terbuka sedikit lebih pendek sekali.
+- **Kartu akun di sidebar Settings (branch `feat/sidebar-chrome`):** `UI/Settings/SettingsAccountCard.swift`,
+  di atas kolom cari. Foto login, nama lengkap dan apakah akun admin dibaca sekali dari direktori lokal lewat
+  Collaboration (`CBUserIdentity`, tanpa izin apa pun), nama komputer dari `ZenithLockScreenAccount.deviceName()`.
+  Tidak membaca Apple Account, iCloud atau Contacts; tidak ada yang dicatat atau dikirim. Foto diperkecil sekali
+  ke 96 px dan disimpan di `SettingsAccountStore`; tidak ada polling, hanya dibaca ulang sekali setelah kartu
+  membuka Users & Groups dan Zenith aktif lagi. Tanpa foto: inisial di lingkaran gradien abu-abu ala Contacts.
+  Baris kedua "Admin · <komputer>" (bahasa Inggris seperti judul grup sidebar) disusun
+  `SettingsAccountSummary` di `SettingsChromeSupport.swift`. Render katalog selalu memakai akun placeholder
+  "Jane Appleseed" (`catalogPose(.placeholder)`), jadi gambar README tidak pernah membawa akun asli.
 - **Zona AirDrop di notch (selesai):** `Services/Notch/NotchAirDropSupport.swift`.
   Pilihan zona sekarang muncul untuk semua file: Files, AirDrop, dan Optimize media
   (hanya untuk media). `ShelfDropRoutingTests` disesuaikan dan tidak pernah memicu

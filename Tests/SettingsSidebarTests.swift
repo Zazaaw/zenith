@@ -151,11 +151,30 @@ enum SettingsSidebarTests {
     }
 }
 
-/// Zenith fork: the Settings window's chrome: what a double-click on the
-/// window's top does.
+/// Zenith fork: the Settings window's chrome: the account card's lines and
+/// what a double-click on the window's top does.
 enum SettingsChromeTests {
     static func run(_ suite: TestSuite) {
+        account(suite)
         doubleClick(suite)
+    }
+
+    private static func account(_ suite: TestSuite) {
+        let jane = SettingsAccountSummary(name: "Jane Appleseed", kind: .admin, computer: "MacBook Pro")
+        suite.expect(jane.subtitle == "Admin · MacBook Pro" && jane.initials == "JA",
+                     "the account card reads Admin · computer under the name, with the name's initials")
+        suite.expect(SettingsAccountSummary(name: "Jane", kind: .standard, computer: "").subtitle == "Standard"
+                        && SettingsAccountSummary(name: "Jane", kind: nil, computer: " Studio ").subtitle == "Studio"
+                        && SettingsAccountSummary(name: "Jane", kind: nil, computer: "  ").subtitle.isEmpty,
+                     "an unknown account type or computer name is left out, never shown as a lone dot")
+        suite.expect(SettingsAccountSummary.displayName(fullName: "  Jane Appleseed ", userName: "jane") == "Jane Appleseed"
+                        && SettingsAccountSummary.displayName(fullName: " ", userName: "jane") == "jane",
+                     "an account without a full name shows its login name")
+        suite.expect(SettingsAccountSummary(name: "jane", kind: nil, computer: "").initials == "J"
+                        && SettingsAccountSummary(name: "", kind: nil, computer: "").initials.isEmpty,
+                     "one word gives one initial, no name none (the card then draws a person)")
+        suite.expect(SettingsAccountSummary.placeholder.name == "Jane Appleseed",
+                     "the offscreen renders use the generic placeholder account")
     }
 
     private static func doubleClick(_ suite: TestSuite) {
