@@ -1802,6 +1802,11 @@ enum Defaults {
         DefaultsKey.notchCalendarTimeLeft: false,
         DefaultsKey.notchCalendarWeekNumbers: false,
         DefaultsKey.notchCalendarExcluded: [String](),
+        // Zenith fork: Meetings, off until turned on (MeetingsSettings).
+        DefaultsKey.zenithMeetingsEnabled: false,
+        DefaultsKey.zenithMeetingsLeadMinutes: MeetingsSettings.defaultLeadMinutes,
+        DefaultsKey.zenithMeetingsDisabledProviders: "",
+        DefaultsKey.zenithMeetingsShowsStrip: true,
         DefaultsKey.notchAgentsEnabled: false,
         DefaultsKey.notchAgentsClaude: true,
         DefaultsKey.notchAgentsClaudeProfile: "",
