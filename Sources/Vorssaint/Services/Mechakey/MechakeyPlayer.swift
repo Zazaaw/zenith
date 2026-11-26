@@ -167,7 +167,7 @@ final class MechakeyPlayer {
                 DispatchQueue.main.async { worker.previewEnded(token) }
             }
         }
-        // Should the engine never report the end, the thread still goes.
+        // Should the engine never report the end, the preview's engine still goes.
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in self?.previewEnded(token) }
     }
 

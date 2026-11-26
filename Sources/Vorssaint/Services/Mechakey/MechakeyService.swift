@@ -38,6 +38,7 @@ final class MechakeyService: ObservableObject {
             guard let self else { return }
             tapFailed = true
             access = FaceUnlockSpaceKeyMonitor.access
+            sync() // nothing to play without the tap: the engine goes too
         }
         player.onPreviewEnded = { [weak self] in self?.previewingPackID = nil }
     }
@@ -57,12 +58,14 @@ final class MechakeyService: ObservableObject {
         observers.append(center.addObserver(forName: .zenithShortcutCaptureEnded, object: nil, queue: .main) {
             [weak self] _ in self?.syncShortcut(force: true)
         })
-        sync()
+        refreshAccess()
     }
 
     private var preferences: MechakeyPreferences { MechakeyPreferences(defaults: .standard) }
 
-    /// Applies the preferences; cheap when nothing changed.
+    /// Applies the preferences; cheap when nothing changed, as it runs on
+    /// every defaults change. Input Monitoring is read again only by
+    /// `refreshAccess`, not here.
     func sync() {
         let preferences = preferences
         syncShortcut()
@@ -71,15 +74,18 @@ final class MechakeyService: ObservableObject {
             player.apply(nil)
             return
         }
-        let current = FaceUnlockSpaceKeyMonitor.access
-        if current != access { access = current }
-        if current == .granted, tapFailed { tapFailed = false }
-        player.apply(current == .granted ? preferences.playback : nil)
+        player.apply(access == .granted && !tapFailed ? preferences.playback : nil)
     }
 
+    /// Reads Input Monitoring again: at launch, coming back to Zenith, and
+    /// after the prompt. A grant clears an earlier failed tap, for a retry.
     func refreshAccess() {
         let current = FaceUnlockSpaceKeyMonitor.access
         if current != access { access = current }
+        if current == .granted, tapFailed {
+            tapFailed = false
+            player.apply(nil)
+        }
         sync()
     }
 
@@ -92,7 +98,7 @@ final class MechakeyService: ObservableObject {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in self?.refreshAccess() }
         }
         UserDefaults.standard.set(on, forKey: MechakeyDefaults.enabled)
-        sync()
+        refreshAccess()
     }
 
     private func toggleFromShortcut() {
