@@ -71,21 +71,19 @@ final class FeatureRuntime: ObservableObject {
 
     func isAvailable(_ feature: AppFeature) -> Bool { feature.isAvailable }
 
-    var availableCount: Int { AppFeature.allCases.filter(\.isAvailable).count }
-
     /// How many features this Mac can end up with. Counting against the whole
-    /// catalog instead would leave the hub's install-all button forever one
-    /// short of its own disabled condition on a Mac missing some hardware.
-    /// An install that predates the check still counts, so the tally can
-    /// never read more installed than installable.
+    /// catalog instead would leave the first-run picker's tally forever one
+    /// short on a Mac missing some hardware. An install that predates the
+    /// check still counts, so the tally can never read more installed than
+    /// installable.
     var installableCount: Int {
         AppFeature.allCases.filter { $0.isHardwareSupported || $0.isAvailable }.count
     }
 
-    /// The one gate every install passes, whichever surface asks: the hub
-    /// row, the hub's install-all button, a preset and the first-run picker
-    /// all decide here. A feature the Mac cannot run never installs, so a
-    /// disabled row cannot be walked around from the button above it.
+    /// The one gate every install passes, whichever surface asks: Orbit's
+    /// Get, a preset and the first-run picker all decide here. A feature the
+    /// Mac cannot run never installs, so a greyed Get cannot be walked around
+    /// from another surface.
     ///
     /// Uninstalls are never refused and an existing install is never revoked:
     /// the check reads hardware and can be wrong, and a wrong answer that
@@ -99,10 +97,10 @@ final class FeatureRuntime: ObservableObject {
     /// Flipping availability runs each feature's binding immediately, in the
     /// order given: off tears every resource down on the spot, while a first
     /// install turns on the feature's main control. Saved choices survive a
-    /// reinstall. One row, the "all" buttons and the Dynamic Island leaving
-    /// with its extensions all pass through here, with one revision bump.
-    /// Install all leaves enable keys alone: it would otherwise switch on
-    /// intrusive features nobody picked, such as focus follows mouse.
+    /// reinstall. One Get or Turn Off, an island extension with the island
+    /// it needs, and the Dynamic Island leaving with its extensions all pass
+    /// through here, with one revision bump. Undoing the never-used offer
+    /// leaves enable keys alone: none of those features was ever on.
     func setAvailable(_ features: [AppFeature], _ available: Bool,
                       enablingFirstInstalls: Bool = true) {
         var changed = false
@@ -197,11 +195,6 @@ final class FeatureRuntime: ObservableObject {
         Set((UserDefaults.standard.string(forKey: DefaultsKey.featureHubKeptFeatures) ?? "")
             .split(separator: ",")
             .compactMap { AppFeature(rawValue: String($0)) })
-    }
-
-    /// Bulk install or uninstall for the hub's "all" buttons.
-    func setAllAvailable(_ available: Bool) {
-        setAvailable(AppFeature.allCases, available, enablingFirstInstalls: false)
     }
 
     private func savedPreferences() -> [String: Any] {

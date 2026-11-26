@@ -18,51 +18,35 @@ enum FeatureHubLayoutTests {
     struct Page: View {
         typealias FeatureRuntime = FeatureHubLayoutTests.FeatureRuntime
         typealias SettingsCard<Content: View> = FeatureHubLayoutTests.SettingsCard<Content>
-        typealias SettingsPageHeader<Accessory: View> = FeatureHubLayoutTests.SettingsPageHeader<Accessory>
-        typealias PermissionsPortalSections = FeatureHubLayoutTests.PermissionsPortalSections
-        typealias ZenithScreenPreviewCard = FeatureHubLayoutTests.ZenithScreenPreviewCard // Zenith fork
-        enum Tab { case features, permissions }
         @ObservedObject var features = FeatureRuntime.shared
-        @State var tab = Tab.features
-        @State var confirmingPreset: FeaturePreset?
         var neverUsed: [AppFeature] { features.offersNeverUsed ? [.notch] : [] }
         let recentlyUninstalled: [AppFeature] = []
         let hub = FeatureStrings.hub(.enUS)
         var body: some View { content }
-        func presetName(_ preset: FeaturePreset) -> String { "Preset" }
-        var summaryCard: some View { Text("Installed features").frame(height: 90) }
+        var header: some View { Text("Orbit").frame(height: 60) }
         @ViewBuilder var neverUsedCard: some View {
             if features.offersNeverUsed { Text("Never used").frame(height: 120) }
         }
-        var dynamicIslandCard: some View {
-            Text("Dynamic Island").frame(height: 900).id(FeatureGroup.dynamicIsland)
-        }
-        var presetsCard: some View { Text("Presets").frame(height: 180) }
-        func groupCard(_ group: FeatureGroup) -> some View {
-            SettingsCard {
-                Text(group.rawValue)
-                ForEach(AppFeature.features(in: group), id: \.self) { feature in
-                    if [.clipboardHistory, .mixer, .screenRecorder, .fanControl].contains(feature) {
-                        FeatureRow(feature: feature).frame(height: 44)
-                    } else {
-                        Text(feature.rawValue).frame(height: 44)
+        /// Orbit's banner, chips and shelves: a long catalog of fixed rows.
+        var catalog: some View {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("Banner").frame(height: 150)
+                Text("Chips").frame(height: 58)
+                ForEach(OrbitCategory.shelves) { shelf in
+                    SettingsCard {
+                        Text(shelf.rawValue)
+                        ForEach(AppFeature.allCases.filter { OrbitCatalog.item(.feature($0))?.category == shelf },
+                                id: \.self) { feature in
+                            if [.clipboardHistory, .mixer, .screenRecorder, .fanControl].contains(feature) {
+                                FeatureRow(feature: feature).frame(height: 56)
+                            } else {
+                                Text(feature.rawValue).frame(height: 56)
+                            }
+                        }
                     }
                 }
             }
-            .id(group)
         }
-    }
-
-    /// Zenith fork: the page's preview card, as a block of its height.
-    struct ZenithScreenPreviewCard: View {
-        enum Group { case features }
-        let group: Group
-        var body: some View { Text("Preview").frame(height: 260) }
-    }
-
-    struct PermissionsPortalSections: View {
-        let hub: FeatureHubStrings
-        var body: some View { Text("Permissions") }
     }
 
     final class FeatureRowView: NSView {

@@ -556,9 +556,6 @@ enum FeatureCatalogTests {
         let runtimeSource = (try? String(contentsOfFile: "Sources/Vorssaint/App/FeatureRuntime.swift",
                                          encoding: .utf8)) ?? ""
         suite.expect(runtimeSource.contains(
-            "setAvailable(AppFeature.allCases, available, enablingFirstInstalls: false)"),
-               "install all makes features available without switching on their behavior")
-        suite.expect(runtimeSource.contains(
             ".scrollZoom: { ScrollInverter.shared.syncWithPreferences() }"),
                "installing, relaunching, or removing Zoom re-syncs the shared scroll tap")
 
@@ -768,8 +765,8 @@ enum FeatureCatalogTests {
         suite.expect(featureHubSource.contains("installBlockedReason")
                 && onboardingFeatureSource.contains("installBlockedReason"),
                "both feature pickers refuse an unsupported install from the same rule")
-        suite.expect(featureHubSource.contains("installableCount"),
-               "the hub counts against what this Mac can install, so install-all can finish")
+        suite.expect(onboardingFeatureSource.contains("installableCount"),
+               "the first-run picker counts against what this Mac can install")
         // The first top-level member opened by `declaration`, with comment lines
         // and whitespace dropped, so a layout check reads structure only.
         func compactMember(_ declaration: String, in source: String) -> String {
