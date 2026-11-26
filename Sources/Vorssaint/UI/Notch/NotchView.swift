@@ -262,6 +262,7 @@ struct NotchView: View {
             case .golden: SkyCapsuleStrip(service: service, kind: .golden, size: size) // Zenith fork
             case .git: GitCapsuleStrip(service: service, size: size) // Zenith fork
             case .batteries: BatteriesCapsuleStrip(service: service, size: size) // Zenith fork
+            case .meeting: MeetingsCapsuleStrip(service: service, size: size) // Zenith fork
             }
         } else {
             // Handed down, the wings stay as they were drawn while a strip
@@ -285,6 +286,7 @@ struct NotchView: View {
             case .golden: SkyActivityStrip(service: service, kind: .golden, displayGeometry: geometry) // Zenith fork
             case .git: GitActivityStrip(service: service, displayGeometry: geometry) // Zenith fork
             case .batteries: BatteriesActivityStrip(service: service, displayGeometry: geometry) // Zenith fork
+            case .meeting: MeetingsActivityStrip(service: service, displayGeometry: geometry) // Zenith fork
             }
         }
     }

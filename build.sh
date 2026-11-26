@@ -725,6 +725,9 @@ if (( TEST )); then
         Sources/Vorssaint/UI/Settings/PocketSettingsSupport.swift
         Sources/Vorssaint/Services/Translate/TranslateSupport.swift
         Sources/Vorssaint/Core/ZenithTranslateStrings.swift
+        # Zenith fork: Meetings' link parser, schedule and call tracker, and its words.
+        Sources/Vorssaint/Services/Meetings/MeetingsSupport.swift
+        Sources/Vorssaint/Core/ZenithMeetingsStrings.swift
         Tests/*.swift
         build/generated-tests/*.swift
     )

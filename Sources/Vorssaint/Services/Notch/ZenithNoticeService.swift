@@ -238,6 +238,14 @@ final class ZenithNoticeCenter: ObservableObject {
                              glyph: .symbol(symbol, .hex(hex)), accessory: succeeded ? .checkmark : .none))
     }
 
+    /// Zenith fork: a meeting about to start (MeetingsService): its title,
+    /// when and its hours below, the provider's glyph, and Join as the click.
+    func meetingSoon(id: String, title: String, subtitle: String, symbol: String, tint: UInt32, join: String) {
+        guard MeetingsSettings.current().enabled else { return }
+        enqueue(ZenithNotice(kind: .meeting, key: ZenithNoticeKey.meeting(id), title: title, subtitle: subtitle,
+                             glyph: .symbol(symbol, .hex(tint)), accessory: .action(join), action: .joinMeeting(id)))
+    }
+
     private static func reading(_ power: PowerReading) -> ZenithBatteryReading {
         ZenithBatteryReading(percent: power.chargePercent, external: power.externalConnected, charging: power.isCharging)
     }
@@ -598,6 +606,10 @@ final class ZenithNoticeCenter: ObservableObject {
             dismiss(quickly: true)
             DispatchQueue.main.async { CardBackupService.shared.noticeBackUp() }
             return
+        case .joinMeeting(let id):
+            dismiss(quickly: true)
+            DispatchQueue.main.async { MeetingsService.shared.join(id) }
+            return
         }
         dismiss(quickly: true)
     }
@@ -680,6 +692,7 @@ final class ZenithNoticeCenter: ObservableObject {
                 return !options.enabled || !options.announces
             case .recap: return !RecapSettings.current(in: defaults).enabled
             case .workspace: return false
+            case .meeting: return !MeetingsSettings.current(in: defaults).enabled
             }
         }
     }

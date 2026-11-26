@@ -23,13 +23,15 @@ struct ZenithNotice: Equatable {
         // A prayer's time is no capsule: the island's pill grows (ZenithIslandBurst).
         /// A workspace the person ran finished, ready or with problems (WorkspaceService).
         case workspace
+        /// A call in the calendar about to start, offering Join (MeetingsService).
+        case meeting
 
         /// Higher shows first and may cut a lower one short.
         var priority: Int {
             switch self {
             case .batteryCritical: return 5
             case .batteryLow: return 4
-            case .audio, .card, .workspace: return 3
+            case .audio, .card, .workspace, .meeting: return 3
             case .charging, .unplugged: return 2
             case .chargeLimit, .download, .export, .devServer, .recap: return 1
             }
@@ -79,6 +81,8 @@ struct ZenithNotice: Equatable {
         case openRecap
         /// Backs up the card imports still without a verified backup (CardBackupService).
         case backUpCards
+        /// Joins a meeting by its occurrence (MeetingsService).
+        case joinMeeting(String)
     }
 
     let kind: Kind
@@ -142,6 +146,8 @@ struct ZenithNoticeQueue {
         case .recap: return 10 * 60
         // Asked for a moment ago; after half a minute it is no longer news.
         case .workspace: return 30
+        // Waits out an open island for a while: the call is still ahead.
+        case .meeting: return 3 * 60
         }
     }
 
@@ -228,6 +234,8 @@ enum ZenithNoticeKey {
     static func recap(_ day: String) -> String { "recap." + day }
     /// One workspace's run, so running it again updates the notice in place.
     static func workspace(_ id: String) -> String { "workspace." + id }
+    /// One meeting's occurrence, so it is announced once.
+    static func meeting(_ id: String) -> String { "meeting." + id }
 }
 
 // MARK: - Battery
@@ -490,6 +498,8 @@ enum ZenithNoticeTiming {
         case .recap: return 8
         // Long enough to read what did not work.
         case .workspace: return 6
+        // Long enough to finish a sentence and reach for Join.
+        case .meeting: return 12
         default: return 4
         }
     }

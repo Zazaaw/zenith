@@ -590,7 +590,8 @@ struct SettingsView: View {
         let ownHeader: Set<SettingsPage> = [.features, .notch, .notchMascot, .energy, .monitor, .mouse,
                                             .switcher, .dock, .homebrew, .releaseNotes, .about, .support,
                                             .killProcess, .portManager, .workspaces, .lockScreen, .remote,
-                                            .faceUnlock, .batteries, .pocket]
+                                            .faceUnlock, .batteries, .pocket,
+                                            .meetings] // Zenith fork: Meetings
         if ownHeader.contains(router.page) { return nil }
         if router.page == .translate { return nil } // Zenith fork: Translate opens with its own header
         if router.page == .general, !(detailShowsGeneralTool) { return nil }
@@ -654,6 +655,7 @@ struct SettingsView: View {
         case .lockScreen: ZenithLockScreenSettings() // Zenith fork
         case .remote: RemoteControlSettings() // Zenith fork
         case .pocket: PocketSettingsPage() // Zenith fork
+        case .meetings: MeetingsSettingsPage() // Zenith fork
         case .faceUnlock: FaceUnlockSettingsPage() // Zenith fork
         case .batteries: BatteriesSettingsPage() // Zenith fork
         case .translate: TranslateSettingsPage() // Zenith fork

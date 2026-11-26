@@ -946,6 +946,8 @@ enum NotchCompactActivity: String, Identifiable {
     case git
     /// Zenith fork: a device's battery low, after its card (BatteriesIslandService).
     case batteries
+    /// Zenith fork: a call under way, with its mic (MeetingsService).
+    case meeting
 
     var id: String { rawValue }
 
@@ -967,6 +969,7 @@ enum NotchCompactActivity: String, Identifiable {
         case .golden: return ZenithStrings.sky(language).goldenTab // Zenith fork
         case .git: return ZenithStrings.git(language).title // Zenith fork
         case .batteries: return ZenithStrings.batteriesIsland(language).title // Zenith fork
+        case .meeting: return ZenithStrings.meetings(language).title // Zenith fork
         }
     }
 
@@ -989,6 +992,7 @@ enum NotchCompactActivity: String, Identifiable {
         case .prayer, .golden: return .sky // Zenith fork
         case .git: return .git // Zenith fork
         case .batteries: return .batteries // Zenith fork
+        case .meeting: return .calendar // Zenith fork: a click brings the call forward instead
         }
     }
 
@@ -998,6 +1002,7 @@ enum NotchCompactActivity: String, Identifiable {
         if self == .export { return ExportTrackerSupport.symbol } // Zenith fork
         if self == .prayer { return "moon.stars.fill" } // Zenith fork
         if self == .golden { return "sun.horizon.fill" } // Zenith fork
+        if self == .meeting { return "video.fill" } // Zenith fork
         return self == .keepAwake ? NotchControlItem.keepAwake.symbol : module.symbol
     }
 }
