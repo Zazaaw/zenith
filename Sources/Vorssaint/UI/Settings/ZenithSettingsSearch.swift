@@ -30,6 +30,7 @@ enum ZenithSettingsSearch {
         .page(.pocket): PocketSearch.aliases,
         .page(.faceUnlock): FaceUnlockSearch.aliases,
         .page(.batteries): BatteriesSearch.aliases,
+        .page(.mechakey): MechakeySearch.aliases,
         .page(.about): ["tentang", "tentang aplikasi", "versi", "version", "Satu Visual", "Zenith"],
     ]
 
