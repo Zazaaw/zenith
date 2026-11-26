@@ -638,6 +638,9 @@ enum SettingsDirectory {
                                                  FeatureStrings.snippets(language).addButton,
                                                  FeatureStrings.snippets(language).soundPickerLabel,
                                                  FeatureStrings.snippets(language).soundToggle]),
+                // Zenith fork: Translate, a page of its own beside the text tools (no hub feature).
+                SettingsDirectoryItem(page: .translate, title: ZenithStrings.translate(language).title,
+                                      icon: "translate", keywords: TranslateSearch.keywords(language)),
                 SettingsDirectoryItem(page: .radialMenu,
                                       title: FeatureStrings.radialMenu(language).pageTitle,
                                       icon: "circle.grid.cross",
