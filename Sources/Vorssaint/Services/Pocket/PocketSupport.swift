@@ -283,6 +283,19 @@ enum PocketCommandPlan: Equatable {
 }
 
 enum PocketCommands {
+    /// The longest device name the lock screen shows.
+    static let maximumDeviceName = 40
+
+    /// Who the lock screen says locked the Mac: the device that sent the
+    /// command, by the name its report gives (the person may have named the
+    /// iPhone in Pocket), else "Apple Watch" or "iPhone".
+    static func lockedBy(_ sender: PocketSender, devices: [PocketDeviceReport.Device]) -> String {
+        let kind: PocketDeviceReport.Device.Kind = sender == .watch ? .watch : .iphone
+        let given = devices.first { $0.kind == kind }?.name.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !given.isEmpty { return String(given.prefix(maximumDeviceName)) }
+        return sender == .watch ? "Apple Watch" : "iPhone"
+    }
+
     /// The longest keep-awake a phone may ask for.
     static let maximumAwakeMinutes = 24 * 60
 

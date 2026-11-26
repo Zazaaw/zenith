@@ -10,6 +10,8 @@ struct SettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage(ThemeChoice.key) private var theme = ThemeChoice.system
     @State private var confirmUnpair = false
+    @AppStorage(PhoneBattery.nameKey) private var phoneName = ""
+    @FocusState private var naming: Bool
     @Namespace private var themePill
 
     var body: some View {
@@ -43,6 +45,11 @@ struct SettingsSheet: View {
                         Text("Unpairing deletes the key on this iPhone. To pair again, show the code in Zenith once more.")
                             .font(K.sans(13)).foregroundStyle(K.faint).fixedSize(horizontal: false, vertical: true)
                             .padding(.horizontal, 4)
+                        SectionLabel(text: "This iPhone").padding(.top, 22)
+                        nameField
+                        Text("The name Zenith shows for this iPhone, as in “Locked by \(PhoneBattery.name)”. iOS doesn't share the name from Settings with apps.")
+                            .font(K.sans(13)).foregroundStyle(K.faint).fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal, 4)
                         SectionLabel(text: "Appearance").padding(.top, 22)
                         themePicker
                         SectionLabel(text: "About").padding(.top, 22)
@@ -66,6 +73,42 @@ struct SettingsSheet: View {
         .confirmationDialog("Unpair from \(model.pairing?.macName ?? "this Mac")?", isPresented: $confirmUnpair, titleVisibility: .visible) {
             Button("Unpair", role: .destructive) { model.unpair() }
         }
+    }
+
+    /// What Zenith calls this iPhone; empty keeps the model's name.
+    private var nameField: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "iphone").font(.system(size: 15, weight: .medium)).foregroundStyle(K.muted)
+            TextField(PhoneBattery.fallbackName, text: $phoneName)
+                .font(K.sans(15, bold: true))
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.done)
+                .focused($naming)
+                .onSubmit { saveName() }
+                .onChange(of: phoneName) { _, next in
+                    if next.count > PhoneBattery.maximumName { phoneName = String(next.prefix(PhoneBattery.maximumName)) }
+                }
+            if !phoneName.isEmpty {
+                Button {
+                    phoneName = ""
+                    saveName()
+                } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(K.faint)
+                }
+                .buttonStyle(PressStyle(haptic: true))
+                .accessibilityLabel("Use the model's name")
+            }
+        }
+        .padding(.horizontal, 14).frame(height: 50)
+        .surface(radius: 16)
+        .onChange(of: naming) { _, focused in if !focused { saveName() } }
+    }
+
+    private func saveName() {
+        let trimmed = phoneName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed != phoneName { phoneName = trimmed }
+        model.phoneNameChanged()
     }
 
     /// System, Light or Dark, as a segmented capsule whose ink pill slides.

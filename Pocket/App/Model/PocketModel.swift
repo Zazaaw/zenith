@@ -468,6 +468,12 @@ final class PocketModel {
         }
     }
 
+    /// The person renamed this iPhone: Zenith hears the new name at once.
+    func phoneNameChanged() {
+        phone = PhoneBattery.read()
+        sendReport()
+    }
+
     /// This iPhone's battery: live when the channel is joined, and in the box.
     private func sendReport() {
         guard let pocketLink, let pairing, let report = PhoneBattery.report() else { return }

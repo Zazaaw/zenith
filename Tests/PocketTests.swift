@@ -241,6 +241,15 @@ enum PocketTests {
 
     private static func commands(_ suite: TestSuite) {
         suite.expect(PocketCommands.plan(.lock, allowAnswers: false) == .lock, "lock locks")
+        let now = Date()
+        let devices = [PocketDeviceReport.Device(kind: .iphone, name: " paiz ", percent: 80, charging: false, readAt: now),
+                       PocketDeviceReport.Device(kind: .watch, name: "Faiz’s Apple Watch", percent: 60, charging: false, readAt: now)]
+        suite.expect(PocketCommands.lockedBy(.watch, devices: devices) == "Faiz’s Apple Watch", "a lock from the Watch names the Watch")
+        suite.expect(PocketCommands.lockedBy(.phone, devices: devices) == "paiz", "a lock from the iPhone names the iPhone, trimmed")
+        suite.expect(PocketCommands.lockedBy(.watch, devices: [devices[0]]) == "Apple Watch"
+                     && PocketCommands.lockedBy(.phone, devices: []) == "iPhone", "with no report, the kind of device")
+        let long = [PocketDeviceReport.Device(kind: .iphone, name: String(repeating: "a", count: 90), percent: 1, charging: false, readAt: now)]
+        suite.expect(PocketCommands.lockedBy(.phone, devices: long).count == PocketCommands.maximumDeviceName, "a long name is cut")
         suite.expect(PocketCommands.plan(.keepAwake(minutes: nil), allowAnswers: false) == .keepAwakeOff, "nil is off")
         suite.expect(PocketCommands.plan(.keepAwake(minutes: 0), allowAnswers: false) == .keepAwakeIndefinitely,
                      "zero is until turned off")

@@ -28,6 +28,21 @@ enum PhoneBattery {
     /// specific ("iPhone 13 Pro"); Zenith matches either to the iPhone it
     /// sees over USB or Wi-Fi.
     static var name: String {
+        chosenName ?? fallbackName
+    }
+
+    /// What the person called this iPhone in Pocket's settings, if anything:
+    /// iOS doesn't give apps the name set in Settings.
+    static let nameKey = "pocket.phoneName"
+    static let maximumName = 40
+
+    static var chosenName: String? {
+        let chosen = (UserDefaults.standard.string(forKey: nameKey) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return chosen.isEmpty ? nil : String(chosen.prefix(maximumName))
+    }
+
+    /// The name used when none is chosen, shown as the field's placeholder.
+    static var fallbackName: String {
         let given = UIDevice.current.name.trimmingCharacters(in: .whitespacesAndNewlines)
         if !given.isEmpty, given != "iPhone", given != UIDevice.current.model { return given }
         return models[identifier] ?? "iPhone"

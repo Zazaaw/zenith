@@ -331,7 +331,7 @@ final class PocketService {
         seen(at: Date())
         switch envelope.body {
         case .report(let report): apply(report)
-        case .command(let command): run(command, id: envelope.id)
+        case .command(let command): run(command, id: envelope.id, from: envelope.from)
         case .macState, .result, .wallpaperChanged: break
         }
     }
@@ -413,7 +413,7 @@ final class PocketService {
 
     // MARK: Commands
 
-    private func run(_ command: PocketCommand, id: UUID) {
+    private func run(_ command: PocketCommand, id: UUID, from sender: PocketSender) {
         // Presence comes once a minute from an open phone; it doesn't count
         // against the command limit.
         if case .presence(let open) = command {
@@ -434,8 +434,8 @@ final class PocketService {
                 reply(id, ok: true, RemoteText.alreadyLocked(macBook: macBook))
                 return
             }
-            // The lock screen says who asked, as for the SSH remote.
-            ZenithRemoteLockMark.mark(device: report.first { $0.kind == .iphone }?.name ?? "iPhone")
+            // The lock screen says who asked (the Watch or the iPhone), as for the SSH remote.
+            ZenithRemoteLockMark.mark(device: PocketCommands.lockedBy(sender, devices: report))
             let immediate = QuickTogglesService.shared.lockScreenForRemote()
             reply(id, ok: true, immediate ? RemoteText.locked(macBook: macBook) : RemoteText.screenSaver)
         case .keepAwakeOff:
