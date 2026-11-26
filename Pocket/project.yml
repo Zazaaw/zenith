@@ -5,9 +5,9 @@
 # `xcodegen generate` turns this into Pocket.xcodeproj, which is not
 # committed. Install with ./install.sh.
 #
-# Two targets, so two App IDs on a free Personal Team (it allows ten new
-# ones a week): the iPhone app and the Watch app embedded in it, both under
-# id.satuvisual.zenith.pocket.
+# Three targets, so three App IDs on a free Personal Team (it allows ten new
+# ones a week): the iPhone app, the Watch app embedded in it, and the Watch
+# app's widget extension (its complications), all under id.satuvisual.zenith.pocket.
 
 name: Pocket
 options:
@@ -85,6 +85,7 @@ targets:
       - path: App/Views/StarShape.swift
     dependencies:
       - package: PocketKit
+      - target: PocketWatchWidgets
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: id.satuvisual.zenith.pocket.watchkitapp
@@ -104,6 +105,36 @@ targets:
         PocketKeychainGroup: $(AppIdentifierPrefix)id.satuvisual.zenith.pocket.shared
     entitlements:
       path: Watch/PocketWatch.entitlements
+      properties:
+        com.apple.security.application-groups: [group.id.satuvisual.zenith.pocket]
+        keychain-access-groups: [$(AppIdentifierPrefix)id.satuvisual.zenith.pocket.shared]
+
+  # The Watch app's complications and Smart Stack card.
+  PocketWatchWidgets:
+    type: app-extension
+    platform: watchOS
+    sources:
+      - path: WatchWidgets
+      - path: WatchShared
+    dependencies:
+      - package: PocketKit
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: id.satuvisual.zenith.pocket.watchkitapp.widgets
+        SKIP_INSTALL: YES
+    info:
+      path: WatchWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: Pocket
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        PocketKeychainGroup: $(AppIdentifierPrefix)id.satuvisual.zenith.pocket.shared
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: WatchWidgets/PocketWidgets.entitlements
       properties:
         com.apple.security.application-groups: [group.id.satuvisual.zenith.pocket]
         keychain-access-groups: [$(AppIdentifierPrefix)id.satuvisual.zenith.pocket.shared]
