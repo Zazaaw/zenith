@@ -28,8 +28,9 @@ settings:
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
-    # Set by install.sh (POCKET_TEAM or the team Xcode knows).
-    DEVELOPMENT_TEAM: ""
+    # From POCKET_TEAM when the project is generated: install.sh sets it (the
+    # env or the team Xcode knows), so the project opened in Xcode keeps it.
+    DEVELOPMENT_TEAM: "${POCKET_TEAM}"
 
 targets:
   Pocket:

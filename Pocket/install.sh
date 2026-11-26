@@ -51,6 +51,7 @@ if [[ -z "$team" ]]; then
         "3. Run ./install.sh again, or set POCKET_TEAM to your 10-character Team ID."
 fi
 print "▸ Team $team"
+export POCKET_TEAM="$team"
 
 # MARK: Device
 
