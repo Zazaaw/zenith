@@ -5,11 +5,11 @@ import AppIntents
 import PocketKit
 import WidgetKit
 
-/// A command from a widget, sent where it runs (the widget
+/// A command from a widget or a control, sent where it runs (the widget
 /// extension): sealed as the iPhone over REST broadcast, as the Watch sends
 /// its own. Nothing hears the Mac's reply here, so the Mac is asked for a
 /// fresh box and the box is read until it shows the change (a few seconds
-/// at most), then the widgets reload.
+/// at most), then the widgets and controls reload.
 enum WidgetCommand {
     static let confirmDelays: [TimeInterval] = [2.5, 5]
 
@@ -36,6 +36,7 @@ enum WidgetCommand {
                PocketWatchPresentation.confirms(command, before: before.mac?.state, after: state) != false { break }
         }
         WidgetCenter.shared.reloadAllTimelines()
+        ControlCenter.shared.reloadAllControls()
     }
 }
 
@@ -57,6 +58,42 @@ struct LockMacIntent: AppIntent {
 
     func perform() async throws -> some IntentResult {
         try await WidgetCommand.send(.lock)
+        return .result()
+    }
+}
+
+/// Keeps the Mac awake for an hour, or lets it sleep. Asks for Face ID on a
+/// locked iPhone, since it changes how the Mac behaves while away.
+struct KeepAwakeIntent: SetValueIntent {
+    static let title: LocalizedStringResource = "Keep Mac Awake"
+    static let description = IntentDescription("Keeps your Mac awake for an hour, or lets it sleep.")
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
+
+    @Parameter(title: "Awake")
+    var value: Bool
+
+    init() {}
+
+    func perform() async throws -> some IntentResult {
+        try await WidgetCommand.send(.keepAwake(minutes: value ? PocketWidgetPresentation.awakeMinutes : nil))
+        return .result()
+    }
+}
+
+/// Mutes or unmutes the Mac's microphone. Asks for Face ID on a locked
+/// iPhone: turning someone's mic back on should take them.
+struct MacMicIntent: SetValueIntent {
+    static let title: LocalizedStringResource = "Mac Microphone"
+    static let description = IntentDescription("Mutes or unmutes your Mac's microphone.")
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
+
+    @Parameter(title: "Mic on")
+    var value: Bool
+
+    init() {}
+
+    func perform() async throws -> some IntentResult {
+        try await WidgetCommand.send(.muteMic(!value))
         return .result()
     }
 }

@@ -7,12 +7,13 @@ import UIKit
 import WidgetKit
 
 /// Pocket's iPhone widgets: the Mac's battery, its lock, Claude Code, and
-/// every battery Pocket knows; and their Lock Screen accessories.
+/// every battery Pocket knows; their Lock Screen accessories; and three
+/// Control Center controls.
 ///
 /// They show what the app last heard (a file in the App Group, see
 /// `WidgetVault`), and read the Mac's box themselves over HTTPS when that is
 /// older than ten minutes or missing, with the pairing the app shares in a
-/// Keychain group. The lock button sends its command from here, sealed
+/// Keychain group. Buttons and controls send their command from here, sealed
 /// as the iPhone, over REST broadcast (`PocketCourier`).
 @main
 struct PocketWidgets: WidgetBundle {
@@ -21,6 +22,9 @@ struct PocketWidgets: WidgetBundle {
         LockWidget()
         ClaudeWidget()
         BatteriesWidget()
+        LockControl()
+        AwakeControl()
+        MicControl()
     }
 }
 
