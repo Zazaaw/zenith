@@ -592,6 +592,7 @@ struct SettingsView: View {
                                             .killProcess, .portManager, .workspaces, .lockScreen, .remote,
                                             .faceUnlock, .batteries, .pocket]
         if ownHeader.contains(router.page) { return nil }
+        if router.page == .translate { return nil } // Zenith fork: Translate opens with its own header
         if router.page == .general, !(detailShowsGeneralTool) { return nil }
         let selected = selectedSidebarItem
         return sidebarItems.first(where: { $0.id == selected })?.title
@@ -655,6 +656,7 @@ struct SettingsView: View {
         case .pocket: PocketSettingsPage() // Zenith fork
         case .faceUnlock: FaceUnlockSettingsPage() // Zenith fork
         case .batteries: BatteriesSettingsPage() // Zenith fork
+        case .translate: TranslateSettingsPage() // Zenith fork
         }
     }
 }

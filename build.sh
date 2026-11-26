@@ -723,6 +723,8 @@ if (( TEST )); then
         Sources/Vorssaint/Core/ZenithPocketStrings.swift
         Sources/Vorssaint/Core/ZenithPocketWatchtowerStrings.swift
         Sources/Vorssaint/UI/Settings/PocketSettingsSupport.swift
+        Sources/Vorssaint/Services/Translate/TranslateSupport.swift
+        Sources/Vorssaint/Core/ZenithTranslateStrings.swift
         Tests/*.swift
         build/generated-tests/*.swift
     )

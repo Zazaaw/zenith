@@ -194,6 +194,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         FeatureRuntime.shared.syncAtLaunch()
         WorkspaceService.shared.start() // Zenith fork: workspace shortcuts
         PrompterService.shared.start() // Zenith fork: the teleprompter's start/stop shortcut
+        TranslateService.launch() // Zenith fork: Translate's shortcut, only while Translate is on
         if AppFeature.monitorPower.isAvailable, PowerSampler.hasInternalBattery {
             MaxCapacityProbe.shared.refreshIfStale()
         }

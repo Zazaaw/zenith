@@ -30,6 +30,7 @@ enum ZenithSettingsSearch {
         .page(.pocket): PocketSearch.aliases,
         .page(.faceUnlock): FaceUnlockSearch.aliases,
         .page(.batteries): BatteriesSearch.aliases,
+        .page(.translate): TranslateSearch.aliases,
         .page(.about): ["tentang", "tentang aplikasi", "versi", "version", "Satu Visual", "Zenith"],
     ]
 
@@ -58,6 +59,7 @@ enum ZenithSettingsSearch {
         let watchtower = ZenithStrings.pocketWatchtower(language)
         let face = ZenithStrings.faceUnlock(language) // Face Unlock
         let batteries = ZenithStrings.batteries(language) // Batteries
+        let translate = ZenithStrings.translate(language) // Translate
         let widgets = ZenithStrings.lockScreenWidgets(language)
         let terminal = ZenithStrings.lockScreenTerminal(language)
         let terminalTitle = ZenithStrings.lockScreenTerminalTitle(language)
@@ -190,6 +192,15 @@ enum ZenithSettingsSearch {
                  keywords: [batteries.readIOS, batteries.needsTools, batteries.install, "libimobiledevice"],
                  aliases: ["iPhone battery", "iPad", "Apple Watch", "watch", "baterai iPhone", "baterai HP", "batre HP",
                            "jam tangan", "baterai jam"]),
+            // Translate: the switch and the shortcut, the languages, the downloads.
+            page(.zenithTranslate, title: translate.enable, icon: "translate",
+                 keywords: [translate.title, translate.shortcutTitle], aliases: TranslateSearch.aliases),
+            page(.zenithTranslateLanguages, title: translate.languagesSection, icon: "character.bubble",
+                 keywords: [translate.target, translate.secondTarget, translate.showDetection],
+                 aliases: ["target language", "detect language", "bahasa tujuan", "bahasa kedua", "deteksi bahasa"]),
+            page(.zenithTranslateDownloads, title: translate.downloadsSection, icon: "arrow.down.circle",
+                 keywords: [translate.download, translate.manageDownloads, translate.checkPair],
+                 aliases: ["offline", "download language", "unduh bahasa", "bahasa terunduh"]),
             // Dynamic Island › Activity: the fork's cards.
             section(.zenithCommandActivity, in: .activity, title: commands.section, icon: "terminal",
                     keywords: [commands.toggle, commands.showAfter, commands.showFolder, commands.ignore, commands.hook],
