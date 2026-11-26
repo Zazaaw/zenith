@@ -347,6 +347,6 @@ enum MechakeyPreview {
     /// How many frames of audio hold every hit and the longest slice after the last.
     static func length(of hits: [Hit], sampleRate: Double, longestSlice: Int) -> Int {
         let last = hits.map(\.offset).max() ?? 0
-        return Int((last * sampleRate).rounded(.up)) + longestSlice
+        return Int((last * sampleRate).rounded()) + longestSlice
     }
 }

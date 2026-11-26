@@ -720,6 +720,8 @@ if (( TEST )); then
         Sources/Vorssaint/UI/Settings/BatteriesSettingsSupport.swift
         Sources/Vorssaint/Services/Notch/BatteriesIslandSupport.swift
         Sources/Vorssaint/Core/ZenithBatteriesIslandStrings.swift
+        Sources/Vorssaint/Services/Mechakey/MechakeySupport.swift
+        Sources/Vorssaint/Core/ZenithMechakeyStrings.swift
         Sources/Vorssaint/Core/ZenithPocketStrings.swift
         Sources/Vorssaint/Core/ZenithPocketWatchtowerStrings.swift
         Sources/Vorssaint/UI/Settings/PocketSettingsSupport.swift
