@@ -562,14 +562,9 @@ if (( TEST )); then
         Sources/Vorssaint/Services/LaunchAtLoginSupport.swift
         Sources/Vorssaint/UI/Settings/SettingsSearchSupport.swift
         Sources/Vorssaint/UI/Settings/SettingsSidebarSupport.swift
-        # Zenith fork: the floating sidebar's groups, icon table and the Orbit icons it draws.
+        # Zenith fork: the floating sidebar's groups and icon table (the Orbit icons are listed with Orbit below).
         Sources/Vorssaint/UI/Settings/SettingsSidebarLayout.swift
         Sources/Vorssaint/UI/Settings/SettingsSidebarIcons.swift
-        Sources/Vorssaint/UI/Icons/OrbitIconKit.swift
-        Sources/Vorssaint/UI/Icons/OrbitIcons.swift
-        Sources/Vorssaint/UI/Icons/OrbitIconsEverydayWindows.swift
-        Sources/Vorssaint/UI/Icons/OrbitIconsIslandSound.swift
-        Sources/Vorssaint/UI/Icons/OrbitIconsSystemAI.swift
         Sources/Vorssaint/Core/ZenithAppearanceStrings.swift
         Sources/Vorssaint/UI/Settings/FeatureVisibilitySupport.swift
         Sources/Vorssaint/UI/Onboarding/WhatsNewSupport.swift
