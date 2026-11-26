@@ -341,9 +341,14 @@ enum PocketTests {
         let otherPhone = BatteryDevice(id: "ios-2", name: "Work iPhone", kind: .iphone, source: .wifi, percent: 80)
         suite.expect(PocketBatteries.merged(scan: [mac, usbPhone, otherPhone], scanDate: scanDate, report: model, now: now).count == 4,
                      "with two iPhones a model name meets neither")
-        let named = [PocketDeviceReport.Device(kind: .iphone, name: "Someone else", percent: 70, charging: false, readAt: now)]
-        suite.expect(PocketBatteries.merged(scan: [usbPhone], scanDate: scanDate, report: named, now: now).count == 2,
-                     "another name is another phone")
+        let named = [PocketDeviceReport.Device(kind: .iphone, name: "paiz", percent: 70, charging: false, readAt: now)]
+        suite.expect(PocketBatteries.merged(scan: [usbPhone], scanDate: scanDate, report: named, now: now).count == 1,
+                     "a name chosen in Pocket still meets the only iPhone")
+        suite.expect(PocketBatteries.merged(scan: [usbPhone, otherPhone], scanDate: scanDate, report: named, now: now).count == 3,
+                     "with two iPhones another name meets neither")
+        let devices = [usbPhone, BatteryDevice(id: "w", name: "Apple Watch", kind: .watch, source: .viaIPhone, percent: 50)]
+        suite.expect(PocketStateBuilder.accessories(devices, report: named).map(\.id) == ["w"],
+                     "the phone isn't shown again among the Mac's accessories")
         let watch = BatteryDevice(id: "watch-1", name: "Apple Watch", kind: .watch, source: .viaIPhone, percent: 60)
         let watchReport = [PocketDeviceReport.Device(kind: .watch, name: "Apple Watch", percent: 61, charging: false, readAt: now)]
         let watches = PocketBatteries.merged(scan: [watch], scanDate: scanDate, report: watchReport, now: now)

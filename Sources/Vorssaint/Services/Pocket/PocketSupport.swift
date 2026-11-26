@@ -390,14 +390,14 @@ enum PocketBatteries {
     }
 
     /// Whether a device Batteries read is the phone (or Watch) the report is
-    /// about: the same kind and name, or, when the phone gives only its model
-    /// ("iPhone 13 Pro", as iOS tells apps without the name entitlement), the
-    /// only one of that kind.
+    /// about: the same kind and name, or else the only one of that kind. The
+    /// phone's name rarely is the one Batteries reads: iOS tells apps only
+    /// the model ("iPhone 13 Pro"), and the name chosen in Pocket's settings
+    /// needn't be the one the device carries.
     static func matches(_ device: BatteryDevice, _ reading: PocketDeviceReport.Device,
                         among devices: [BatteryDevice]) -> Bool {
         guard device.source != .pocket, device.kind == kind(reading.kind) else { return false }
         if BatteriesNames.key(device.name) == BatteriesNames.key(reading.name) { return true }
-        guard isGeneric(reading) else { return false }
         return devices.filter { $0.source != .pocket && $0.kind == device.kind }.count == 1
     }
 
@@ -434,10 +434,6 @@ enum PocketBatteries {
 
     private static func fallbackName(_ kind: PocketDeviceReport.Device.Kind) -> String {
         kind == .iphone ? "iPhone" : "Apple Watch"
-    }
-
-    private static func isGeneric(_ reading: PocketDeviceReport.Device) -> Bool {
-        BatteriesNames.key(reading.name).hasPrefix(BatteriesNames.key(fallbackName(reading.kind)))
     }
 }
 
