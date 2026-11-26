@@ -728,6 +728,15 @@ if (( TEST )); then
         # Zenith fork: Meetings' link parser, schedule and call tracker, and its words.
         Sources/Vorssaint/Services/Meetings/MeetingsSupport.swift
         Sources/Vorssaint/Core/ZenithMeetingsStrings.swift
+        # Zenith fork: Orbit, the Features page's catalog, its words and its icons.
+        Sources/Vorssaint/UI/Settings/OrbitCatalog.swift
+        Sources/Vorssaint/Core/ZenithOrbitStrings.swift
+        Sources/Vorssaint/UI/Icons/OrbitIconKit.swift
+        Sources/Vorssaint/UI/Icons/OrbitIcons.swift
+        Sources/Vorssaint/UI/Icons/OrbitIconsEverydayWindows.swift
+        Sources/Vorssaint/UI/Icons/OrbitIconsIslandSound.swift
+        Sources/Vorssaint/UI/Icons/OrbitIconsSystemAI.swift
+        Sources/Vorssaint/UI/Icons/OrbitIconsCatalog.swift
         Tests/*.swift
         build/generated-tests/*.swift
     )
