@@ -108,6 +108,9 @@ targets:
       properties:
         com.apple.security.application-groups: [group.id.satuvisual.zenith.pocket]
         keychain-access-groups: [$(AppIdentifierPrefix)id.satuvisual.zenith.pocket.shared]
+    # Its own scheme: building it once with the Watch as the destination is
+    # what registers the Watch with the team and puts it in the profiles.
+    scheme: {}
 
   # The Watch app's complications and Smart Stack card.
   PocketWatchWidgets:
