@@ -16,6 +16,7 @@ enum SettingsPage: Hashable {
     case pocket // Zenith fork: Zenith Pocket, the iPhone and Watch companion, beside iPhone Remote
     case faceUnlock // Zenith fork: unlock by looking at the Mac, a page of its own
     case batteries // Zenith fork: every device's battery and when to warn, under Monitor
+    case meetings // Zenith fork: calls from the calendar, Join and the mic, beside the lock screen
 }
 
 /// Stable, non-localized identities for destinations inside shared Settings
@@ -78,6 +79,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
     case zenithPocket, zenithPocketRelay, zenithPocketPairing, zenithPocketSharing, zenithPocketWatchtower
     case zenithFaceUnlock
     case zenithBatteries, zenithBatteriesAlerts, zenithBatteriesIPhone
+    case zenithMeetings, zenithMeetingsCalls, zenithMeetingsProviders // Zenith fork
 
     var page: SettingsPage {
         switch self {
@@ -111,6 +113,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
         case .zenithPocket, .zenithPocketRelay, .zenithPocketPairing, .zenithPocketSharing, .zenithPocketWatchtower: return .pocket
         case .zenithFaceUnlock: return .faceUnlock
         case .zenithBatteries, .zenithBatteriesAlerts, .zenithBatteriesIPhone: return .batteries
+        case .zenithMeetings, .zenithMeetingsCalls, .zenithMeetingsProviders: return .meetings // Zenith fork
         case .zenithDropZones, .zenithWatermark: return .shelf
         case .zenithDesignOverlay, .zenithBeautify: return .screenshot
         case .zenithQR: return .clipboard
@@ -527,7 +530,8 @@ enum FeatureVisibilitySupport {
         case .radialMenu: return [.radialMenu]
         case .commandBar: return [.commandBar]
         case .general, .features, .shortcuts, .advanced, .about, .releaseNotes, .support,
-             .workspaces, .remote, .pocket, .faceUnlock, .batteries: // Zenith fork
+             .workspaces, .remote, .pocket, .faceUnlock, .batteries,
+             .meetings: // Zenith fork
             return []
         }
     }

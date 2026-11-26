@@ -30,6 +30,7 @@ enum ZenithSettingsSearch {
         .page(.pocket): PocketSearch.aliases,
         .page(.faceUnlock): FaceUnlockSearch.aliases,
         .page(.batteries): BatteriesSearch.aliases,
+        .page(.meetings): MeetingsSearch.aliases,
         .page(.about): ["tentang", "tentang aplikasi", "versi", "version", "Satu Visual", "Zenith"],
     ]
 
@@ -58,6 +59,7 @@ enum ZenithSettingsSearch {
         let watchtower = ZenithStrings.pocketWatchtower(language)
         let face = ZenithStrings.faceUnlock(language) // Face Unlock
         let batteries = ZenithStrings.batteries(language) // Batteries
+        let meetings = ZenithStrings.meetings(language) // Meetings
         let widgets = ZenithStrings.lockScreenWidgets(language)
         let terminal = ZenithStrings.lockScreenTerminal(language)
         let terminalTitle = ZenithStrings.lockScreenTerminalTitle(language)
@@ -178,6 +180,16 @@ enum ZenithSettingsSearch {
                             face.passwordStored, face.passwordMissing, face.reset, face.lab, face.openLab, face.notes],
                  aliases: FaceUnlockSearch.aliases),
             // Batteries: the switch and the devices, when to warn, the iPhone and the Watch.
+            // Meetings: the switch and calendars, the notice and the strip, the providers.
+            page(.zenithMeetings, title: meetings.enable, icon: "video",
+                 keywords: [meetings.title, meetings.calendarAccess, meetings.calendars],
+                 aliases: MeetingsSearch.aliases),
+            page(.zenithMeetingsCalls, title: meetings.before, icon: "bell.badge",
+                 keywords: [meetings.lead, meetings.during, meetings.showsStrip, meetings.join, meetings.mute],
+                 aliases: ["join meeting", "notice", "strip", "mute", "gabung", "pengingat rapat", "bisukan mic"]),
+            page(.zenithMeetingsProviders, title: meetings.providers, icon: "video.badge.checkmark",
+                 keywords: MeetingProvider.allCases.map(\.name),
+                 aliases: ["zoom", "google meet", "teams", "webex", "slack", "facetime", "whereby", "jitsi"]),
             page(.zenithBatteries, title: batteries.enable, icon: "battery.75percent",
                  keywords: [batteries.title, batteries.look, batteries.layout, batteries.rings, batteries.list,
                             batteries.devices, batteries.hide, batteries.hidden],

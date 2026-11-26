@@ -575,6 +575,9 @@ enum SettingsDirectory {
                 // Zenith fork: the lock screen, a page of its own beside the island's.
                 SettingsDirectoryItem(page: .lockScreen, title: lockScreen.title, icon: "lock.display",
                                       keywords: [lockScreen.show, lockScreen.sounds]),
+                // Zenith fork: calls from the calendar, a page of its own beside the island's (no hub feature).
+                SettingsDirectoryItem(page: .meetings, title: ZenithStrings.meetings(language).title,
+                                      icon: "video", keywords: MeetingsSearch.keywords(language)),
                 // Zenith fork: lock and check status from an iPhone, a page of its own (no hub feature).
                 SettingsDirectoryItem(page: .remote, title: ZenithStrings.remote(language).title,
                                       icon: "iphone.radiowaves.left.and.right",
