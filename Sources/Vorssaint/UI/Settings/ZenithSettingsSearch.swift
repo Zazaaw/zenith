@@ -59,6 +59,7 @@ enum ZenithSettingsSearch {
         let watchtower = ZenithStrings.pocketWatchtower(language)
         let face = ZenithStrings.faceUnlock(language) // Face Unlock
         let batteries = ZenithStrings.batteries(language) // Batteries
+        let mechakey = ZenithStrings.mechakey(language) // Mechakey
         let widgets = ZenithStrings.lockScreenWidgets(language)
         let terminal = ZenithStrings.lockScreenTerminal(language)
         let terminalTitle = ZenithStrings.lockScreenTerminalTitle(language)
@@ -191,6 +192,11 @@ enum ZenithSettingsSearch {
                  keywords: [batteries.readIOS, batteries.needsTools, batteries.install, "libimobiledevice"],
                  aliases: ["iPhone battery", "iPad", "Apple Watch", "watch", "baterai iPhone", "baterai HP", "batre HP",
                            "jam tangan", "baterai jam"]),
+            // Mechakey: the switch, the packs and how typing sounds.
+            page(.zenithMechakey, title: mechakey.enable, icon: "pianokeys",
+                 keywords: [mechakey.title, mechakey.soundPack, mechakey.preview, mechakey.volume, mechakey.typing,
+                            mechakey.keyUp, mechakey.ignoreRepeat, mechakey.shortcut],
+                 aliases: MechakeySearch.aliases),
             // Dynamic Island › Activity: the fork's cards.
             section(.zenithCommandActivity, in: .activity, title: commands.section, icon: "terminal",
                     keywords: [commands.toggle, commands.showAfter, commands.showFolder, commands.ignore, commands.hook],
