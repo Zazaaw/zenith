@@ -82,7 +82,7 @@ struct IslandBar: View {
     }
 
     private var bar: some View {
-        let attention = PocketPresentation.attention(model.state, phone: model.phone)
+        let attention = PocketPresentation.attention(model.state, phone: model.phone, watch: model.watch)
         let asking = model.claude?.sessions.contains { $0.state == .asking } ?? false
         let claudeDot = attention.agents || asking || model.waitingSession() != nil
         return HStack(spacing: 0) {

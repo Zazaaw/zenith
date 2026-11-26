@@ -125,3 +125,53 @@ private func mac(percent: Int = 47, charging: Bool = false, claude: PocketClaude
         #expect(PocketWatchPresentation.confirms(.refresh, before: nil, after: mac()) == nil)
     }
 }
+
+@Suite struct WatchBatteryTests {
+    let phone = PocketDeviceReport.Device(kind: .iphone, name: "paiz", percent: 60, charging: false, readAt: now)
+
+    @Test func showsTheWatchBesideTheIPhone() {
+        var state = mac()
+        state.accessories = [
+            .init(id: "w", name: "Apple Watch", kind: "watch", percent: 70, charging: false),
+            .init(id: "kb", name: "Maxfit61", kind: "keyboard", percent: 45, charging: false),
+        ]
+        let watch = PocketDeviceReport.Device(kind: .watch, name: "Apple Watch", percent: 15, charging: false,
+                                              readAt: now.addingTimeInterval(-240))
+        let items = PocketPresentation.batteryItems(state, phone: phone, watch: watch, now: now)
+        #expect(items.map(\.role) == [.mac, .thisPhone, .thisWatch, .accessory], "the Watch's own reading replaces Zenith's")
+        let item = items[2]
+        #expect(item.kind == "watch" && PocketPresentation.symbolName(item) == "applewatch")
+        #expect(PocketPresentation.itemMeta(item, now: now) == "watch · 4m ago")
+        #expect(PocketPresentation.lowest(items)?.role == .thisWatch)
+        #expect(PocketPresentation.devicesSentence(items).text == "Your Apple Watch is at 15%, charge it soon.")
+        #expect(PocketPresentation.attention(state, phone: phone, watch: watch, now: now).devices)
+    }
+
+    @Test func marksAnOldWatchReadingAsLastKnown() {
+        let watch = PocketDeviceReport.Device(kind: .watch, name: "Apple Watch", percent: 15, charging: true,
+                                              readAt: now.addingTimeInterval(-3 * 3600))
+        let items = PocketPresentation.batteryItems(nil, phone: nil, watch: watch, now: now)
+        let item = items[0]
+        #expect(item.seenAt == watch.readAt && !item.charging)
+        #expect(PocketPresentation.itemMeta(item, now: now) == "seen 3h ago")
+        #expect(PocketPresentation.itemTone(item) == .quiet)
+        #expect(PocketPresentation.lowest(items) == nil, "a stale level never reads as low")
+    }
+
+    @Test func travelsFromTheWatchToTheIPhone() throws {
+        let watch = PocketDeviceReport.Device(kind: .watch, name: "Apple Watch", percent: 64, charging: true, readAt: now)
+        let message = try PocketWatchContext.watchBatteryMessage(watch)
+        #expect(PropertyListSerialization.propertyList(message, isValidFor: .binary))
+        #expect(PocketWatchContext.watchBattery(from: message) == watch)
+        #expect(PocketWatchContext.watchBattery(from: try PocketWatchContext.watchBatteryMessage(phone)) == nil, "only a Watch")
+    }
+
+    @Test func reportsAFreshWatchToZenith() {
+        let fresh = PocketDeviceReport.Device(kind: .watch, name: "Apple Watch", percent: 80, charging: false, readAt: now)
+        let old = PocketDeviceReport.Device(kind: .watch, name: "Apple Watch", percent: 80, charging: false,
+                                            readAt: now.addingTimeInterval(-3600))
+        #expect(PocketPresentation.deviceReport(phone: phone, watch: fresh, now: now)?.devices.map(\.kind) == [.iphone, .watch])
+        #expect(PocketPresentation.deviceReport(phone: phone, watch: old, now: now)?.devices.map(\.kind) == [.iphone])
+        #expect(PocketPresentation.deviceReport(phone: nil, watch: nil, now: now) == nil)
+    }
+}

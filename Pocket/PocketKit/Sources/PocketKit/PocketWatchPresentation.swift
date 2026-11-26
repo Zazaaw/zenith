@@ -78,6 +78,20 @@ public struct PocketWatchContext: Codable, Hashable, Sendable {
         return try? decoder.decode(PocketCommand.self, from: data)
     }
 
+    /// The Watch's own battery, in the Watch's application context for its iPhone.
+    public static let watchBatteryKey = "watchBattery"
+
+    public static func watchBatteryMessage(_ device: PocketDeviceReport.Device) throws -> [String: Any] {
+        [watchBatteryKey: try encoder.encode(device)]
+    }
+
+    public static func watchBattery(from message: [String: Any]) -> PocketDeviceReport.Device? {
+        guard let data = message[watchBatteryKey] as? Data,
+              let device = try? decoder.decode(PocketDeviceReport.Device.self, from: data), device.kind == .watch,
+              (0...100).contains(device.percent) else { return nil }
+        return device
+    }
+
     /// For the snapshot file the Watch app writes for its complications.
     public static func encode<T: Encodable>(_ value: T) throws -> Data { try encoder.encode(value) }
     public static func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T { try decoder.decode(type, from: data) }

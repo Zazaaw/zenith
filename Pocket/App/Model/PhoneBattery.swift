@@ -19,8 +19,9 @@ enum PhoneBattery {
                                          charging: charging, readAt: now)
     }
 
+    /// This iPhone, and its Apple Watch while the Watch's last reading is fresh.
     static func report(now: Date = Date()) -> PocketDeviceReport? {
-        read(now: now).map { PocketDeviceReport(devices: [$0]) }
+        PocketPresentation.deviceReport(phone: read(now: now), watch: WatchBridge.storedWatch(), now: now)
     }
 
     /// iOS gives apps "iPhone" for the device's name, so the model makes it

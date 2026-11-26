@@ -65,10 +65,11 @@ public enum PocketFreshness: Hashable, Sendable {
     }
 }
 
-/// One battery on the Devices tab: the Mac's, this iPhone's, or one of the
+/// One battery on the Devices tab: the Mac's, this iPhone's, the Apple
+/// Watch's (read on the Watch, passed on by the iPhone), or one of the
 /// accessories Zenith reads on the Mac.
 public struct PocketBatteryItem: Hashable, Sendable, Identifiable {
-    public enum Role: String, Hashable, Sendable { case mac, thisPhone, accessory }
+    public enum Role: String, Hashable, Sendable { case mac, thisPhone, thisWatch, accessory }
 
     public var id: String
     public var role: Role
@@ -81,11 +82,13 @@ public struct PocketBatteryItem: Hashable, Sendable, Identifiable {
     public var pluggedIn: Bool
     /// Set when the reading is a last-known level from that time.
     public var seenAt: Date?
+    /// When a fresh reading was taken, where it is not now (the Watch's).
+    public var readAt: Date?
 
     public init(id: String, role: Role, name: String, kind: String, percent: Int?, charging: Bool,
-                pluggedIn: Bool = false, seenAt: Date? = nil) {
+                pluggedIn: Bool = false, seenAt: Date? = nil, readAt: Date? = nil) {
         self.id = id; self.role = role; self.name = name; self.kind = kind; self.percent = percent
-        self.charging = charging; self.pluggedIn = pluggedIn; self.seenAt = seenAt
+        self.charging = charging; self.pluggedIn = pluggedIn; self.seenAt = seenAt; self.readAt = readAt
     }
 }
 
@@ -359,8 +362,23 @@ public enum PocketPresentation {
 
     // MARK: Devices
 
-    /// The Mac first, then this iPhone, then the Mac's accessories.
-    public static func batteryItems(_ state: PocketMacState?, phone: PocketDeviceReport.Device?) -> [PocketBatteryItem] {
+    /// A Watch reading older than this is a last-known level: the Watch app
+    /// sends one whenever it opens or refreshes in the background.
+    public static let watchStaleAfter: TimeInterval = 45 * 60
+
+    /// The report for Zenith's Batteries: this iPhone, and the Watch while
+    /// its reading is fresh. nil with neither.
+    public static func deviceReport(phone: PocketDeviceReport.Device?, watch: PocketDeviceReport.Device?,
+                                    now: Date) -> PocketDeviceReport? {
+        var devices: [PocketDeviceReport.Device] = []
+        if let phone { devices.append(phone) }
+        if let watch, now.timeIntervalSince(watch.readAt) < watchStaleAfter { devices.append(watch) }
+        return devices.isEmpty ? nil : PocketDeviceReport(devices: devices)
+    }
+
+    /// The Mac first, then this iPhone and its Watch, then the Mac's accessories.
+    public static func batteryItems(_ state: PocketMacState?, phone: PocketDeviceReport.Device?,
+                                    watch: PocketDeviceReport.Device? = nil, now: Date = Date()) -> [PocketBatteryItem] {
         var items: [PocketBatteryItem] = []
         if let state, let battery = state.battery {
             items.append(PocketBatteryItem(id: "mac", role: .mac, name: state.macName, kind: "mac", percent: battery.percent,
@@ -370,7 +388,14 @@ public enum PocketPresentation {
             items.append(PocketBatteryItem(id: "this-phone", role: .thisPhone, name: phone.name, kind: phone.kind.rawValue,
                                            percent: phone.percent, charging: phone.charging))
         }
-        for accessory in state?.accessories ?? [] {
+        if let watch {
+            let stale = now.timeIntervalSince(watch.readAt) >= watchStaleAfter
+            items.append(PocketBatteryItem(id: "this-watch", role: .thisWatch, name: watch.name.isEmpty ? "Apple Watch" : watch.name,
+                                           kind: "watch", percent: watch.percent, charging: stale ? false : watch.charging,
+                                           seenAt: stale ? watch.readAt : nil, readAt: watch.readAt))
+        }
+        // The Watch's own reading stands for it; one Zenith saw is the same Watch.
+        for accessory in state?.accessories ?? [] where watch == nil || accessory.kind != "watch" {
             items.append(PocketBatteryItem(id: "accessory-" + accessory.id, role: .accessory, name: accessory.name,
                                            kind: accessory.kind, percent: accessory.percent, charging: accessory.charging,
                                            seenAt: accessory.seenAt))
@@ -433,6 +458,10 @@ public enum PocketPresentation {
             return item.charging ? "charging" : item.pluggedIn ? "plugged in" : "on battery"
         case .thisPhone:
             return item.charging ? "charging · this iphone" : "this iphone"
+        case .thisWatch:
+            if let seen = item.seenAt { return "seen " + ago(seen, now: now) }
+            let read = item.readAt.map { ago($0, now: now) } ?? "just now"
+            return (item.charging ? "charging · " : "") + "watch · " + read
         case .accessory:
             if let seen = item.seenAt { return "seen " + ago(seen, now: now) }
             if item.percent == nil { return "no reading" }
@@ -466,8 +495,9 @@ public enum PocketPresentation {
     // MARK: Island bar
 
     /// Which tabs carry a dot: Agents when Claude asks, Devices when a battery is low.
-    public static func attention(_ state: PocketMacState?, phone: PocketDeviceReport.Device?) -> (agents: Bool, devices: Bool) {
-        let items = batteryItems(state, phone: phone)
+    public static func attention(_ state: PocketMacState?, phone: PocketDeviceReport.Device?,
+                                 watch: PocketDeviceReport.Device? = nil, now: Date = Date()) -> (agents: Bool, devices: Bool) {
+        let items = batteryItems(state, phone: phone, watch: watch, now: now)
         return (!(state?.questions.isEmpty ?? true), lowest(items).map(isLow) ?? false)
     }
 

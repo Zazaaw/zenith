@@ -111,6 +111,7 @@ struct BatteryDetailSheet: View {
     private func updatedAt(_ item: PocketBatteryItem) -> Date? {
         switch item.role {
         case .thisPhone: return model.phone?.readAt
+        case .thisWatch: return model.watch?.readAt
         case .mac: return model.heardAt
         case .accessory: return item.seenAt ?? model.heardAt
         }
@@ -152,6 +153,7 @@ struct BatteryDetailSheet: View {
         switch item.role {
         case .mac: source = "Your Mac"
         case .thisPhone: source = "This iPhone"
+        case .thisWatch: source = "Your Apple Watch"
         case .accessory: source = "Zenith, on your Mac"
         }
         lines.append(("Read by", source))

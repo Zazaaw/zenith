@@ -55,6 +55,8 @@ final class PocketModel {
     private(set) var relayProblem: String?
     private(set) var wallpaper: UIImage?
     private(set) var phone: PocketDeviceReport.Device?
+    /// The paired Apple Watch's battery, as the Watch app last sent it.
+    private(set) var watch: PocketDeviceReport.Device? = WatchBridge.storedWatch()
     private(set) var toast: Toast?
     /// The Mac's reply to an answer, by question id.
     private(set) var answers: [String: String] = [:]
@@ -110,7 +112,19 @@ final class PocketModel {
         return nil
     }
 
-    var batteryItems: [PocketBatteryItem] { PocketPresentation.batteryItems(state, phone: phone) }
+    var batteryItems: [PocketBatteryItem] { PocketPresentation.batteryItems(state, phone: phone, watch: watch) }
+
+    /// The Watch app sent its battery: shown at once, and passed on to Zenith
+    /// with this iPhone's (live when open, else straight into the box).
+    func watchBatteryChanged(_ device: PocketDeviceReport.Device) {
+        guard device != watch else { return }
+        watch = device
+        if pocketLink != nil {
+            sendReport()
+        } else if let pairing, let report = PhoneBattery.report() {
+            Task { try? await PocketLink(pairing: pairing, me: .phone).putBox(pairing.phoneBoxID, report) }
+        }
+    }
 
     // MARK: Lifecycle
 
@@ -457,7 +471,7 @@ final class PocketModel {
     /// This iPhone's battery: live when the channel is joined, and in the box.
     private func sendReport() {
         guard let pocketLink, let pairing, let report = PhoneBattery.report() else { return }
-        phone = report.devices.first
+        phone = report.devices.first { $0.kind == .iphone }
         WatchBridge.shared.phoneChanged(phone)
         let live = link == .live
         Task {

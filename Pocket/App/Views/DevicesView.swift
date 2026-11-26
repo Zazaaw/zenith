@@ -4,8 +4,8 @@
 import PocketKit
 import SwiftUI
 
-/// Every battery Pocket knows: the Mac's, this iPhone's, and the
-/// accessories Zenith reads on the Mac. The first four as rings, like the
+/// Every battery Pocket knows: the Mac's, this iPhone's, its Apple Watch's
+/// (sent by the Watch app), and the accessories Zenith reads on the Mac. The first four as rings, like the
 /// iPhone's Batteries widget; AirPods (one entry per bud and case) together
 /// on their own card; then every device as a row. A tap on any of them
 /// opens that battery's sheet.

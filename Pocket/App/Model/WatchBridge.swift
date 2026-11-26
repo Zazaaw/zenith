@@ -13,7 +13,10 @@ import WatchConnectivity
 /// and the iPhone's battery: cheap and best effort, at most twice a minute
 /// unless something the Watch's face shows changed. When the Watch can't
 /// send a command itself it hands it here (`sendMessage`), and it goes out
-/// over the live channel if one is open, else over REST broadcast.
+/// over the live channel if one is open, else over REST broadcast. The other
+/// way, the Watch sends its own battery (its application context, or a
+/// queued user info from a background refresh), which Devices shows and
+/// Zenith's Batteries gets with this iPhone's report.
 @MainActor
 final class WatchBridge: NSObject {
     static let shared = WatchBridge()
@@ -125,10 +128,26 @@ final class WatchBridge: NSObject {
 
     // MARK: From the Watch
 
+    nonisolated private static let watchKey = "pocket.watchBattery"
+
+    /// The Watch's last battery reading, kept across launches.
+    nonisolated static func storedWatch() -> PocketDeviceReport.Device? {
+        guard let data = UserDefaults.standard.data(forKey: watchKey) else { return nil }
+        return PocketWatchContext.watchBattery(from: [PocketWatchContext.watchBatteryKey: data])
+    }
+
+    fileprivate func received(_ body: [String: Any]) {
+        guard let device = PocketWatchContext.watchBattery(from: body) else { return }
+        if let current = Self.storedWatch(), current.readAt > device.readAt { return }
+        UserDefaults.standard.set(body[PocketWatchContext.watchBatteryKey] as? Data, forKey: Self.watchKey)
+        model?.watchBatteryChanged(device)
+    }
+
     fileprivate func activated(_ state: WCSessionActivationState) {
         guard state == .activated else { return }
         sent = nil
         pushNow()
+        received(WCSession.default.receivedApplicationContext)
     }
 
     fileprivate func reply(to message: [String: Any]) async -> [String: Any] {
@@ -160,6 +179,16 @@ extension WatchBridge: WCSessionDelegate {
             WatchBridge.shared.sent = nil
             WatchBridge.shared.pushNow()
         }
+    }
+
+    nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
+        let body = Message(applicationContext)
+        Task { @MainActor in WatchBridge.shared.received(body.body) }
+    }
+
+    nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
+        let body = Message(userInfo)
+        Task { @MainActor in WatchBridge.shared.received(body.body) }
     }
 
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any],
