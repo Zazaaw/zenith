@@ -47,6 +47,7 @@ enum SettingsBackupSupport {
         var keys = Set(Defaults.registeredDefaults.keys)
         keys.formUnion(AppFeature.availabilityDefaults.keys)
         keys.formUnion(unregisteredPreferenceKeys)
+        keys.formUnion(MechakeyDefaults.all) // Zenith fork: Mechakey keeps its keys beside its code
         keys.subtract(machineStateKeys)
         return keys
     }
