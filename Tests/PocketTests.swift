@@ -250,6 +250,10 @@ enum PocketTests {
                      && PocketCommands.lockedBy(.phone, devices: []) == "iPhone", "with no report, the kind of device")
         let long = [PocketDeviceReport.Device(kind: .iphone, name: String(repeating: "a", count: 90), percent: 1, charging: false, readAt: now)]
         suite.expect(PocketCommands.lockedBy(.phone, devices: long).count == PocketCommands.maximumDeviceName, "a long name is cut")
+        ZenithRemoteLockMark.mark(device: "Faiz’s Apple Watch", symbol: ZenithRemoteLockMark.watchSymbol, at: now)
+        suite.expect(ZenithRemoteLockMark.symbol(for: "Faiz’s Apple Watch") == "applewatch"
+                     && ZenithRemoteLockMark.symbol(for: "Someone’s iPhone") == "iphone", "the lock island draws the device that asked")
+        _ = ZenithRemoteLockMark.take(at: now)
         suite.expect(PocketCommands.plan(.keepAwake(minutes: nil), allowAnswers: false) == .keepAwakeOff, "nil is off")
         suite.expect(PocketCommands.plan(.keepAwake(minutes: 0), allowAnswers: false) == .keepAwakeIndefinitely,
                      "zero is until turned off")

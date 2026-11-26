@@ -132,15 +132,33 @@ final class WatchBridge: NSObject {
 
     /// The Watch's last battery reading, kept across launches.
     nonisolated static func storedWatch() -> PocketDeviceReport.Device? {
-        guard let data = UserDefaults.standard.data(forKey: watchKey) else { return nil }
-        return PocketWatchContext.watchBattery(from: [PocketWatchContext.watchBatteryKey: data])
+        guard let data = UserDefaults.standard.data(forKey: watchKey),
+              let device = PocketWatchContext.watchBattery(from: [PocketWatchContext.watchBatteryKey: data]) else { return nil }
+        return named(device)
+    }
+
+    /// What the person called the Watch in Pocket's settings, if anything:
+    /// watchOS gives apps only "Apple Watch".
+    nonisolated static let nameKey = "pocket.watchName"
+
+    nonisolated static var chosenName: String? {
+        let chosen = (UserDefaults.standard.string(forKey: nameKey) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return chosen.isEmpty ? nil : String(chosen.prefix(40))
+    }
+
+    /// The Watch's reading under the chosen name.
+    nonisolated static func named(_ device: PocketDeviceReport.Device) -> PocketDeviceReport.Device {
+        guard let chosen = chosenName else { return device }
+        var named = device
+        named.name = chosen
+        return named
     }
 
     fileprivate func received(_ body: [String: Any]) {
         guard let device = PocketWatchContext.watchBattery(from: body) else { return }
         if let current = Self.storedWatch(), current.readAt > device.readAt { return }
         UserDefaults.standard.set(body[PocketWatchContext.watchBatteryKey] as? Data, forKey: Self.watchKey)
-        model?.watchBatteryChanged(device)
+        model?.watchBatteryChanged(Self.named(device))
     }
 
     fileprivate func activated(_ state: WCSessionActivationState) {

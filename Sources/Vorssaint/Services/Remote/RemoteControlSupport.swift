@@ -274,8 +274,19 @@ enum ZenithRemoteLockMark {
     /// How long a mark waits for the lock to be noticed.
     static let window: TimeInterval = 10
     nonisolated(unsafe) private static var pending: (device: String, at: Date)?
+    /// Zenith fork: the glyph for each name that locked the Mac, so a lock
+    /// from Zenith Pocket on an Apple Watch shows the Watch, not an iPhone.
+    nonisolated(unsafe) private static var symbols: [String: String] = [:]
+    static let phoneSymbol = "iphone"
+    static let watchSymbol = "applewatch"
 
-    static func mark(device: String, at date: Date = Date()) { pending = (device, date) }
+    static func mark(device: String, symbol: String = phoneSymbol, at date: Date = Date()) {
+        pending = (device, date)
+        symbols[device] = symbol
+    }
+
+    /// The glyph for a device that locked the Mac: an iPhone unless marked otherwise.
+    static func symbol(for device: String) -> String { symbols[device] ?? phoneSymbol }
 
     static func take(at now: Date = Date()) -> String? {
         defer { pending = nil }

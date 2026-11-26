@@ -435,7 +435,8 @@ final class PocketService {
                 return
             }
             // The lock screen says who asked (the Watch or the iPhone), as for the SSH remote.
-            ZenithRemoteLockMark.mark(device: PocketCommands.lockedBy(sender, devices: report))
+            ZenithRemoteLockMark.mark(device: PocketCommands.lockedBy(sender, devices: report),
+                                      symbol: sender == .watch ? ZenithRemoteLockMark.watchSymbol : ZenithRemoteLockMark.phoneSymbol)
             let immediate = QuickTogglesService.shared.lockScreenForRemote()
             reply(id, ok: true, immediate ? RemoteText.locked(macBook: macBook) : RemoteText.screenSaver)
         case .keepAwakeOff:

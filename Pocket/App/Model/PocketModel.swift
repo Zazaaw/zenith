@@ -468,9 +468,10 @@ final class PocketModel {
         }
     }
 
-    /// The person renamed this iPhone: Zenith hears the new name at once.
-    func phoneNameChanged() {
+    /// The person renamed this iPhone or its Watch: Zenith hears the new names at once.
+    func deviceNamesChanged() {
         phone = PhoneBattery.read()
+        watch = WatchBridge.storedWatch()
         sendReport()
     }
 

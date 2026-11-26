@@ -11,7 +11,10 @@ struct SettingsSheet: View {
     @AppStorage(ThemeChoice.key) private var theme = ThemeChoice.system
     @State private var confirmUnpair = false
     @AppStorage(PhoneBattery.nameKey) private var phoneName = ""
-    @FocusState private var naming: Bool
+    @AppStorage(WatchBridge.nameKey) private var watchName = ""
+    @FocusState private var naming: NameField?
+
+    private enum NameField: Hashable { case phone, watch }
     @Namespace private var themePill
 
     var body: some View {
@@ -45,9 +48,12 @@ struct SettingsSheet: View {
                         Text("Unpairing deletes the key on this iPhone. To pair again, show the code in Zenith once more.")
                             .font(K.sans(13)).foregroundStyle(K.faint).fixedSize(horizontal: false, vertical: true)
                             .padding(.horizontal, 4)
-                        SectionLabel(text: "This iPhone").padding(.top, 22)
-                        nameField
-                        Text("The name Zenith shows for this iPhone, as in “Locked by \(PhoneBattery.name)”. iOS doesn't share the name from Settings with apps.")
+                        SectionLabel(text: "Names").padding(.top, 22)
+                        VStack(spacing: 10) {
+                            nameField(.phone, symbol: "iphone", text: $phoneName, placeholder: PhoneBattery.fallbackName)
+                            nameField(.watch, symbol: "applewatch", text: $watchName, placeholder: "Apple Watch")
+                        }
+                        Text("The names Zenith shows, as in “Locked from \(PhoneBattery.name)”. iOS and watchOS don't share the names from Settings with apps.")
                             .font(K.sans(13)).foregroundStyle(K.faint).fixedSize(horizontal: false, vertical: true)
                             .padding(.horizontal, 4)
                         SectionLabel(text: "Appearance").padding(.top, 22)
@@ -75,40 +81,43 @@ struct SettingsSheet: View {
         }
     }
 
-    /// What Zenith calls this iPhone; empty keeps the model's name.
-    private var nameField: some View {
+    /// What Zenith calls this iPhone or its Watch; empty keeps the default.
+    private func nameField(_ field: NameField, symbol: String, text: Binding<String>, placeholder: String) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: "iphone").font(.system(size: 15, weight: .medium)).foregroundStyle(K.muted)
-            TextField(PhoneBattery.fallbackName, text: $phoneName)
+            Image(systemName: symbol).font(.system(size: 15, weight: .medium)).foregroundStyle(K.muted)
+                .frame(width: 20)
+            TextField(placeholder, text: text)
                 .font(K.sans(15, bold: true))
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .submitLabel(.done)
-                .focused($naming)
-                .onSubmit { saveName() }
-                .onChange(of: phoneName) { _, next in
-                    if next.count > PhoneBattery.maximumName { phoneName = String(next.prefix(PhoneBattery.maximumName)) }
+                .focused($naming, equals: field)
+                .onSubmit { saveNames() }
+                .onChange(of: text.wrappedValue) { _, next in
+                    if next.count > PhoneBattery.maximumName { text.wrappedValue = String(next.prefix(PhoneBattery.maximumName)) }
                 }
-            if !phoneName.isEmpty {
+            if !text.wrappedValue.isEmpty {
                 Button {
-                    phoneName = ""
-                    saveName()
+                    text.wrappedValue = ""
+                    saveNames()
                 } label: {
                     Image(systemName: "xmark.circle.fill").foregroundStyle(K.faint)
                 }
                 .buttonStyle(PressStyle(haptic: true))
-                .accessibilityLabel("Use the model's name")
+                .accessibilityLabel("Use the default name")
             }
         }
         .padding(.horizontal, 14).frame(height: 50)
         .surface(radius: 16)
-        .onChange(of: naming) { _, focused in if !focused { saveName() } }
+        .onChange(of: naming) { old, _ in if old == field { saveNames() } }
     }
 
-    private func saveName() {
-        let trimmed = phoneName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed != phoneName { phoneName = trimmed }
-        model.phoneNameChanged()
+    private func saveNames() {
+        for name in [$phoneName, $watchName] {
+            let trimmed = name.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed != name.wrappedValue { name.wrappedValue = trimmed }
+        }
+        model.deviceNamesChanged()
     }
 
     /// System, Light or Dark, as a segmented capsule whose ink pill slides.

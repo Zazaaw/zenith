@@ -451,7 +451,7 @@ struct ZenithLockRemoteRow: View {
             ZenithBurstWords(title: RemoteText.lockedFrom(device), subtitle: RemoteText.justNow, titleLines: lines)
                 .padding(.leading, Layout.tileGap)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Image(systemName: "iphone")
+            Image(systemName: ZenithRemoteLockMark.symbol(for: device))
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.85))
                 .frame(width: Layout.remoteGlyph, height: Layout.markSide)
