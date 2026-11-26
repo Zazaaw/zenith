@@ -1905,10 +1905,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
             // The window's size is fully owned by SettingsWindowSupport's
             // explicit sizing below plus ordinary user drag-resize.
             host.sizingOptions = []
+            SettingsWindow.prepare(host: host) // Zenith fork: no bridged toolbar or title bar safe area
             let window = SettingsWindow(contentViewController: host)
             window.isMouseButtonCaptureActive = { MouseButtonShortcutService.isCaptureActive }
             // .miniaturizable so the Window menu's Minimize (Cmd+M) actually works.
-            window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
+            // Zenith fork: plus full-size content under a hidden title bar, the
+            // window buttons inside the sidebar panel (SettingsWindowChrome).
+            window.applyZenithChrome()
             host.view.widthAnchor.constraint(greaterThanOrEqualToConstant: SettingsWindowSupport.minContentWidth).isActive = true
             host.view.heightAnchor.constraint(greaterThanOrEqualToConstant: SettingsWindowSupport.minContentHeight).isActive = true
             let minFrame = window.frameRect(forContentRect: NSRect(

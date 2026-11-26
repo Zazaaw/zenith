@@ -51,13 +51,17 @@ final class SettingsDirectoryCache {
 }
 
 /// Zenith fork: the floating sidebar of the Settings window. A rounded panel
-/// inset from the window's edges, with the settings search on top, four big
+/// inset from the window's edges and running up to its top: the window's own
+/// buttons and the sidebar, Back and Forward controls in its top row, the Mac
+/// account and the settings search under them, then four big
 /// tiles (General, Appearance, Command Bar, Orbit), the groups under small
 /// uppercase headers, and the brand at its foot. Arrow keys move through the
 /// tiles and rows once the sidebar has focus; while the search field has it,
 /// they move through the results.
 struct SettingsSidebarView: View {
     let cache: SettingsDirectoryCache
+    var isFullScreen = false
+    var toggleSidebar: () -> Void = {}
 
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var router = SettingsRouter.shared
@@ -133,9 +137,13 @@ struct SettingsSidebarView: View {
         }()
 
         VStack(spacing: 0) {
+            topRow
+            SettingsAccountCard()
+                .padding(.horizontal, 10)
+                .padding(.top, 2)
             SettingsSidebarSearchField(query: $searchQuery, isFocused: $searchFocused)
                 .padding(.horizontal, 10)
-                .padding(.top, 10)
+                .padding(.top, 8)
                 .padding(.bottom, 4)
             list(searchResults: searchResults)
             ZenithSidebarFooter()
@@ -170,6 +178,21 @@ struct SettingsSidebarView: View {
     }
 
     // MARK: Panel
+
+    /// The window's close, minimise and zoom buttons (AppKit's own, which the
+    /// window lays out over this row's start) and the controls at its end.
+    /// The empty stretch moves the window like a title bar.
+    private var topRow: some View {
+        let inset = SettingsWindowChrome.panelInset
+        return HStack(spacing: 0) {
+            Spacer(minLength: isFullScreen ? 0 : SettingsWindowChrome.windowButtonsReserve - inset)
+            SettingsWindowControls(sidebarShown: true, toggleSidebar: toggleSidebar)
+        }
+        .padding(.trailing, 8)
+        // Centred where the window buttons are, half the title bar down.
+        .frame(height: 2 * (SettingsWindowChrome.topBarHeight / 2 - inset))
+        .background { SettingsWindowDragArea() }
+    }
 
     @ViewBuilder
     private var panelBackground: some View {

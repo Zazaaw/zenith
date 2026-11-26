@@ -41,6 +41,8 @@ enum IslandCatalog {
         let folder = URL(fileURLWithPath: arguments[index + 1], isDirectory: true)
         let only = arguments.firstIndex(of: "--only").flatMap { arguments.indices.contains($0 + 1) ? arguments[$0 + 1] : nil }
         CatalogDefaults.isolate()
+        // Zenith fork: the Settings sidebar shows a placeholder account, never the real one.
+        SettingsAccountStore.shared.catalogPose(.placeholder)
         // Run in its sandbox, the app's own saved preferences are out of reach.
         let saved = Bundle.main.bundleIdentifier.flatMap { UserDefaults.standard.persistentDomain(forName: $0) }?.count ?? 0
         print("saved preferences visible: \(saved)")
@@ -212,9 +214,9 @@ enum CatalogRenderer {
         let appearance = NSAppearance(named: shot.light ? .aqua : shot.appearance)
         NSApp.appearance = appearance
         let host = NSHostingController(rootView: view.environment(\.locale, Locale(identifier: "en_US")))
-        host.sizingOptions = []
+        SettingsWindow.prepare(host: host)
         let window = SettingsWindow(contentViewController: host)
-        window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
+        window.applyZenithChrome()
         window.appearance = appearance
         window.isReleasedWhenClosed = false
         window.title = L10n.shared.s.settingsTitle
