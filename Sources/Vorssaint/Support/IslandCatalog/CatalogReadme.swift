@@ -131,6 +131,9 @@ extension CatalogShots {
         typealias S = CatalogSamples
         return [
             settings("readme-settings-general", page: .general),
+            // Zenith fork: the floating sidebar in both appearances, on the Appearance tile.
+            settings("readme-settings-sidebar-dark", page: .appearance, height: 860),
+            settings("readme-settings-sidebar-light", page: .appearance, height: 860, light: true),
             settings("readme-settings-island", page: .notch) {
                 NotchService.shared.catalogPose(pose())
                 S.music(); S.timer(); S.calendarCountdown()
@@ -182,14 +185,14 @@ extension CatalogShots {
     /// The Settings window open on `page`, as the app opens it.
     static func settings(_ id: String, page: SettingsPage, preferences: [String: Any] = [:], visible: Bool = true,
                          settle: TimeInterval = 1.5, height: CGFloat = 700, // Zenith fork: a taller window
-                         setup: @escaping @MainActor () -> Void = {}) -> CatalogShot {
+                         light: Bool = false, setup: @escaping @MainActor () -> Void = {}) -> CatalogShot {
         CatalogShot(id: id, kind: .window, preferences: preferences, setup: {
             setup()
             SettingsRouter.shared.page = page
             SettingsWindowVisibility.shared.set(visible)
         }, teardown: {
             SettingsWindowVisibility.shared.set(false)
-        }, settle: settle) {
+        }, settle: settle, light: light) {
             (AnyView(SettingsView()), CGSize(width: 1000, height: height))
         }
     }

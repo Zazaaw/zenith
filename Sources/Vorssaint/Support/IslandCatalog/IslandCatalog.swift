@@ -157,6 +157,8 @@ struct CatalogShot {
     var teardown: @MainActor () -> Void = {}
     /// How long the view runs before it is drawn, for what loads on appear.
     var settle: TimeInterval = 0.25
+    /// Zenith fork: draws a `.window` shot in Light Mode instead of Dark.
+    var light = false
     let draw: @MainActor () -> (view: AnyView, size: CGSize)
 }
 
@@ -203,12 +205,13 @@ enum CatalogRenderer {
     /// drawn with its frame (title bar, toolbar, sidebar), then given the
     /// window's rounded corners and shadow on a clear background.
     private static func renderWindow(_ shot: CatalogShot, view: AnyView, size: CGSize, to url: URL) -> [String: Any]? {
-        NSApp.appearance = NSAppearance(named: .darkAqua)
+        let appearance = NSAppearance(named: shot.light ? .aqua : .darkAqua)
+        NSApp.appearance = appearance
         let host = NSHostingController(rootView: view.environment(\.locale, Locale(identifier: "en_US")))
         host.sizingOptions = []
         let window = SettingsWindow(contentViewController: host)
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
-        window.appearance = NSAppearance(named: .darkAqua)
+        window.appearance = appearance
         window.isReleasedWhenClosed = false
         window.title = L10n.shared.s.settingsTitle
         window.setContentSize(size)
