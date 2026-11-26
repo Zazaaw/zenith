@@ -720,6 +720,8 @@ if (( TEST )); then
         Sources/Vorssaint/UI/Settings/BatteriesSettingsSupport.swift
         Sources/Vorssaint/Services/Notch/BatteriesIslandSupport.swift
         Sources/Vorssaint/Core/ZenithBatteriesIslandStrings.swift
+        Sources/Vorssaint/Services/Mechakey/MechakeySupport.swift
+        Sources/Vorssaint/Core/ZenithMechakeyStrings.swift
         Sources/Vorssaint/Core/ZenithPocketStrings.swift
         Sources/Vorssaint/Core/ZenithPocketWatchtowerStrings.swift
         Sources/Vorssaint/UI/Settings/PocketSettingsSupport.swift
@@ -907,6 +909,9 @@ mkdir -p "$STAGE/Contents/Resources/FaceUnlock"
 cp Resources/FaceUnlock/*.mp4 Resources/FaceUnlock/*.png "$STAGE/Contents/Resources/FaceUnlock/"
 ditto Resources/FaceUnlock/ArcFace.mlpackage "$STAGE/Contents/Resources/FaceUnlock/ArcFace.mlpackage"
 cp Resources/FaceUnlock/NOTICE.txt "$STAGE/Contents/Resources/FaceUnlock/NOTICE.txt"
+# Zenith fork: Mechakey's sound packs (Mechvibes, MIT), cut down and re-encoded
+# by Tools/zenith-mechakey-packs.py, and their notice.
+ditto Resources/Mechakey "$STAGE/Contents/Resources/Mechakey"
 xattr -c -r "$STAGE" 2>/dev/null || true
 
 # Signing, in order of preference:

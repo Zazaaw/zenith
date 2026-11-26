@@ -591,7 +591,7 @@ struct SettingsView: View {
                                             .switcher, .dock, .homebrew, .releaseNotes, .about, .support,
                                             .killProcess, .portManager, .workspaces, .lockScreen, .remote,
                                             .faceUnlock, .batteries, .pocket,
-                                            .meetings] // Zenith fork: Meetings
+                                            .meetings, .mechakey] // Zenith fork: Meetings, Mechakey
         if ownHeader.contains(router.page) { return nil }
         if router.page == .translate { return nil } // Zenith fork: Translate opens with its own header
         if router.page == .general, !(detailShowsGeneralTool) { return nil }
@@ -659,6 +659,7 @@ struct SettingsView: View {
         case .faceUnlock: FaceUnlockSettingsPage() // Zenith fork
         case .batteries: BatteriesSettingsPage() // Zenith fork
         case .translate: TranslateSettingsPage() // Zenith fork
+        case .mechakey: MechakeySettingsPage() // Zenith fork
         }
     }
 }

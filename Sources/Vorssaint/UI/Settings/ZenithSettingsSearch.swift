@@ -32,6 +32,7 @@ enum ZenithSettingsSearch {
         .page(.batteries): BatteriesSearch.aliases,
         .page(.translate): TranslateSearch.aliases,
         .page(.meetings): MeetingsSearch.aliases,
+        .page(.mechakey): MechakeySearch.aliases,
         .page(.about): ["tentang", "tentang aplikasi", "versi", "version", "Satu Visual", "Zenith"],
     ]
 
@@ -62,6 +63,7 @@ enum ZenithSettingsSearch {
         let batteries = ZenithStrings.batteries(language) // Batteries
         let translate = ZenithStrings.translate(language) // Translate
         let meetings = ZenithStrings.meetings(language) // Meetings
+        let mechakey = ZenithStrings.mechakey(language) // Mechakey
         let widgets = ZenithStrings.lockScreenWidgets(language)
         let terminal = ZenithStrings.lockScreenTerminal(language)
         let terminalTitle = ZenithStrings.lockScreenTerminalTitle(language)
@@ -213,6 +215,11 @@ enum ZenithSettingsSearch {
             page(.zenithTranslateDownloads, title: translate.downloadsSection, icon: "arrow.down.circle",
                  keywords: [translate.download, translate.manageDownloads, translate.checkPair],
                  aliases: ["offline", "download language", "unduh bahasa", "bahasa terunduh"]),
+            // Mechakey: the switch, the packs and how typing sounds.
+            page(.zenithMechakey, title: mechakey.enable, icon: "pianokeys",
+                 keywords: [mechakey.title, mechakey.soundPack, mechakey.preview, mechakey.volume, mechakey.typing,
+                            mechakey.keyUp, mechakey.ignoreRepeat, mechakey.shortcut],
+                 aliases: MechakeySearch.aliases),
             // Dynamic Island › Activity: the fork's cards.
             section(.zenithCommandActivity, in: .activity, title: commands.section, icon: "terminal",
                     keywords: [commands.toggle, commands.showAfter, commands.showFolder, commands.ignore, commands.hook],

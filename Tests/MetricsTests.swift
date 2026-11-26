@@ -304,6 +304,7 @@ struct MetricsTests {
             ("face-unlock-recognition", { FaceUnlockRecognitionTests.run(suite) }), // Zenith fork
             ("face-unlock-liveness", { FaceUnlockLivenessTests.run(suite) }), // Zenith fork: Glance's liveness self-test
             ("batteries-settings", { BatteriesSettingsTests.run(suite) }), // Zenith fork: Settings → Batteries
+            ("mechakey", { MechakeyTests.run(suite) }), // Zenith fork: keyboard sounds, from Mechvibes' packs
             ("pocket", { PocketTests.run(suite) }), // Zenith fork: Zenith Pocket's Mac side
             ("pocket-claude", { PocketClaudeTests.run(suite) }), // Zenith fork: Claude Code on the phone, Away mode
             ("pocket-settings", { PocketSettingsTests.run(suite) }), // Zenith fork: Settings → iPhone & Watch

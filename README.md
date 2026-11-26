@@ -336,6 +336,8 @@ Zenith stands on the work of others:
   the core tools come from that project and its contributors. Thank you.
 - **[Glance](https://github.com/jonnyoo/glance)** by Jonathan Zhou (MIT License), which
   Face Unlock is adapted from. Its notice is in the app's About page.
+- **[Mechvibes](https://github.com/hainguyents13/mechvibes)** by Hải Nguyễn (MIT License),
+  whose keyboard sound packs Mechakey plays. Its notice is in the app's About page.
 - **[InsightFace](https://github.com/deepinsight/insightface)**, whose ArcFace model
   recognizes faces for Face Unlock. Its weights are licensed for non-commercial
   research use only.

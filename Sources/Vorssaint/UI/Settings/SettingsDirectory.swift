@@ -628,6 +628,9 @@ enum SettingsDirectory {
                                         .screenCaptureFeatureKeywords(s, language: language)),
                 SettingsDirectoryItem(page: .urlCleaner, title: s.urlCleanerName, icon: "link"),
                 SettingsDirectoryItem(page: .keyDebounce, title: s.keyDebounceName, icon: "keyboard"),
+                // Zenith fork: keyboard sounds as you type, a page of its own (no hub feature).
+                SettingsDirectoryItem(page: .mechakey, title: ZenithStrings.mechakey(language).title,
+                                      icon: "pianokeys", keywords: MechakeySearch.keywords(language)),
                 SettingsDirectoryItem(page: .superKey,
                                       title: FeatureStrings.superKey(language).pageTitle,
                                       icon: superKeySource.systemImage,

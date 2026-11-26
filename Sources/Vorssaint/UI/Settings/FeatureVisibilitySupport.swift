@@ -18,6 +18,7 @@ enum SettingsPage: Hashable {
     case batteries // Zenith fork: every device's battery and when to warn, under Monitor
     case translate // Zenith fork: translate a selection on this Mac, a page of its own
     case meetings // Zenith fork: calls from the calendar, Join and the mic, beside the lock screen
+    case mechakey // Zenith fork: mechanical keyboard sounds as you type, a page of its own
 }
 
 /// Stable, non-localized identities for destinations inside shared Settings
@@ -82,6 +83,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
     case zenithBatteries, zenithBatteriesAlerts, zenithBatteriesIPhone
     case zenithTranslate, zenithTranslateLanguages, zenithTranslateDownloads
     case zenithMeetings, zenithMeetingsCalls, zenithMeetingsProviders // Zenith fork
+    case zenithMechakey
 
     var page: SettingsPage {
         switch self {
@@ -117,6 +119,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
         case .zenithBatteries, .zenithBatteriesAlerts, .zenithBatteriesIPhone: return .batteries
         case .zenithTranslate, .zenithTranslateLanguages, .zenithTranslateDownloads: return .translate
         case .zenithMeetings, .zenithMeetingsCalls, .zenithMeetingsProviders: return .meetings // Zenith fork
+        case .zenithMechakey: return .mechakey
         case .zenithDropZones, .zenithWatermark: return .shelf
         case .zenithDesignOverlay, .zenithBeautify: return .screenshot
         case .zenithQR: return .clipboard
@@ -535,7 +538,7 @@ enum FeatureVisibilitySupport {
         case .translate: return [] // Zenith fork: a page of the app's own, which no hub feature hides
         case .general, .features, .shortcuts, .advanced, .about, .releaseNotes, .support,
              .workspaces, .remote, .pocket, .faceUnlock, .batteries,
-             .meetings: // Zenith fork
+             .meetings, .mechakey: // Zenith fork
             return []
         }
     }

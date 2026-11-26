@@ -79,6 +79,7 @@ struct ZenithAboutPage: View {
                     VStack(alignment: .leading, spacing: 10) {
                         FaceUnlockCredits()
                         BatteriesCredits() // Zenith fork: the Batteries droplet, MIT
+                        MechakeyCredits() // Zenith fork: Mechvibes' sound packs, MIT
                     }
                 }
                 .padding(.top, 36)

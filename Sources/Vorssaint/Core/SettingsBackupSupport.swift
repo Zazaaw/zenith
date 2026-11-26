@@ -48,6 +48,7 @@ enum SettingsBackupSupport {
         keys.formUnion(AppFeature.availabilityDefaults.keys)
         keys.formUnion(unregisteredPreferenceKeys)
         keys.formUnion(TranslateDefaults.backupKeys) // Zenith fork: Translate keeps its keys in its own file
+        keys.formUnion(MechakeyDefaults.all) // Zenith fork: Mechakey keeps its keys beside its code
         keys.subtract(machineStateKeys)
         return keys
     }
