@@ -6,7 +6,7 @@ import Foundation
 
 /// The Settings pages. Lives here (without SwiftUI) so the visibility rules
 /// below and the unit tests can reason about pages without pulling UI in.
-enum SettingsPage: Hashable {
+enum SettingsPage: Hashable, CaseIterable {
     case general, features, energy, monitor
     case mouse, switcher, dock, keyDebounce, superKey, cutPaste, autoQuit, quitProtection, cleaner, uninstaller, urlCleaner, homebrew, appUpdates, media, clipboard, windowLayout, shelf, quickTools, textSnippets, screenshot, radialMenu, commandBar, killProcess, portManager, notch, notchMascot
     case shortcuts, advanced, about, releaseNotes, support
@@ -19,6 +19,7 @@ enum SettingsPage: Hashable {
     case translate // Zenith fork: translate a selection on this Mac, a page of its own
     case meetings // Zenith fork: calls from the calendar, Join and the mic, beside the lock screen
     case mechakey // Zenith fork: mechanical keyboard sounds as you type, a page of its own
+    case appearance // Zenith fork: how the island moves and what it is made of, a sidebar tile
 }
 
 /// Stable, non-localized identities for destinations inside shared Settings
@@ -538,7 +539,7 @@ enum FeatureVisibilitySupport {
         case .translate: return [] // Zenith fork: a page of the app's own, which no hub feature hides
         case .general, .features, .shortcuts, .advanced, .about, .releaseNotes, .support,
              .workspaces, .remote, .pocket, .faceUnlock, .batteries,
-             .meetings, .mechakey: // Zenith fork
+             .meetings, .mechakey, .appearance: // Zenith fork
             return []
         }
     }

@@ -1166,6 +1166,11 @@ def main():
           + declaration(directory, "    static func sections(").replace("SuperKeyService.shared.source", ".capsLock")
           + declaration(directory, "    static func searchItems(").replace("SuperKeyService.shared.source", ".capsLock")
               .replace("state: SettingsSearchState = .current", "state: SettingsSearchState")
+          # Zenith fork: the floating sidebar's rows, with the hardware passed in.
+          + declaration(directory, "    private static let toolOnlyPages:", closing="]")
+          + declaration(directory, "    static func sidebarSections(").replace("SuperKeyService.shared.source", ".capsLock")
+              .replace("state: SettingsSearchState = .current", "state: SettingsSearchState")
+              .replace("keyboardLight: Bool = BrightnessService.keyboardLightIsSupported", "keyboardLight: Bool")
           + "}\nextension SettingsFeatureTests.SearchCommands {\n"
           + declaration("Sources/Vorssaint/Services/CommandBar/CommandBarCatalog.swift", "    private static func settingsEntries(")
               .replace("private static func", "static func", 1)

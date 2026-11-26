@@ -299,6 +299,7 @@ struct MetricsTests {
             ("batteries-island", { BatteriesIslandTests.run(suite) }), // Zenith fork: the Batteries page, widget and card
             ("prompter", { PrompterTests.run(suite) }),
             ("fork-settings-search", { ForkSettingsSearchTests.run(suite) }),
+            ("settings-sidebar", { SettingsSidebarTests.run(suite) }), // Zenith fork: the floating sidebar, its groups and icons
             ("remote-lock", { RemoteControlTests.run(suite) }), // Zenith fork: lock and status from an iPhone
             ("face-unlock-flow", { FaceUnlockFlowTests.run(suite) }), // Zenith fork: security, triggers, setup
             ("face-unlock-recognition", { FaceUnlockRecognitionTests.run(suite) }), // Zenith fork

@@ -186,6 +186,15 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   `ZenithRadius` dengan nilai yang sama (kartu Settings 16 = `panel`). Halaman `Form`
   grouped bawaan upstream belum punya header ini; `NotchSettings` belum disentuh.
   `ZenithTokens.swift` ikut dikompilasi ke test karena `SettingsCard` disalin ke sana.
+- **Sidebar Settings mengambang (selesai):** `NavigationSplitView` diganti panel bulat
+  18 pt (`SettingsSidebarView.swift`, Liquid Glass kalau pengaturan kaca nyala, solid
+  kalau tidak) dengan search, empat tile (General, Appearance, Command Bar, Orbit) dan
+  grup Island, Everyday, Capture, Windows, Input, Sound, System, Apps, Devices, From
+  Orbit, Zenith. Grup tiap tujuan di `SettingsSidebarLayout.swift` (switch exhaustive,
+  jadi halaman baru wajib dapat grup), ikon Orbit tiap tujuan di
+  `SettingsSidebarIcons.swift` (tanpa ikon Orbit: SF Symbol di squircle yang sama,
+  warna grupnya). Header halaman (`ZenithPageTitle`) menggambar ikon Orbit 46 pt dari
+  environment `settingsPageIcon`. Halaman Appearance masih placeholder.
 - **Zona AirDrop di notch (selesai):** `Services/Notch/NotchAirDropSupport.swift`.
   Pilihan zona sekarang muncul untuk semua file: Files, AirDrop, dan Optimize media
   (hanya untuk media). `ShelfDropRoutingTests` disesuaikan dan tidak pernah memicu
