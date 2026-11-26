@@ -209,6 +209,7 @@ enum CommandBarCatalog {
         entries.append(contentsOf: snippetEntries(bar))
         entries.append(contentsOf: workspaceEntries(bar)) // Zenith fork: workspaces
         entries.append(contentsOf: qrEntries(bar)) // Zenith fork: QR codes
+        entries.append(contentsOf: translateEntries(bar)) // Zenith fork: Translate
         entries.append(contentsOf: linkEntries(
             CommandBarLinks.decode(UserDefaults.standard.data(forKey: DefaultsKey.commandBarLinks)),
             bar: bar))

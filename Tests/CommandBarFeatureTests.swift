@@ -37,6 +37,7 @@ enum CommandBarFeatureTests {
         static func snippetEntries(_ bar: CommandBarFeatureStrings) -> [CommandBarEntry] { [] }
         static func workspaceEntries(_ bar: CommandBarFeatureStrings) -> [CommandBarEntry] { [] } // Zenith fork
         static func qrEntries(_ bar: CommandBarFeatureStrings) -> [CommandBarEntry] { [] } // Zenith fork
+        static func translateEntries(_ bar: CommandBarFeatureStrings) -> [CommandBarEntry] { [] } // Zenith fork
         static func linkEntries(_ links: [Int], bar: CommandBarFeatureStrings) -> [CommandBarEntry] { [] }
     }
 
