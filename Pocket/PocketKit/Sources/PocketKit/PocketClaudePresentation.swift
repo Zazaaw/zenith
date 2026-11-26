@@ -168,7 +168,7 @@ extension PocketPresentation {
     }
 
     /// Seconds a held turn has left and the whole wait it was given.
-    private static func claudeWait(_ session: PocketClaude.Session, now: Date) -> (left: TimeInterval, total: TimeInterval)? {
+    static func claudeWait(_ session: PocketClaude.Session, now: Date) -> (left: TimeInterval, total: TimeInterval)? {
         guard session.acceptsReply else { return nil }
         let left: TimeInterval, total: TimeInterval
         if let deadline = session.replyDeadline {
