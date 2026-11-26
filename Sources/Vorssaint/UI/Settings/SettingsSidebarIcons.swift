@@ -183,7 +183,7 @@ struct SettingsDestinationIcon: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        Group {
+        OrbitRasterizedIcon(key: "destination|\(id)|\(symbol)|\(rich)", size: size) {
             if let icon = SettingsSidebarIcons.orbitIcon(for: id) {
                 if rich {
                     OrbitIconView(icon: icon)
@@ -198,8 +198,6 @@ struct SettingsDestinationIcon: View {
                 SettingsFallbackIcon(symbol: symbol, tint: SettingsSidebarGroup.of(id).tint)
             }
         }
-        .scaleEffect(size / 100)
-        .frame(width: size, height: size)
         .accessibilityHidden(true)
     }
 }

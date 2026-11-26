@@ -13,16 +13,13 @@ struct OrbitItemIcon: View {
     var size: CGFloat = 38
 
     var body: some View {
-        Group {
+        OrbitRasterizedIcon(key: "item|\(name)", size: size) {
             if let icon = OrbitIcons.named(name) {
                 OrbitIconView(icon: icon)
             } else {
                 OrbitIconBase()
             }
         }
-        .frame(width: 100, height: 100)
-        .scaleEffect(size / 100)
-        .frame(width: size, height: size)
         .accessibilityHidden(true)
     }
 }

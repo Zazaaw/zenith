@@ -745,6 +745,7 @@ if (( TEST )); then
         Sources/Vorssaint/UI/Icons/OrbitIconsIslandSound.swift
         Sources/Vorssaint/UI/Icons/OrbitIconsSystemAI.swift
         Sources/Vorssaint/UI/Icons/OrbitIconsCatalog.swift
+        Sources/Vorssaint/UI/Icons/OrbitIconRaster.swift
         Tests/*.swift
         build/generated-tests/*.swift
     )
