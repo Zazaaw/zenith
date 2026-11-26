@@ -27,8 +27,8 @@ enum OrbitCatalogTests {
                          "\(feature.rawValue) appears in Orbit exactly once")
         }
         let pages = items.compactMap(\.page)
-        suite.expect(Set(pages) == [.lockScreen, .meetings, .translate, .workspaces, .pocket, .remote,
-                                    .batteries, .faceUnlock] && pages.count == 8,
+        suite.expect(Set(pages) == [.lockScreen, .meetings, .translate, .mechakey, .workspaces, .pocket, .remote,
+                                    .batteries, .faceUnlock] && pages.count == 9,
                      "every Zenith page appears exactly once: \(pages)")
         suite.expect(items.count == AppFeature.allCases.count + pages.count,
                      "Orbit lists the hub's features and Zenith's pages, nothing else")
@@ -66,7 +66,7 @@ enum OrbitCatalogTests {
         let picks = OrbitCatalog.picks.compactMap(OrbitCatalog.item)
         suite.expect(picks.count == OrbitCatalog.picks.count, "every pick is a catalog item")
         suite.expect(Set(OrbitCatalog.picks).isSuperset(of: [
-            .page(.meetings), .page(.translate), .feature(.shelf), .feature(.clipboardHistory),
+            .page(.meetings), .page(.translate), .page(.mechakey), .feature(.shelf), .feature(.clipboardHistory),
             .page(.pocket), .page(.batteries), .page(.faceUnlock), .feature(.commandBar),
         ]), "Our Picks holds the curated list")
         suite.expect(OrbitCatalog.item(OrbitCatalog.featured) != nil, "the banner features a catalog item")

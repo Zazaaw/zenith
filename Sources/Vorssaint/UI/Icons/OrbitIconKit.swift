@@ -266,7 +266,7 @@ enum OrbitSeedIcons {
     static let icons: [OrbitIcon] = [
         OrbitIcon(name: "Orbit", group: "Zenith", compact: "circle.hexagongrid.fill", tint: [Color(red: 0.55, green: 0.8, blue: 1), Color(red: 0.35, green: 0.3, blue: 0.95)], art: AnyView(OrbitPlanetArt())),
         OrbitIcon(name: "Voice Transcribe", group: "AI", compact: "waveform", tint: [Color(red: 0.75, green: 0.45, blue: 1), Color(red: 1, green: 0.35, blue: 0.6)], art: AnyView(OrbitVoiceArt())),
-        OrbitIcon(name: "Mechey", group: "Input", compact: "keyboard.fill", tint: [Color(red: 1, green: 0.88, blue: 0.4), Color(red: 1, green: 0.62, blue: 0.1)],
+        OrbitIcon(name: "Mechakey", group: "Input", compact: "keyboard.fill", tint: [Color(red: 1, green: 0.88, blue: 0.4), Color(red: 1, green: 0.62, blue: 0.1)],
                   art: AnyView(OrbitKeycapArt(label: "Z", top: [Color(red: 1, green: 0.92, blue: 0.55), Color(red: 1, green: 0.78, blue: 0.2)], side: Color(red: 0.7, green: 0.45, blue: 0.05)))),
         OrbitIcon(name: "Command Bar", group: "Zenith", compact: "command", tint: [Color(white: 0.95), Color(white: 0.65)],
                   art: AnyView(OrbitKeycapArt(label: "⌘", top: [Color(white: 0.98), Color(white: 0.82)], side: Color(white: 0.5)))),

@@ -88,7 +88,7 @@ struct OrbitGetPlan: Equatable {
 
 enum OrbitCatalog {
     /// Zenith's own pages, which no hub feature stands for.
-    static let pages: [SettingsPage] = [.lockScreen, .meetings, .translate, .workspaces,
+    static let pages: [SettingsPage] = [.lockScreen, .meetings, .translate, .mechakey, .workspaces,
                                         .pocket, .remote, .batteries, .faceUnlock]
 
     /// Every item: the hub's features in their catalog order, then the pages.
@@ -99,9 +99,9 @@ enum OrbitCatalog {
 
     static func item(_ id: OrbitItemID) -> OrbitItem? { byID[id] }
 
-    /// The curated row at the top of All. Mechakey joins once it lands.
+    /// The curated row at the top of All.
     static let picks: [OrbitItemID] = [
-        .page(.meetings), .page(.translate), .feature(.shelf), .feature(.clipboardHistory),
+        .page(.meetings), .page(.translate), .page(.mechakey), .feature(.shelf), .feature(.clipboardHistory),
         .page(.pocket), .page(.batteries), .page(.faceUnlock), .feature(.commandBar),
     ]
 
@@ -130,6 +130,9 @@ enum OrbitCatalog {
         case .translate:
             return OrbitItem(id: .page(page), iconName: "Quick Translate", category: .ai,
                              switchKey: TranslateDefaults.enabled, pagePermissions: [.accessibility])
+        case .mechakey:
+            return OrbitItem(id: .page(page), iconName: "Mechakey", category: .input,
+                             switchKey: MechakeyDefaults.enabled)
         case .workspaces:
             return OrbitItem(id: .page(page), iconName: "Workspaces", category: .windows)
         case .pocket:
