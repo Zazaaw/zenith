@@ -137,7 +137,8 @@ app="$DERIVED/Build/Products/Release-iphoneos/Pocket.app"
 watch_app="$DERIVED/Build/Products/Release-watchos/PocketWatch.app"
 [[ -d "$app" ]] || fail "The build finished but $app is missing."
 [[ -d "$app/Watch/PocketWatch.app" ]] || fail "The build finished but the Watch app isn't inside $app."
-print "✓ Built $app (with the Watch app)"
+[[ -d "$app/PlugIns/PocketWidgets.appex" ]] || fail "The build finished but the widgets aren't inside $app."
+print "✓ Built $app (with the Watch app and the widgets)"
 (( BUILD_ONLY )) && exit 0
 
 # MARK: Install

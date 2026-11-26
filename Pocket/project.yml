@@ -5,9 +5,12 @@
 # `xcodegen generate` turns this into Pocket.xcodeproj, which is not
 # committed. Install with ./install.sh.
 #
-# Three targets, so three App IDs on a free Personal Team (it allows ten new
-# ones a week): the iPhone app, the Watch app embedded in it, and the Watch
-# app's widget extension (its complications), all under id.satuvisual.zenith.pocket.
+# Four targets, so four App IDs on a free Personal Team (it allows ten new
+# ones a week): the iPhone app, its widget extension, the Watch app embedded
+# in it, and the Watch app's widget extension (its complications), all under
+# id.satuvisual.zenith.pocket. The iPhone app and its widgets share an App
+# Group (the latest state) and a Keychain group (the pairing), as the Watch
+# app and its complications do.
 
 name: Pocket
 options:
@@ -41,6 +44,7 @@ targets:
     dependencies:
       - package: PocketKit
       - target: PocketWatch
+      - target: PocketWidgets
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: id.satuvisual.zenith.pocket
@@ -79,6 +83,46 @@ targets:
         com.apple.security.application-groups: [group.id.satuvisual.zenith.pocket]
         keychain-access-groups: [$(AppIdentifierPrefix)id.satuvisual.zenith.pocket.shared]
     scheme: {}
+
+  # The iPhone's widgets, Lock Screen accessories and Control Center
+  # controls. They share the pairing store, the widgets' file and the theme
+  # with the app, and its fonts.
+  PocketWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Widgets
+      - path: App/Model/PairingStore.swift
+      - path: App/Model/WidgetVault.swift
+      - path: App/Views/Theme.swift
+      - path: App/Resources/Fonts
+    dependencies:
+      - package: PocketKit
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
+      - sdk: AppIntents.framework
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: id.satuvisual.zenith.pocket.widgets
+        TARGETED_DEVICE_FAMILY: "1"
+        SKIP_INSTALL: YES
+    info:
+      path: Widgets/Info.plist
+      properties:
+        CFBundleDisplayName: Pocket
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UIAppFonts:
+          - PlusJakartaSans-Medium.ttf
+          - PlusJakartaSans-ExtraBold.ttf
+        PocketKeychainGroup: $(AppIdentifierPrefix)id.satuvisual.zenith.pocket.shared
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: Widgets/PocketWidgets.entitlements
+      properties:
+        com.apple.security.application-groups: [group.id.satuvisual.zenith.pocket]
+        keychain-access-groups: [$(AppIdentifierPrefix)id.satuvisual.zenith.pocket.shared]
 
   # The Watch app: a single-target watchOS app, embedded in Pocket so it
   # installs with it. It shares PocketKit and the companion star.
