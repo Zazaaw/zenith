@@ -72,6 +72,12 @@ targets:
         UIBackgroundModes: [fetch]
         BGTaskSchedulerPermittedIdentifiers:
           - id.satuvisual.zenith.pocket.report
+        PocketKeychainGroup: $(AppIdentifierPrefix)id.satuvisual.zenith.pocket.shared
+    entitlements:
+      path: App/Pocket.entitlements
+      properties:
+        com.apple.security.application-groups: [group.id.satuvisual.zenith.pocket]
+        keychain-access-groups: [$(AppIdentifierPrefix)id.satuvisual.zenith.pocket.shared]
     scheme: {}
 
   # The Watch app: a single-target watchOS app, embedded in Pocket so it

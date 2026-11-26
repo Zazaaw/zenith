@@ -8,6 +8,7 @@ import PocketKit
 /// Keeps Zenith's Batteries current while Pocket is closed: iOS wakes the
 /// app now and then (as often as it judges, at most every half hour here),
 /// and the phone's battery goes into its box. No live channel is opened.
+/// The widgets get the Mac's box, read at the same time.
 enum BackgroundReport {
     static let identifier = "id.satuvisual.zenith.pocket.report"
     static let interval: TimeInterval = 30 * 60
@@ -22,7 +23,10 @@ enum BackgroundReport {
     /// still keeps the chain going.
     static func run() async {
         schedule()
-        guard let pairing = PairingStore.load(), let report = await PhoneBattery.report() else { return }
+        guard let pairing = PairingStore.load() else { return }
+        let phone = await PhoneBattery.read()
+        await WidgetFeed.shared.refresh(pairing, phone: phone)
+        guard let report = await PhoneBattery.report() else { return }
         try? await PocketLink(pairing: pairing, me: .phone).putBox(pairing.phoneBoxID, report)
     }
 }

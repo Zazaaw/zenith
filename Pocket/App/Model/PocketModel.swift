@@ -27,6 +27,18 @@ final class PocketModel {
     enum Tab: Int, CaseIterable, Identifiable {
         case home, claude, mac, devices
         var id: Int { rawValue }
+
+        /// A widget's link: `zenith-pocket://claude` and the like.
+        init?(route url: URL) {
+            guard url.scheme == PocketPairing.urlScheme else { return nil }
+            switch url.host() {
+            case "home": self = .home
+            case "claude": self = .claude
+            case "mac": self = .mac
+            case "devices": self = .devices
+            default: return nil
+            }
+        }
     }
 
     /// The keep-awake lengths offered; 0 is until turned off.
@@ -85,6 +97,9 @@ final class PocketModel {
 
     init() {
         pairing = PairingStore.load()
+        PairingStore.share()
+        // Unpaired while the widgets still hold a Mac (a reinstall keeps the group).
+        if pairing == nil, WidgetVault.load() != nil { WidgetFeed.shared.pairingChanged(paired: false, phone: nil, watch: watch) }
         WatchBridge.shared.start(model: self, pairing: pairing)
         if let cached = WallpaperCache.load() {
             wallpaperHash = cached.hash
@@ -119,6 +134,7 @@ final class PocketModel {
     func watchBatteryChanged(_ device: PocketDeviceReport.Device) {
         guard device != watch else { return }
         watch = device
+        WidgetFeed.shared.watchChanged(device)
         if pocketLink != nil {
             sendReport()
         } else if let pairing, let report = PhoneBattery.report() {
@@ -133,6 +149,7 @@ final class PocketModel {
         active = true
         observeBattery()
         phone = PhoneBattery.read()
+        WidgetFeed.shared.phoneChanged(phone)
         guard let pairing else { return }
         start(pairing)
     }
@@ -141,6 +158,7 @@ final class PocketModel {
         guard active else { return }
         active = false
         unobserveBattery()
+        WidgetFeed.shared.flush()
         // The link closes after telling the Mac the phone stopped watching.
         let leaving = pocketLink, watching = link == .live
         pocketLink = nil
@@ -232,6 +250,7 @@ final class PocketModel {
         forgetMac()
         pairing = next
         WatchBridge.shared.pairingChanged(next)
+        WidgetFeed.shared.pairingChanged(paired: true, phone: phone, watch: watch)
         tab = .home
         if active { start(next) }
     }
@@ -245,6 +264,7 @@ final class PocketModel {
         PairingStore.delete()
         self.pairing = nil
         WatchBridge.shared.pairingChanged(nil)
+        WidgetFeed.shared.pairingChanged(paired: false, phone: phone, watch: watch)
         forgetMac()
         showingSettings = false
     }
@@ -322,6 +342,7 @@ final class PocketModel {
         stateIsLive = live
         loading = false
         WatchBridge.shared.stateChanged(next, sentAt: sentAt, heardAt: heardAt ?? heard)
+        WidgetFeed.shared.stateChanged(next, sentAt: sentAt, heardAt: heardAt ?? heard)
         mac.record(next.health, at: heard)
         if next.awakeUntil == nil { awakeChoice = nil }
         if let hash = next.wallpaperHash {
@@ -464,6 +485,7 @@ final class PocketModel {
             try? await Task.sleep(for: .seconds(2))
             guard !Task.isCancelled, let self else { return }
             self.phone = PhoneBattery.read()
+            WidgetFeed.shared.phoneChanged(self.phone)
             self.sendReport()
         }
     }
@@ -472,6 +494,8 @@ final class PocketModel {
     func deviceNamesChanged() {
         phone = PhoneBattery.read()
         watch = WatchBridge.storedWatch()
+        WidgetFeed.shared.phoneChanged(phone)
+        WidgetFeed.shared.watchChanged(watch)
         sendReport()
     }
 

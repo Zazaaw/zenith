@@ -32,9 +32,13 @@ struct PocketApp: App {
             }
             .environment(model)
             .preferredColorScheme(theme.scheme)
-            // The iPhone Camera app opens Zenith's QR code here.
+            // The iPhone Camera app opens Zenith's QR code here, and a
+            // widget its tab.
             .onOpenURL { url in
-                if !model.open(url) { model.show("That isn't a Zenith pairing code.", ok: false) }
+                if let tab = PocketModel.Tab(route: url) {
+                    model.showingSettings = false
+                    model.tab = tab
+                } else if !model.open(url) { model.show("That isn't a Zenith pairing code.", ok: false) }
             }
         }
         .onChange(of: scenePhase) { _, phase in
