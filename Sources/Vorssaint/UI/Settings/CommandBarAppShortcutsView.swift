@@ -142,6 +142,7 @@ struct CommandBarAppShortcutsView: View {
         }
         .padding(24)
         .frame(width: 780, height: 560)
+        .environment(\.settingsPageIcon, nil) // Zenith fork: a sheet, not the page's header
         .onAppear { service.refreshApplications() }
         .onChange(of: features.revision) { _, _ in
             if !AppFeature.commandBar.isAvailable { dismiss() }

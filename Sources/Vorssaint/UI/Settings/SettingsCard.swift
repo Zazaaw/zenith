@@ -72,8 +72,21 @@ struct SettingsPageHeader<Accessory: View>: View {
 struct ZenithPageTitle: View {
     let title: String
     var subtitle: String? = nil
+    /// The open page's Orbit icon, set by Settings for the page it shows.
+    @Environment(\.settingsPageIcon) private var icon
 
     var body: some View {
+        if let icon {
+            HStack(alignment: .center, spacing: 14) {
+                SettingsDestinationIcon(id: icon.id, symbol: icon.symbol, size: 46, rich: true)
+                text
+            }
+        } else {
+            text
+        }
+    }
+
+    private var text: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(ZenithType.pageTitle)

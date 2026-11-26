@@ -17,11 +17,12 @@ struct SettingsSidebarItem: Identifiable {
     let icon: String
 }
 
-/// A stable category in the sidebar; its title follows the selected language.
+/// One group of the sidebar (or its tiles), in `SettingsSidebarLayout`'s order.
 struct SettingsSidebarSection: Identifiable {
-    let id: Int
-    let title: String
+    let group: SettingsSidebarGroup
     let items: [SettingsSidebarItem]
+    var id: SettingsSidebarGroup { group }
+    var title: String { group.title }
 }
 
 /// Builds one row per tool, even when several tools share one Settings card.
@@ -63,27 +64,6 @@ enum SettingsSidebarSupport {
             title: FeatureStrings.screenshot(language).scrollingCaptureTitle,
             icon: ScreenCaptureTool.scrolling.systemImageName), at: index + 1)
         return result
-    }
-
-    /// Splits window and control rows, and takes input, file and sound tools
-    /// out of Utilities, so the sidebar groups them as the Features page does.
-    /// Rows of other groups, or of no feature, stay where they are.
-    static func featureGroupRows(windowsControls: [SettingsSidebarItem],
-                                 utilities: [SettingsSidebarItem])
-        -> (windowsDock: [SettingsSidebarItem], mouseKeyboard: [SettingsSidebarItem],
-            files: [SettingsSidebarItem], sound: [SettingsSidebarItem],
-            utilities: [SettingsSidebarItem]) {
-        func group(_ item: SettingsSidebarItem) -> FeatureGroup? {
-            if case .feature(let feature) = item.id { return feature.group }
-            return AppFeature.allCases.first { $0.settingsDestination == item.destination }?.group
-        }
-        func moved(_ target: FeatureGroup) -> [SettingsSidebarItem] {
-            utilities.filter { group($0) == target }
-        }
-        return (windowsControls.filter { group($0) == .windowsDock },
-                windowsControls.filter { group($0) != .windowsDock } + moved(.mouseKeyboard),
-                moved(.clipboardFiles), moved(.sound),
-                utilities.filter { ![.mouseKeyboard, .clipboardFiles, .sound].contains(group($0)) })
     }
 
     static func selection(for destination: FeatureSettingsDestination,

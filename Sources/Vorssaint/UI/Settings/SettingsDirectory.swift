@@ -81,100 +81,55 @@ enum SettingsDirectory {
         .energy, .mouse, .switcher, .dock, .clipboard, .cutPaste, .quickTools, .screenshot,
     ]
 
-    /// Keep the directory's destinations, but show the most useful groups
-    /// first and separate everyday controls from the longer tool list.
+    /// The sidebar: the directory's rows (one per page, or one per tool on a
+    /// shared page), sorted by `SettingsSidebarLayout` into the four tiles and
+    /// the groups under them. Zenith fork: the floating sidebar's groups.
     static func sidebarSections(_ s: Strings,
                                 language: AppLanguage,
                                 superKeySource: SuperKeySource = SuperKeyService.shared.source,
+                                state: SettingsSearchState = .current,
+                                keyboardLight: Bool = BrightnessService.keyboardLightIsSupported,
                                 isAvailable: (AppFeature) -> Bool) -> [SettingsSidebarSection] {
         let hub = FeatureStrings.hub(language)
-        let grouped: [SettingsSidebarSection] = sections(
-            s, language: language, superKeySource: superKeySource,
-            state: .current
-        ).enumerated().compactMap { index, section -> SettingsSidebarSection? in
-                let items = section.items.flatMap { pageItem -> [SettingsSidebarItem] in
-                    var rows = SettingsSidebarSupport.items(
-                        page: pageItem.page, title: pageItem.title, icon: pageItem.icon,
-                        preferredFeatures: pageItem.terms.compactMap(\.feature),
-                        includePage: !toolOnlyPages.contains(pageItem.page),
-                        isAvailable: isAvailable) { feature in
-                            if feature == .clipboardHistory {
-                                return FeatureStrings.commandBar(language).sourceClipboard
-                            }
-                            return feature.hubTitle(s, hub: hub, language: language)
+        let rows = sections(s, language: language, superKeySource: superKeySource, state: state)
+            .flatMap(\.items).flatMap { pageItem -> [SettingsSidebarItem] in
+                var rows = SettingsSidebarSupport.items(
+                    page: pageItem.page, title: pageItem.title, icon: pageItem.icon,
+                    preferredFeatures: pageItem.terms.compactMap(\.feature),
+                    includePage: !toolOnlyPages.contains(pageItem.page),
+                    isAvailable: isAvailable) { feature in
+                        if feature == .clipboardHistory {
+                            return FeatureStrings.commandBar(language).sourceClipboard
                         }
-                    if pageItem.page == .screenshot {
-                        rows = SettingsSidebarSupport.screenshotRows(rows, language: language)
+                        return feature.hubTitle(s, hub: hub, language: language)
                     }
-                    if pageItem.page == .general {
-                        rows.insert(SettingsSidebarItem(
-                            id: .setting(.panelConfiguration),
-                            destination: FeatureSettingsDestination(
-                                .general, sectionAnchor: .panelConfiguration),
-                            title: s.menuBarSection, icon: "menubar.rectangle"), at: 1)
-                    }
-                    if pageItem.page == .shortcuts, isAvailable(.brightness),
-                       BrightnessService.keyboardLightIsSupported {
-                        let destination = FeatureSettingsDestination(
-                            .shortcuts, sectionAnchor: .keyboardBrightnessShortcuts)
-                        rows.append(SettingsSidebarItem(
-                            id: .setting(.keyboardBrightnessShortcuts), destination: destination,
-                            title: FeatureStrings.brightness(language).keyboardLight,
-                            icon: "keyboard"))
-                    }
-                    return rows
+                if pageItem.page == .screenshot {
+                    rows = SettingsSidebarSupport.screenshotRows(rows, language: language)
                 }
-                guard !items.isEmpty else { return nil }
-                return SettingsSidebarSection(id: index, title: section.title, items: items)
+                if pageItem.page == .general {
+                    rows.insert(SettingsSidebarItem(
+                        id: .setting(.panelConfiguration),
+                        destination: FeatureSettingsDestination(
+                            .general, sectionAnchor: .panelConfiguration),
+                        title: s.menuBarSection, icon: "menubar.rectangle"), at: 1)
+                    // Zenith fork: Appearance, a tile beside General.
+                    rows.insert(SettingsSidebarItem(
+                        id: .page(.appearance), destination: FeatureSettingsDestination(.appearance),
+                        title: ZenithStrings.appearancePage(language).title, icon: "paintpalette"), at: 1)
+                }
+                if pageItem.page == .shortcuts, isAvailable(.brightness), keyboardLight {
+                    let destination = FeatureSettingsDestination(
+                        .shortcuts, sectionAnchor: .keyboardBrightnessShortcuts)
+                    rows.append(SettingsSidebarItem(
+                        id: .setting(.keyboardBrightnessShortcuts), destination: destination,
+                        title: FeatureStrings.brightness(language).keyboardLight,
+                        icon: "keyboard"))
+                }
+                // The companion lives in the island, and its settings in a tab
+                // of the island's page rather than a row of their own.
+                return rows.filter { $0.id != .page(.notchMascot) }
             }
-        guard let essentials = grouped.first(where: { $0.id == 0 }) else { return grouped }
-        let categories = FeatureStrings.settingsCategories(language)
-        // Monitor keeps its tool rows, such as Fan Control, beside it.
-        var core = essentials.items.filter { item in
-            switch item.id {
-            case .page(.general), .page(.features),
-                 .setting(.panelConfiguration), .page(.batteries): return true // Zenith fork: Batteries
-            default: return item.destination.page == .monitor
-            }
-        }
-        // Zenith fork: Batteries right under Monitor, above Monitor's tool rows.
-        if let batteries = core.firstIndex(where: { $0.id == .page(.batteries) }),
-           let monitor = core.firstIndex(where: { $0.id == .page(.monitor) }), batteries > monitor {
-            core.insert(core.remove(at: batteries), at: monitor + 1)
-        }
-        // The companion lives in the island, and its settings in a tab of the
-        // island's page rather than a row of their own.
-        let islandPages: Set<SettingsSidebarItem.ID> = [.page(.notch)]
-        let island = grouped.first(where: { $0.id == 4 })?.items.filter {
-            islandPages.contains($0.id)
-        } ?? []
-        let sound: [SettingsSidebarItem] = essentials.items.filter { item in
-            item.destination.page == .general
-                && item.destination.sectionAnchor != nil
-                && item.destination.sectionAnchor != .panelConfiguration
-        }
-        let energy: [SettingsSidebarItem] = essentials.items.filter {
-            $0.destination.page == .energy
-        }
-        func rows(_ id: Int) -> [SettingsSidebarItem] {
-            grouped.first(where: { $0.id == id })?.items ?? []
-        }
-        let byGroup = SettingsSidebarSupport.featureGroupRows(
-            windowsControls: rows(1), utilities: rows(4).filter {
-                !islandPages.contains($0.id) && $0.id != .page(.notchMascot)
-            })
-        let featured = [
-            SettingsSidebarSection(id: 0, title: categories.essentials,
-                                   items: Array(core.prefix(3)) + island + Array(core.dropFirst(3))),
-            SettingsSidebarSection(id: 4, title: categories.utilities, items: byGroup.utilities),
-            SettingsSidebarSection(id: 6, title: hub.groupSound, items: sound + byGroup.sound),
-            SettingsSidebarSection(id: 7, title: hub.groupEnergyDisplay, items: energy),
-            SettingsSidebarSection(id: 1, title: hub.groupWindowsDock, items: byGroup.windowsDock),
-            SettingsSidebarSection(id: 8, title: hub.groupMouseKeyboard, items: byGroup.mouseKeyboard),
-            SettingsSidebarSection(id: 2, title: categories.files, items: rows(2) + byGroup.files),
-        ]
-        let remaining = grouped.filter { ![0, 1, 2, 4].contains($0.id) }
-        return [featured[0]] + featured.dropFirst().filter { !$0.items.isEmpty } + remaining
+        return SettingsSidebarLayout.sections(rows)
     }
 
     static func sidebarItems(_ s: Strings,
