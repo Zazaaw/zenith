@@ -59,6 +59,7 @@ struct NotchMirrorView: View {
             case .golden: SkyCapsuleStrip(service: service, kind: .golden, size: size, displayGeometry: geometry) // Zenith fork
             case .git: GitCapsuleStrip(service: service, size: size, displayGeometry: geometry) // Zenith fork
             case .batteries: BatteriesCapsuleStrip(service: service, size: size, displayGeometry: geometry) // Zenith fork
+            case .meeting: MeetingsCapsuleStrip(service: service, size: size, displayGeometry: geometry) // Zenith fork
             }
         } else {
             switch activity {
@@ -78,6 +79,7 @@ struct NotchMirrorView: View {
             case .golden: SkyActivityStrip(service: service, kind: .golden, displayGeometry: mirror.strip) // Zenith fork
             case .git: GitActivityStrip(service: service, displayGeometry: mirror.strip) // Zenith fork
             case .batteries: BatteriesActivityStrip(service: service, displayGeometry: mirror.strip) // Zenith fork
+            case .meeting: MeetingsActivityStrip(service: service, displayGeometry: mirror.strip) // Zenith fork
             }
         }
     }

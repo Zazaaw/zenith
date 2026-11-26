@@ -699,13 +699,19 @@ final class NotchService: ObservableObject {
         BatteriesIslandService.shared.indicator != nil && BatteriesIslandSupport.isEnabled()
     }
 
+    /// Zenith fork: a call under way, while Meetings shows its strip.
+    var hasMeetingActivity: Bool {
+        MeetingsService.shared.call != nil
+    }
+
     var compactActivity: NotchCompactActivity? {
         // A new song waiting for its notice is not drawn yet.
         activitySelection.current(available: awaitsTrackNotice ? compactActivities.filter { $0 != .music } : compactActivities)
     }
 
     var compactActivities: [NotchCompactActivity] {
-        NotchSupport.compactActivities(timer: hasTimerActivity, watch: hasWatchActivity, downloads: hasDownloadActivity,
+        // Zenith fork: a live call comes before everything else.
+        (hasMeetingActivity ? [NotchCompactActivity.meeting] : []) + NotchSupport.compactActivities(timer: hasTimerActivity, watch: hasWatchActivity, downloads: hasDownloadActivity,
                                       agents: hasAgentActivity, calendar: hasCalendarActivity,
                                       music: hasMusicActivity, keepAwake: hasKeepAwakeActivity,
                                       vercel: hasVercelActivity, command: hasCommandActivity,
@@ -848,6 +854,7 @@ final class NotchService: ObservableObject {
         case .golden: return geometry.compactWatchGeometry(wing: goldenStripWing(in: geometry)) // Zenith fork
         case .git: return geometry.compactWatchGeometry(wing: gitStripWing(in: geometry)) // Zenith fork
         case .batteries: return geometry.compactWatchGeometry(wing: batteriesStripWing(in: geometry)) // Zenith fork
+        case .meeting: return geometry.compactWatchGeometry(wing: meetingStripWing(in: geometry)) // Zenith fork
         default: return geometry
         }
     }
@@ -899,6 +906,11 @@ final class NotchService: ObservableObject {
     /// Zenith fork: the wider of the sun and its clock or the golden hour's words.
     private func goldenStripWing(in geometry: NotchGeometry) -> CGFloat {
         SkyStripLayout.stripWing(.golden, language: L10n.shared.language, in: geometry)
+    }
+
+    /// Zenith fork: the call's glyph and title on one side, its clock and mic on the other.
+    private func meetingStripWing(in geometry: NotchGeometry) -> CGFloat {
+        MeetingsStripLayout.stripWing(MeetingsService.shared.call, in: geometry)
     }
 
     /// Zenith fork: the device's symbol on one side, the red battery and its level on the other.
@@ -1368,6 +1380,8 @@ final class NotchService: ObservableObject {
             return GitStripLayout.capsuleSurface(GitService.shared.indicator, geometry: geometry)
         case .batteries: // Zenith fork
             return BatteriesStripLayout.capsuleSurface(BatteriesIslandService.shared.indicator, geometry: geometry)
+        case .meeting: // Zenith fork
+            return MeetingsStripLayout.capsuleSurface(MeetingsService.shared.call, geometry: geometry)
         }
     }
 
@@ -1468,6 +1482,7 @@ final class NotchService: ObservableObject {
         RecapService.shared.syncWithPreferences() // Zenith fork: one timer for the day's recap notice.
         SkyService.shared.syncWithPreferences() // Zenith fork: one timer for the next prayer and golden hour.
         BatteriesMonitor.shared.syncWithPreferences() // Zenith fork: Batteries scans only while it is on.
+        MeetingsService.shared.syncWithPreferences() // Zenith fork: one timer for the next call; listens only near one.
         ClaudeHooksService.shared.syncWithPreferences() // Zenith fork: Claude Code's hooks, while Claude shows.
         followsPointer = displayPreference == .pointer || displayPreference == .all
         showsOnAllDisplays = displayPreference == .all
@@ -1580,6 +1595,7 @@ final class NotchService: ObservableObject {
         RecapService.shared.stop() // Zenith fork
         SkyService.shared.stop() // Zenith fork
         BatteriesMonitor.shared.stop() // Zenith fork
+        MeetingsService.shared.stop() // Zenith fork
         let cancelCapture = captureControlsCancel
         endCaptureControls()
         cancelCapture?()
@@ -4868,6 +4884,13 @@ final class NotchService: ObservableObject {
                 guard let self, self.expanded, self.selected == .batteries else { return }
                 self.objectWillChange.send()
                 self.refreshPresentation()
+            }.store(in: &subscriptions)
+        // Zenith fork: a call's strip showing, changing or going.
+        MeetingsService.shared.$call.removeDuplicates().dropFirst().receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.syncMenuSpaceMonitoring()
+                self?.objectWillChange.send()
+                self?.refreshPresentation()
             }.store(in: &subscriptions)
         // Zenith fork: a device's low battery showing in the closed island, changing or going.
         BatteriesIslandService.shared.$indicator.removeDuplicates().dropFirst().receive(on: DispatchQueue.main)
