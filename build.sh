@@ -723,6 +723,9 @@ if (( TEST )); then
         Sources/Vorssaint/Core/ZenithPocketStrings.swift
         Sources/Vorssaint/Core/ZenithPocketWatchtowerStrings.swift
         Sources/Vorssaint/UI/Settings/PocketSettingsSupport.swift
+        # Zenith fork: Meetings' link parser, schedule and call tracker, and its words.
+        Sources/Vorssaint/Services/Meetings/MeetingsSupport.swift
+        Sources/Vorssaint/Core/ZenithMeetingsStrings.swift
         Tests/*.swift
         build/generated-tests/*.swift
     )
