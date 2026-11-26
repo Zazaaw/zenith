@@ -20,6 +20,10 @@ struct SplashView: View {
     /// The glass runs half again as fast as its own timeline, as on the web.
     private static let speed = 1.5
     private static let starSize: CGFloat = 92
+    /// What hangs under the star: the gap, "Zenith Pocket", the gap and the
+    /// link's line. The star sits half of it above the middle, so the star
+    /// and its words together are centred.
+    private static let wordsHeight: CGFloat = 100
 
     var body: some View {
         let look = GlassLook(dark: scheme == .dark)
@@ -27,11 +31,12 @@ struct SplashView: View {
             let t = reduceMotion ? 10 : max(0, context.date.timeIntervalSince(start))
             let T = t * Self.speed
             let glassDone = T >= look.end
-            // The star has one place for the whole splash, the screen's centre:
-            // the glass draws it there and the still star takes over in the
-            // same spot, so it never jumps; only the text arrives below it.
+            // The star has one place for the whole splash, a little above the
+            // middle so it and its words are centred together: the glass draws
+            // it there and the still star takes over in the same spot, so it
+            // never jumps; only the text arrives below it.
             GeometryReader { geo in
-                let center = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
+                let center = CGPoint(x: geo.size.width / 2, y: (geo.size.height - Self.wordsHeight) / 2)
                 ZStack {
                     if glassDone {
                         K.bg
