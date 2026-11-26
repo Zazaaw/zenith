@@ -151,6 +151,10 @@ final class WatchBridge: NSObject {
     }
 
     fileprivate func reply(to message: [String: Any]) async -> [String: Any] {
+        if message[PocketWatchContext.watchBatteryKey] != nil {
+            received(message)
+            return [:]
+        }
         if let command = PocketWatchContext.command(from: message) {
             let ok = await model?.relayFromWatch(command) ?? false
             return [PocketWatchContext.sentKey: ok]
@@ -189,6 +193,11 @@ extension WatchBridge: WCSessionDelegate {
     nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
         let body = Message(userInfo)
         Task { @MainActor in WatchBridge.shared.received(body.body) }
+    }
+
+    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+        let body = Message(message)
+        Task { @MainActor in _ = await WatchBridge.shared.reply(to: body.body) }
     }
 
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any],

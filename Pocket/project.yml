@@ -1,9 +1,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Satu Visual
 #
-# Zenith Pocket, the iPhone (and later Apple Watch) companion of Zenith.
+# Zenith Pocket, the iPhone and Apple Watch companion of Zenith.
 # `xcodegen generate` turns this into Pocket.xcodeproj, which is not
-# committed. Install on a phone with ./install.sh.
+# committed. Install with ./install.sh.
+#
+# Two targets, so two App IDs on a free Personal Team (it allows ten new
+# ones a week): the iPhone app and the Watch app embedded in it, both under
+# id.satuvisual.zenith.pocket.
 
 name: Pocket
 options:
@@ -11,6 +15,7 @@ options:
   developmentLanguage: en
   deploymentTarget:
     iOS: "26.0"
+    watchOS: "26.0"
   createIntermediateGroups: true
 
 packages:
@@ -34,6 +39,7 @@ targets:
       - path: App
     dependencies:
       - package: PocketKit
+      - target: PocketWatch
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: id.satuvisual.zenith.pocket
@@ -67,5 +73,37 @@ targets:
           - id.satuvisual.zenith.pocket.report
     scheme: {}
 
-  # PocketWatch (watchOS 26, embedded in Pocket) comes later; it will share
-  # PocketKit and its PocketPresentation.
+  # The Watch app: a single-target watchOS app, embedded in Pocket so it
+  # installs with it. It shares PocketKit and the companion star.
+  PocketWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - path: Watch
+      - path: WatchShared
+      - path: App/Views/ClaudeMascot.swift
+      - path: App/Views/StarShape.swift
+    dependencies:
+      - package: PocketKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: id.satuvisual.zenith.pocket.watchkitapp
+        PRODUCT_NAME: PocketWatch
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SKIP_INSTALL: YES
+        ENABLE_PREVIEWS: YES
+    info:
+      path: Watch/Info.plist
+      properties:
+        CFBundleDisplayName: Pocket
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        WKApplication: true
+        WKCompanionAppBundleIdentifier: id.satuvisual.zenith.pocket
+        WKRunsIndependentlyOfCompanionApp: false
+        PocketKeychainGroup: $(AppIdentifierPrefix)id.satuvisual.zenith.pocket.shared
+    entitlements:
+      path: Watch/PocketWatch.entitlements
+      properties:
+        com.apple.security.application-groups: [group.id.satuvisual.zenith.pocket]
+        keychain-access-groups: [$(AppIdentifierPrefix)id.satuvisual.zenith.pocket.shared]
