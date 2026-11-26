@@ -456,5 +456,13 @@ extension Permissions {
     func catalogPoseCalendarAccess() {
         if #available(macOS 14, *) { calendarAccess = .fullAccess } else { calendarAccess = .authorized }
     }
+
+    /// Orbit's renders: the broad grants in place, so rows show the catalog
+    /// rather than the sandbox's refusals.
+    func catalogPoseBroadGrants() {
+        accessibility = true
+        screenRecording = true
+        fullDiskAccess = true
+    }
 }
 #endif
