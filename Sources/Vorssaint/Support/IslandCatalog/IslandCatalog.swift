@@ -60,8 +60,10 @@ enum IslandCatalog {
         }
         var manifest: [[String: Any]] = []
         var failures: [String] = []
-        // Zenith fork: `--only readme…` draws the README's pictures instead.
-        let shots = only?.hasPrefix("readme") == true ? CatalogShots.readme : CatalogShots.all
+        // Zenith fork: `--only readme…` draws the README's pictures instead,
+        // and `--only orbit…` the Features page.
+        let shots = only?.hasPrefix("readme") == true ? CatalogShots.readme
+            : only?.hasPrefix("orbit") == true ? CatalogShots.orbit : CatalogShots.all
         for shot in shots where only.map({ shot.id.hasPrefix($0) }) ?? true {
             let url = folder.appendingPathComponent(shot.id + ".png")
             if let entry = CatalogRenderer.render(shot, to: url) {
@@ -157,6 +159,8 @@ struct CatalogShot {
     var teardown: @MainActor () -> Void = {}
     /// How long the view runs before it is drawn, for what loads on appear.
     var settle: TimeInterval = 0.25
+    /// Zenith fork: a window shot's appearance, for Light Mode renders.
+    var appearance: NSAppearance.Name = .darkAqua
     let draw: @MainActor () -> (view: AnyView, size: CGSize)
 }
 
@@ -203,12 +207,12 @@ enum CatalogRenderer {
     /// drawn with its frame (title bar, toolbar, sidebar), then given the
     /// window's rounded corners and shadow on a clear background.
     private static func renderWindow(_ shot: CatalogShot, view: AnyView, size: CGSize, to url: URL) -> [String: Any]? {
-        NSApp.appearance = NSAppearance(named: .darkAqua)
+        NSApp.appearance = NSAppearance(named: shot.appearance)
         let host = NSHostingController(rootView: view.environment(\.locale, Locale(identifier: "en_US")))
         host.sizingOptions = []
         let window = SettingsWindow(contentViewController: host)
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
-        window.appearance = NSAppearance(named: .darkAqua)
+        window.appearance = NSAppearance(named: shot.appearance)
         window.isReleasedWhenClosed = false
         window.title = L10n.shared.s.settingsTitle
         window.setContentSize(size)

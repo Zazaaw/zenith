@@ -8,6 +8,7 @@ import SwiftUI
 
 enum OrbitIcons {
     static let all: [OrbitIcon] = OrbitSeedIcons.icons + OrbitIconsA.icons + OrbitIconsB.icons + OrbitIconsC.icons
+        + OrbitIconsD.icons
 
     private static let byName: [String: OrbitIcon] = Dictionary(all.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })
 

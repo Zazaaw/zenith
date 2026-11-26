@@ -312,6 +312,7 @@ struct MetricsTests {
             ("pocket-mac", { PocketMacTests.run(suite) }), // Zenith fork: Zenith Pocket's Mac tab
             ("translate", { TranslateTests.run(suite) }), // Zenith fork: Translate's language choice, text and clipboard
             ("meetings", { MeetingsTests.run(suite) }), // Zenith fork: call links, the next meeting, notice timing
+            ("orbit-catalog", { OrbitCatalogTests.run(suite) }), // Zenith fork: the Features page's catalog, routing and search
         ]
         var selected = Set<String>()
         var listOnly = false

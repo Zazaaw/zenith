@@ -1,33 +1,31 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Vorssaint
+// Copyright (C) 2026 Satu Visual
 
 import AppKit
 import SwiftUI
 
-/// The Features hub. Install or uninstall each feature, grouped in plain
-/// language: uninstalling removes it from the whole app (Settings, panel,
-/// menu bar, shortcuts) and stops its work; its configuration is kept for
-/// its return. The Permissions tab is the transparency portal: what each system
-/// permission does, which features use it right now, and a gentle nudge when
-/// one is granted with nothing using it.
+/// The Features page, as Orbit (Zenith fork): a store-like catalog of every
+/// hub feature and Zenith's own pages. Get installs a feature through the
+/// hub's runtime, Open goes to its settings, Turn Off uninstalls it from the
+/// whole app (Settings, panel, menu bar, shortcuts) and keeps its
+/// configuration for its return. A row opens its details, where the
+/// permissions it uses can be granted. The permissions portal opens from the
+/// header.
 struct FeatureHubSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var features = FeatureRuntime.shared
     @ObservedObject private var router = SettingsRouter.shared
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var tab: Tab = .features
-    @State private var confirmingPreset: FeaturePreset?
-    /// Tracks the feature-target request currently being revealed, so a
-    /// delayed retry from an older request cannot act after a newer one has
-    /// already taken over (same convention as `SettingsSectionFocusModifier`).
-    @State private var revealID = UUID()
-    /// The row briefly tinted after a search or Command Bar selection lands
-    /// on it, mirroring the section highlight `SettingsSectionFocusModifier`
-    /// gives an ordinary page anchor.
-    @State private var highlightedFeature: AppFeature?
-    @State private var expandedGroups = Set(FeatureGroup.allCases)
-    @State private var islandExtensionsExpanded = true
-    @State private var presetsExpanded = true
+    @ObservedObject private var permissions = Permissions.shared
+    @State private var query = ""
+    @State private var category: OrbitCategory = .all
+    @State private var detail: OrbitItemID?
+    @State private var showingPermissions = false
+    @State private var confirmingIslandUninstall = false
+    /// The words Settings search knows each item by, read once per visit
+    /// and language rather than on every keystroke.
+    @State private var searchWords: [OrbitItemID: [String]] = [:]
+    @FocusState private var searchFocused: Bool
     /// Installed switches never once turned on, read when the page appears
     /// and after every install change rather than on every redraw.
     @State private var neverUsed: [AppFeature] = []
@@ -37,73 +35,63 @@ struct FeatureHubSettings: View {
     /// Below this, the offer would be more to read than it saves.
     private static let neverUsedMinimum = 3
 
-    private enum Tab { case features, permissions }
-
     private var hub: FeatureHubStrings { FeatureStrings.hub(l10n.language) }
+    private var text: ZenithOrbitStrings { ZenithStrings.orbit }
 
     var body: some View {
-        ScrollViewReader { proxy in
-            content
-                .onAppear {
-                    refreshNeverUsed()
-                    revealPendingFeatureTarget(using: proxy)
+        content
+            .onAppear {
+                refreshNeverUsed()
+                searchWords = Self.readSearchWords(l10n)
+                revealPendingFeatureTarget()
+            }
+            .onChange(of: router.requestID) { _, _ in revealPendingFeatureTarget() }
+            .onChange(of: features.revision) { _, _ in refreshNeverUsed() }
+            .onChange(of: l10n.language) { _, _ in searchWords = Self.readSearchWords(l10n) }
+            .sheet(item: $detail) { id in
+                if let item = OrbitCatalog.item(id) {
+                    OrbitDetailSheet(item: item, state: state(of: item),
+                                     onAction: { act(on: item, fromDetails: true) },
+                                     onTurnOff: turnOffAction(for: item),
+                                     onDone: { detail = nil })
                 }
-                .onChange(of: router.requestID) { _, _ in revealPendingFeatureTarget(using: proxy) }
-                .onChange(of: features.revision) { _, _ in refreshNeverUsed() }
-        }
+            }
+            .sheet(isPresented: $showingPermissions) { permissionsSheet }
+            .alert(hub.notchUninstallTitle, isPresented: $confirmingIslandUninstall) {
+                Button(hub.notchUninstallWithExtensions) {
+                    uninstall([.notch] + installedIslandExtensions)
+                }
+                Button(hub.notchUninstallKeepExtensions) { uninstall([.notch]) }
+                Button(hub.presetConfirmCancel, role: .cancel) {}
+            } message: {
+                Text(String(format: hub.notchUninstallMessageFormat,
+                            installedIslandExtensions.map { $0.hubTitle(l10n.s, hub: hub) }
+                                .joined(separator: ", ")))
+            }
     }
 
     private var content: some View {
-        // These few cards contain many variable-height rows. Measure them
-        // eagerly so scrolling cannot re-estimate distant cards and re-anchor
-        // the viewport in the lazy layout loop reported in #2311 and #2642.
+        // The catalog is measured eagerly, so scrolling cannot re-estimate
+        // distant rows and re-anchor the viewport in the lazy layout loop
+        // reported in #2311 and #2642.
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                // Keep the header's identity stable when the notice changes.
+                // Keep the header's identity stable when a notice changes.
                 VStack(alignment: .leading, spacing: 20) {
-                    SettingsPageHeader(title: hub.pageTitle, subtitle: tab == .features ? hub.intro : hub.permissionsIntro)
-                    ZenithScreenPreviewCard(group: .features) // Zenith fork
-                    Picker(hub.pageTitle, selection: $tab) {
-                        Text(hub.tabFeatures).tag(Tab.features)
-                        Text(hub.tabPermissions).tag(Tab.permissions)
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    // The restart notice comes first on either tab.
+                    header
                     if features.needsRestartToUnload {
                         restartCard
                     }
-                    if tab == .features {
-                        VStack(alignment: .leading, spacing: 20) {
-                            summaryCard
-                            neverUsedCard
-                        }
-                    }
+                    neverUsedCard
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background { FeatureHubScrollAnchor() }
-                if tab == .features {
-                    dynamicIslandCard
-                    presetsCard
-                    ForEach(FeatureGroup.allCases.filter { $0 != .dynamicIsland }, id: \.self) { group in
-                        groupCard(group)
-                    }
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(hub.footerNote)
-                        Text(hub.energyHelp)
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                } else {
-                    SettingsCard {
-                        PermissionsPortalSections(hub: hub)
-                    }
-                }
+                catalog
             }
-            .frame(maxWidth: 760)
+            .frame(maxWidth: 860)
             .frame(maxWidth: .infinity)
-            .padding(22)
+            .padding(.horizontal, 26)
+            .padding(.vertical, 24)
         }
         // Include the scroll view's document height in this transaction;
         // animating that height would constrain an immediate notice adjustment
@@ -111,73 +99,37 @@ struct FeatureHubSettings: View {
         .animation(nil, value: features.needsRestartToUnload)
         .animation(nil, value: neverUsed)
         .animation(nil, value: recentlyUninstalled)
-        .alert(confirmingPreset.map { presetName($0) } ?? "",
-               isPresented: Binding(get: { confirmingPreset != nil },
-                                    set: { if !$0 { confirmingPreset = nil } }),
-               presenting: confirmingPreset) { preset in
-            Button(hub.presetConfirmApply) {
-                withAnimation(.easeOut(duration: 0.22)) {
-                    FeatureRuntime.shared.apply(preset)
-                }
-            }
-            Button(hub.presetConfirmCancel, role: .cancel) {}
-        } message: { preset in
-            Text(String(format: hub.presetConfirmFormat, presetName(preset)))
-        }
     }
 
-    /// Consumes a pending Feature Hub target: switches off the Permissions
-    /// tab if needed and scrolls the requested row into view. Retried once
-    /// after the first run-loop turn, the same allowance
-    /// `SettingsSectionFocusModifier` gives a freshly installed Form to
-    /// register its row identities.
-    private func revealPendingFeatureTarget(using proxy: ScrollViewProxy) {
-        guard let request = router.pendingFeatureTarget else { return }
-        router.consumeFeatureTarget(id: request.id)
-        revealID = request.id
-        if tab == .permissions { tab = .features }
-        if request.feature.group == .dynamicIsland {
-            if request.feature != .notch { islandExtensionsExpanded = true }
-        } else {
-            expandedGroups.insert(request.feature.group)
-        }
-        DispatchQueue.main.async {
-            guard self.revealID == request.id else { return }
-            proxy.scrollTo(request.feature.group, anchor: .top)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
-                guard self.revealID == request.id else { return }
-                reveal(request.feature, using: proxy)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
-                    guard self.revealID == request.id else { return }
-                    reveal(request.feature, using: proxy)
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                    guard self.revealID == request.id else { return }
-                    clearHighlight()
-                }
-            }
-        }
-    }
+    // MARK: Header
 
-    private func reveal(_ feature: AppFeature, using proxy: ScrollViewProxy) {
-        if reduceMotion {
-            proxy.scrollTo(feature, anchor: .center)
-            highlightedFeature = feature
-        } else {
-            withAnimation(.easeInOut(duration: 0.3)) {
-                proxy.scrollTo(feature, anchor: .center)
-                highlightedFeature = feature
+    private var header: some View {
+        HStack(alignment: .center, spacing: 14) {
+            OrbitItemIcon(name: "Orbit", size: 52)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(text.title)
+                    .font(.system(size: 26, weight: .bold))
+                    .tracking(-0.5)
+                    .accessibilityAddTraits(.isHeader)
+                Text(text.subtitle)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-        }
-    }
-
-    private func clearHighlight() {
-        if reduceMotion {
-            highlightedFeature = nil
-        } else {
-            withAnimation(.easeOut(duration: 0.25)) {
-                highlightedFeature = nil
+            Spacer(minLength: 12)
+            OrbitSearchField(query: $query, placeholder: text.searchPlaceholder,
+                             clearTitle: text.clearSearch, focus: $searchFocused)
+            Button { showingPermissions = true } label: {
+                Image(systemName: "hand.raised.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 30, height: 30)
+                    .background(Circle().fill(Color.primary.opacity(0.06)))
+                    .contentShape(Circle())
             }
+            .buttonStyle(.plain)
+            .help(hub.tabPermissions)
+            .accessibilityLabel(hub.tabPermissions)
         }
     }
 
@@ -200,26 +152,259 @@ struct FeatureHubSettings: View {
                     in: RoundedRectangle(cornerRadius: ZenithRadius.panel, style: .continuous))
     }
 
-    /// The tally as a bar, with the two bulk actions beside it.
-    private var summaryCard: some View {
-        SettingsCard {
-            HStack(spacing: 12) {
-                Text(String(format: hub.activeCountFormat,
-                            features.availableCount, features.installableCount))
-                    .font(.headline)
-                Spacer(minLength: 12)
-                Button(hub.installAllButton) {
-                    FeatureRuntime.shared.setAllAvailable(true)
+    // MARK: Catalog
+
+    @ViewBuilder
+    private var catalog: some View {
+        let states = itemStates()
+        if query.isEmpty, let featured = OrbitCatalog.item(OrbitCatalog.featured) {
+            OrbitHeroBanner(item: featured, state: states[featured.id] ?? .off,
+                            onAction: { act(on: featured) },
+                            onDetails: { detail = featured.id })
+        }
+        OrbitFlowLayout {
+            ForEach(OrbitCategory.allCases) { shelf in
+                OrbitChip(title: text.category(shelf), selected: category == shelf) {
+                    category = shelf
                 }
-                .disabled(features.availableCount == features.installableCount)
-                Button(hub.uninstallAllButton) {
-                    FeatureRuntime.shared.setAllAvailable(false)
-                }
-                .disabled(features.availableCount == 0)
             }
-            InstalledShareBar(installed: features.availableCount, total: features.installableCount)
+        }
+        let isOn = { (id: OrbitItemID) in states[id]?.isOn ?? false }
+        if !query.isEmpty {
+            let found = OrbitCatalog.visible(in: category, query: query, isOn: isOn, words: searchWords)
+            if found.isEmpty {
+                emptyNote(text.noResults)
+            } else {
+                section(text.results, found, states)
+            }
+        } else {
+            switch category {
+            case .all:
+                section(text.ourPicks, OrbitCatalog.picks.compactMap(OrbitCatalog.item), states)
+                ForEach(OrbitCategory.shelves) { shelf in
+                    let members = OrbitCatalog.visible(in: shelf, query: "", isOn: isOn)
+                    section(text.category(shelf), Array(members.prefix(OrbitCatalog.shelfPreviewCount)), states,
+                            seeAll: members.count > OrbitCatalog.shelfPreviewCount ? shelf : nil)
+                }
+            case .installed:
+                let installed = OrbitCatalog.visible(in: .installed, query: "", isOn: isOn)
+                if installed.isEmpty {
+                    emptyNote(text.noneInstalled)
+                } else {
+                    ForEach(OrbitCategory.shelves) { shelf in
+                        let members = installed.filter { $0.category == shelf }
+                        if !members.isEmpty { section(text.category(shelf), members, states) }
+                    }
+                }
+            default:
+                section(text.category(category), OrbitCatalog.visible(in: category, query: "", isOn: isOn), states)
+            }
         }
     }
+
+    /// A titled shelf of rows in two columns.
+    private func section(_ title: String, _ items: [OrbitItem], _ states: [OrbitItemID: OrbitItemState],
+                         seeAll: OrbitCategory? = nil) -> some View {
+        let rows = stride(from: 0, to: items.count, by: 2).map { Array(items[$0..<min($0 + 2, items.count)]) }
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text(title)
+                    .font(.system(size: 16, weight: .bold))
+                    .accessibilityAddTraits(.isHeader)
+                if let seeAll {
+                    Button(text.seeAll) { category = seeAll }
+                        .buttonStyle(.plain)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.accentColor)
+                        .accessibilityLabel("\(text.seeAll), \(title)")
+                }
+            }
+            VStack(spacing: 0) {
+                ForEach(rows.indices, id: \.self) { index in
+                    HStack(alignment: .top, spacing: 22) {
+                        ForEach(rows[index]) { item in
+                            row(item, state: states[item.id] ?? .off)
+                                .frame(maxWidth: .infinity)
+                        }
+                        if rows[index].count == 1 {
+                            Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func row(_ item: OrbitItem, state: OrbitItemState) -> some View {
+        OrbitStoreRow(item: item, state: state, badge: badge(for: item),
+                      onDetails: { detail = item.id },
+                      onAction: { act(on: item) },
+                      onTurnOff: turnOffAction(for: item))
+            .id(item.id)
+    }
+
+    private func emptyNote(_ message: String) -> some View {
+        Text(message)
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.vertical, 30)
+    }
+
+    private func badge(for item: OrbitItem) -> String? {
+        if item.feature == .notch { return hub.experimentalBadge }
+        return item.feature?.isBeta == true ? l10n.s.betaBadge : nil
+    }
+
+    // MARK: State
+
+    /// Every item's state from one read of availability and of which
+    /// features use each permission right now.
+    private func itemStates() -> [OrbitItemID: OrbitItemState] {
+        let users = Dictionary(uniqueKeysWithValues: AppPermission.allCases.map {
+            ($0, Set(AppFeature.activeFeatures(using: $0)))
+        })
+        return Dictionary(uniqueKeysWithValues: OrbitCatalog.items.map { item in
+            (item.id, state(of: item, users: users))
+        })
+    }
+
+    private func state(of item: OrbitItem,
+                       users: [AppPermission: Set<AppFeature>]? = nil) -> OrbitItemState {
+        OrbitCatalog.state(
+            of: item,
+            isAvailable: \.isAvailable,
+            switchValue: { UserDefaults.standard.object(forKey: $0) as? Bool },
+            missing: isMissing,
+            using: { feature, permission in
+                users?[permission]?.contains(feature)
+                    ?? AppFeature.activeFeatures(using: permission).contains(feature)
+            },
+            blockedReason: \.installBlockedReason)
+    }
+
+    /// Only a refusal the app can read counts; a grant macOS has not been
+    /// asked for yet is requested when the feature first needs it.
+    private func isMissing(_ permission: AppPermission) -> Bool {
+        switch permission {
+        case .accessibility: return !permissions.accessibility
+        case .screenRecording: return !permissions.screenRecording
+        case .fullDiskAccess: return !permissions.fullDiskAccess
+        case .notifications: return permissions.notifications == .denied
+        case .camera: return permissions.camera == .denied
+        case .microphone: return permissions.microphone == .denied
+        case .calendar: return permissions.calendarAccess == .denied || permissions.calendarAccess == .restricted
+        case .filesAndFolders, .automationFinder, .automationPlayback, .audioCapture, .appManagement:
+            return false
+        }
+    }
+
+    // MARK: Actions
+
+    /// The capsule's action: Get, or Open.
+    private func act(on item: OrbitItem, fromDetails: Bool = false) {
+        switch OrbitCatalog.button(for: state(of: item)) {
+        case .get: get(item, fromDetails: fromDetails)
+        case .open: open(item)
+        case .unavailable: break
+        }
+    }
+
+    /// Installs through the hub's runtime, so its first-install rules and
+    /// its hardware gate apply. A feature that now needs a permission shows
+    /// its details, where the grant is requested; a Zenith page opens, since
+    /// it is switched on and set up there.
+    private func get(_ item: OrbitItem, fromDetails: Bool) {
+        let plan = OrbitCatalog.getPlan(for: item, isAvailable: \.isAvailable)
+        if !plan.install.isEmpty {
+            withAnimation(.easeOut(duration: 0.22)) {
+                FeatureRuntime.shared.setAvailable(plan.install, true)
+            }
+        }
+        if let destination = plan.opens {
+            detail = nil
+            SettingsRouter.shared.request(destination)
+        } else if !fromDetails, case .needsPermission = state(of: item) {
+            detail = item.id
+        }
+    }
+
+    private func open(_ item: OrbitItem) {
+        guard let destination = OrbitCatalog.openDestination(for: item) else {
+            detail = item.id
+            return
+        }
+        detail = nil
+        SettingsRouter.shared.request(destination, sidebarFeature: item.feature)
+    }
+
+    private func turnOffAction(for item: OrbitItem) -> (() -> Void)? {
+        guard let features = OrbitCatalog.turnOffFeatures(for: item) else { return nil }
+        return {
+            // The island's extensions do nothing without it, so leaving
+            // asks whether they leave too.
+            if features == [.notch], !installedIslandExtensions.isEmpty {
+                confirmingIslandUninstall = true
+            } else {
+                uninstall(features)
+            }
+        }
+    }
+
+    private var installedIslandExtensions: [AppFeature] {
+        AppFeature.dynamicIslandExtensions.filter(\.isAvailable)
+    }
+
+    private func uninstall(_ features: [AppFeature]) {
+        withAnimation(.easeOut(duration: 0.22)) {
+            FeatureRuntime.shared.setAvailable(features, false)
+        }
+    }
+
+    /// Consumes a pending Features target (a search result, the Command Bar,
+    /// an option that needs a feature) by showing that feature's details.
+    private func revealPendingFeatureTarget() {
+        guard let request = router.pendingFeatureTarget else { return }
+        router.consumeFeatureTarget(id: request.id)
+        query = ""
+        detail = .feature(request.feature)
+    }
+
+    private static func readSearchWords(_ l10n: L10n) -> [OrbitItemID: [String]] {
+        OrbitCatalog.searchWords(from: SettingsDirectory.searchItems(l10n.s, language: l10n.language))
+    }
+
+    // MARK: Permissions
+
+    private var permissionsSheet: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text(hub.tabPermissions)
+                        .font(.system(size: 22, weight: .bold))
+                        .accessibilityAddTraits(.isHeader)
+                    Text(hub.permissionsIntro)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    PermissionsPortalSections(hub: hub)
+                }
+                .padding(24)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            Divider()
+            HStack {
+                Spacer()
+                Button(text.done) { showingPermissions = false }
+                    .keyboardShortcut(.defaultAction)
+            }
+            .padding(14)
+        }
+        .frame(width: 560, height: 620)
+        .onExitCommand { showingPermissions = false }
+    }
+
+    // MARK: Never used
 
     /// Installed switches that were never once turned on, offered as one
     /// batch. People come to this page to manage the app, so the offer waits
@@ -292,153 +477,6 @@ struct FeatureHubSettings: View {
         FeatureRuntime.shared.keep(neverUsed)
         withAnimation(.easeOut(duration: 0.22)) {
             refreshNeverUsed()
-        }
-    }
-
-    /// Three one-click starting points. Nobody arrives wanting 67 decisions;
-    /// a preset shapes the app in one move and everything else stays one
-    /// click away in the list below.
-    private var presetsCard: some View {
-        SettingsCard {
-            DisclosureGroup(hub.presetsTitle, isExpanded: $presetsExpanded) {
-                if presetsExpanded {
-                    HStack(alignment: .top, spacing: 10) {
-                        ForEach(FeaturePreset.allCases) { preset in
-                            PresetCard(preset: preset,
-                                       name: presetName(preset),
-                                       caption: presetDescription(preset),
-                                       applyTitle: hub.presetApplyButton) {
-                                confirmingPreset = preset
-                            }
-                        }
-                    }
-                    Text(hub.presetsCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-        }
-    }
-
-    private func presetName(_ preset: FeaturePreset) -> String {
-        switch preset {
-        case .essential: return hub.presetEssentialName
-        case .windows: return hub.presetWindowsName
-        case .battery: return hub.presetBatteryName
-        }
-    }
-
-    private func presetDescription(_ preset: FeaturePreset) -> String {
-        switch preset {
-        case .essential: return hub.presetEssentialDesc
-        case .windows: return hub.presetWindowsDesc
-        case .battery: return hub.presetBatteryDesc
-        }
-    }
-
-    /// The island stays near the top, with its additions in a group the user
-    /// can close when they want a shorter catalog.
-    private var dynamicIslandCard: some View {
-        let members = AppFeature.features(in: .dynamicIsland)
-        let installed = members.filter(\.isAvailable).count
-        return SettingsCard {
-            groupHeader(.dynamicIsland, installed: installed, total: members.count)
-            FeatureHubRow(feature: .notch, hub: hub,
-                          isHighlighted: highlightedFeature == .notch)
-                .id(AppFeature.notch)
-            DisclosureGroup(
-                FeatureStrings.notch(l10n.language).modules,
-                isExpanded: $islandExtensionsExpanded
-            ) {
-                if islandExtensionsExpanded {
-                    VStack(spacing: 0) {
-                        ForEach(members.filter { $0 != .notch }, id: \.self) { feature in
-                            FeatureHubRow(feature: feature, hub: hub,
-                                          isHighlighted: highlightedFeature == feature)
-                                .id(feature)
-                            if feature != members.last {
-                                Divider().padding(.leading, 8)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        .id(FeatureGroup.dynamicIsland)
-    }
-
-    /// Groups start open and are measured before scrolling begins.
-    /// Closing a group removes its feature rows until the user reopens it.
-    private func groupCard(_ group: FeatureGroup) -> some View {
-        let members = AppFeature.features(in: group)
-        let installed = members.filter(\.isAvailable).count
-        return SettingsCard {
-            DisclosureGroup(isExpanded: Binding(
-                get: { expandedGroups.contains(group) },
-                set: { expanded in
-                    if expanded { expandedGroups.insert(group) }
-                    else { expandedGroups.remove(group) }
-                }
-            )) {
-                if expandedGroups.contains(group) {
-                    VStack(spacing: 0) {
-                        ForEach(members, id: \.self) { feature in
-                            FeatureHubRow(
-                                feature: feature,
-                                hub: hub,
-                                isHighlighted: highlightedFeature == feature
-                            )
-                            .id(feature)
-                            if feature != members.last {
-                                Divider().padding(.leading, 8)
-                            }
-                        }
-                    }
-                    if group == .monitor,
-                       !FeatureVisibilitySupport.monitorFeatures.contains(where: \.isAvailable) {
-                        Text(hub.monitorAllOffNote)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            } label: {
-                groupHeader(group, installed: installed, total: members.count)
-            }
-        }
-        .id(group)
-    }
-
-    private func groupHeader(_ group: FeatureGroup, installed: Int, total: Int) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: group.symbolName)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 26, height: 26)
-                .background(Color.accentColor.opacity(0.12),
-                            in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-            Text(groupTitle(group)).font(.headline)
-            Spacer(minLength: 12)
-            Text("\(installed)/\(total)")
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
-            InstalledShareBar(installed: installed, total: total)
-                .controlSize(.small)
-                .frame(width: 64)
-        }
-    }
-
-    private func groupTitle(_ group: FeatureGroup) -> String {
-        switch group {
-        case .windowsDock: return hub.groupWindowsDock
-        case .mouseKeyboard: return hub.groupMouseKeyboard
-        case .clipboardFiles: return hub.groupClipboardFiles
-        case .sound: return hub.groupSound
-        case .energyDisplay: return hub.groupEnergyDisplay
-        case .tools: return hub.groupTools
-        case .dynamicIsland: return FeatureStrings.notch(l10n.language).title
-        case .monitor: return hub.groupMonitor
         }
     }
 }
@@ -575,287 +613,6 @@ private struct FeatureHubScrollAnchor: NSViewRepresentable {
     }
 }
 
-private extension FeatureGroup {
-    var symbolName: String {
-        switch self {
-        case .windowsDock: return "macwindow.on.rectangle"
-        case .mouseKeyboard: return "computermouse"
-        case .clipboardFiles: return "doc.on.clipboard"
-        case .sound: return "speaker.wave.2.fill"
-        case .energyDisplay: return "bolt.fill"
-        case .tools: return "wrench.and.screwdriver.fill"
-        case .dynamicIsland: return AppFeature.notch.symbolName
-        case .monitor: return "chart.line.uptrend.xyaxis"
-        }
-    }
-}
-
-/// The installed share as the system's own bar, the one picture of "how
-/// much of this is on" that needs no reading.
-private struct InstalledShareBar: View {
-    let installed: Int
-    let total: Int
-
-    var body: some View {
-        ProgressView(value: Double(min(installed, total)), total: Double(max(total, 1)))
-            .progressViewStyle(.linear)
-            .tint(Color.accentColor)
-    }
-}
-
-// MARK: - Preset card
-
-private struct PresetCard: View {
-    let preset: FeaturePreset
-    let name: String
-    let caption: String
-    let applyTitle: String
-    let onApply: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Image(systemName: preset.symbolName)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 34, height: 34)
-                .background(Color.accentColor.opacity(0.12),
-                            in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            Text(name)
-                .font(.system(size: 13, weight: .semibold))
-                .lineLimit(1)
-            Text(caption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Spacer(minLength: 0)
-            Button(applyTitle, action: onApply)
-                .controlSize(.small)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, minHeight: 138, alignment: .topLeading)
-        .background(Color.primary.opacity(0.05),
-                    in: RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(name). \(caption)")
-    }
-}
-
-// MARK: - Feature row
-
-/// Icon, name and one line about the feature; small icons for the
-/// permissions it can use and what it keeps alive; and the install action.
-/// An installed feature with a page of its own opens it from the row.
-private struct FeatureHubRow: View {
-    @ObservedObject private var l10n = L10n.shared
-    @ObservedObject private var features = FeatureRuntime.shared
-    @State private var confirmingExtensions = false
-    @State private var hovering = false
-    @State private var showingMetadata = false
-    let feature: AppFeature
-    let hub: FeatureHubStrings
-    var isHighlighted: Bool = false
-
-    private var installed: Bool { feature.isAvailable }
-
-    private var opensSettings: Bool { installed && feature.hasNavigableSettingsDestination }
-
-    /// Extensions still installed under this row's feature; only the Dynamic
-    /// Island has any. They do nothing without it, so its uninstall asks
-    /// whether they leave too.
-    private var installedExtensions: [AppFeature] {
-        feature == .notch ? AppFeature.dynamicIslandExtensions.filter(\.isAvailable) : []
-    }
-
-    /// Set only while this Mac cannot run the feature and it is not yet
-    /// installed, so an install that predates the check keeps an ordinary
-    /// row with its settings and Uninstall reachable.
-    private var unsupportedReason: String? { feature.installBlockedReason }
-
-    private var accessibilityTitle: String {
-        let title = feature.hubTitle(l10n.s, hub: hub)
-        if feature == .notch { return "\(title). \(hub.experimentalBadge)" }
-        return feature.isBeta ? "\(title). \(l10n.s.betaFeatureWarning)" : title
-    }
-
-    private var energyLabel: String {
-        switch feature.energyProfile {
-        case .idle: return hub.energyIdle
-        case .mouse: return hub.energyMouse
-        case .pointer: return hub.energyPointer
-        case .keyboard: return hub.energyKeyboard
-        case .inputs: return hub.energyInputs
-        case .periodic: return hub.energyPeriodic
-        }
-    }
-
-    private var energySymbols: [String] {
-        switch feature.energyProfile {
-        case .idle: return ["leaf"]
-        case .mouse: return ["computermouse"]
-        case .pointer: return ["hand.point.up.left"]
-        case .keyboard: return ["keyboard"]
-        case .inputs: return ["computermouse", "keyboard"]
-        case .periodic: return ["clock.arrow.circlepath"]
-        }
-    }
-
-    var body: some View {
-        HStack(spacing: 12) {
-            if opensSettings {
-                Button {
-                    SettingsRouter.shared.request(feature.settingsDestination,
-                                                  sidebarFeature: feature)
-                } label: {
-                    rowContent(showsChevron: true)
-                }
-                .buttonStyle(.plain)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("\(accessibilityTitle). \(feature.hubDescription(hub))")
-                .accessibilityAddTraits(.isLink)
-                .accessibilityRemoveTraits(.isButton)
-            } else {
-                rowContent(showsChevron: false)
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel("\(accessibilityTitle). \(feature.hubDescription(hub))")
-                    .opacity(unsupportedReason == nil ? 1 : 0.4)
-                    .saturation(unsupportedReason == nil ? 1 : 0)
-            }
-            metadata
-            installAction
-        }
-        .padding(.vertical, 7)
-        .padding(.horizontal, 8)
-        .background(rowFill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .onHover { hovering = $0 }
-        .alert(hub.notchUninstallTitle, isPresented: $confirmingExtensions) {
-            Button(hub.notchUninstallWithExtensions) { flip(to: false, alongside: installedExtensions) }
-            Button(hub.notchUninstallKeepExtensions) { flip(to: false) }
-            Button(hub.presetConfirmCancel, role: .cancel) {}
-        } message: {
-            Text(String(format: hub.notchUninstallMessageFormat,
-                        installedExtensions.map { $0.hubTitle(l10n.s, hub: hub) }
-                            .joined(separator: ", ")))
-        }
-    }
-
-    private var rowFill: Color {
-        if isHighlighted { return Color.accentColor.opacity(0.10) }
-        return hovering && opensSettings ? Color.primary.opacity(0.04) : Color.clear
-    }
-
-    private func rowContent(showsChevron: Bool) -> some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(feature.hubTitle(l10n.s, hub: hub))
-                        .foregroundStyle(installed ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
-                    if feature == .notch {
-                        Text(hub.experimentalBadge.uppercased())
-                            .font(.system(size: 9, weight: .bold))
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .foregroundStyle(ZenithStatus.warning)
-                            .background(Capsule().fill(ZenithStatus.fill(ZenithStatus.warning)))
-                            .accessibilityHidden(true)
-                    }
-                    if feature.isBeta {
-                        Text(l10n.s.betaBadge)
-                            .font(.system(size: 8, weight: .bold))
-                            .foregroundStyle(Color.white)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(Capsule().fill(Color.accentColor))
-                            .accessibilityHidden(true)
-                    }
-                }
-                Text(feature.hubDescription(hub))
-                    .font(.caption)
-                    .foregroundStyle(installed ? Color.secondary : Color.secondary.opacity(0.7))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 8)
-            if showsChevron {
-                Image(systemName: "chevron.forward")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.tertiary)
-                    .accessibilityHidden(true)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .contentShape(Rectangle())
-    }
-
-    /// Use a readable label instead of a row of tiny, unexplained symbols.
-    private var metadata: some View {
-        let explanation = (feature.permissions.map { $0.name(hub) } + [energyLabel])
-            .joined(separator: "\n")
-        return Button(feature.permissions.isEmpty ? energyLabel : hub.tabPermissions) {
-            showingMetadata.toggle()
-        }
-        .buttonStyle(.plain)
-        .font(.caption)
-        .foregroundStyle(.secondary)
-        .help(explanation)
-        .accessibilityLabel(explanation)
-        .popover(isPresented: $showingMetadata) {
-            // Symbols differ in width, so a centered icon column keeps the texts aligned.
-            Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 8) {
-                ForEach(feature.permissions, id: \.self) { permission in
-                    GridRow {
-                        Image(systemName: permission.symbolName)
-                            .gridColumnAlignment(.center)
-                            .accessibilityHidden(true)
-                        Text(permission.name(hub))
-                    }
-                }
-                GridRow {
-                    HStack(spacing: 2) {
-                        ForEach(energySymbols, id: \.self) { Image(systemName: $0) }
-                    }
-                    .accessibilityHidden(true)
-                    Text(energyLabel)
-                }
-            }
-            .padding(14)
-        }
-    }
-
-    @ViewBuilder
-    private var installAction: some View {
-        if installed {
-            Button(hub.uninstallButton) {
-                if installedExtensions.isEmpty { flip(to: false) } else { confirmingExtensions = true }
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .accessibilityLabel("\(hub.uninstallButton) \(accessibilityTitle)")
-        } else if let reason = unsupportedReason {
-            // .help() never fires on a disabled control, so the tooltip
-            // has to sit on this wrapper. Flattening it loses the only
-            // place the reason is shown.
-            HStack(spacing: 0) {
-                Button(hub.installButton) { flip(to: true) }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .disabled(true)
-                    .accessibilityLabel("\(hub.installButton) \(accessibilityTitle). \(reason)")
-            }
-            .help(reason)
-        } else {
-            Button(hub.installButton) { flip(to: true) }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-                .accessibilityLabel("\(hub.installButton) \(accessibilityTitle)")
-        }
-    }
-
-    private func flip(to install: Bool, alongside companions: [AppFeature] = []) {
-        withAnimation(.easeOut(duration: 0.22)) {
-            FeatureRuntime.shared.setAvailable([feature] + companions, install)
-        }
-    }
-}
 
 // MARK: - Permissions portal
 
