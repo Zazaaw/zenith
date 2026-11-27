@@ -29,6 +29,7 @@ struct SettingsSidebarSection: Identifiable {
 enum SettingsSidebarSupport {
     static func items(page: SettingsPage, title: String, icon: String,
                       preferredFeatures: [AppFeature], includePage: Bool,
+                      includeFeatures: Bool = true,
                       isAvailable: (AppFeature) -> Bool,
                       featureTitle: (AppFeature) -> String) -> [SettingsSidebarItem] {
         guard FeatureVisibilitySupport.isPageVisible(page, isAvailable: isAvailable) else { return [] }
@@ -37,7 +38,7 @@ enum SettingsSidebarSupport {
                                            title: title, icon: icon)
         var rows = includePage ? [pageItem] : []
         var seenFeatures: Set<AppFeature> = []
-        for feature in preferredFeatures + AppFeature.allCases {
+        for feature in includeFeatures ? preferredFeatures + AppFeature.allCases : [] {
             guard seenFeatures.insert(feature).inserted else { continue }
             let destination = feature.settingsDestination
             guard destination.page == page, destination.sectionAnchor != nil,

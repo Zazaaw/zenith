@@ -8,7 +8,7 @@ import Foundation
 /// below and the unit tests can reason about pages without pulling UI in.
 enum SettingsPage: Hashable, CaseIterable {
     case general, features, energy, monitor
-    case mouse, switcher, dock, keyDebounce, superKey, cutPaste, autoQuit, quitProtection, cleaner, uninstaller, urlCleaner, homebrew, appUpdates, media, clipboard, windowLayout, shelf, quickTools, textSnippets, screenshot, radialMenu, commandBar, killProcess, portManager, notch, notchMascot
+    case mouse, switcher, dock, keyDebounce, superKey, finderTools, autoQuit, quitProtection, cleaner, uninstaller, urlCleaner, homebrew, appUpdates, media, clipboard, windowLayout, shelf, quickTools, textSnippets, screenshot, radialMenu, commandBar, killProcess, portManager, notch, notchMascot
     case shortcuts, advanced, about, releaseNotes, support
     case workspaces // Zenith fork: part of the app, no hub feature gates it
     case lockScreen // Zenith fork: the island's lock screen, a page of its own
@@ -71,6 +71,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
     case fanControl
     case monitorAlerts
     case windowMaximizer
+    case diskImageInstaller // Zenith fork: its prompt's remembered choices, on Finder Tools
     // Zenith fork: the fork's own sections, which Settings search lands on
     // (ZenithSettingsSearch). Their raw values all start with "zenith".
     case zenithWakaTime, zenithVercel, zenithGitHub, zenithCardImport, zenithDevServers, zenithGit, zenithSky, zenithRecap, zenithPrompter
@@ -98,7 +99,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
             return .mouse
         case .switcher: return .switcher
         case .dock, .dockClick, .spacesOrder: return .dock
-        case .finderCutPaste, .finderRename: return .cutPaste
+        case .finderCutPaste, .finderRename, .diskImageInstaller: return .finderTools
         case .clipboardHistory, .pastePlain: return .clipboard
         case .quickLauncher, .quickToggles, .quitApps, .micMute, .cameraPreview, .wallpaper, .scratchpad,
              .cleaningMode:
@@ -416,12 +417,13 @@ extension AppFeature {
         case .pastePlain:
             return FeatureSettingsDestination(.clipboard, sectionAnchor: .pastePlain)
         case .finderCutPaste:
-            return FeatureSettingsDestination(.cutPaste, sectionAnchor: .finderCutPaste)
+            return FeatureSettingsDestination(.finderTools, sectionAnchor: .finderCutPaste)
         case .finderRename:
-            return FeatureSettingsDestination(.cutPaste, sectionAnchor: .finderRename)
+            return FeatureSettingsDestination(.finderTools, sectionAnchor: .finderRename)
         case .shelf: return FeatureSettingsDestination(.shelf)
         case .urlCleaner: return FeatureSettingsDestination(.urlCleaner)
-        case .diskImageInstaller: return FeatureSettingsDestination(.features)
+        case .diskImageInstaller:
+            return FeatureSettingsDestination(.finderTools, sectionAnchor: .diskImageInstaller)
 
         case .mixer:
             return FeatureSettingsDestination(.general, sectionAnchor: .mixer)
@@ -516,8 +518,8 @@ enum FeatureVisibilitySupport {
         case .windowLayout: return [.windowLayout, .windowMaximizer]
         case .autoQuit: return [.autoQuit]
         case .quitProtection: return [.quitWindowProtection]
-        case .clipboard: return [.clipboardHistory, .pastePlain, .finderCutPaste]
-        case .cutPaste: return [.finderCutPaste, .finderRename]
+        case .clipboard: return [.clipboardHistory, .pastePlain]
+        case .finderTools: return [.finderCutPaste, .finderRename, .diskImageInstaller]
         case .shelf: return [.shelf]
         case .media: return [.mediaTools]
         case .quickTools: return [.quickLauncher, .quickToggles, .quitApps, .micMute,

@@ -386,8 +386,8 @@ enum UpdateFeatureTests {
         suite.expect(grouped(.windows) == [.page(.windowLayout), .page(.autoQuit), .page(.quitProtection),
                                            .page(.radialMenu)]
                 && grouped(.input) == [.feature(.scrollInverter), .page(.keyDebounce), .page(.superKey)]
-                && grouped(.everyday) == [.feature(.quickLauncher), .feature(.scratchpad),
-                                          .page(.urlCleaner), .page(.textSnippets)]
+                && grouped(.everyday) == [.page(.urlCleaner), .page(.textSnippets),
+                                          .feature(.quickLauncher), .feature(.scratchpad)]
                 && grouped(.sound) == [.feature(.micMute)]
                 && grouped(.system) == [.feature(.cleaningMode)],
                "sidebar rows land in the floating sidebar's groups, in the directory's order")
@@ -460,7 +460,7 @@ enum UpdateFeatureTests {
             (.cameraPreview, FeatureSettingsDestination(.quickTools, sectionAnchor: .cameraPreview)),
             (.screenRecorder, FeatureSettingsDestination(.screenshot, sectionAnchor: .screenRecorder)),
             (.micMute, FeatureSettingsDestination(.quickTools, sectionAnchor: .micMute)),
-            (.diskImageInstaller, FeatureSettingsDestination(.features)),
+            (.diskImageInstaller, FeatureSettingsDestination(.finderTools, sectionAnchor: .diskImageInstaller)),
         ]
         for (feature, destination) in expectedFeatureSearchDestinations {
             let item = featureSearchItems.first { $0.id == .feature(feature) }
@@ -611,9 +611,10 @@ enum UpdateFeatureTests {
 
         let diskImageItem = featureSearchItems.first { $0.id == .feature(.diskImageInstaller) }!
         let diskImageRoute = SettingsSearchSupport.route(for: diskImageItem) { _ in true }
-        suite.expect(diskImageRoute.destination == FeatureSettingsDestination(.features)
-                && diskImageRoute.targetFeature == .diskImageInstaller,
-               "Disk Image Installer, whose own destination is Features, still targets its exact row")
+        suite.expect(diskImageRoute.destination
+                == FeatureSettingsDestination(.finderTools, sectionAnchor: .diskImageInstaller)
+                && diskImageRoute.targetFeature == nil,
+               "Disk Image Installer opens its section on Finder Tools")
 
         let genericFeaturesItem = SettingsSearchItem(id: .page(.features),
                                                      destination: FeatureSettingsDestination(.features),

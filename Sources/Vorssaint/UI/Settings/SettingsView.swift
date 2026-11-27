@@ -144,6 +144,8 @@ struct SettingsView: View {
                                             .meetings, .mechakey, .appearance] // Zenith fork: Meetings, Mechakey, Appearance
         if ownHeader.contains(router.page) { return nil }
         if router.page == .translate { return nil } // Zenith fork: Translate opens with its own header
+        // Zenith fork: the Everyday pages open with their own hero.
+        if [.shelf, .clipboard, .finderTools, .media, .urlCleaner, .textSnippets].contains(router.page) { return nil }
         if router.page == .general, !(detailShowsGeneralTool) { return nil }
         let selected = selectedSidebarItem
         return sidebarItems.first(where: { $0.id == selected })?.title
@@ -180,7 +182,7 @@ struct SettingsView: View {
         case .dock: DockSettings()
         case .keyDebounce: KeyboardDebounceSettings()
         case .superKey: SuperKeySettings()
-        case .cutPaste: CutPasteSettings()
+        case .finderTools: FinderToolsSettingsPage() // Zenith fork
         case .autoQuit: AutoQuitSettings()
         case .quitProtection: QuitProtectionSettings()
         case .uninstaller: UninstallerView()

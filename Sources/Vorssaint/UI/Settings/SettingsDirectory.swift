@@ -78,7 +78,13 @@ struct SettingsDirectoryItem: Identifiable {
 enum SettingsDirectory {
     /// Shared pages whose tools cover the page without a separate overview row.
     private static let toolOnlyPages: Set<SettingsPage> = [
-        .energy, .mouse, .switcher, .dock, .clipboard, .cutPaste, .quickTools, .screenshot,
+        .energy, .mouse, .switcher, .dock, .quickTools, .screenshot,
+    ]
+
+    /// Zenith fork: pages several features share as one page with one
+    /// sidebar row. Each feature's destination still scrolls to its section.
+    static let singleRowPages: Set<SettingsPage> = [
+        .clipboard, .finderTools,
     ]
 
     /// The sidebar: the directory's rows (one per page, or one per tool on a
@@ -97,6 +103,7 @@ enum SettingsDirectory {
                     page: pageItem.page, title: pageItem.title, icon: pageItem.icon,
                     preferredFeatures: pageItem.terms.compactMap(\.feature),
                     includePage: !toolOnlyPages.contains(pageItem.page),
+                    includeFeatures: !singleRowPages.contains(pageItem.page),
                     isAvailable: isAvailable) { feature in
                         if feature == .clipboardHistory {
                             return FeatureStrings.commandBar(language).sourceClipboard
@@ -449,7 +456,6 @@ enum SettingsDirectory {
                                                              FeatureStrings.clipboardRetention(language).title,
                                                              FeatureStrings.clipboard(language).historyLayout,
                                                              FeatureStrings.clipboard(language).skipSensitive,
-                                                             FeatureStrings.clipboard(language).pasteImageAsFile,
                                                              FeatureStrings.clipboard(language).autoClearEnable,
                                                              FeatureStrings.clipboard(language).autoClearOnSleep,
                                                              FeatureStrings.clipboard(language)
@@ -460,13 +466,21 @@ enum SettingsDirectory {
                                                                 .listTitle]),
                                         (.pastePlain, [s.pastePlainName]),
                                        ]),
-                SettingsDirectoryItem(page: .cutPaste,
-                                       title: FeatureStrings.finderRename(language).pageTitle,
+                // Zenith fork: Finder's tools on one page: cut and paste, rename, disk images.
+                SettingsDirectoryItem(page: .finderTools,
+                                       title: ZenithStrings.everyday(language).finderTitle,
                                        icon: "filemenu.and.selection",
+                                       keywords: [FeatureStrings.finderRename(language).pageTitle],
                                        featureKeywords: [
-                                        (.finderCutPaste, [s.cutPasteEnable]),
+                                        (.finderCutPaste, [s.cutPasteEnable,
+                                                           FeatureStrings.clipboard(language).pasteImageAsFile]),
                                         (.finderRename,
                                          [FeatureStrings.finderRename(language).enableLabel]),
+                                        (.diskImageInstaller,
+                                         [FeatureStrings.diskImageInstaller(language).title,
+                                          FeatureStrings.diskImageInstaller(language).trashDownloadOption,
+                                          FeatureStrings.diskImageInstaller(language).revealAppOption,
+                                          FeatureStrings.diskImageInstaller(language).useUserApplications]),
                                        ]),
                 SettingsDirectoryItem(page: .shelf, title: s.shelfName, icon: "tray.full",
                                       keywords: [s.shelfEnable, s.shelfDropZoneToggle, s.shelfEdgeToggle,

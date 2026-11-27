@@ -1168,6 +1168,7 @@ def main():
               .replace("state: SettingsSearchState = .current", "state: SettingsSearchState")
           # Zenith fork: the floating sidebar's rows, with the hardware passed in.
           + declaration(directory, "    private static let toolOnlyPages:", closing="]")
+          + declaration(directory, "    static let singleRowPages:", closing="]")
           + declaration(directory, "    static func sidebarSections(").replace("SuperKeyService.shared.source", ".capsLock")
               .replace("state: SettingsSearchState = .current", "state: SettingsSearchState")
               .replace("keyboardLight: Bool = BrightnessService.keyboardLightIsSupported", "keyboardLight: Bool")
