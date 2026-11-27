@@ -6,18 +6,42 @@ import AVFoundation
 import SwiftUI
 import UniformTypeIdentifiers
 
+/// Settings → Media Tools. Zenith fork: built with the Settings kit. The
+/// hero (the tools have no master switch of their own; Orbit installs them),
+/// the preview on the chosen tool, and the workspace itself in a grouped card
+/// without its own title, which the hero already shows.
 struct MediaSettings: View {
-    // Zenith fork: the preview card above the workspace, on its tool.
+    @ObservedObject private var l10n = L10n.shared
     @AppStorage(DefaultsKey.mediaLastTool) private var toolRaw = MediaTool.videoCompressor.rawValue
 
+    private let page = ZenithStrings.everyday(.enUS)
+
+    private var tool: MediaTool { MediaSupport.sanitizedTool(toolRaw) }
+
     var body: some View {
-        VStack(spacing: 14) {
-            ZenithScreenPreviewCard(group: .media,
-                                    current: MediaTool(rawValue: toolRaw).flatMap(ZenithScreenScene.init(mediaTool:)))
-                .frame(maxWidth: 760)
-            MediaWorkspaceView(compact: false)
+        ScrollView {
+            ZenithPageColumn {
+                ZenithHero(title: l10n.s.mediaName, subtitle: page.mediaSubtitle,
+                           chips: [ZenithChip(title(for: tool)), ZenithChip(page.mediaLocal)],
+                           animation: .mediaTools)
+                ZenithScreenPreviewCard(group: .media, current: ZenithScreenScene(mediaTool: tool))
+                VStack(alignment: .leading, spacing: 8) {
+                    ZenithSectionTitle(page.mediaWorkspace)
+                    MediaWorkspaceView(compact: false, scrollsContent: false, showsHeader: false)
+                        .padding(16)
+                        .zenithGroupBackground()
+                }
+            }
         }
-        .padding(16)
+    }
+
+    private func title(for tool: MediaTool) -> String {
+        switch tool {
+        case .videoCompressor: return l10n.s.mediaToolVideo
+        case .gifMaker: return l10n.s.mediaToolGIF
+        case .imageCompressor: return l10n.s.mediaToolImage
+        case .textExtractor: return l10n.s.mediaToolText
+        }
     }
 }
 
@@ -145,6 +169,8 @@ struct MediaWorkspaceView: View {
     private let onContentHeightChange: ((CGFloat) -> Void)?
     private let onToolChange: (() -> Void)?
     private let scrollsContent: Bool
+    /// Zenith fork: Settings draws the title in its hero instead.
+    private let showsHeader: Bool
 
     init(compact: Bool, onClose: (() -> Void)? = nil,
          media: MediaService = .shared, initialInputs: [URL] = [],
@@ -152,8 +178,10 @@ struct MediaWorkspaceView: View {
          acceptsDirectDrops: Bool = true, workspace: MediaWorkspaceSelection? = nil,
          onContentHeightChange: ((CGFloat) -> Void)? = nil,
          onToolChange: (() -> Void)? = nil,
-         scrollsContent: Bool = true) {
+         scrollsContent: Bool = true,
+         showsHeader: Bool = true) {
         self.compact = compact
+        self.showsHeader = showsHeader
         self.onClose = onClose
         self.media = media
         self.acceptsDirectDrops = acceptsDirectDrops
@@ -273,7 +301,7 @@ struct MediaWorkspaceView: View {
 
     private var workspaceContent: some View {
         VStack(alignment: .leading, spacing: compact ? 10 : 14) {
-            header
+            if showsHeader { header }
             toolPicker
             content.padding(.trailing, 1)
         }
