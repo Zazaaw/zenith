@@ -124,7 +124,7 @@ struct CalculatorPage: View {
     }
 
     private func keep() {
-        guard let answer else { return NSSound.beep() }
+        guard let answer else { return ZenithQuiet.beep() }
         let closed = expression + String(repeating: ")", count: answer.closedBrackets)
         service.keep(closed, value: answer.value)
         expression = CalculatorText.copied(answer.value, places: service.preferences.decimalPlaces)
@@ -132,7 +132,7 @@ struct CalculatorPage: View {
 
     private func copy() {
         guard let answer else { return }
-        service.copy(answer.value) { ok in if ok { copied = true } else { NSSound.beep() } }
+        service.copy(answer.value) { ok in if ok { copied = true } else { ZenithQuiet.beep() } }
     }
 
     // MARK: History

@@ -81,7 +81,7 @@ final class RemoveBackgroundCardController {
                 QuickToolHUD.show(icon: "person.and.background.dotted",
                                   message: ZenithStrings.removeBackground(.enUS).copied)
             } else {
-                NSSound.beep()
+                ZenithQuiet.beep()
             }
         }
     }

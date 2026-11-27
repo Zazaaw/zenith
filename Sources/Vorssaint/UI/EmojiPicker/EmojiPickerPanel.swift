@@ -128,7 +128,7 @@ final class EmojiPickerPanelController {
     }
 
     private func insertSelected() {
-        guard let model, let record = model.selected else { return NSSound.beep() }
+        guard let model, let record = model.selected else { return ZenithQuiet.beep() }
         EmojiPickerService.shared.insert(record.character(model.tone), base: record.emoji)
     }
 

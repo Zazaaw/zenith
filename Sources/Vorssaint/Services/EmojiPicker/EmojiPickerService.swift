@@ -134,7 +134,7 @@ final class EmojiPickerService: ObservableObject {
             pasteboard.declareVorssaintSource()
             return pasteboard.setString(emoji, forType: .string)
         }, then: { ok in
-            if ok { QuickToolHUD.show(icon: "face.smiling", message: "\(emoji)  Copied") } else { NSSound.beep() }
+            if ok { QuickToolHUD.show(icon: "face.smiling", message: "\(emoji)  Copied") } else { ZenithQuiet.beep() }
         })
     }
 
