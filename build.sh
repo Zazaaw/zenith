@@ -632,7 +632,6 @@ if (( TEST )); then
         Sources/Vorssaint/Services/QuickTools/ScreenshotImageImport.swift
         Sources/Vorssaint/Services/Media/MediaImageProcessing.swift
         Sources/Vorssaint/Services/QuickTools/ScreenshotImageFile.swift
-        Sources/Vorssaint/UI/Settings/ScreenCaptureToolPicker.swift
         Sources/Vorssaint/UI/Settings/MonitorToken.swift
         Sources/Vorssaint/Services/QuickTools/ScreenshotRenderer.swift
         Sources/Vorssaint/Services/QuickTools/ScreenshotImageLayerRendering.swift
@@ -736,6 +735,7 @@ if (( TEST )); then
         Sources/Vorssaint/Core/ZenithBatteriesIslandStrings.swift
         Sources/Vorssaint/Services/Mechakey/MechakeySupport.swift
         Sources/Vorssaint/Core/ZenithMechakeyStrings.swift
+        Sources/Vorssaint/Core/ZenithSoundCaptureStrings.swift
         # Zenith fork: Appearance's model, its store, the motion preview and the power reading.
         Sources/Vorssaint/Services/Appearance/ZenithAppearance.swift
         Sources/Vorssaint/Services/Appearance/ZenithAppearanceStore.swift

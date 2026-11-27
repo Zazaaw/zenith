@@ -147,7 +147,8 @@ enum ForkSettingsSearchTests {
         }), "every fork anchor names a search result")
         let sources = uiSources()
         for anchor in anchors {
-            let pattern = try! NSRegularExpression(pattern: #"Anchor\(\."# + anchor.rawValue + #"\b"#)
+            // A modifier (`.zenithSectionAnchor(.x…`) or a kit section (`ZenithSection(…, anchor: .x)`).
+            let pattern = try! NSRegularExpression(pattern: #"(Anchor\(|anchor: )\."# + anchor.rawValue + #"\b"#)
             let placed = sources.reduce(0) { $0 + pattern.numberOfMatches(in: $1, range: NSRange($1.startIndex..., in: $1)) }
             let expected = ZenithSettingsSearch.unplacedAnchors.contains(anchor) ? 0 : 1
             suite.expect(placed == expected, "\(anchor.rawValue) is placed \(expected) time(s) in the UI (\(placed))")

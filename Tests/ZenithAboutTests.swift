@@ -65,11 +65,11 @@ enum ZenithAboutTests {
             .agents: FeatureSettingsDestination(notch: .module(.agents)),
             .developers: FeatureSettingsDestination(notch: .module(.vercel)),
             .files: FeatureSettingsDestination(.shelf),
-            .capture: FeatureSettingsDestination(.screenshot, sectionAnchor: .screenshot),
+            .capture: FeatureSettingsDestination(.screenshot),
             .system: FeatureSettingsDestination(.monitor),
             .windows: FeatureSettingsDestination(.switcher, sectionAnchor: .switcher),
             .input: FeatureSettingsDestination(.mouse, sectionAnchor: .smoothScroll),
-            .sound: FeatureSettingsDestination(.general, sectionAnchor: .mixer),
+            .sound: FeatureSettingsDestination(.volumeMixer),
             .utilities: FeatureSettingsDestination(.quickTools, sectionAnchor: .quickLauncher),
         ]
         for area in ZenithAbout.areas {
