@@ -545,33 +545,36 @@ struct NotchBackdropShape: Shape {
 
 struct NotchWindowBackground: View {
     @ObservedObject var presentation: NotchBackdropPresentation
-    @AppStorage(DefaultsKey.notchLiquidGlassEnabled) private var glass = false
-    @AppStorage(DefaultsKey.notchTranslucentBackground) private var translucent = false
+    @ObservedObject private var appearance = ZenithAppearance.shared // Zenith fork: Settings → Appearance › Glass
 
     var body: some View {
-        NotchSurfaceBackground(presentation: presentation, glass: glass, translucent: translucent)
+        NotchSurfaceBackground(presentation: presentation, glass: appearance.glass)
     }
 }
 
 /// Keep the upper content dark and open the lower surface into a refractive lip.
+/// Zenith fork: the open island is Black, Gradient (black melting into the
+/// system's blur) or Liquid Glass, as Settings → Appearance chooses, with its
+/// tint darkening the glass. Reduce Transparency keeps it black.
 struct NotchSurfaceBackground: View {
     @ObservedObject var presentation: NotchBackdropPresentation
-    let glass: Bool
-    var translucent = false
+    let glass: IslandGlassSettings
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
-    private var offersGlass: Bool {
+    /// What the open island draws. Liquid Glass needs macOS 26 and gives way
+    /// to Gradient before it.
+    private var style: IslandGlassStyle {
+        guard !reduceTransparency else { return .black }
+        guard glass.style == .liquid else { return glass.style }
 #if compiler(>=6.2)
-        if #available(macOS 26, *) { return glass && !reduceTransparency }
+        if #available(macOS 26, *) { return .liquid }
 #endif
-        return false
+        return .gradient
     }
 
-    private var showsGlass: Bool { offersGlass && presentation.usesGlass }
-    private var showsTranslucent: Bool {
-        translucent && !offersGlass && presentation.usesGlass && !reduceTransparency
-    }
+    private var showsGlass: Bool { style == .liquid && presentation.usesGlass }
+    private var showsTranslucent: Bool { style == .gradient && presentation.usesGlass }
 
     var body: some View {
         ZStack {
@@ -589,7 +592,8 @@ struct NotchSurfaceBackground: View {
                     .environment(\.appearsActive, true)
                     .materialActiveAppearance(.active)
                     .overlay {
-                        LinearGradient(stops: Self.shade(openness: presentation.openness, contrast: contrast),
+                        LinearGradient(stops: Self.shade(openness: presentation.openness, contrast: contrast,
+                                                         tint: glass.tint),
                                        startPoint: .top, endPoint: .bottom)
                             .frame(height: presentation.contourBottom)
                             .frame(maxHeight: .infinity, alignment: .top)
@@ -610,13 +614,14 @@ struct NotchSurfaceBackground: View {
 
     /// The dimming over the glass, from the top of the island to its lip. Near
     /// a black strip the lip closes up, so the last frames of a collapse
-    /// already match the resting island.
-    static func shade(openness: Double, contrast: ColorSchemeContrast) -> [Gradient.Stop] {
-        (0...64).map { index in
+    /// already match the resting island. Zenith fork: `tint` darkens the lip;
+    /// the default tint clears it as much as before.
+    static func shade(openness: Double, contrast: ColorSchemeContrast,
+                      tint: Double = IslandGlassSettings.standard.tint) -> [Gradient.Stop] {
+        let clearance = contrast == .increased ? 0.10 : 0.45 * (1 - min(max(tint, 0), 1)) / 0.7
+        return (0...64).map { index in
             let t = Double(index) / 64
-            return Gradient.Stop(
-                color: .black.opacity(1 - openness * (contrast == .increased ? 0.10 : 0.45) * pow(t, 2.5)),
-                location: t)
+            return Gradient.Stop(color: .black.opacity(1 - openness * clearance * pow(t, 2.5)), location: t)
         }
     }
 }
@@ -626,12 +631,16 @@ extension NotchSurfaceBackground {
     /// the camera strip so every open state meets the housing as the resting
     /// island does. Reduce Transparency keeps it black.
     @ViewBuilder var translucentOrBlack: some View {
-        if translucent, presentation.usesGlass, !reduceTransparency {
+        if showsTranslucent {
             let shape = NotchBackdropShape(contour: presentation.contour)
             let height = presentation.contourBottom
+            // Zenith fork: the melt's height and the tint from Appearance › Glass.
+            let melt = NotchTranslucentTint.gradient(height: height, stripHeight: presentation.stripHeight,
+                                                     gradientHeight: glass.gradientHeight, tint: glass.tint)
             let stops = NotchTranslucentTint.stops(height: height, stripHeight: presentation.stripHeight,
                                                    openness: presentation.openness,
-                                                   increasedContrast: contrast == .increased)
+                                                   increasedContrast: contrast == .increased,
+                                                   rampLength: melt.rampLength, clearance: melt.clearance)
                 .map { Gradient.Stop(color: .black.opacity($0.opacity), location: $0.location) }
             // The blur covers only the island's box. Its mask image is drawn
             // again on every frame of a resize, and at the stage's size it

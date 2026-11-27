@@ -208,13 +208,6 @@ enum SettingsDirectory {
         let notchCalendar = FeatureStrings.notchCalendar(language)
         let notchAgents = FeatureStrings.notchAgents(language)
         let notchLowBattery = NotchLowBatteryStrings.localized(language)
-        var liquidGlass: [String] = []
-#if compiler(>=6.2)
-        if #available(macOS 26.0, *) {
-            liquidGlass = [FeatureStrings.appearance(language).liquidGlass,
-                           FeatureStrings.generalSettings(language).liquidGlassOtherWindows]
-        }
-#endif
         let mascot = FeatureStrings.notchMascot(language)
         let activities = FeatureStrings.notchActivities(language)
         let lockScreen = FeatureStrings.notchLockScreen(language)
@@ -224,7 +217,7 @@ enum SettingsDirectory {
         let batteryRest = state.hardware.battery && state.batteryRest
         let tintedBattery = batteryRest && state.on(DefaultsKey.notchLowBatteryTint)
         let islandTerms: [SettingsSearchTerms] = [
-            .init([notchEditor.layout, notch.size, notch.translucentBackground, notch.showOutline], notch: .layout),
+            .init([notchEditor.layout, notch.size, notch.showOutline], notch: .layout),
             .init([notch.width, notch.maximumHeight], notch: .layout, when: state.customSize),
             .init([notch.cameraFit, notch.hideMenuBarGap, notch.width, notch.height],
                   notch: .layout, when: state.hardware.notchedDisplay),
@@ -276,9 +269,7 @@ enum SettingsDirectory {
             (categories.essentials, [
                 SettingsDirectoryItem(page: .general, title: s.tabGeneral, icon: "gearshape",
                                        keywords: [s.launchAtLogin, s.languageLabel,
-                                                  FeatureStrings.appearance(language).label,
-                                                  FeatureStrings.appearance(language).dark,
-                                                  FeatureStrings.feedback(language).sectionTitle] + liquidGlass,
+                                                  FeatureStrings.feedback(language).sectionTitle],
                                        // The first title of each feature places its sidebar row,
                                        // so these follow the sidebar's order.
                                        featureKeywords: [

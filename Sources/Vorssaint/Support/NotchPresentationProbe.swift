@@ -13,8 +13,15 @@ enum NotchPresentationProbe {
     /// Exercise the production backdrop, including its native glass rendering,
     /// without changing the app's preferences or making the test windows visible.
     private static func surface(_ presentation: NotchBackdropPresentation) -> AnyView {
-        AnyView(NotchSurfaceBackground(presentation: presentation, glass: CommandLine.arguments.contains("--glass"))
+        AnyView(NotchSurfaceBackground(presentation: presentation, glass: probeGlass)
             .environment(\.colorScheme, .dark))
+    }
+
+    /// Liquid Glass with `--glass`, else black, at the default tint.
+    private static var probeGlass: IslandGlassSettings {
+        var glass = IslandGlassSettings.standard
+        glass.style = CommandLine.arguments.contains("--glass") ? .liquid : .black
+        return glass
     }
 
     /// The floating buttons take the same glass choice as `surface`. The suite

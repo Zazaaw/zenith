@@ -91,8 +91,6 @@ struct NotchSettings: View {
     @AppStorage(DefaultsKey.notchCapsuleFitHeight) private var capsuleFitHeight = 0.0
     @AppStorage(DefaultsKey.notchCapsuleFitDrop) private var capsuleFitDrop = 0.0
     @AppStorage(DefaultsKey.notchHapticFeedback) private var hapticFeedback = true
-    @AppStorage(DefaultsKey.notchTranslucentBackground) private var translucentBackground = false
-    @AppStorage(DefaultsKey.notchLiquidGlassEnabled) private var liquidGlass = false
     @AppStorage(DefaultsKey.notchShelf) private var shelfWindow = true
     @AppStorage(DefaultsKey.notchDragReveal) private var dragReveal = true
     @AppStorage(DefaultsKey.notchCaptureControls) private var captureControls = true
@@ -111,7 +109,6 @@ struct NotchSettings: View {
     @State private var draggingControl: NotchControlItem?
     @State private var preferredPlayers: [NotchPreferredPlayer.Choice]?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     private var text: NotchStrings { FeatureStrings.notch(l10n.language) }
     private var editor: NotchEditorStrings { FeatureStrings.notchEditor(l10n.language) }
 
@@ -242,13 +239,6 @@ struct NotchSettings: View {
                     }
                     Text(text.sizeHint).font(.caption).foregroundStyle(.secondary)
                 }
-                // Liquid Glass takes the open island's background when it is
-                // on and is already see-through, so the switch reads on and
-                // changes nothing then.
-                switchRow("drop.halffull", text.translucentBackground,
-                          caption: liquidGlassIsOn ? text.translucentBackgroundGlassHint : text.translucentBackgroundHint,
-                          isOn: liquidGlassIsOn ? .constant(true) : $translucentBackground)
-                    .disabled(liquidGlassIsOn)
             }
             ZenithTabBarSettings() // Zenith fork: what the tab pill under the open island holds.
             // Only a display without a camera can float the island.
@@ -300,16 +290,6 @@ struct NotchSettings: View {
                 }
             }
         }
-    }
-
-    /// Whether the open island draws Liquid Glass, by the island's own rule.
-    /// Reduce Transparency keeps it black, so the switch then shows the saved
-    /// choice as it does with the glass off.
-    private var liquidGlassIsOn: Bool {
-#if compiler(>=6.2)
-        if #available(macOS 26, *) { return liquidGlass && !reduceTransparency }
-#endif
-        return false
     }
 
     /// The sections in a list of their own, the chosen one's options beside

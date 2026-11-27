@@ -64,6 +64,9 @@ enum ZenithSettingsSearch {
         let translate = ZenithStrings.translate(language) // Translate
         let meetings = ZenithStrings.meetings(language) // Meetings
         let mechakey = ZenithStrings.mechakey(language) // Mechakey
+        let appearance = ZenithStrings.appearancePage(language) // Appearance
+        let theme = FeatureStrings.appearance(language) // its Theme keeps General's localized words
+        let general = FeatureStrings.generalSettings(language)
         let widgets = ZenithStrings.lockScreenWidgets(language)
         let terminal = ZenithStrings.lockScreenTerminal(language)
         let terminalTitle = ZenithStrings.lockScreenTerminalTitle(language)
@@ -220,6 +223,24 @@ enum ZenithSettingsSearch {
                  keywords: [mechakey.title, mechakey.soundPack, mechakey.preview, mechakey.volume, mechakey.typing,
                             mechakey.keyUp, mechakey.ignoreRepeat, mechakey.shortcut],
                  aliases: MechakeySearch.aliases),
+            // Appearance: the page, then its theme, motion, glass and battery.
+            SettingsSearchItem(id: .page(.appearance), destination: FeatureSettingsDestination(.appearance),
+                               title: appearance.title, icon: "paintpalette", keywords: [appearance.subtitle],
+                               aliases: AppearanceSearch.aliases),
+            page(.zenithAppearanceTheme, title: appearance.theme, icon: "circle.lefthalf.filled",
+                 keywords: [theme.label, theme.system, theme.light, theme.dark, theme.liquidGlass,
+                            general.liquidGlassOtherWindows],
+                 aliases: AppearanceSearch.theme),
+            page(.zenithAppearanceMotion, title: appearance.motion, icon: "wind",
+                 keywords: IslandMotionPreset.allCases.map(appearance.preset)
+                    + [appearance.bounce, appearance.blur, appearance.contentPace, appearance.speed],
+                 aliases: AppearanceSearch.motion),
+            page(.zenithAppearanceGlass, title: appearance.glass, icon: "square.stack.3d.down.forward",
+                 keywords: IslandGlassStyle.allCases.map(appearance.glassStyle)
+                    + [appearance.gradientHeight, appearance.tint],
+                 aliases: AppearanceSearch.glass),
+            page(.zenithAppearanceBattery, title: appearance.saveBattery, icon: "leaf",
+                 keywords: [appearance.battery, appearance.savingNow], aliases: AppearanceSearch.battery),
             // Dynamic Island › Activity: the fork's cards.
             section(.zenithCommandActivity, in: .activity, title: commands.section, icon: "terminal",
                     keywords: [commands.toggle, commands.showAfter, commands.showFolder, commands.ignore, commands.hook],
