@@ -22,6 +22,7 @@ extension CatalogShots {
             ("translate", .translate, [TranslateDefaults.enabled: true], 1300),
             ("shortcuts", .shortcuts, [:], 1000),
         ] + kitEverydayPages
+            + kitWave2Pages // Zenith fork: Orbit wave 2 (CatalogKitShotsWave2)
         var shots: [CatalogShot] = []
         for (name, page, preferences, height) in pages {
             for (suffix, appearance) in [("dark", NSAppearance.Name.darkAqua), ("light", .aqua)] {

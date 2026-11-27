@@ -214,6 +214,7 @@ extension NotchModule {
         case .git: return GitSupportSymbols.module // Zenith fork
         case .prompter: return "scroll.fill"
         case .batteries: return "battery.75percent" // Zenith fork
+        case .calculator: return "plus.forwardslash.minus" // Zenith fork
         }
     }
 }

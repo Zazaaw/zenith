@@ -20,6 +20,7 @@ enum SettingsPage: Hashable, CaseIterable {
     case meetings // Zenith fork: calls from the calendar, Join and the mic, beside the lock screen
     case mechakey // Zenith fork: mechanical keyboard sounds as you type, a page of its own
     case appearance // Zenith fork: how the island moves and what it is made of, a sidebar tile
+    case removeBackground, emojiPicker, calculator // Zenith fork: Orbit wave 2, pages of their own
     // Zenith fork: the island's sections with options of their own, each a page in the Island group.
     case notchCalendar, notchNotifications, notchMusic, notchTimer, notchAgents, notchDownloads, notchWatch
 }
@@ -89,6 +90,9 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
     case zenithMeetings, zenithMeetingsCalls, zenithMeetingsProviders // Zenith fork
     case zenithMechakey, zenithMechakeyRepeat // Zenith fork: the repeat switch sits under More options
     case zenithAppearanceTheme, zenithAppearanceMotion, zenithAppearanceGlass, zenithAppearanceBattery
+    case zenithRemoveBackground, zenithRemoveBackgroundResult // Zenith fork: Orbit wave 2
+    case zenithEmojiPicker, zenithEmojiPickerPicking
+    case zenithCalculator, zenithCalculatorAnswers
 
     var page: SettingsPage {
         switch self {
@@ -127,6 +131,9 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
         case .zenithTranslate, .zenithTranslateLanguages, .zenithTranslateDownloads: return .translate
         case .zenithMeetings, .zenithMeetingsCalls, .zenithMeetingsProviders: return .meetings // Zenith fork
         case .zenithMechakey, .zenithMechakeyRepeat: return .mechakey
+        case .zenithRemoveBackground, .zenithRemoveBackgroundResult: return .removeBackground // Zenith fork
+        case .zenithEmojiPicker, .zenithEmojiPickerPicking: return .emojiPicker
+        case .zenithCalculator, .zenithCalculatorAnswers: return .calculator
         case .zenithAppearanceTheme, .zenithAppearanceMotion, .zenithAppearanceGlass, .zenithAppearanceBattery: return .appearance
         case .zenithDropZones, .zenithWatermark: return .shelf
         case .zenithDesignOverlay, .zenithBeautify: return .screenshot
@@ -575,7 +582,8 @@ enum FeatureVisibilitySupport {
         case .translate: return [] // Zenith fork: a page of the app's own, which no hub feature hides
         case .general, .features, .shortcuts, .advanced, .about, .releaseNotes, .support,
              .workspaces, .remote, .pocket, .faceUnlock, .batteries,
-             .meetings, .mechakey, .appearance: // Zenith fork
+             .meetings, .mechakey, .appearance, // Zenith fork
+             .removeBackground, .emojiPicker, .calculator: // Zenith fork: Orbit wave 2
             return []
         }
     }

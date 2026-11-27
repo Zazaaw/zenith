@@ -48,6 +48,7 @@ enum ZenithIslandPalette {
         case .git: return 0xFCA5A5           // coral, the red 300 step: git's own orange red, softened
         case .prompter: return 0xC4B5FD      // lavender, the violet 300 step: calm, for reading aloud
         case .batteries: return 0xBEF264     // Zenith fork: lime, the 300 step: a charge
+        case .calculator: return 0xFDE68A    // Zenith fork: butter, the amber 200 step: a pocket calculator's
         }
     }
 

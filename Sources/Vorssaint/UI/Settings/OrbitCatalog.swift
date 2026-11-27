@@ -89,7 +89,8 @@ struct OrbitGetPlan: Equatable {
 enum OrbitCatalog {
     /// Zenith's own pages, which no hub feature stands for.
     static let pages: [SettingsPage] = [.lockScreen, .meetings, .translate, .mechakey, .workspaces,
-                                        .pocket, .remote, .batteries, .faceUnlock]
+                                        .pocket, .remote, .batteries, .faceUnlock,
+                                        .removeBackground, .emojiPicker, .calculator] // Zenith fork: Orbit wave 2
 
     /// Every item: the hub's features in their catalog order, then the pages.
     static let items: [OrbitItem] = AppFeature.allCases.map(item(for:)) + pages.compactMap(item(for:))
@@ -103,6 +104,7 @@ enum OrbitCatalog {
     static let picks: [OrbitItemID] = [
         .page(.meetings), .page(.translate), .page(.mechakey), .feature(.shelf), .feature(.clipboardHistory),
         .page(.pocket), .page(.batteries), .page(.faceUnlock), .feature(.commandBar),
+        .page(.removeBackground), .page(.emojiPicker), .page(.calculator), // Orbit wave 2
     ]
 
     /// The item the banner shows.
@@ -147,6 +149,16 @@ enum OrbitCatalog {
         case .faceUnlock:
             return OrbitItem(id: .page(page), iconName: "Face Unlock", category: .devices,
                              switchKey: DefaultsKey.faceUnlockEnabled, pagePermissions: [.camera])
+        // Zenith fork: Orbit wave 2.
+        case .removeBackground:
+            return OrbitItem(id: .page(page), iconName: "Remove Background", category: .ai,
+                             switchKey: RemoveBackgroundDefaults.enabled)
+        case .emojiPicker:
+            return OrbitItem(id: .page(page), iconName: "Emoji Picker", category: .productivity,
+                             switchKey: EmojiPickerDefaults.enabled, pagePermissions: [.accessibility])
+        case .calculator:
+            return OrbitItem(id: .page(page), iconName: "Calculator", category: .productivity,
+                             switchKey: CalculatorDefaults.enabled)
         default:
             return nil
         }

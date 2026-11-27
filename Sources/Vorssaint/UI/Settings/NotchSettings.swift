@@ -450,7 +450,7 @@ struct NotchSettings: View {
         // Zenith fork: these have pages of their own in the Island group (NotchModulePages),
         // and Batteries keeps its options on its own page under Devices.
         case .music, .notifications, .downloads, .calendar, .timer, .agents, .watch,
-             .mixer, .system, .tools, .batteries:
+             .mixer, .system, .tools, .batteries, .calculator:
             EmptyView()
         }
     }
@@ -793,7 +793,7 @@ struct NotchSettings: View {
         case .agents: return .notchAgents
         case .watch: return .notchWatch
         case .wakatime, .vercel, .github, .cardImport, .devServers, .recap, .sky, .git, .prompter,
-             .batteries: return nil // Zenith fork: cardImport, devServers, recap, sky, git, prompter, batteries
+             .batteries, .calculator: return nil // Zenith fork: cardImport, devServers, recap, sky, git, prompter, batteries
         }
     }
 

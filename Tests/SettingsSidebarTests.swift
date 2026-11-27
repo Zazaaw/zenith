@@ -40,9 +40,10 @@ enum SettingsSidebarTests {
         func group(_ group: SettingsSidebarGroup) -> [SettingsSidebarItem.ID] {
             all.first { $0.group == group }?.items.map(\.id) ?? []
         }
-        suite.expect(Set(group(.fromOrbit)) == [.page(.meetings), .page(.translate), .page(.mechakey)]
-                        && group(.fromOrbit).count == 3,
-                     "From Orbit lists the features Zenith added: Meetings, Translate and Mechakey")
+        suite.expect(Set(group(.fromOrbit)) == [.page(.meetings), .page(.translate), .page(.mechakey),
+                                                .page(.removeBackground), .page(.emojiPicker), .page(.calculator)]
+                        && group(.fromOrbit).count == 6,
+                     "From Orbit lists the features Zenith added: Meetings, Translate, Mechakey and Orbit wave 2")
         suite.expect(group(.island).prefix(2) == [.page(.notch), .page(.lockScreen)]
                         && group(.devices).first == .page(.pocket)
                         && group(.everyday).prefix(6) == [.page(.shelf), .page(.clipboard), .page(.finderTools), .page(.media),

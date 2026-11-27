@@ -33,6 +33,9 @@ enum ZenithSettingsSearch {
         .page(.translate): TranslateSearch.aliases,
         .page(.meetings): MeetingsSearch.aliases,
         .page(.mechakey): MechakeySearch.aliases,
+        .page(.removeBackground): RemoveBackgroundSearch.aliases, // Zenith fork: Orbit wave 2
+        .page(.emojiPicker): EmojiPickerSearch.aliases,
+        .page(.calculator): CalculatorSearch.aliases,
         .page(.finderTools): ["finder", "cut paste", "cut and paste", "potong tempel", "pindah file", "rename",
                               "ganti nama", "F2", "dmg", "disk image", "install app", "pasang aplikasi"],
         .page(.about): ["tentang", "tentang aplikasi", "versi", "version", "Satu Visual", "Zenith"],
@@ -66,6 +69,9 @@ enum ZenithSettingsSearch {
         let translate = ZenithStrings.translate(language) // Translate
         let meetings = ZenithStrings.meetings(language) // Meetings
         let mechakey = ZenithStrings.mechakey(language) // Mechakey
+        let removeBackground = ZenithStrings.removeBackground(language) // Orbit wave 2
+        let emojiPicker = ZenithStrings.emojiPicker(language)
+        let calculator = ZenithStrings.calculator(language)
         let appearance = ZenithStrings.appearancePage(language) // Appearance
         let theme = FeatureStrings.appearance(language) // its Theme keeps General's localized words
         let general = FeatureStrings.generalSettings(language)
@@ -228,6 +234,25 @@ enum ZenithSettingsSearch {
             page(.zenithMechakeyRepeat, title: mechakey.ignoreRepeat, icon: "repeat",
                  keywords: [mechakey.title, mechakey.ignoreRepeatCaption],
                  aliases: ["key repeat", "held key", "tahan tombol", "ulang tombol"]),
+            // Orbit wave 2: Remove Background, the Emoji Picker and the Calculator.
+            page(.zenithRemoveBackground, title: removeBackground.enable, icon: "person.and.background.dotted",
+                 keywords: [removeBackground.title, removeBackground.shortcut, removeBackground.commandBarRow],
+                 aliases: RemoveBackgroundSearch.aliases),
+            page(.zenithRemoveBackgroundResult, title: removeBackground.resultSection, icon: "square.and.arrow.down",
+                 keywords: [removeBackground.output, removeBackground.framing],
+                 aliases: ["crop to subject", "save beside", "potong ke objek", "simpan di samping"]),
+            page(.zenithEmojiPicker, title: emojiPicker.enable, icon: "face.smiling",
+                 keywords: [emojiPicker.title, emojiPicker.shortcut, emojiPicker.showInCommandBar],
+                 aliases: EmojiPickerSearch.aliases),
+            page(.zenithEmojiPickerPicking, title: emojiPicker.pickingSection, icon: "hand.raised",
+                 keywords: [emojiPicker.skinTone, emojiPicker.recentCount, emojiPicker.clearRecents],
+                 aliases: ["skin tone", "recent emoji", "warna kulit", "emoji terakhir"]),
+            page(.zenithCalculator, title: calculator.enable, icon: "plus.forwardslash.minus",
+                 keywords: [calculator.title, calculator.showInIsland, calculator.showInCommandBar],
+                 aliases: CalculatorSearch.aliases),
+            page(.zenithCalculatorAnswers, title: calculator.answersSection, icon: "number",
+                 keywords: [calculator.decimalPlaces, calculator.clearHistory],
+                 aliases: ["decimal places", "history", "angka desimal", "riwayat hitungan"]),
             // Appearance: the page, then its theme, motion, glass and battery.
             SettingsSearchItem(id: .page(.appearance), destination: FeatureSettingsDestination(.appearance),
                                title: appearance.title, icon: "paintpalette", keywords: [appearance.subtitle],

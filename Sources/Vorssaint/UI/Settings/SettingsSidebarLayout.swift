@@ -63,7 +63,8 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
         case .energy, .monitor, .quickTools: return .system
         case .cleaner, .uninstaller, .homebrew, .appUpdates, .killProcess, .portManager: return .apps
         case .remote, .pocket, .faceUnlock, .batteries: return .devices
-        case .meetings, .translate, .mechakey: return .fromOrbit
+        case .meetings, .translate, .mechakey,
+             .removeBackground, .emojiPicker, .calculator: return .fromOrbit // Zenith fork: Orbit wave 2
         case .shortcuts, .advanced, .about, .releaseNotes, .support: return .zenith
         }
     }

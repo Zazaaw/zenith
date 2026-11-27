@@ -755,6 +755,9 @@ if (( TEST )); then
         Sources/Vorssaint/Services/EmojiPicker/EmojiPickerSupport.swift
         Sources/Vorssaint/Services/Calculator/CalculatorEngine.swift
         Sources/Vorssaint/Services/Calculator/CalculatorSupport.swift
+        Sources/Vorssaint/Core/ZenithCalculatorStrings.swift
+        Sources/Vorssaint/Core/ZenithEmojiPickerStrings.swift
+        Sources/Vorssaint/Core/ZenithRemoveBackgroundStrings.swift
         # Zenith fork: Orbit, the Features page's catalog, its words and its icons.
         Sources/Vorssaint/UI/Settings/OrbitCatalog.swift
         Sources/Vorssaint/Core/ZenithOrbitStrings.swift

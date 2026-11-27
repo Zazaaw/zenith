@@ -242,7 +242,7 @@ struct ZenithTabBarSettings: View {
         case .agents: return .notchAgents
         case .watch: return .notchWatch
         case .controls, .music, .captures, .system, .wakatime, .vercel, .github, .cardImport, .devServers, .recap, .sky, .git, .prompter,
-             .batteries: // Zenith fork
+             .batteries, .calculator: // Zenith fork
             return nil
         }
     }
