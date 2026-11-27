@@ -1,8 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Vorssaint
+// Copyright (C) 2026 Satu Visual
 
 import SwiftUI
 
+/// Settings → Clipboard. Zenith fork: rebuilt with the Settings kit. The
+/// history's switch is the hero's, then its preview, the window's layout as
+/// pictures, the history's shortcut and what it keeps (rarer choices under
+/// More options), Paste as plain text, privacy and auto clear, and QR codes.
+/// Pasting a copied image as a file moved to Finder Tools, beside the Finder
+/// paste it belongs to.
 struct ClipboardSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var features = FeatureRuntime.shared
@@ -23,13 +30,14 @@ struct ClipboardSettings: View {
     @AppStorage(DefaultsKey.clipboardHistoryMenuBarPreviewLength)
     private var menuBarPreviewLength = Defaults.defaultClipboardMenuBarPreviewLength
     @AppStorage(DefaultsKey.panelUtilityClipboard) private var showInPanel = true
-    @AppStorage(DefaultsKey.finderPasteImageAsFile) private var pasteImageAsFile = false
     @AppStorage(DefaultsKey.clipboardAutoClearOnDelay) private var autoClearOnDelay = false
     @AppStorage(DefaultsKey.clipboardAutoClearDelay)
     private var autoClearDelay = Defaults.defaultClipboardAutoClearDelay
     @AppStorage(DefaultsKey.clipboardAutoClearOnSleep) private var autoClearOnSleep = false
     @AppStorage(DefaultsKey.clipboardAutoClearOnDisplaySleep) private var autoClearOnDisplaySleep = false
     @AppStorage(DefaultsKey.clipboardAutoClearOnScreenLock) private var autoClearOnScreenLock = false
+
+    private let page = ZenithStrings.everyday(.enUS)
 
     private var text: ClipboardFeatureStrings {
         FeatureStrings.clipboard(l10n.language)
@@ -39,122 +47,30 @@ struct ClipboardSettings: View {
         FeatureStrings.clipboardRetention(l10n.language)
     }
 
+    private var historyAvailable: Bool { AppFeature.clipboardHistory.isAvailable }
+
     var body: some View {
-        Form {
-            ZenithPreviewFormSection { ZenithClipboardPreviewCard() } // Zenith fork: the preview card
-            if AppFeature.clipboardHistory.isAvailable {
-                Section {
-                    Toggle(text.enable, isOn: $enabled)
-                        .onChange(of: enabled) { _, _ in
-                            ClipboardHistoryService.shared.syncWithPreferences()
-                        }
-                    Text(text.caption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(text.localNote)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                    if enabled, history.isRunning {
-                        Label(text.active, systemImage: "checkmark.circle.fill")
-                            .font(.caption)
-                            .foregroundStyle(ZenithStatus.success)
-                    }
+        ScrollView {
+            ZenithPageColumn {
+                hero
+                if AppFeature.pastePlain.isAvailable, pastePlainEnabled, !permissions.accessibility {
+                    ZenithPermissionSection(kind: .accessibility)
                 }
-                .settingsFormSectionAnchor(.clipboardHistory)
-
-                clipboardShortcutSection
-                clipboardMenuBarPreviewSection
-
-                Section {
-                    Toggle(text.includeImagesFiles, isOn: $includeImagesFiles)
-                        .disabled(!enabled)
-                    Text(text.includeImagesFilesCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Toggle(text.skipSensitive, isOn: $skipSensitive)
-                        .disabled(!enabled)
-                    Text(text.skipSensitiveCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    ClipboardIgnoredAppsList()
-                        .disabled(!enabled)
-                    Picker(text.limit, selection: $limit) {
-                        ForEach(Defaults.allowedClipboardHistoryLimits, id: \.self) { value in
-                            Text(value == 0 ? text.limitUnlimited : "\(value)").tag(value)
-                        }
-                    }
-                    .disabled(!enabled)
-                    Picker(retentionText.title, selection: $retentionDays) {
-                        ForEach(Defaults.allowedClipboardHistoryRetentionDays, id: \.self) { value in
-                            Text(retentionText.label(days: value)).tag(value)
-                        }
-                    }
-                    .disabled(!enabled)
-                    Text(retentionText.caption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                ZenithClipboardPreviewCard()
+                if historyAvailable {
+                    layoutPicker
+                    historySection
                 }
-
-                // Its own section because it is the one setting here that keeps
-                // working with capture off: the panel entry stays, saying so,
-                // and still opens the saved items. Sitting among the disabled
-                // rows it read as one that had been missed.
-                Section {
-                    Toggle(text.showInPanel, isOn: $showInPanel)
+                if AppFeature.pastePlain.isAvailable {
+                    pastePlainSection
                 }
-
-                clipboardAutoClearSection
-            }
-
-            if AppFeature.finderCutPaste.isAvailable {
-                Section {
-                    Toggle(text.pasteImageAsFile, isOn: $pasteImageAsFile)
-                        .onChange(of: pasteImageAsFile) { _, _ in
-                            FinderCutPaste.shared.syncWithPreferences()
-                        }
-                    Text(text.pasteImageAsFileCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    if pasteImageAsFile, !permissions.accessibility {
-                        PermissionRow(kind: .accessibility)
-                    }
+                if historyAvailable {
+                    privacySection
                 }
-            }
-
-            if AppFeature.pastePlain.isAvailable {
-                Section {
-                    Toggle(l10n.s.pastePlainName, isOn: $pastePlainEnabled)
-                        .onChange(of: pastePlainEnabled) { _, _ in
-                            PastePlainService.shared.syncWithPreferences()
-                        }
-                    Text(l10n.s.pastePlainCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    ShortcutPreferenceRow(role: .pastePlain,
-                                          isEnabled: pastePlainEnabled) {
-                        PastePlainService.shared.syncWithPreferences()
-                    }
-                    if pastePlainEnabled, pastePlain.shortcutRegistrationFailed {
-                        Text(l10n.s.shortcutUnavailable)
-                            .font(.caption)
-                            .foregroundStyle(ZenithStatus.warning)
-                    }
-                    if pastePlainEnabled, !permissions.accessibility {
-                        PermissionRow(kind: .accessibility)
-                    }
-                } header: {
-                    Text(l10n.s.pastePlainName)
-                }
-                .settingsFormSectionAnchor(.pastePlain)
-            }
-
-            QRSettingsSection() // Zenith fork: QR codes.
-
-            if AppFeature.clipboardHistory.isAvailable {
-                clipboardStatsSection
+                autoClearSection
+                QRSettingsSection() // Zenith fork: QR codes.
             }
         }
-        .formStyle(.grouped)
         .onAppear {
             limit = Defaults.sanitizedClipboardHistoryLimit(limit)
             retentionDays = Defaults.sanitizedClipboardHistoryRetentionDays(retentionDays)
@@ -185,63 +101,125 @@ struct ClipboardSettings: View {
         }
     }
 
-    @ViewBuilder
-    private var clipboardShortcutSection: some View {
-        Section(text.shortcut) {
-            Toggle(text.shortcut, isOn: $shortcutEnabled)
-                .onChange(of: shortcutEnabled) { _, _ in
-                    ClipboardHistoryService.shared.syncHotkey()
-                }
+    // MARK: Hero
+
+    @ViewBuilder private var hero: some View {
+        if historyAvailable {
+            ZenithHero(title: text.title, subtitle: text.caption, chips: chips,
+                       isOn: Binding(get: { enabled }, set: { on in
+                           enabled = on
+                           ClipboardHistoryService.shared.syncWithPreferences()
+                       }),
+                       switchLabel: text.enable, switchHint: text.localNote, animation: .clipboard)
+                .zenithSectionAnchor(.clipboardHistory, cornerRadius: ZenithKitSurface.heroRadius + 6, inset: 6)
+        } else {
+            ZenithHero(title: text.title, subtitle: l10n.s.pastePlainCaption, chips: chips, animation: .clipboard)
+        }
+    }
+
+    private var chips: [ZenithChip] {
+        var chips: [ZenithChip] = []
+        if historyAvailable {
+            chips.append(ZenithChip(page.clipboardItems(history.entries.count),
+                                    dot: enabled && history.isRunning ? ZenithStatus.success : nil))
+            chips.append(ZenithChip(page.clipboardKeeps(limitLabel(limit))))
+        }
+        if AppFeature.pastePlain.isAvailable, pastePlainEnabled {
+            chips.append(ZenithChip(page.clipboardPlainOn))
+        }
+        return chips
+    }
+
+    private func limitLabel(_ value: Int) -> String {
+        value == 0 ? text.limitUnlimited : "\(value)"
+    }
+
+    // MARK: Layout
+
+    /// Not disabled with capture off: the window still opens on the saved items.
+    private var layoutPicker: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ZenithSectionTitle(text.historyLayout)
+            ZenithVisualPicker(text.historyLayout, selection: $historyLayout, options: [
+                ZenithPickerOption(ClipboardHistoryLayout.list, text.historyLayoutList),
+                ZenithPickerOption(ClipboardHistoryLayout.cards, text.historyLayoutCards),
+            ], minimumTileWidth: 150, tileHeight: 70) { layout, _ in
+                ClipboardLayoutArt(cards: layout == .cards)
+            }
+        }
+    }
+
+    // MARK: History
+
+    private var historySection: some View {
+        ZenithSection(page.clipboardHistory) {
+            ZenithRow(text.shortcut, isOn: $shortcutEnabled, info: text.shortcutCaption)
+                .onChange(of: shortcutEnabled) { _, _ in ClipboardHistoryService.shared.syncHotkey() }
                 .disabled(!enabled)
             ShortcutPreferenceRow(role: .clipboard,
                                   isEnabled: enabled && shortcutEnabled,
                                   additionalConflict: WindowLayoutService.shared.shortcutConflictTitle) {
                 ClipboardHistoryService.shared.syncHotkey()
             }
+            .padding(.vertical, 8)
             if enabled, shortcutEnabled, history.shortcutRegistrationFailed {
-                Text(l10n.s.shortcutUnavailable)
-                    .font(.caption)
-                    .foregroundStyle(ZenithStatus.warning)
+                ZenithRowStatus(text: l10n.s.shortcutUnavailable, symbol: "exclamationmark.triangle.fill",
+                                color: ZenithStatus.warning)
             }
-            Text(text.shortcutCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            // Not disabled with capture off: the window still opens on the
-            // saved items, like the button below.
-            Picker(text.historyLayout, selection: $historyLayout) {
-                Text(text.historyLayoutList).tag(ClipboardHistoryLayout.list)
-                Text(text.historyLayoutCards).tag(ClipboardHistoryLayout.cards)
+            ZenithRow(text.limit, selection: $limit) {
+                ForEach(Defaults.allowedClipboardHistoryLimits, id: \.self) { value in
+                    Text(limitLabel(value)).tag(value)
+                }
             }
-            .pickerStyle(.segmented)
-            Toggle(text.showSourceAppIconsInList, isOn: $showSourceAppIcons)
-            Button {
-                ClipboardHistoryService.shared.showHistoryWindow()
-            } label: {
-                Label(text.shortcut, systemImage: "doc.on.clipboard")
+            .disabled(!enabled)
+            ZenithRow(text.includeImagesFiles, isOn: $includeImagesFiles, info: text.includeImagesFilesCaption)
+                .disabled(!enabled)
+            savedRow
+            ZenithMoreOptions(id: "clipboard") {
+                ZenithRow(retentionText.title, selection: $retentionDays, info: retentionText.caption) {
+                    ForEach(Defaults.allowedClipboardHistoryRetentionDays, id: \.self) { value in
+                        Text(retentionText.label(days: value)).tag(value)
+                    }
+                }
+                .disabled(!enabled)
+                ZenithRow(text.showSourceAppIconsInList, isOn: $showSourceAppIcons)
+                // It keeps working with capture off: the panel entry stays,
+                // saying so, and still opens the saved items.
+                ZenithRow(text.showInPanel, isOn: $showInPanel)
+                ZenithRow(text.menuBarPreview, isOn: $menuBarPreview, info: text.menuBarPreviewCaption)
+                    .disabled(!enabled)
+                ZenithRow(text.menuBarPreviewLength) {
+                    HStack(spacing: 6) {
+                        TextField("", value: $menuBarPreviewLength, formatter: Self.menuBarPreviewLengthFormatter)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 50)
+                            .multilineTextAlignment(.trailing)
+                            .accessibilityLabel(text.menuBarPreviewLength)
+                        Text(text.menuBarPreviewLengthSuffix).foregroundStyle(.secondary)
+                    }
+                }
+                .disabled(!enabled || !menuBarPreview)
             }
-            .disabled(history.entries.isEmpty)
         }
     }
 
-    @ViewBuilder
-    private var clipboardMenuBarPreviewSection: some View {
-        Section {
-            Toggle(text.menuBarPreview, isOn: $menuBarPreview)
-                .disabled(!enabled)
-            HStack {
-                Text(text.menuBarPreviewLength)
-                Spacer()
-                TextField("", value: $menuBarPreviewLength, formatter: Self.menuBarPreviewLengthFormatter)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 50)
-                    .multilineTextAlignment(.trailing)
-                Text(text.menuBarPreviewLengthSuffix)
+    /// What the history holds now, its window, and clearing what is not pinned.
+    private var savedRow: some View {
+        ZenithRow(page.clipboardSaved) {
+            HStack(spacing: 8) {
+                Text("\(history.pinnedEntries.count) \(text.pinned) · \(history.recentEntries.count) \(text.recent)")
+                    .font(ZenithType.caption)
                     .foregroundStyle(.secondary)
+                Button(text.clearRecent) {
+                    clearingIDs = history.recentEntriesSnapshot
+                }
+                .disabled(history.recentEntries.isEmpty)
+                .modifier(ClipboardClearRecentConfirmation(entryIDs: $clearingIDs))
+                Button(page.clipboardOpenHistory) {
+                    ClipboardHistoryService.shared.showHistoryWindow()
+                }
+                .disabled(history.entries.isEmpty)
             }
-            .disabled(!enabled || !menuBarPreview)
-            Text(text.menuBarPreviewCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
     }
 
@@ -254,40 +232,66 @@ struct ClipboardSettings: View {
         return formatter
     }()
 
-    // Never disabled by the capture toggle, unlike the sections above it:
-    // emptying the pasteboard is a security setting in its own right, and
-    // someone who keeps no history is exactly who reaches for it.
-    @ViewBuilder
-    private var clipboardAutoClearSection: some View {
-        Section {
-            HStack {
-                Toggle(text.autoClearEnable, isOn: $autoClearOnDelay)
-                    .onChange(of: autoClearOnDelay) { _, _ in
+    // MARK: Paste as plain text
+
+    private var pastePlainSection: some View {
+        ZenithSection(l10n.s.pastePlainName, anchor: .pastePlain) {
+            ZenithRow(l10n.s.pastePlainName, isOn: $pastePlainEnabled, info: l10n.s.pastePlainCaption)
+                .onChange(of: pastePlainEnabled) { _, _ in PastePlainService.shared.syncWithPreferences() }
+            ShortcutPreferenceRow(role: .pastePlain, isEnabled: pastePlainEnabled) {
+                PastePlainService.shared.syncWithPreferences()
+            }
+            .padding(.vertical, 8)
+            if pastePlainEnabled, pastePlain.shortcutRegistrationFailed {
+                ZenithRowStatus(text: l10n.s.shortcutUnavailable, symbol: "exclamationmark.triangle.fill",
+                                color: ZenithStatus.warning)
+            }
+        }
+    }
+
+    // MARK: Privacy
+
+    private var privacySection: some View {
+        ZenithSection(page.clipboardPrivacy, footer: text.localNote) {
+            ZenithRow(text.skipSensitive, isOn: $skipSensitive, info: text.skipSensitiveCaption)
+                .disabled(!enabled)
+            ClipboardIgnoredAppsList()
+                .padding(.vertical, 8)
+                .disabled(!enabled)
+        }
+    }
+
+    // MARK: Auto clear
+
+    // Never disabled by the capture toggle, unlike the rows above: emptying
+    // the pasteboard is a security setting in its own right, and someone who
+    // keeps no history is exactly who reaches for it.
+    private var autoClearSection: some View {
+        ZenithSection(page.clipboardAutoClear, footer: text.autoClearCaption) {
+            ZenithRow(text.autoClearEnable) {
+                HStack(spacing: 8) {
+                    TextField("", value: $autoClearDelay, formatter: Self.delayFieldFormatter)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 60)
+                        .disabled(!autoClearOnDelay)
+                        .accessibilityLabel(text.autoClearSecondsSuffix)
+                    Text(text.autoClearSecondsSuffix).foregroundStyle(.secondary)
+                    ZenithRowSwitch(title: text.autoClearEnable, isOn: $autoClearOnDelay)
+                }
+            }
+            .onChange(of: autoClearOnDelay) { _, _ in ClipboardAutoClearService.shared.syncWithPreferences() }
+            ZenithMoreOptions(id: "clipboard.autoClear") {
+                ZenithRow(text.autoClearOnSleep, isOn: $autoClearOnSleep)
+                    .onChange(of: autoClearOnSleep) { _, _ in ClipboardAutoClearService.shared.syncWithPreferences() }
+                ZenithRow(text.autoClearOnDisplaySleep, isOn: $autoClearOnDisplaySleep)
+                    .onChange(of: autoClearOnDisplaySleep) { _, _ in
                         ClipboardAutoClearService.shared.syncWithPreferences()
                     }
-                TextField("", value: $autoClearDelay, formatter: Self.delayFieldFormatter)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 60)
-                    .disabled(!autoClearOnDelay)
-                Text(text.autoClearSecondsSuffix)
-                    .foregroundStyle(.secondary)
+                ZenithRow(text.autoClearOnScreenLock, isOn: $autoClearOnScreenLock)
+                    .onChange(of: autoClearOnScreenLock) { _, _ in
+                        ClipboardAutoClearService.shared.syncWithPreferences()
+                    }
             }
-            .fixedSize(horizontal: false, vertical: true)
-            Toggle(text.autoClearOnSleep, isOn: $autoClearOnSleep)
-                .onChange(of: autoClearOnSleep) { _, _ in
-                    ClipboardAutoClearService.shared.syncWithPreferences()
-                }
-            Toggle(text.autoClearOnDisplaySleep, isOn: $autoClearOnDisplaySleep)
-                .onChange(of: autoClearOnDisplaySleep) { _, _ in
-                    ClipboardAutoClearService.shared.syncWithPreferences()
-                }
-            Toggle(text.autoClearOnScreenLock, isOn: $autoClearOnScreenLock)
-                .onChange(of: autoClearOnScreenLock) { _, _ in
-                    ClipboardAutoClearService.shared.syncWithPreferences()
-                }
-            Text(text.autoClearCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
     }
 
@@ -299,25 +303,46 @@ struct ClipboardSettings: View {
         formatter.usesGroupingSeparator = false
         return formatter
     }()
+}
 
-    private var clipboardStatsSection: some View {
-            Section {
-                HStack {
-                    Text("\(history.pinnedEntries.count)")
-                    Text(text.pinned)
-                        .foregroundStyle(.secondary)
-                    Text("·")
-                        .foregroundStyle(.tertiary)
-                    Text("\(history.recentEntries.count)")
-                    Text(text.recent)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Button(text.clearRecent) {
-                        clearingIDs = history.recentEntriesSnapshot
+/// The history window's layout as a picture: rows of a list, or cards side by side.
+private struct ClipboardLayoutArt: View {
+    let cards: Bool
+
+    var body: some View {
+        Group {
+            if cards {
+                HStack(spacing: 6) {
+                    ForEach(0..<3, id: \.self) { index in
+                        card(lines: 3 - index % 2).frame(width: 30, height: 40)
                     }
-                    .disabled(history.recentEntries.isEmpty)
-                    .modifier(ClipboardClearRecentConfirmation(entryIDs: $clearingIDs))
+                }
+            } else {
+                VStack(spacing: 4) {
+                    ForEach(0..<3, id: \.self) { index in
+                        HStack(spacing: 5) {
+                            RoundedRectangle(cornerRadius: 2).fill(Color.primary.opacity(0.45)).frame(width: 8, height: 8)
+                            Capsule().fill(Color.primary.opacity(0.6)).frame(width: index == 1 ? 52 : 70, height: 4)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.horizontal, 6)
+                        .frame(width: 100, height: 14)
+                        .background(RoundedRectangle(cornerRadius: 4).fill(Color.primary.opacity(0.1)))
+                    }
                 }
             }
+        }
+        .accessibilityHidden(true)
+    }
+
+    private func card(lines: Int) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            ForEach(0..<lines, id: \.self) { line in
+                Capsule().fill(Color.primary.opacity(0.6)).frame(width: line == lines - 1 ? 12 : 20, height: 3)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(5)
+        .background(RoundedRectangle(cornerRadius: 5).fill(Color.primary.opacity(0.1)))
     }
 }

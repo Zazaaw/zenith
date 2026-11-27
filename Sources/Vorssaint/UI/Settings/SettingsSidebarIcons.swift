@@ -35,6 +35,7 @@ enum SettingsSidebarIcons {
         case .clipboard: return "Clipboard"
         case .shelf: return "Shelf"
         case .media: return "Media Tools"
+        case .finderTools: return "Finder Tools"
         case .urlCleaner: return "URL Cleaner"
         case .textSnippets: return "Text Snippets"
         case .screenshot: return "Screenshot"
@@ -59,7 +60,7 @@ enum SettingsSidebarIcons {
         case .meetings: return "Meetings"
         case .translate: return "Quick Translate"
         case .mechakey: return "Mechakey"
-        case .mouse, .keyDebounce, .cutPaste, .quitProtection, .quickTools, .killProcess,
+        case .mouse, .keyDebounce, .quitProtection, .quickTools, .killProcess,
              .shortcuts, .advanced, .about, .releaseNotes, .support:
             return nil
         }
@@ -124,7 +125,6 @@ enum SettingsSidebarIcons {
         switch page {
         case .mouse: return "computermouse"
         case .keyDebounce: return "keyboard"
-        case .cutPaste: return "filemenu.and.selection"
         case .quitProtection: return "shield.lefthalf.filled"
         case .quickTools: return "wand.and.rays"
         case .killProcess: return "xmark.octagon"

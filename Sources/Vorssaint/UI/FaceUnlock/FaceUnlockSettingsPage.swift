@@ -7,11 +7,12 @@ import AppKit
 import SwiftUI
 
 // Zenith fork: Settings → Face Unlock, a page of its own (Glance's General,
-// Recognition, Camera, Your Face and Password pages in one). The switch, the
-// session, what starts a scan, scanning, recognition, the animation, the
-// faces, the password, Face Lab, and the notes that say what this trades
-// away. Headings are drawn here and switches are ZenithSwitchRow, like the
-// fork's other pages.
+// Recognition, Camera, Your Face and Password pages in one), built with the
+// Settings kit. The switch in the hero, setup as a callout until it is done,
+// the session, what starts a scan and the camera (how long and how it
+// retries under More options), recognition, the animation, the faces (Face
+// Lab under More options), the password, and the notes that say what this
+// trades away.
 
 struct FaceUnlockSettingsPage: View {
     @ObservedObject private var session = FaceUnlockRuntime.shared.session
@@ -41,6 +42,7 @@ struct FaceUnlockSettingsPage: View {
     @State private var faceError: String?
 
     private let text = ZenithStrings.faceUnlock(.enUS)
+    private let page = ZenithStrings.everyday(.enUS)
 
     private var supported: Bool { FaceUnlockRuntime.isSupported }
     private var recognition: Bool { FaceUnlockSetup.isRecognitionAvailable }
@@ -52,8 +54,18 @@ struct FaceUnlockSettingsPage: View {
     var body: some View {
         ScrollViewReader { proxy in // Zenith fork: the preview card scrolls to its settings
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                SettingsPageHeader(title: text.title, subtitle: text.subtitle)
+            ZenithPageColumn {
+                hero
+                    .zenithSectionAnchor(.zenithFaceUnlock, cornerRadius: ZenithKitSurface.heroRadius + 6, inset: 6)
+                if !supported {
+                    ZenithCallout(.warning, text.unsupported)
+                } else if !isSetUp {
+                    ZenithCallout(.info, title: text.setUp,
+                                  recognition ? text.setUpCaption : text.recognitionMissing) {
+                        Button(text.setUp) { FaceUnlockSetupWindow.startFirstRun() }
+                            .disabled(!recognition)
+                    }
+                }
                 ZenithFaceUnlockPreviewCard { // Zenith fork: the shared preview card
                     if isSetUp {
                         withAnimation(.easeInOut(duration: 0.3)) { proxy.scrollTo(Self.animationID, anchor: .center) }
@@ -61,22 +73,16 @@ struct FaceUnlockSettingsPage: View {
                         SettingsRouter.shared.request(FeatureSettingsDestination(.faceUnlock, sectionAnchor: .zenithFaceUnlock))
                     }
                 }
-                enableCard
                 if isSetUp {
-                    sessionCard
-                    triggersCard
-                    scanningCard
-                    recognitionCard
-                    animationCard.id(Self.animationID)
-                    facesCard
-                    passwordCard
-                    labCard
+                    sessionSection
+                    triggersSection
+                    recognitionSection
+                    animationSection.id(Self.animationID)
+                    facesSection
+                    passwordSection
                 }
-                notesCard
+                notesSection
             }
-            .frame(maxWidth: 760)
-            .frame(maxWidth: .infinity)
-            .padding(22)
         }
         }
         .onAppear {
@@ -102,28 +108,27 @@ struct FaceUnlockSettingsPage: View {
         }
     }
 
-    // MARK: Switch
+    // MARK: Hero
 
-    private var enableCard: some View {
-        SettingsCard {
-            if !supported {
-                note(symbol: "exclamationmark.triangle", text.unsupported, color: ZenithStatus.warning)
-            } else {
-                ZenithSwitchRow(text.enable, isOn: Binding(get: { enabled && isSetUp }, set: setEnabled)) {
-                    SettingsRow(symbol: "faceid", title: text.enable, caption: text.enableCaption) { EmptyView() }
-                }
+    /// The switch, once Face Unlock can run here. Turning it on before setup
+    /// runs the setup instead.
+    @ViewBuilder private var hero: some View {
+        if supported {
+            ZenithHero(title: text.title, subtitle: text.subtitle, chips: chips,
+                       isOn: Binding(get: { enabled && isSetUp }, set: setEnabled),
+                       switchLabel: text.enable, switchHint: text.enableCaption, animation: .faceUnlock)
                 .disabled(!recognition && !isSetUp)
-                if !isSetUp {
-                    Divider()
-                    SettingsRow(symbol: "person.crop.circle.badge.plus", title: text.setUp,
-                                caption: recognition ? text.setUpCaption : text.recognitionMissing) {
-                        Button(text.setUp) { FaceUnlockSetupWindow.startFirstRun() }
-                            .disabled(!recognition)
-                    }
-                }
-            }
+        } else {
+            ZenithHero(title: text.title, subtitle: text.subtitle, animation: .faceUnlock)
         }
-        .zenithSectionAnchor(.zenithFaceUnlock)
+    }
+
+    private var chips: [ZenithChip] {
+        guard isSetUp else { return [ZenithChip(page.faceNotSetUp)] }
+        var chips = [ZenithChip(session.isUnlocked ? text.sessionOpen : text.sessionLocked,
+                                dot: session.isUnlocked ? ZenithStatus.success : nil)]
+        if let faces { chips.append(ZenithChip(page.faceCount(faces.count))) }
+        return chips
     }
 
     /// Turning it on before setup runs the setup, which turns it on at the end.
@@ -138,14 +143,14 @@ struct FaceUnlockSettingsPage: View {
 
     // MARK: Session
 
-    private var sessionCard: some View {
-        SettingsCard(title: text.session) {
+    private var sessionSection: some View {
+        ZenithSection(text.session) {
             if session.isUnlocked {
-                SettingsRow(symbol: "lock.open", title: text.sessionOpen, caption: text.sessionOpenCaption) {
-                    Button(text.lockNow) { session.lockSession() }
+                ZenithRow(text.sessionOpen, info: text.sessionOpenCaption, button: text.lockNow) {
+                    session.lockSession()
                 }
             } else {
-                SettingsRow(symbol: "lock", title: text.sessionLocked, caption: text.sessionLockedCaption) {
+                ZenithRow(text.sessionLocked, info: text.sessionLockedCaption) {
                     Button(session.isAuthenticating ? text.authenticating : text.unlockWithTouchID) {
                         session.unlockSession(reason: text.reasonOpen) { _ in reloadFaces() }
                     }
@@ -153,49 +158,50 @@ struct FaceUnlockSettingsPage: View {
                 }
             }
             if let error = session.lastError {
-                Text(text.error(error))
-                    .font(ZenithType.caption)
-                    .foregroundStyle(ZenithStatus.error)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.leading, settingsRowTextInset)
+                ZenithRowStatus(text: text.error(error), symbol: "xmark.octagon.fill", color: ZenithStatus.error)
             }
-            Divider()
-            SettingsMenuRow(symbol: "timer", title: text.autoLock, selection: $autoLockDays) {
+            ZenithRow(text.autoLock, selection: $autoLockDays,
+                      essential: autoLockDays == FaceUnlockAutoLock.never.rawValue ? text.neverCaption : nil) {
                 ForEach(FaceUnlockAutoLock.allCases) { value in
                     Text(text.autoLockTitle(value)).tag(value.rawValue)
                 }
             }
-            if autoLockDays == FaceUnlockAutoLock.never.rawValue {
-                caption(text.neverCaption)
-            }
         }
     }
 
-    // MARK: Triggers
+    // MARK: Triggers and scanning
 
-    private var triggersCard: some View {
-        SettingsCard(title: text.triggers) {
-            caption(text.triggersCaption)
-            ZenithSwitchRow(text.onLock, isOn: trigger(.onLock)) {
-                SettingsRow(symbol: "lock.laptopcomputer", title: text.onLock) { EmptyView() }
-            }
-            ZenithSwitchRow(text.onWake, isOn: trigger(.onWake)) {
-                SettingsRow(symbol: "sun.max", title: text.onWake) { EmptyView() }
-            }
-            ZenithSwitchRow(text.onHover, isOn: trigger(.onHover)) {
-                SettingsRow(symbol: "cursorarrow.rays", title: text.onHover) { EmptyView() }
-            }
-            ZenithSwitchRow(text.onSpace, isOn: trigger(.onSpace)) {
-                SettingsRow(symbol: "space", title: text.onSpace) { EmptyView() }
-            }
+    private var triggersSection: some View {
+        ZenithSection(text.triggers, footer: text.triggersCaption) {
+            ZenithRow(text.onLock, isOn: trigger(.onLock))
+            ZenithRow(text.onWake, isOn: trigger(.onWake))
+            ZenithRow(text.onHover, isOn: trigger(.onHover))
+            ZenithRow(text.onSpace, isOn: trigger(.onSpace),
+                      essential: triggers.contains(.onSpace) && inputMonitoring != .granted ? text.spaceAccess : nil)
             if triggers.contains(.onSpace), inputMonitoring != .granted {
-                VStack(alignment: .leading, spacing: 6) {
-                    caption(text.spaceAccess)
-                    Button(text.openInputMonitoring) {
-                        Self.openPrivacyPane("Privacy_ListenEvent")
-                    }
-                    .padding(.leading, settingsRowTextInset)
+                Button(text.openInputMonitoring) { Self.openPrivacyPane("Privacy_ListenEvent") }
+                    .padding(.vertical, 8)
+            }
+            ZenithRow(text.camera, selection: $cameraID) {
+                Text(text.systemDefault).tag("")
+                ForEach(cameras) { camera in Text(camera.name).tag(camera.id) }
+                // A chosen camera that is unplugged keeps its place in the menu.
+                if !cameraID.isEmpty, !cameras.contains(where: { $0.id == cameraID }) {
+                    Text(cameraID).tag(cameraID)
                 }
+            }
+            .onChange(of: cameraID) { _, value in
+                // Empty is the system default: no key, as recognition reads it.
+                if value.isEmpty { UserDefaults.standard.removeObject(forKey: DefaultsKey.faceUnlockCameraID) }
+            }
+            ZenithMoreOptions(id: "faceUnlock.scanning") {
+                ZenithRow(text.scanDuration, selection: $detectionSeconds) {
+                    ForEach(Array(FaceUnlockPreferences.detectionRange), id: \.self) { seconds in
+                        Text(text.seconds(seconds)).tag(seconds)
+                    }
+                }
+                ZenithRow(text.retryOnHover, isOn: $retryOnHover)
+                ZenithRow(text.autoRetry, isOn: $autoRetry)
             }
         }
     }
@@ -215,99 +221,68 @@ struct FaceUnlockSettingsPage: View {
         })
     }
 
-    // MARK: Scanning
-
-    private var scanningCard: some View {
-        SettingsCard(title: text.scanning) {
-            SettingsMenuRow(symbol: "hourglass", title: text.scanDuration, selection: $detectionSeconds) {
-                ForEach(Array(FaceUnlockPreferences.detectionRange), id: \.self) { seconds in
-                    Text(text.seconds(seconds)).tag(seconds)
-                }
-            }
-            ZenithSwitchRow(text.retryOnHover, isOn: $retryOnHover) {
-                SettingsRow(symbol: "arrow.clockwise", title: text.retryOnHover) { EmptyView() }
-            }
-            ZenithSwitchRow(text.autoRetry, isOn: $autoRetry) {
-                SettingsRow(symbol: "arrow.triangle.2.circlepath", title: text.autoRetry) { EmptyView() }
-            }
-            SettingsMenuRow(symbol: "camera", title: text.camera, selection: $cameraID) {
-                Text(text.systemDefault).tag("")
-                ForEach(cameras) { camera in Text(camera.name).tag(camera.id) }
-                // A chosen camera that is unplugged keeps its place in the menu.
-                if !cameraID.isEmpty, !cameras.contains(where: { $0.id == cameraID }) {
-                    Text(cameraID).tag(cameraID)
-                }
-            }
-            .onChange(of: cameraID) { _, value in
-                // Empty is the system default: no key, as recognition reads it.
-                if value.isEmpty { UserDefaults.standard.removeObject(forKey: DefaultsKey.faceUnlockCameraID) }
-            }
-        }
-    }
-
     // MARK: Recognition
 
-    private var recognitionCard: some View {
-        SettingsCard(title: text.recognition) {
-            SettingsChoiceRow(symbol: "person.crop.square", title: text.matchStrictness, selection: Binding(
+    private var recognitionSection: some View {
+        ZenithSection(text.recognition) {
+            ZenithRow(text.matchStrictness, selection: Binding(
                 get: { FaceUnlockMatchLevel.nearest(to: matchThreshold) },
                 set: { matchThreshold = $0.threshold })) {
                 ForEach(FaceUnlockMatchLevel.allCases) { level in Text(text.match(level)).tag(level) }
             }
-            SettingsChoiceRow(symbol: "ruler", title: text.detectionDistance, selection: Binding(
+            ZenithRow(text.detectionDistance, selection: Binding(
                 get: { FaceUnlockDistanceLevel.nearest(to: minimumFaceWidth) },
-                set: { minimumFaceWidth = $0.minimumFaceWidth })) {
+                set: { minimumFaceWidth = $0.minimumFaceWidth }), info: text.detectionDistanceCaption) {
                 ForEach(FaceUnlockDistanceLevel.allCases) { level in Text(text.distance(level)).tag(level) }
             }
-            caption(text.detectionDistanceCaption)
-            Divider()
-            ZenithSwitchRow(text.liveness, isOn: $livenessEnabled) {
-                SettingsRow(symbol: "eye", title: text.liveness, caption: text.livenessCaption) { EmptyView() }
-            }
-            SettingsChoiceRow(symbol: "checkmark.shield", title: text.livenessLevel, selection: $livenessMode) {
+            ZenithRow(text.liveness, isOn: $livenessEnabled, info: text.livenessCaption)
+            ZenithRow(text.livenessLevel, selection: $livenessMode,
+                      info: livenessMode == FaceUnlockLivenessLevel.heavy.rawValue ? text.heavyCaption : text.lightCaption) {
                 ForEach(FaceUnlockLivenessLevel.allCases) { level in Text(text.liveness(level)).tag(level.rawValue) }
             }
             .disabled(!livenessEnabled)
             .opacity(livenessEnabled ? 1 : 0.45)
-            caption(livenessMode == FaceUnlockLivenessLevel.heavy.rawValue ? text.heavyCaption : text.lightCaption)
         }
     }
 
     // MARK: Animation
 
-    private var animationCard: some View {
-        SettingsCard(title: text.animation) {
-            SettingsChoiceRow(symbol: "sparkles", title: text.animation, selection: $animationStyle) {
+    private var animationSection: some View {
+        ZenithSection(text.animation) {
+            ZenithRow(text.animation, selection: $animationStyle,
+                      essential: animationStyle == FaceUnlockAnimationStyle.none.rawValue ? text.noAnimationCaption : nil) {
                 ForEach(FaceUnlockAnimationStyle.allCases) { style in Text(text.animation(style)).tag(style.rawValue) }
-            }
-            if animationStyle == FaceUnlockAnimationStyle.none.rawValue {
-                caption(text.noAnimationCaption)
             }
         }
     }
 
     // MARK: Faces
 
-    private var facesCard: some View {
-        SettingsCard(title: text.faces) {
-            caption(text.facesCaption)
+    private var facesSection: some View {
+        ZenithSection(text.faces, footer: text.facesCaption) {
             if let faces {
                 if faces.isEmpty {
-                    Text(text.facesEmpty).font(ZenithType.footnote).foregroundStyle(.secondary)
+                    Text(text.facesEmpty).font(ZenithType.body).foregroundStyle(.secondary).padding(.vertical, 8)
                 }
                 ForEach(faces) { face in faceRow(face) }
                 if !faces.isEmpty, !faces.contains(where: \.isEnabled) {
-                    note(symbol: "exclamationmark.triangle", text.facesNoneOn, color: ZenithStatus.warning)
+                    ZenithRowStatus(text: text.facesNoneOn, symbol: "exclamationmark.triangle.fill",
+                                    color: ZenithStatus.warning)
                 }
             } else {
-                Text(text.facesLocked).font(ZenithType.footnote).foregroundStyle(.secondary)
+                Text(text.facesLocked).font(ZenithType.body).foregroundStyle(.secondary).padding(.vertical, 8)
             }
             if let faceError {
-                Text(faceError).font(ZenithType.caption).foregroundStyle(ZenithStatus.error)
+                ZenithRowStatus(text: faceError, symbol: "xmark.octagon.fill", color: ZenithStatus.error)
             }
             HStack {
                 Spacer()
                 Button(text.addFace) { FaceUnlockSetupWindow.startAddFace() }
+                    .disabled(!recognition)
+            }
+            .padding(.vertical, 8)
+            ZenithMoreOptions(id: "faceUnlock") {
+                ZenithRow(text.lab, info: text.labCaption, button: text.openLab) { FaceUnlockLab.open() }
                     .disabled(!recognition)
             }
         }
@@ -341,6 +316,7 @@ struct FaceUnlockSettingsPage: View {
                 }))
             }
         }
+        .padding(.vertical, 8)
     }
 
     private func renameSheet(_ face: FaceUnlockFace) -> some View {
@@ -390,23 +366,22 @@ struct FaceUnlockSettingsPage: View {
 
     // MARK: Password
 
-    private var passwordCard: some View {
-        SettingsCard(title: text.password) {
+    private var passwordSection: some View {
+        ZenithSection(text.password) {
             if session.hasPassword {
-                SettingsRow(symbol: "key", title: text.passwordStored) {
+                ZenithRow(text.passwordStored) {
                     HStack(spacing: 8) {
                         Button(text.changePassword) { FaceUnlockSetupWindow.startPasswordChange() }
                         Button(text.removePassword) { confirmsRemovePassword = true }
                     }
                 }
             } else {
-                SettingsRow(symbol: "key", title: text.passwordMissing) {
-                    Button(text.setPassword) { FaceUnlockSetupWindow.startPasswordChange() }
+                ZenithRow(text.passwordMissing, button: text.setPassword) {
+                    FaceUnlockSetupWindow.startPasswordChange()
                 }
             }
-            Divider()
-            SettingsRow(symbol: "trash", title: text.reset, caption: text.resetCaption) {
-                Button(text.resetButton) { confirmsReset = true }
+            ZenithRow(text.reset, essential: text.resetCaption, button: text.resetButton, role: .destructive) {
+                confirmsReset = true
             }
             .confirmationDialog(text.resetConfirm, isPresented: $confirmsReset) {
                 Button(text.resetButton, role: .destructive, action: resetAll)
@@ -429,21 +404,11 @@ struct FaceUnlockSettingsPage: View {
         reloadFaces()
     }
 
-    // MARK: Face Lab
-
-    private var labCard: some View {
-        SettingsCard(title: text.lab) {
-            SettingsRow(symbol: "flask", title: text.lab, caption: text.labCaption) {
-                Button(text.openLab) { FaceUnlockLab.open() }
-                    .disabled(!recognition)
-            }
-        }
-    }
-
     // MARK: Notes
 
-    private var notesCard: some View {
-        SettingsCard(title: text.notes) {
+    /// What Face Unlock trades away; always in view, set up or not.
+    private var notesSection: some View {
+        ZenithSection(text.notes) {
             note(symbol: "exclamationmark.shield", text.noteSecurity, color: ZenithStatus.warning)
             note(symbol: "play.rectangle", text.noteVideo, color: ZenithStatus.warning)
             note(symbol: "keyboard", text.noteTyping, color: ZenithStatus.warning)
@@ -453,21 +418,15 @@ struct FaceUnlockSettingsPage: View {
 
     // MARK: Pieces
 
-    private func caption(_ string: String) -> some View {
-        Text(string)
-            .font(ZenithType.caption)
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
-    }
-
     private func note(symbol: String, _ string: String, color: Color) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             Image(systemName: symbol).foregroundStyle(color).frame(width: 18)
             Text(string)
-                .font(ZenithType.footnote)
+                .font(ZenithType.body)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(.vertical, 8)
     }
 
     static func openPrivacyPane(_ pane: String) {

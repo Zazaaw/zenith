@@ -45,7 +45,9 @@ enum SettingsSidebarTests {
                      "From Orbit lists the features Zenith added: Meetings, Translate and Mechakey")
         suite.expect(group(.island).prefix(2) == [.page(.notch), .page(.lockScreen)]
                         && group(.devices).first == .page(.pocket)
-                        && group(.everyday).prefix(2) == [.page(.shelf), .feature(.clipboardHistory)]
+                        && group(.everyday).prefix(6) == [.page(.shelf), .page(.clipboard), .page(.finderTools), .page(.media),
+                                                .page(.urlCleaner), .page(.textSnippets)]
+                        && group(.devices) == [.page(.pocket), .page(.batteries), .page(.faceUnlock), .page(.remote)]
                         && group(.capture).first == .feature(.screenshot)
                         && group(.system).first == .page(.monitor),
                      "the groups open with the rows the design leads with")
@@ -79,9 +81,18 @@ enum SettingsSidebarTests {
         let tools = AppFeature.allCases.filter { feature in
             let destination = feature.settingsDestination
             return destination.sectionAnchor != nil && destination.page != .notchMascot
+                && !SettingsDirectory.singleRowPages.contains(destination.page)
         }
         let missingTools = tools.filter { !ids.contains(.feature($0)) }
         suite.expect(missingTools.isEmpty, "every tool on a shared page keeps its row (missing: \(missingTools))")
+        suite.expect(SettingsDirectory.singleRowPages.allSatisfy { page in
+            items.filter { $0.destination.page == page }.map(\.id) == [.page(page)]
+        }, "Clipboard and Finder Tools are one row each, their features' sections inside")
+        suite.expect(SettingsSidebarSupport.selection(
+            for: FeatureSettingsDestination(.clipboard, sectionAnchor: .pastePlain), in: items) == .page(.clipboard)
+                        && SettingsSidebarSupport.selection(
+            for: AppFeature.diskImageInstaller.settingsDestination, in: items) == .page(.finderTools),
+                     "a feature's section on a one-row page selects that page's row")
         suite.expect(ids.contains(.setting(.panelConfiguration)) && ids.contains(.setting(.screenshotScrolling))
                         && ids.contains(.setting(.keyboardBrightnessShortcuts)),
                      "the menu bar editor, scrolling capture and keyboard light shortcuts keep their rows")

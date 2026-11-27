@@ -137,7 +137,8 @@ enum ForkSettingsSearchTests {
         }
 
         // Where results land: on their own page, at an anchor of that page,
-        // which the page places once; the island opens the tab and module.
+        // which the page places once (a modifier, or a kit section's
+        // `anchor:`); the island opens the tab and module.
         let items = ZenithSettingsSearch.items(language: .enUS, state: everything)
         suite.expect(Set(items.map(\.id)).count == items.count, "each fork result has its own identity")
         let anchors = SettingsSectionAnchor.allCases.filter { $0.rawValue.hasPrefix("zenith") }
@@ -147,7 +148,7 @@ enum ForkSettingsSearchTests {
         }), "every fork anchor names a search result")
         let sources = uiSources()
         for anchor in anchors {
-            let pattern = try! NSRegularExpression(pattern: #"Anchor\(\."# + anchor.rawValue + #"\b"#)
+            let pattern = try! NSRegularExpression(pattern: #"(?:Anchor\(|\banchor: )\."# + anchor.rawValue + #"\b"#)
             let placed = sources.reduce(0) { $0 + pattern.numberOfMatches(in: $1, range: NSRange($1.startIndex..., in: $1)) }
             let expected = ZenithSettingsSearch.unplacedAnchors.contains(anchor) ? 0 : 1
             suite.expect(placed == expected, "\(anchor.rawValue) is placed \(expected) time(s) in the UI (\(placed))")

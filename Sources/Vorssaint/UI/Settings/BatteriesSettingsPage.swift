@@ -6,8 +6,8 @@
 import AppKit
 import SwiftUI
 
-/// Zenith fork: Settings → Batteries, under Monitor. The switch for the whole
-/// feature, the island page's layout, the devices with their alert switches
+/// Zenith fork: Settings → Batteries, built with the Settings kit. The switch
+/// for the whole feature in the hero, the island page's layout as pictures, the devices with their alert switches
 /// (and the hidden ones, to show again), when to warn, and the iPhone, iPad
 /// and Apple Watch readings with the libimobiledevice they need. Everything
 /// reads `BatteriesStore.shared` and writes `BatteriesDefaults`; a change asks
@@ -30,6 +30,7 @@ struct BatteriesSettingsPage: View {
     @ObservedObject private var router = SettingsRouter.shared
 
     private let text = ZenithStrings.batteries(.enUS)
+    private let page = ZenithStrings.everyday(.enUS)
     private static let formula = "libimobiledevice"
 
     private var groups: (accessories: [BatteryDevice], mobile: [BatteryDevice]) {
@@ -41,23 +42,20 @@ struct BatteriesSettingsPage: View {
     var body: some View {
         ScrollViewReader { proxy in // Zenith fork: the preview card scrolls to its settings
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                SettingsPageHeader(title: text.title, subtitle: text.subtitle) {
-                    BatteriesTitledSwitch(title: text.enable, isOn: $enabled)
-                        .help(text.enableHint)
-                }
-                .zenithSectionAnchor(.zenithBatteries)
+            ZenithPageColumn {
+                ZenithHero(title: text.title, subtitle: text.subtitle, chips: chips, isOn: $enabled,
+                           switchLabel: text.enable, switchHint: text.enableHint, animation: .batteries)
+                    .zenithSectionAnchor(.zenithBatteries, cornerRadius: ZenithKitSurface.heroRadius + 6, inset: 6)
                 // Zenith fork: the shared preview card.
                 ZenithBatteriesPreviewCard(state: $previewState) {
                     withAnimation(.easeInOut(duration: 0.3)) { proxy.scrollTo(Self.lookID, anchor: .center) }
                 } openAlerts: {
                     router.request(FeatureSettingsDestination(.batteries, sectionAnchor: .zenithBatteriesAlerts))
                 }
-                Rectangle().fill(ZenithSurface.hairline).frame(height: 1)
                 // Kept in view while Batteries is off, greyed, so the page
                 // reads the same whichever way the switch is.
-                VStack(alignment: .leading, spacing: 22) {
-                    lookSection.id(Self.lookID)
+                VStack(alignment: .leading, spacing: 18) {
+                    lookPicker.id(Self.lookID)
                     devicesSection
                     alertSection
                     iOSSection
@@ -65,9 +63,6 @@ struct BatteriesSettingsPage: View {
                 .disabled(!enabled)
                 .opacity(enabled ? 1 : 0.5)
             }
-            .frame(maxWidth: 760)
-            .frame(maxWidth: .infinity)
-            .padding(22)
         }
         }
         .onAppear {
@@ -87,6 +82,11 @@ struct BatteriesSettingsPage: View {
         }
     }
 
+    private var chips: [ZenithChip] {
+        let shown = groups.accessories.count + (readIOSDevices ? groups.mobile.count : 0)
+        return [ZenithChip(page.batteriesDevices(shown)), ZenithChip(page.batteriesWarnAt(threshold))]
+    }
+
     /// Zenith fork: a sidebar row or search landing on the alerts shows the
     /// Battery Low card; any other landing, the page.
     private func followRoute() {
@@ -101,14 +101,15 @@ struct BatteriesSettingsPage: View {
 
     // MARK: Look
 
-    private var lookSection: some View {
-        BatteriesSection(symbol: "square.grid.2x2", title: text.look) {
-            BatteriesRow {
-                rowTitle(text.layout)
-                Spacer(minLength: 12)
-                BatteriesSegmented(title: text.layout, selection: $layout, options: [
-                    (BatteriesLayout.rings.rawValue, text.rings), (BatteriesLayout.list.rawValue, text.list),
-                ])
+    /// The island page's layout, as pictures.
+    private var lookPicker: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ZenithSectionTitle(text.layout)
+            ZenithVisualPicker(text.layout, selection: $layout, options: [
+                ZenithPickerOption(BatteriesLayout.rings.rawValue, text.rings),
+                ZenithPickerOption(BatteriesLayout.list.rawValue, text.list),
+            ], minimumTileWidth: 150, tileHeight: 70) { value, _ in
+                BatteriesLayoutArt(rings: value == BatteriesLayout.rings.rawValue)
             }
         }
     }
@@ -118,35 +119,19 @@ struct BatteriesSettingsPage: View {
     private var devicesSection: some View {
         let devices = groups.accessories
         let hiddenRows = BatteriesDevicePreferences.hiddenRows(store.devices, hidden: hidden, names: hiddenNames)
-        return BatteriesSection(symbol: "battery.75percent", title: text.devices, trailing: text.alert,
-                                footnote: devices.isEmpty ? nil : devicesFootnote(devices)) {
+        return ZenithSection(text.devices, footer: devices.isEmpty ? nil : devicesFootnote(devices)) {
             if devices.isEmpty {
-                BatteriesRow { caption(text.devicesEmpty) }
+                caption(text.devicesEmpty).padding(.vertical, 8)
             }
-            ForEach(Array(devices.enumerated()), id: \.element.id) { index, device in
-                if index > 0 { BatteriesDivider() }
+            ForEach(devices) { device in
                 deviceRow(device)
             }
             if !hiddenRows.isEmpty {
-                BatteriesDivider()
-                BatteriesRow {
-                    Text(text.hidden.uppercased())
-                        .font(ZenithType.mono(9.5, weight: .semibold))
-                        .tracking(1)
-                        .foregroundStyle(.secondary)
-                        .accessibilityAddTraits(.isHeader)
-                    Spacer()
-                }
-                .padding(.bottom, -6)
-                ForEach(hiddenRows, id: \.id) { row in
-                    BatteriesRow {
-                        Text(row.name)
-                            .font(ZenithType.rowTitle)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                        Spacer(minLength: 12)
-                        Button(text.unhide) { setHidden(false, id: row.id, name: nil) }
-                            .controlSize(.small)
+                ZenithMoreOptions(id: "batteries.hidden") {
+                    ForEach(hiddenRows, id: \.id) { row in
+                        ZenithRow(row.name, essential: text.hidden) {
+                            Button(text.unhide) { setHidden(false, id: row.id, name: nil) }
+                        }
                     }
                 }
             }
@@ -161,7 +146,7 @@ struct BatteriesSettingsPage: View {
 
     private func deviceRow(_ device: BatteryDevice) -> some View {
         let alert = Binding(get: { !muted.contains(device.id) }, set: { setAlert($0, for: device.id) })
-        return BatteriesRow {
+        return HStack(spacing: 12) {
             HStack(spacing: 12) {
                 Image(systemName: device.symbolName)
                     .symbolRenderingMode(.monochrome)
@@ -181,9 +166,14 @@ struct BatteriesSettingsPage: View {
             }
             .opacity(device.isReachable ? 1 : 0.45)
             Spacer(minLength: 12)
+            Text(text.alert)
+                .font(ZenithType.caption)
+                .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
             ZenithSwitch(isOn: alert)
                 .accessibilityRepresentation { Toggle(device.name, isOn: alert) }
         }
+        .padding(.vertical, 8)
         .contentShape(Rectangle())
         .contextMenu {
             Button(text.hide) { setHidden(true, id: device.id, name: device.name) }
@@ -193,78 +183,55 @@ struct BatteriesSettingsPage: View {
     // MARK: Low battery alert
 
     private var alertSection: some View {
-        BatteriesSection(symbol: "bell.badge", title: text.lowBatteryAlert, footnote: text.alertRule) {
-            BatteriesRow {
-                rowTitle(text.warnAt)
-                Spacer(minLength: 12)
+        ZenithSection(text.lowBatteryAlert, anchor: .zenithBatteriesAlerts, footer: text.alertRule) {
+            ZenithRow(text.warnAt) {
                 BatteriesSegmented(title: text.warnAt, selection: $threshold,
                                    options: BatteriesDefaults.thresholdOptions.map { ($0, "\($0)%") })
             }
-            BatteriesDivider()
-            BatteriesRow {
-                rowTitle(text.checkEvery, caption: text.checkEveryCaption)
-                Spacer(minLength: 12)
-                BatteriesSegmented(title: text.checkEvery, selection: $refreshMinutes,
-                                   options: BatteriesDefaults.refreshOptions.map { ($0, text.count(text.minutes, $0)) })
-            }
-            BatteriesDivider()
-            BatteriesRow {
-                ZenithSwitchRow(text.airPodsScanning, isOn: $airPodsScanning) {
-                    rowTitle(text.airPodsScanning, caption: text.airPodsScanningCaption)
+            ZenithMoreOptions(id: "batteries") {
+                ZenithRow(text.checkEvery, info: text.checkEveryCaption) {
+                    BatteriesSegmented(title: text.checkEvery, selection: $refreshMinutes,
+                                       options: BatteriesDefaults.refreshOptions.map { ($0, text.count(text.minutes, $0)) })
                 }
+                ZenithRow(text.airPodsScanning, isOn: $airPodsScanning, info: text.airPodsScanningCaption)
             }
         }
-        .zenithSectionAnchor(.zenithBatteriesAlerts)
     }
 
     // MARK: iPhone & Apple Watch
 
     private var iOSSection: some View {
         let devices = groups.mobile
-        return BatteriesSection(symbol: "iphone", title: text.iOSSection, trailing: readIOSDevices ? text.alert : nil) {
-            BatteriesRow {
-                ZenithSwitchRow(text.readIOS, isOn: $readIOSDevices) {
-                    rowTitle(text.readIOS, caption: text.readIOSCaption)
-                }
-            }
+        return ZenithSection(text.iOSSection, anchor: .zenithBatteriesIPhone) {
+            ZenithRow(text.readIOS, isOn: $readIOSDevices, info: text.readIOSCaption)
             if readIOSDevices {
-                BatteriesDivider()
                 toolsRow
                 ForEach(devices) { device in
-                    BatteriesDivider()
                     deviceRow(device)
                 }
                 if devices.isEmpty, case .installed = store.iOSTools {
-                    BatteriesDivider()
-                    BatteriesRow { caption(text.noIOSDevices) }
+                    caption(text.noIOSDevices).padding(.vertical, 8)
                 }
-                BatteriesDivider()
                 steps
             }
         }
-        .zenithSectionAnchor(.zenithBatteriesIPhone)
     }
 
     @ViewBuilder
     private var toolsRow: some View {
         switch store.iOSTools {
         case .unknown:
-            BatteriesRow {
-                caption(text.checkingTools)
-                Spacer()
-            }
+            caption(text.checkingTools).padding(.vertical, 8)
         case .installed(let watchSupport):
-            BatteriesRow {
-                VStack(alignment: .leading, spacing: 4) {
-                    Label(text.toolsInstalled, systemImage: "checkmark.circle")
-                        .font(ZenithType.footnote)
-                        .foregroundStyle(.secondary)
-                    if !watchSupport {
-                        caption(text.noWatchSupport)
-                    }
+            VStack(alignment: .leading, spacing: 4) {
+                Label(text.toolsInstalled, systemImage: "checkmark.circle")
+                    .font(ZenithType.footnote)
+                    .foregroundStyle(.secondary)
+                if !watchSupport {
+                    caption(text.noWatchSupport)
                 }
-                Spacer()
             }
+            .padding(.vertical, 8)
         case .missing:
             missingToolsRow
         }
@@ -273,39 +240,34 @@ struct BatteriesSettingsPage: View {
     /// The amber box, what is missing, and Homebrew's install of it, its
     /// progress and its failure shown by Homebrew's own status card.
     private var missingToolsRow: some View {
-        BatteriesRow {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 12) {
-                    let box = RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous)
-                    Image(systemName: "shippingbox")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(ZenithStatus.warning)
-                        .frame(width: 30, height: 30)
-                        .background(ZenithStatus.fill(ZenithStatus.warning), in: box)
-                        .overlay(box.strokeBorder(ZenithStatus.stroke(ZenithStatus.warning)))
-                    rowTitle(text.needsTools, caption: text.needsToolsCaption)
-                    Spacer(minLength: 12)
-                    installButton
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                let box = RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous)
+                Image(systemName: "shippingbox")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(ZenithStatus.warning)
+                    .frame(width: 30, height: 30)
+                    .background(ZenithStatus.fill(ZenithStatus.warning), in: box)
+                    .overlay(box.strokeBorder(ZenithStatus.stroke(ZenithStatus.warning)))
+                rowTitle(text.needsTools, caption: text.needsToolsCaption)
+                Spacer(minLength: 12)
+                installButton
+            }
+            if homebrew.brewPath == nil {
+                caption(text.noHomebrew)
+            } else if homebrew.operation != nil, installStatus == nil {
+                caption(text.busyHomebrew)
+            }
+            if let installStatus {
+                if installStatus.result == .failed {
+                    Text(text.installFailed)
+                        .font(ZenithType.caption)
+                        .foregroundStyle(ZenithStatus.error)
                 }
-                if homebrew.brewPath == nil {
-                    caption(text.noHomebrew)
-                        .padding(.leading, settingsRowTextInset)
-                } else if homebrew.operation != nil, installStatus == nil {
-                    caption(text.busyHomebrew)
-                        .padding(.leading, settingsRowTextInset)
-                }
-                if let installStatus {
-                    if installStatus.result == .failed {
-                        Text(text.installFailed)
-                            .font(ZenithType.caption)
-                            .foregroundStyle(ZenithStatus.error)
-                            .padding(.leading, settingsRowTextInset)
-                    }
-                    HomebrewOperationOutputView(homebrew: homebrew, output: .status(installStatus), compact: true)
-                        .padding(.leading, settingsRowTextInset)
-                }
+                HomebrewOperationOutputView(homebrew: homebrew, output: .status(installStatus), compact: true)
             }
         }
+        .padding(.vertical, 10)
     }
 
     @ViewBuilder
@@ -333,30 +295,12 @@ struct BatteriesSettingsPage: View {
     }
 
     private var steps: some View {
-        BatteriesRow {
-            VStack(alignment: .leading, spacing: 8) {
-                step(1, text.stepCable)
-                step(2, text.stepWiFi)
-                step(3, text.stepWatch)
-            }
-            Spacer(minLength: 0)
+        VStack(alignment: .leading, spacing: 0) {
+            ZenithStepRow(number: 1, text: text.stepCable)
+            ZenithStepRow(number: 2, text: text.stepWiFi)
+            ZenithStepRow(number: 3, text: text.stepWatch)
         }
-    }
-
-    private func step(_ number: Int, _ string: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Text("\(number)")
-                .font(ZenithType.mono(10, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .frame(width: 18, height: 18)
-                .background(Circle().fill(ZenithSurface.tileFill))
-                .overlay(Circle().strokeBorder(ZenithSurface.tileStroke))
-                .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 4 }
-            Text(string)
-                .font(ZenithType.footnote)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
+        .padding(.vertical, 4)
     }
 
     // MARK: Preferences
@@ -398,88 +342,44 @@ struct BatteriesSettingsPage: View {
     }
 }
 
-// MARK: - Chrome
+// MARK: - Pieces
 
-/// A section: its glyph and bold title above a hairline card, an optional
-/// mono label over the card's switch column, and an optional line under it.
-private struct BatteriesSection<Content: View>: View {
-    let symbol: String
-    let title: String
-    var trailing: String? = nil
-    var footnote: String? = nil
-    @ViewBuilder let content: Content
+/// The island page's layout as a picture: three rings, or rows of levels.
+private struct BatteriesLayoutArt: View {
+    let rings: Bool
+    private static let levels = [0.82, 0.56, 0.24]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Image(systemName: symbol)
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 22)
-                Text(title)
-                    .font(ZenithType.sectionTitle)
-                    .tracking(ZenithType.sectionTitleTracking)
-                    .accessibilityAddTraits(.isHeader)
-                Spacer(minLength: 12)
-                if let trailing {
-                    Text(trailing.uppercased())
-                        .font(ZenithType.mono(9.5, weight: .semibold))
-                        .tracking(1)
-                        .foregroundStyle(.secondary)
-                        .padding(.trailing, 16)
+        Group {
+            if rings {
+                HStack(spacing: 8) {
+                    ForEach(0..<3, id: \.self) { index in
+                        ZStack {
+                            Circle().stroke(Color.primary.opacity(0.15), lineWidth: 4)
+                            Circle().trim(from: 0, to: Self.levels[index])
+                                .stroke(index == 2 ? ZenithStatus.warning : ZenithStatus.success,
+                                        style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                                .rotationEffect(.degrees(-90))
+                        }
+                        .frame(width: 26, height: 26)
+                    }
+                }
+            } else {
+                VStack(spacing: 6) {
+                    ForEach(0..<3, id: \.self) { index in
+                        HStack(spacing: 6) {
+                            Circle().fill(Color.primary.opacity(0.4)).frame(width: 7, height: 7)
+                            Capsule().fill(Color.primary.opacity(0.15)).frame(width: 70, height: 5)
+                                .overlay(alignment: .leading) {
+                                    Capsule().fill(index == 2 ? ZenithStatus.warning : ZenithStatus.success)
+                                        .frame(width: 70 * Self.levels[index], height: 5)
+                                }
+                        }
+                    }
                 }
             }
-            .padding(.leading, 2)
-            let shape = RoundedRectangle(cornerRadius: ZenithRadius.panel, style: .continuous)
-            VStack(alignment: .leading, spacing: 0) { content }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 4)
-                .background(ZenithSurface.cardFill, in: shape)
-                .overlay(shape.strokeBorder(ZenithSurface.hairline))
-            if let footnote {
-                Text(footnote)
-                    .font(ZenithType.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, 4)
-            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-/// One row of a section's card.
-private struct BatteriesRow<Content: View>: View {
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        HStack(spacing: 12) { content }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-    }
-}
-
-/// The hairline between rows, inset like the rows.
-private struct BatteriesDivider: View {
-    var body: some View {
-        Rectangle().fill(ZenithSurface.hairline).frame(height: 1).padding(.horizontal, 16)
-    }
-}
-
-/// The page's switch beside its title, as the Lock Screen page's.
-private struct BatteriesTitledSwitch: View {
-    let title: String
-    @Binding var isOn: Bool
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Text(title)
-                .font(ZenithType.rowTitle)
-                .fixedSize()
-            ZenithSwitch(isOn: $isOn)
-        }
-        .accessibilityRepresentation { Toggle(title, isOn: $isOn) }
+        .accessibilityHidden(true)
     }
 }
 

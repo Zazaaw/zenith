@@ -1168,6 +1168,7 @@ def main():
               .replace("state: SettingsSearchState = .current", "state: SettingsSearchState")
           # Zenith fork: the floating sidebar's rows, with the hardware passed in.
           + declaration(directory, "    private static let toolOnlyPages:", closing="]")
+          + declaration(directory, "    static let singleRowPages:", closing="]")
           + declaration(directory, "    static func sidebarSections(").replace("SuperKeyService.shared.source", ".capsLock")
               .replace("state: SettingsSearchState = .current", "state: SettingsSearchState")
               .replace("keyboardLight: Bool = BrightnessService.keyboardLightIsSupported", "keyboardLight: Bool")
@@ -2196,6 +2197,7 @@ def main():
           + "struct Workspace: View {\nlet compact = true\n@ObservedObject var fixture: Fixture\n"
           + "let onContentHeightChange: ((CGFloat) -> Void)?\n"
           + "var scrollsContent = true\n"
+          + "var showsHeader = true\n"
           + "var header: some View { Color.clear.frame(height: 22) }\n"
           + "var toolPicker: some View { Color.clear.frame(height: 24).background(PickerMarker(fixture: fixture)) }\n"
           + "var content: some View { Color.clear.frame(height: fixture.height) }\n"

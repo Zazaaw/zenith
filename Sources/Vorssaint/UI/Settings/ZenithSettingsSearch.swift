@@ -33,6 +33,8 @@ enum ZenithSettingsSearch {
         .page(.translate): TranslateSearch.aliases,
         .page(.meetings): MeetingsSearch.aliases,
         .page(.mechakey): MechakeySearch.aliases,
+        .page(.finderTools): ["finder", "cut paste", "cut and paste", "potong tempel", "pindah file", "rename",
+                              "ganti nama", "F2", "dmg", "disk image", "install app", "pasang aplikasi"],
         .page(.about): ["tentang", "tentang aplikasi", "versi", "version", "Satu Visual", "Zenith"],
     ]
 

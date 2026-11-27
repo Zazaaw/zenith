@@ -2344,10 +2344,11 @@ enum FeatureCatalogTests {
                "app pages never hide")
         suite.expect(!pageVisible(.shelf, available: allFeatures.subtracting([.shelf])),
                "single-feature pages follow their feature")
-        suite.expect(pageVisible(.cutPaste, available: [.finderRename])
-                && pageVisible(.cutPaste, available: [.finderCutPaste])
-                && !pageVisible(.cutPaste, available: []),
-               "either Finder shortcut keeps their shared page visible")
+        suite.expect(pageVisible(.finderTools, available: [.finderRename])
+                && pageVisible(.finderTools, available: [.finderCutPaste])
+                && pageVisible(.finderTools, available: [.diskImageInstaller])
+                && !pageVisible(.finderTools, available: []),
+               "any Finder tool keeps the Finder Tools page visible")
         suite.expect(!pageVisible(.cleaner,
                             available: allFeatures.subtracting([.cleaner])),
                "cleaner settings, including WhatsApp downloads, follow the cleaner module")
@@ -2355,8 +2356,9 @@ enum FeatureCatalogTests {
                "the quick toggles alone keep the quick tools page")
         suite.expect(pageVisible(.quickTools, available: [.quitApps]),
                "Quit apps alone keeps the quick tools page")
-        suite.expect(pageVisible(.clipboard, available: [.finderCutPaste]),
-               "the image paste option keeps the Clipboard page available")
+        suite.expect(!pageVisible(.clipboard, available: [.finderCutPaste])
+                && pageVisible(.clipboard, available: [.pastePlain]),
+               "the image paste option lives on Finder Tools, and plain paste alone keeps the Clipboard page")
         suite.expect(AppFeature.allCases.allSatisfy { feature in
             let destination = feature.settingsDestination
             let gate = FeatureVisibilitySupport.features(for: destination.page)
@@ -2410,12 +2412,10 @@ enum FeatureCatalogTests {
         suite.expect(AppFeature.musicBlock.settingsDestination
                 == FeatureSettingsDestination(.general, sectionAnchor: .musicBlocking)
                 && AppFeature.diskImageInstaller.settingsDestination
-                == FeatureSettingsDestination(.features),
+                == FeatureSettingsDestination(.finderTools, sectionAnchor: .diskImageInstaller),
                "features without dedicated pages use explicit nearest Settings destinations")
-        suite.expect(!AppFeature.diskImageInstaller.hasNavigableSettingsDestination
-                && AppFeature.allCases.filter { $0 != .diskImageInstaller }
-                    .allSatisfy(\.hasNavigableSettingsDestination),
-               "a feature without a separate configuration surface does not show a dead-end link")
+        suite.expect(AppFeature.allCases.allSatisfy(\.hasNavigableSettingsDestination),
+               "every feature has a configuration surface, so none shows a dead-end link")
         suite.expect(AppFeature.monitorCPU.settingsDestination == FeatureSettingsDestination(.monitor)
                 && AppFeature.fanControl.settingsDestination
                 == FeatureSettingsDestination(.monitor, sectionAnchor: .fanControl),

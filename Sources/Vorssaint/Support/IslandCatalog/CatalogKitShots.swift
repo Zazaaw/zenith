@@ -21,7 +21,7 @@ extension CatalogShots {
             ("general", .general, [:], 1080),
             ("translate", .translate, [TranslateDefaults.enabled: true], 1300),
             ("shortcuts", .shortcuts, [:], 1000),
-        ]
+        ] + kitEverydayPages
         var shots: [CatalogShot] = []
         for (name, page, preferences, height) in pages {
             for (suffix, appearance) in [("dark", NSAppearance.Name.darkAqua), ("light", .aqua)] {

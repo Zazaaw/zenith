@@ -5,7 +5,8 @@ import AppKit
 import SwiftUI
 
 /// The text snippets page: the enable toggle, the snippet list and a simple
-/// editor sheet. Edits persist to defaults and nudge the service, so a change
+/// editor sheet. Zenith fork: rebuilt with the Settings kit (the switch in
+/// the hero, the expansion sound under More options). Edits persist to defaults and nudge the service, so a change
 /// works on the very next keystroke.
 struct TextSnippetsSettings: View {
     @ObservedObject private var l10n = L10n.shared
@@ -20,120 +21,38 @@ struct TextSnippetsSettings: View {
         UserDefaults.standard.data(forKey: DefaultsKey.textSnippets))
     @State private var editing: TextSnippet?
     @State private var creating = false
+    @AppStorage(GlobalShortcutRole.snippetLibrary.storageKey) private var libraryShortcutRaw =
+        GlobalShortcutRole.snippetLibrary.defaultShortcut.storageValue
+    private let page = ZenithStrings.everyday(.enUS)
 
     private var text: SnippetFeatureStrings {
         FeatureStrings.snippets(l10n.language)
     }
 
     var body: some View {
-        Form {
-            ZenithPreviewFormSection { ZenithTextSnippetsPreviewCard() } // Zenith fork: the preview card
-            Section {
-                Toggle(text.enable, isOn: $enabled)
-                    .onChange(of: enabled) { _, _ in
-                        TextSnippetService.shared.syncWithPreferences()
-                    }
-                Text(text.enableCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        ScrollView {
+            ZenithPageColumn {
+                ZenithHero(title: text.pageTitle, subtitle: text.enableCaption, chips: chips,
+                           isOn: Binding(get: { enabled }, set: { on in
+                               enabled = on
+                               TextSnippetService.shared.syncWithPreferences()
+                           }),
+                           switchLabel: text.enable, animation: .textSnippets)
                 if enabled, !permissions.accessibility {
-                    PermissionRow(kind: .accessibility)
+                    ZenithPermissionSection(kind: .accessibility)
                 }
-                if enabled {
-                    Toggle(text.soundToggle, isOn: $soundEnabled)
-                        .onChange(of: soundEnabled) { _, _ in
-                            TextSnippetService.shared.syncExpansionSound()
-                        }
-                    Text(text.soundCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    if soundEnabled {
-                        Picker(text.soundPickerLabel, selection: $soundName) {
-                            ForEach(AlertSoundStrings.sortedNames(TextSnippetSupport.alertSoundNames,
-                                                                  language: l10n.language), id: \.self) { name in
-                                Text(AlertSoundStrings.displayName(for: name, language: l10n.language)).tag(name)
-                            }
-                            // A name stored on another Mac, or dropped by a
-                            // macOS update, needs a row of its own or the
-                            // picker shows an empty selection. Asked through
-                            // the same resolver the service arms the sound
-                            // with, so the row cannot call a name usable that
-                            // an expansion would substitute away from.
-                            if TextSnippetSupport.resolvedSoundName(stored: soundName) != soundName {
-                                Text(text.soundUnavailable).tag(soundName)
-                            }
-                        }
-                        .onChange(of: soundName) { _, _ in
-                            TextSnippetService.shared.syncExpansionSound()
-                            TextSnippetService.shared.previewExpansionSound()
-                        }
-                    }
+                ZenithTextSnippetsPreviewCard() // Zenith fork: the preview card
+                // The library beeps under secure input whether or not trigger
+                // expansion is on, so either switch earns the explanation.
+                if enabled || libraryEnabled, secureInput.holder != .off {
+                    ZenithSection { SecureInputRow().padding(.vertical, 8) }
                 }
+                listSection
+                    .zenithPreviewTarget("snippets.list") // Zenith fork
+                librarySection
+                    .zenithPreviewTarget("snippets.library") // Zenith fork
             }
-
-            Section {
-                Toggle(text.libraryToggle, isOn: $libraryEnabled)
-                    .onChange(of: libraryEnabled) { _, _ in
-                        SnippetLibraryService.shared.syncWithPreferences()
-                    }
-                Text(text.libraryCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                if libraryEnabled {
-                    ShortcutPreferenceRow(role: .snippetLibrary,
-                                          isEnabled: libraryEnabled) {
-                        SnippetLibraryService.shared.syncWithPreferences()
-                    }
-                    if library.shortcutRegistrationFailed {
-                        Text(l10n.s.shortcutUnavailable)
-                            .font(.caption)
-                            .foregroundStyle(ZenithStatus.warning)
-                    }
-                }
-            } header: {
-                Text(text.libraryTitle)
-            }
-            .zenithPreviewTarget("snippets.library") // Zenith fork
-
-            // The library beeps under secure input whether or not trigger
-            // expansion is on, so either toggle earns the explanation. It
-            // answers to both, so it sits under both rather than inside the
-            // section for one of them.
-            if enabled || libraryEnabled, secureInput.holder != .off {
-                Section { SecureInputRow() }
-            }
-
-            Section {
-                if snippets.isEmpty {
-                    Text(text.emptyList)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                ForEach(TextSnippetSupport.sortedForDisplay(snippets)) { snippet in
-                    SnippetRow(snippet: snippet,
-                               modeLabel: snippet.expansion == .immediate
-                                   ? text.expansionImmediate
-                                   : text.expansionDelimiter,
-                               toggle: { setEnabled($0, id: snippet.id) },
-                               edit: { editing = snippet })
-                }
-                Button {
-                    creating = true
-                } label: {
-                    Label(text.addButton, systemImage: "plus")
-                }
-            } footer: {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(text.variablesHint)
-                    Text(text.variablesCaption)
-                    Text(text.variablesFormatCaption)
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            }
-            .zenithPreviewTarget("snippets.list") // Zenith fork
         }
-        .formStyle(.grouped)
         .zenithPreviewJumps() // Zenith fork
         .observesSecureInput(isActive: enabled || libraryEnabled)
         .sheet(isPresented: $creating) {
@@ -151,6 +70,92 @@ struct TextSnippetsSettings: View {
                           others: snippets.filter { $0.id != snippet.id },
                           save: { upsert($0) },
                           delete: { remove(id: snippet.id) })
+        }
+    }
+
+    private var chips: [ZenithChip] {
+        var chips = [ZenithChip(page.snippetsCount(snippets.count))]
+        if libraryEnabled,
+           let shortcut = GlobalShortcut(storageValue: libraryShortcutRaw) {
+            chips.append(ZenithChip(shortcut.displayString))
+        }
+        return chips
+    }
+
+    // MARK: Snippets
+
+    private var listSection: some View {
+        ZenithSection(page.snippetsList,
+                      footer: [text.variablesHint, text.variablesCaption, text.variablesFormatCaption]
+                        .joined(separator: "\n")) {
+            if snippets.isEmpty {
+                Text(text.emptyList)
+                    .font(ZenithType.body)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 8)
+            }
+            ForEach(TextSnippetSupport.sortedForDisplay(snippets)) { snippet in
+                SnippetRow(snippet: snippet,
+                           modeLabel: snippet.expansion == .immediate
+                               ? text.expansionImmediate
+                               : text.expansionDelimiter,
+                           toggle: { setEnabled($0, id: snippet.id) },
+                           edit: { editing = snippet })
+                    .padding(.vertical, 6)
+            }
+            Button {
+                creating = true
+            } label: {
+                Label(text.addButton, systemImage: "plus")
+            }
+            .buttonStyle(.borderless)
+            .padding(.vertical, 8)
+            ZenithMoreOptions(id: "textSnippets") {
+                ZenithRow(text.soundToggle, isOn: $soundEnabled, info: text.soundCaption)
+                    .onChange(of: soundEnabled) { _, _ in TextSnippetService.shared.syncExpansionSound() }
+                    .disabled(!enabled)
+                if soundEnabled {
+                    ZenithRow(text.soundPickerLabel, selection: $soundName) {
+                        ForEach(AlertSoundStrings.sortedNames(TextSnippetSupport.alertSoundNames,
+                                                              language: l10n.language), id: \.self) { name in
+                            Text(AlertSoundStrings.displayName(for: name, language: l10n.language)).tag(name)
+                        }
+                        // A name stored on another Mac, or dropped by a macOS
+                        // update, needs a row of its own or the picker shows
+                        // an empty selection. Asked through the same resolver
+                        // the service arms the sound with, so the row cannot
+                        // call a name usable that an expansion would
+                        // substitute away from.
+                        if TextSnippetSupport.resolvedSoundName(stored: soundName) != soundName {
+                            Text(text.soundUnavailable).tag(soundName)
+                        }
+                    }
+                    .disabled(!enabled)
+                    .onChange(of: soundName) { _, _ in
+                        TextSnippetService.shared.syncExpansionSound()
+                        TextSnippetService.shared.previewExpansionSound()
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: Library
+
+    private var librarySection: some View {
+        ZenithSection(text.libraryTitle) {
+            ZenithRow(text.libraryToggle, isOn: $libraryEnabled, info: text.libraryCaption)
+                .onChange(of: libraryEnabled) { _, _ in SnippetLibraryService.shared.syncWithPreferences() }
+            if libraryEnabled {
+                ShortcutPreferenceRow(role: .snippetLibrary, isEnabled: libraryEnabled) {
+                    SnippetLibraryService.shared.syncWithPreferences()
+                }
+                .padding(.vertical, 8)
+                if library.shortcutRegistrationFailed {
+                    ZenithRowStatus(text: l10n.s.shortcutUnavailable, symbol: "exclamationmark.triangle.fill",
+                                    color: ZenithStatus.warning)
+                }
+            }
         }
     }
 

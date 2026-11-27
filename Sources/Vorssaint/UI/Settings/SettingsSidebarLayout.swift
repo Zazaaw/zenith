@@ -54,7 +54,7 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
         switch page {
         case .general, .appearance, .commandBar, .features: return .tiles
         case .notch, .notchMascot, .lockScreen: return .island
-        case .clipboard, .cutPaste, .shelf, .media, .urlCleaner, .textSnippets: return .everyday
+        case .clipboard, .finderTools, .shelf, .media, .urlCleaner, .textSnippets: return .everyday
         case .screenshot: return .capture
         case .switcher, .dock, .windowLayout, .autoQuit, .quitProtection, .workspaces, .radialMenu: return .windows
         case .mouse, .keyDebounce, .superKey: return .input
@@ -107,7 +107,8 @@ enum SettingsSidebarLayout {
     /// Rows that open their group, ahead of the directory's order.
     static let leading: [SettingsSidebarGroup: [SettingsSidebarItem.ID]] = [
         .island: [.page(.notch), .page(.lockScreen)],
-        .everyday: [.page(.shelf), .feature(.clipboardHistory)],
+        .everyday: [.page(.shelf), .page(.clipboard), .page(.finderTools), .page(.media), .page(.urlCleaner),
+                    .page(.textSnippets)],
         .capture: [.feature(.screenshot), .setting(.screenshotScrolling), .feature(.screenRecorder)],
         .system: [.page(.monitor), .feature(.fanControl)],
         .devices: [.page(.pocket), .page(.batteries), .page(.faceUnlock), .page(.remote)],
