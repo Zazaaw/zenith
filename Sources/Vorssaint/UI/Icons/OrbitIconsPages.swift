@@ -373,6 +373,7 @@ enum OrbitIconsE {
         OrbitIcon(name: "Wallpaper", group: "Media", compact: "photo.on.rectangle.angled", tint: [eRGB(1, 0.6, 0.85), eRGB(0.65, 0.3, 1)], art: AnyView(EWallpaperArt())),
         OrbitIcon(name: "Downloads", group: "Island", compact: "arrow.down.circle.fill", tint: [eRGB(0.5, 0.85, 1), eRGB(0.25, 0.4, 0.98)], art: AnyView(EDownloadsArt())),
         OrbitIcon(name: "Watch", group: "Island", compact: "eye.fill", tint: [eRGB(0.85, 0.7, 1), eRGB(0.55, 0.35, 1)], art: AnyView(EWatchArt())),
+        OrbitIcon(name: "Screen Watch", group: "Island", compact: "eye.fill", tint: [eRGB(0.85, 0.7, 1), eRGB(0.55, 0.35, 1)], art: AnyView(EWatchArt())),
 
         // Page names drawn with another icon's art.
         OrbitIcon(name: "Scrolling", group: "Input", compact: "arrow.up.arrow.down", tint: [cRGB(0.75, 0.68, 1), cRGB(0.42, 0.32, 0.95)], art: AnyView(CMouseArt())),
