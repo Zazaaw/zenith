@@ -280,6 +280,7 @@ struct MetricsTests {
             ("notices", { ZenithNoticeTests.run(suite) }),
             ("island-room", { IslandRoundThreeTests.run(suite) }),
             ("island-motion", { IslandMotionTests.run(suite) }),
+            ("island-motion-system", { IslandMotionSystemTests.run(suite) }), // Zenith fork: one motion source, agent frame rate
             ("lock-island", { LockIslandTests.run(suite) }),
             ("island-floor", { IslandFloorTests.run(suite) }),
             ("island-fit", { IslandFitTests.run(suite) }), // Zenith fork
