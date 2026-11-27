@@ -106,25 +106,12 @@ struct SettingsAccountCard: View {
     var body: some View {
         let summary = store.summary
         Button(action: store.openUsersAndGroups) {
-            HStack(spacing: 12) {
-                SettingsAccountAvatar(photo: store.photo, initials: summary.initials, size: 50)
-                    .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 1))
-                    .shadow(color: .black.opacity(0.18), radius: 3, y: 1)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(summary.name)
-                        .font(.system(size: 15, weight: .semibold))
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.9)
-                        .fixedSize(horizontal: false, vertical: true)
-                    let computer = summary.computer.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !computer.isEmpty {
-                        Label(computer, systemImage: "laptopcomputer")
-                            .labelStyle(SettingsAccountLineLabelStyle())
-                            .font(.system(size: 11.5))
-                            .foregroundStyle(contrast == .increased ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                    }
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top) {
+                    SettingsAccountAvatar(photo: store.photo, initials: summary.initials, size: 52)
+                        .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 1))
+                        .shadow(color: .black.opacity(0.18), radius: 3, y: 1)
+                    Spacer(minLength: 8)
                     if let kind = summary.kind {
                         Text(kind.title)
                             .font(.system(size: 10, weight: .semibold))
@@ -134,14 +121,24 @@ struct SettingsAccountCard: View {
                             .background(Capsule().fill((kind == .admin ? Color.accentColor : Color.primary).opacity(0.14)))
                     }
                 }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.tertiary)
-                    .opacity(hovering ? 1 : 0.6)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(summary.name)
+                        .font(.system(size: 15, weight: .semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    let computer = summary.computer.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !computer.isEmpty {
+                        Label(computer, systemImage: "laptopcomputer")
+                            .labelStyle(SettingsAccountLineLabelStyle())
+                            .font(.system(size: 11.5))
+                            .foregroundStyle(contrast == .increased ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
             .background {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(Color.primary.opacity(hovering ? 0.08 : 0.04))
