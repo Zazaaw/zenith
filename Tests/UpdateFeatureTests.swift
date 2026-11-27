@@ -743,13 +743,13 @@ enum UpdateFeatureTests {
                "a matching main page is shown once before grouped keyword matches")
 
         let settingPage = SettingsSearchItem(
-            id: .page(.energy), destination: FeatureSettingsDestination(.energy),
-            title: "Energy", icon: "bolt.fill",
+            id: .page(.sleep), destination: FeatureSettingsDestination(.sleep),
+            title: "Sleep", icon: "moon.zzz.fill",
             keywords: ["Keep awake", "Show countdown", "Show remaining duration"])
         let settingGroups = SettingsSearchSupport.groupedMatchingItems(
             query: "show", items: [settingPage], isAvailable: { _ in true })
         suite.expect(settingGroups.count == 1
-                && settingGroups[0].id == .energy
+                && settingGroups[0].id == .sleep
                 && !settingGroups[0].parentMatches
                 && settingGroups[0].suggestions.map(\.title)
                     == ["Show countdown", "Show remaining duration"],

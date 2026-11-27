@@ -811,7 +811,7 @@ enum FeatureCatalogTests {
         let monitorPreviewInCard = compactMonitorBody.contains("ScrollView{VStack(")
             && compactMonitorBody.contains("ZenithScreenPreviewCard(group:.monitor)")
             && monitorPicturesSource.contains("MenuBarMetricsPreview()")
-        suite.expect(compactMonitorBody.hasPrefix("VStack(spacing:0){")
+        suite.expect(compactMonitorBody.hasPrefix("ScrollView{VStack(")
                 && monitorPreviewInCard
                 && !compactMonitorBody.contains("LazyVStack("),
                "the Monitor page lays its rows out eagerly, with the live preview in its preview card")
@@ -829,10 +829,10 @@ enum FeatureCatalogTests {
         suite.expect((AppFeature.availabilityDefaults[AppFeature.bluetoothSleep.availabilityKey] as? Bool) == true,
                "Bluetooth on sleep ships installed, switched off, so its section is findable")
         suite.expect(AppFeature.bluetoothSleep.settingsDestination
-                == FeatureSettingsDestination(.energy, sectionAnchor: .bluetoothSleep)
+                == FeatureSettingsDestination(.sleep, sectionAnchor: .bluetoothSleep)
                 && AppFeature.bluetoothSleep.settingsDestination.hasValidSectionAnchor
-                && FeatureVisibilitySupport.features(for: .energy).contains(.bluetoothSleep),
-               "Bluetooth on sleep owns a section of the Energy page and can keep it alive alone")
+                && FeatureVisibilitySupport.features(for: .sleep).contains(.bluetoothSleep),
+               "Bluetooth on sleep owns a section of the Sleep page and can keep it alive alone")
         suite.expect(BluetoothSleepSupport.sleepPlan(isPoweredOn: true, restoresOnWake: true)
                 == BluetoothSleepSupport.SleepPlan(powersOff: true, owesRestore: true),
                "Bluetooth on before sleep is switched off and owed back")
@@ -2329,13 +2329,17 @@ enum FeatureCatalogTests {
                "mouse click debounce alone keeps its Settings page reachable")
         suite.expect(!pageVisible(.mouse, available: []),
                "the mouse page hides only with all eight mouse features off")
-        suite.expect(!pageVisible(.energy, available: allFeatures.subtracting([.keepAwake, .brightness,
-                                                                         .extraBrightness,
-                                                                         .bluetoothSleep])),
-               "energy hides when all four of its features are off")
-        suite.expect(pageVisible(.energy, available: [.extraBrightness]), "XDR alone keeps the energy page")
-        suite.expect(pageVisible(.energy, available: [.brightness]),
-               "brightness control alone keeps the energy page")
+        suite.expect(!pageVisible(.sleep, available: allFeatures.subtracting([.keepAwake, .bluetoothSleep]))
+                && !pageVisible(.brightness, available: allFeatures.subtracting([.brightness, .extraBrightness])),
+               "Sleep and Brightness hide when both of their features are off")
+        suite.expect(pageVisible(.brightness, available: [.extraBrightness]), "XDR alone keeps the Brightness page")
+        suite.expect(pageVisible(.brightness, available: [.brightness]) && !pageVisible(.sleep, available: [.brightness]),
+               "brightness control alone keeps the Brightness page, not Sleep")
+        suite.expect(pageVisible(.sleep, available: [.bluetoothSleep]) && pageVisible(.sleep, available: [.keepAwake]),
+               "either Keep Awake or Bluetooth on sleep keeps the Sleep page")
+        suite.expect(pageVisible(.fanControl, available: [.fanControl]) && !pageVisible(.fanControl, available: [.monitorCPU])
+                && !pageVisible(.monitor, available: [.fanControl]) && pageVisible(.menuBar, available: []),
+               "Fan Control follows its feature alone, and Menu Bar is part of the app")
         suite.expect(!pageVisible(.monitor, available: allFeatures.subtracting(Set(FeatureVisibilitySupport.monitorFeatures))),
                "monitor page hides with every metric off")
         suite.expect(pageVisible(.monitor, available: [.monitorNetwork]), "one metric keeps the monitor page")
@@ -2369,8 +2373,9 @@ enum FeatureCatalogTests {
         suite.expect(Set(AppFeature.allCases.compactMap(\.settingsDestination.sectionAnchor))
                 == Set(SettingsSectionAnchor.allCases).subtracting([
                     .panelConfiguration, .keyboardBrightnessShortcuts, .monitorAlerts, .screenshotScrolling,
+                    .fanControl, // Zenith fork: the top section of Fan Control, a page of its own
                 ]).filter { !$0.rawValue.hasPrefix("zenith") } // Zenith fork: search-only sections
-                && SettingsSectionAnchor.panelConfiguration.page == .general
+                && SettingsSectionAnchor.panelConfiguration.page == .menuBar
                 && SettingsSectionAnchor.keyboardBrightnessShortcuts.page == .shortcuts
                 && SettingsSectionAnchor.screenshotScrolling.page == .screenshot
                 && SettingsSectionAnchor.monitorAlerts.page == .monitor,
@@ -2417,9 +2422,9 @@ enum FeatureCatalogTests {
         suite.expect(AppFeature.allCases.allSatisfy(\.hasNavigableSettingsDestination),
                "every feature has a configuration surface, so none shows a dead-end link")
         suite.expect(AppFeature.monitorCPU.settingsDestination == FeatureSettingsDestination(.monitor)
-                && AppFeature.fanControl.settingsDestination
-                == FeatureSettingsDestination(.monitor, sectionAnchor: .fanControl),
-               "shared monitor destinations distinguish the dedicated fan controls")
+                && AppFeature.fanControl.settingsDestination == FeatureSettingsDestination(.fanControl)
+                && SettingsSectionAnchor.fanControl.page == .fanControl,
+               "the metrics share System Monitor and Fan Control opens its own page")
         let settingsRouter = SettingsRouter.shared
         let companionRouter = SettingsRouter()
         companionRouter.request(AppFeature.notchMascot.settingsDestination)
@@ -2568,14 +2573,12 @@ enum FeatureCatalogTests {
         generalToolRouter.goForward()
         suite.expect(generalToolRouter.destination == musicBlockingDestination,
                "Settings Forward retraces General tools")
-        generalToolRouter.page = .energy
-        generalToolRouter.request(FeatureSettingsDestination(.energy, sectionAnchor: .keepAwake))
-        generalToolRouter.request(FeatureSettingsDestination(.energy, sectionAnchor: .brightness))
-        generalToolRouter.request(FeatureSettingsDestination(.energy, sectionAnchor: .extraBrightness),
-                                  replacingVisit: true)
+        generalToolRouter.page = .sleep
+        generalToolRouter.request(FeatureSettingsDestination(.brightness, sectionAnchor: .brightness))
+        generalToolRouter.request(FeatureSettingsDestination(.brightness, sectionAnchor: .extraBrightness))
         generalToolRouter.goBack()
-        suite.expect(generalToolRouter.destination == FeatureSettingsDestination(.energy, sectionAnchor: .keepAwake),
-               "Settings Back returns to the previous Energy tool, and a fallback replaces the visit")
+        suite.expect(generalToolRouter.destination == FeatureSettingsDestination(.sleep),
+               "a section of the Brightness page refines its visit, so Back returns to the page before it")
 
         let hiddenHistoryRouter = SettingsRouter()
         hiddenHistoryRouter.page = .mouse
@@ -2846,7 +2849,7 @@ enum FeatureCatalogTests {
                 && !SettingsBackupSupport.exportKeys().contains(
                     DefaultsKey.brightnessExtendedDimmingPaths),
                "the per-monitor extended dimming choice stays on this Mac")
-        for surface in ["Sources/Vorssaint/UI/Settings/EnergySettings.swift",
+        for surface in ["Sources/Vorssaint/UI/Settings/BrightnessSettingsPage.swift",
                         "Sources/Vorssaint/UI/MenuPanel/BrightnessSection.swift"] {
             let source = (try? String(contentsOfFile: surface, encoding: .utf8)) ?? ""
             suite.expect(source.contains("SoftwareDimmingButton(display: display"),
