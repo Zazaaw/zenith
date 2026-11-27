@@ -17,8 +17,9 @@ final class NotchTimerAlert {
     convenience init() {
         let tone = NSSound(contentsOfFile: "/System/Library/Sounds/Glass.aiff", byReference: false)
         self.init(sound: {
+            guard !ZenithQuiet.isOn else { return } // Zenith fork: tests stay silent
             if let tone { tone.stop(); tone.play() }
-            else { NSSound.beep() }
+            else { ZenithQuiet.beep() }
         }, stopSound: { tone?.stop() })
     }
 

@@ -556,6 +556,7 @@ private final class AlertSound {
     }
 
     func play() {
+        guard !ZenithQuiet.isOn else { return } // Zenith fork: tests stay silent
         // The completion holds this instance until playback ends, so a
         // preview that resolved its own sound is not disposed mid-note.
         AudioServicesPlayAlertSoundWithCompletion(soundID) { withExtendedLifetime(self) {} }

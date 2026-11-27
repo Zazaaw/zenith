@@ -455,7 +455,7 @@ struct CommandActivitySettings: View {
             NSPasteboard.general.declareVorssaintSource()
             return NSPasteboard.general.setString(block, forType: .string)
         }, then: { done in
-            if done { copied = true } else { NSSound.beep() }
+            if done { copied = true } else { ZenithQuiet.beep() }
         })
     }
 

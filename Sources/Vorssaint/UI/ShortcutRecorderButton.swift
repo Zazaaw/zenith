@@ -265,7 +265,7 @@ final class RecorderButton: NSButton {
             return
         }
         guard requiresModifier ? captured.isValid : captured.hasPrintableKey else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             invalidAction?()
             return
         }

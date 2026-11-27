@@ -172,7 +172,7 @@ final class DevServersService: ObservableObject {
 
     func open(_ server: DevServer) {
         guard let url = server.url, NSWorkspace.shared.open(url) else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
     }
@@ -186,7 +186,7 @@ final class DevServersService: ObservableObject {
         }, then: { [weak self] copied in
             guard let self else { return }
             guard copied else {
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
             self.copiedID = server.id

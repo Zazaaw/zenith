@@ -20,7 +20,7 @@ final class QRPresentationController {
 
     func present(_ payload: String) {
         guard let matrix = QRService.shared.matrix(payload, correction: QRSettings.correction()) else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         dismiss(animated: false)

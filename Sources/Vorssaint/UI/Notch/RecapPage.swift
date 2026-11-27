@@ -227,7 +227,7 @@ struct RecapPageActions: View {
         HStack(spacing: 2) {
             NotchIconButton(symbol: copied ? "checkmark" : "doc.on.doc", title: copied ? text.copied : text.copyText) {
                 service.copySummary { done in
-                    guard done else { NSSound.beep(); return }
+                    guard done else { ZenithQuiet.beep(); return }
                     copied = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { copied = false }
                 }

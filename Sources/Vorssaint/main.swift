@@ -14,6 +14,7 @@ SuperKeyMappingGuard.runIfRequestedAndExit()
 // Zenith fork: the island catalog renders offscreen and exits before the
 // defaults migrations below, which write to the app's preferences.
 if IslandCatalog.isRequested(by: CommandLine.arguments) {
+    ZenithQuiet.isOn = true // Zenith fork: the catalog makes no sound
     MainActor.assumeIsolated { IslandCatalog.runAndExit() }
 }
 #endif
@@ -26,6 +27,7 @@ MouseAccelerationGuard.runIfRequestedAndExit()
 MouseAccelerationService.recoverPendingAtLaunch()
 
 if CommandLine.arguments.contains("--selftest") {
+    ZenithQuiet.isOn = true // Zenith fork: the selftest makes no sound
     SelfTest.runAndExit()
 }
 if CommandLine.arguments.contains("--sensors") {

@@ -154,7 +154,7 @@ struct NotchClipboardView: View {
         .onChange(of: service.clipboardPastePress) { _, press in
             guard let press, !preview else { return }
             guard entries.indices.contains(press.index) else {
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
             activate(entries[press.index])
@@ -585,7 +585,7 @@ struct NotchClipboardView: View {
             if copied {
                 copiedID = entry.id
             } else {
-                NSSound.beep()
+                ZenithQuiet.beep()
             }
         }
     }

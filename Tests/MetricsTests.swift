@@ -8,10 +8,14 @@ import Foundation
 @main
 struct MetricsTests {
     static func main() {
+        // Zenith fork: the tests run real code on the owner's Mac; nothing beeps,
+        // chimes or listens to the keyboard while they do.
+        ZenithQuiet.isOn = true
         let suite = TestSuite()
         let groups: [(String, () -> Void)] = [
             ("harness", {
                 TestHarnessTests.run(suite)
+                ZenithQuietTests.run(suite) // Zenith fork: tests make no sound
                 PreferenceNamespaceTests.run(suite)
             }),
             ("metrics", {

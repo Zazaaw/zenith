@@ -76,7 +76,7 @@ final class ScreenshotBeautifySession: ObservableObject {
     func enter() {
         guard !isActive else { return }
         guard let export = model?.beautifySource() else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         source = export
@@ -255,7 +255,7 @@ final class ScreenshotBeautifySession: ObservableObject {
     func copy() {
         withPrepared { [weak self] prepared in
             guard let self, let prepared else {
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
             let imageOnly = UserDefaults.standard.bool(forKey: DefaultsKey.screenshotCopyImageOnly)
@@ -278,7 +278,7 @@ final class ScreenshotBeautifySession: ObservableObject {
                       ScreenshotEditorController.copyFile(output.0, payload: output.1, imageOnly: imageOnly)
                 else {
                     if let url = output?.0 { try? FileManager.default.removeItem(at: url) }
-                    NSSound.beep()
+                    ZenithQuiet.beep()
                     return
                 }
                 if let folder, let url = output.0 {
@@ -296,7 +296,7 @@ final class ScreenshotBeautifySession: ObservableObject {
     func saveBesideOriginal() {
         withPrepared { [weak self] prepared in
             guard let self, let prepared else {
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
             let ext = prepared.format.fileExtension
@@ -319,7 +319,7 @@ final class ScreenshotBeautifySession: ObservableObject {
                                                   url.deletingLastPathComponent().lastPathComponent))
             } catch {
                 if let consumedNumber { ScreenshotService.rewindNumberSequence(toReuse: consumedNumber) }
-                NSSound.beep()
+                ZenithQuiet.beep()
             }
         }
     }

@@ -117,7 +117,7 @@ struct CardBackupSettingsView: View {
         case .added: problem = nil
         case .sameDrive: problem = text.sameDrive
         case .card: problem = text.cardChosen
-        case .full, .unreadable: NSSound.beep()
+        case .full, .unreadable: ZenithQuiet.beep()
         }
     }
 }

@@ -302,7 +302,7 @@ final class ScreenshotQuickPreviewController {
         dismissWork?.cancel()
         dismissWork = nil
         guard let url = shareFile() else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             scheduleAutoDismiss()
             return
         }
@@ -373,7 +373,7 @@ final class ScreenshotQuickPreviewController {
             QuickToolHUD.show(icon: "link", message: strings.sharedHUD)
         } else {
             QuickToolHUD.show(icon: "link", message: strings.linkCopyFailedHUD)
-            NSSound.beep()
+            ZenithQuiet.beep()
         }
         return copied
     }
@@ -399,7 +399,7 @@ final class ScreenshotQuickPreviewController {
                 guard !self.closed else { return }
                 self.model.deletingShare = false
                 QuickToolHUD.show(icon: "link", message: self.strings.deleteFailedHUD)
-                NSSound.beep()
+                ZenithQuiet.beep()
             }
             self.scheduleAutoDismiss()
         }

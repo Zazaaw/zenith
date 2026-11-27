@@ -92,6 +92,7 @@ final class NotchLockScreenService {
     }
 
     func playSound(locking: Bool) {
+        guard !ZenithQuiet.isOn else { return } // Zenith fork: tests stay silent
         guard let url = NotchLockScreenSupport.soundURL(locking: locking) else { return }
         var sound: SystemSoundID = 0
         guard AudioServicesCreateSystemSoundID(url as CFURL, &sound) == noErr else { return }

@@ -299,7 +299,7 @@ struct PanelClipboardView: View {
                             copiedID = entry.id
                             copyCount += 1
                         } else {
-                            NSSound.beep()
+                            ZenithQuiet.beep()
                         }
                     }
                 } label: {

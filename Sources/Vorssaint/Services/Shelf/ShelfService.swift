@@ -2567,7 +2567,7 @@ final class ShelfService: ObservableObject {
                     // main thread only to be thrown away.
                     guard ShelfPersistenceSupport.canAdd(existingLeaves: self.itemCount,
                                                          newLeaves: urls.count) else {
-                        NSSound.beep()
+                        ZenithQuiet.beep()
                         self.toggle()
                         return
                     }

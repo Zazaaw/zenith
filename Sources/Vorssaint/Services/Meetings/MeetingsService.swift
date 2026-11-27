@@ -222,10 +222,10 @@ final class MeetingsService: ObservableObject {
         let workspace = NSWorkspace.shared
         switch MeetingLinkParser.launch(meeting.link, installed: { workspace.urlForApplication(withBundleIdentifier: $0) != nil }) {
         case .open(let url):
-            if !workspace.open(url) { NSSound.beep(); return }
+            if !workspace.open(url) { ZenithQuiet.beep(); return }
         case .openWith(let url, let bundleID):
             guard let app = workspace.urlForApplication(withBundleIdentifier: bundleID) else {
-                if !workspace.open(url) { NSSound.beep() }
+                if !workspace.open(url) { ZenithQuiet.beep() }
                 return
             }
             workspace.open([url], withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration())

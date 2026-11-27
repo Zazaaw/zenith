@@ -1075,9 +1075,9 @@ final class ScreenshotEditorModel: ObservableObject, BackdropEditing {
             if isTap { _ = selectExistingAnnotation(at: point) }
         case .expandCanvas:
             if expansionRejected {
-                NSSound.beep()
+                ZenithQuiet.beep()
             } else if let draft = expansionDraft, draft.size != imageSize {
-                if !commitCanvasExpansion(to: draft) { NSSound.beep() }
+                if !commitCanvasExpansion(to: draft) { ZenithQuiet.beep() }
             }
             cancelCanvasExpansion()
         case .image:
@@ -1575,7 +1575,7 @@ final class ScreenshotEditorController: NSObject, NSWindowDelegate {
         }) { [weak self] capture in
             guard let self, self.window != nil else { return }
             guard let capture, self.model.pasteImage(capture.image) else {
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
         }
@@ -1713,7 +1713,7 @@ final class ScreenshotEditorController: NSObject, NSWindowDelegate {
                 completion(record)
             } catch {
                 QuickToolHUD.show(icon: "link", message: self.strings.shareFailedHUD)
-                NSSound.beep()
+                ZenithQuiet.beep()
                 completion(nil)
             }
         }
@@ -1732,7 +1732,7 @@ final class ScreenshotEditorController: NSObject, NSWindowDelegate {
     func copyToClipboard() {
         guard let export = model.exportImage() else { return }
         guard Self.copyImage(export, fileNamePrefix: strings.fileNamePrefix) else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         model.markExported()
@@ -1837,7 +1837,7 @@ final class ScreenshotEditorController: NSObject, NSWindowDelegate {
             if let consumedNumber {
                 ScreenshotService.rewindNumberSequence(toReuse: consumedNumber)
             }
-            NSSound.beep()
+            ZenithQuiet.beep()
         }
     }
 
@@ -1855,7 +1855,7 @@ final class ScreenshotEditorController: NSObject, NSWindowDelegate {
                 self.model.markExported()
                 self.window?.close()
             } catch {
-                NSSound.beep()
+                ZenithQuiet.beep()
             }
         }
     }
@@ -1869,7 +1869,7 @@ final class ScreenshotEditorController: NSObject, NSWindowDelegate {
         let name = ScreenshotSupport.fileName(prefix: strings.fileNamePrefix, date: Date(),
                                              fileExtension: file.format.fileExtension)
         guard ShelfService.shared.shelveGeneratedFile(file.data, named: name) != nil else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         model.markExported()

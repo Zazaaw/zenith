@@ -632,7 +632,7 @@ final class ClipboardHistoryService: ObservableObject {
         pasteTargetApp = nil
         copy(entry) { [weak self] copied in
             guard copied else {
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
             self?.pasteIntoPreviousApp(target)
@@ -645,7 +645,7 @@ final class ClipboardHistoryService: ObservableObject {
         pasteTargetApp = nil
         copy(selectedEntries) { [weak self] copied in
             guard copied else {
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
             self?.pasteIntoPreviousApp(target)
@@ -663,7 +663,7 @@ final class ClipboardHistoryService: ObservableObject {
             DispatchQueue.main.async {
                 guard AppFeature.screenshot.isAvailable else { return }
                 guard let capture else {
-                    NSSound.beep()
+                    ZenithQuiet.beep()
                     return
                 }
                 self.hideHistoryWindow()
@@ -682,13 +682,13 @@ final class ClipboardHistoryService: ObservableObject {
         // Closing first lets its last check read what the panel copied
         // before this write replaces it.
         hideHistoryWindow()
-        copy(entry) { if !$0 { NSSound.beep() } }
+        copy(entry) { if !$0 { ZenithQuiet.beep() } }
         pasteTargetApp = nil
     }
 
     func copyOnlyQuickEntries(_ selectedEntries: [ClipboardHistoryEntry]) {
         hideHistoryWindow()
-        copy(selectedEntries) { if !$0 { NSSound.beep() } }
+        copy(selectedEntries) { if !$0 { ZenithQuiet.beep() } }
         pasteTargetApp = nil
     }
 
@@ -1386,14 +1386,14 @@ final class ClipboardHistoryService: ObservableObject {
     private func pasteIntoPreviousApp(_ app: NSRunningApplication?) {
         guard let app else { return }
         guard !app.isTerminated else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         app.activate(options: [])
         guard ClipboardHistoryPasteTarget.acceptsSyntheticPaste(bundleID: app.bundleIdentifier) else { return }
         guard AXIsProcessTrusted() else {
             if promptedForAccessibility {
-                NSSound.beep()
+                ZenithQuiet.beep()
             } else {
                 promptedForAccessibility = true
                 Permissions.shared.requestAccessibility()

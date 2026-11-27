@@ -413,7 +413,7 @@ final class FinderCutPaste: ObservableObject {
         case .saved:
             break
         case .failed:
-            NSSound.beep()
+            ZenithQuiet.beep()
         }
     }
 

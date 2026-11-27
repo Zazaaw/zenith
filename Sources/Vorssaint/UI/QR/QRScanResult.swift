@@ -80,7 +80,7 @@ final class QRScanResultController {
             pasteboard.declareVorssaintSource()
             return pasteboard.setString(payload, forType: .string)
         }, then: { ok in
-            if ok { QuickToolHUD.show(icon: "qrcode", message: L10n.shared.s.ocrQRCopied) } else { NSSound.beep() }
+            if ok { QuickToolHUD.show(icon: "qrcode", message: L10n.shared.s.ocrQRCopied) } else { ZenithQuiet.beep() }
         })
     }
 

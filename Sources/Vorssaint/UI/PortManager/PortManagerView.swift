@@ -160,7 +160,7 @@ struct PortManagerRowActions: View {
         if let url = PortManagerSupport.browserURL(for: entry) {
             Divider()
             Button(FeatureStrings.commandBar(language).openInBrowser) {
-                if !NSWorkspace.shared.open(url) { NSSound.beep() }
+                if !NSWorkspace.shared.open(url) { ZenithQuiet.beep() }
             }
         }
     }
@@ -171,7 +171,7 @@ struct PortManagerRowActions: View {
             NSPasteboard.general.declareVorssaintSource()
             return NSPasteboard.general.setString(value, forType: .string)
         }, then: { copied in
-            if !copied { NSSound.beep() }
+            if !copied { ZenithQuiet.beep() }
         })
     }
 }

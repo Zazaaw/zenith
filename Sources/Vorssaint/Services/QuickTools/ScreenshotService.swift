@@ -589,7 +589,7 @@ final class ScreenshotService: ObservableObject {
             return
         }
         guard editors.isEmpty, !latestCaptureWithheld, !ScreenshotLastCaptureStore.isWithheld else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         guard uploadingCaptureID != latestCaptureID else { return }
@@ -775,7 +775,7 @@ final class ScreenshotService: ObservableObject {
         let imageOnly = UserDefaults.standard.bool(forKey: DefaultsKey.screenshotCopyImageOnly)
         let folder = imageOnly ? nil : ScreenshotSupport.copiedFilesDirectory()
         guard imageOnly || folder != nil else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         let name = ScreenshotSupport.fileName(prefix: strings.fileNamePrefix, date: Date())
@@ -796,7 +796,7 @@ final class ScreenshotService: ObservableObject {
                 return (url, payload)
             }.value
             guard let output else {
-                if !Task.isCancelled { NSSound.beep() }
+                if !Task.isCancelled { ZenithQuiet.beep() }
                 return
             }
             guard let self, !Task.isCancelled,
@@ -811,7 +811,7 @@ final class ScreenshotService: ObservableObject {
                                                        imageOnly: imageOnly)
             else {
                 if let url = output.0 { try? FileManager.default.removeItem(at: url) }
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
             if let folder, let url = output.0 {
@@ -867,7 +867,7 @@ final class ScreenshotService: ObservableObject {
             guard !Task.isCancelled, AppFeature.screenshot.isAvailable,
                   ScreenshotSupport.addsCapturesToShelf() else { return }
             guard let png, let item = ShelfService.shared.shelveGeneratedFile(png, named: name) else {
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
             if self.latestCaptureToken == token {
@@ -902,7 +902,7 @@ final class ScreenshotService: ObservableObject {
                 completion(record)
             } catch {
                 QuickToolHUD.show(icon: "link", message: self.strings.shareFailedHUD)
-                NSSound.beep()
+                ZenithQuiet.beep()
                 completion(nil)
             }
         }
@@ -913,7 +913,7 @@ final class ScreenshotService: ObservableObject {
         guard let export = flatten(capture) else { return false }
         guard ScreenshotEditorController.copyImage(
             export, fileNamePrefix: strings.fileNamePrefix) else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return false
         }
         QuickToolHUD.show(icon: "camera.viewfinder", message: strings.copiedHUD)
@@ -936,7 +936,7 @@ final class ScreenshotService: ObservableObject {
             if let consumedNumber {
                 Self.rewindNumberSequence(toReuse: consumedNumber)
             }
-            NSSound.beep()
+            ZenithQuiet.beep()
             return nil
         }
     }
@@ -957,7 +957,7 @@ final class ScreenshotService: ObservableObject {
             if let consumedNumber {
                 Self.rewindNumberSequence(toReuse: consumedNumber)
             }
-            NSSound.beep()
+            ZenithQuiet.beep()
             return nil
         }
 

@@ -36,6 +36,9 @@ def declaration(path, prefix, scope=None, *, closing="}"):
 
 
 def write(name, text):
+    # Zenith fork: the app routes alert beeps through ZenithQuiet; the copies
+    # here keep calling NSSound.beep(), which each test fakes and counts.
+    text = text.replace("ZenithQuiet.beep()", "NSSound.beep()")
     path = OUTPUT / name
     if not path.exists() or path.read_text() != text:
         path.write_text(text)

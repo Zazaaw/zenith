@@ -1227,7 +1227,7 @@ struct EditableVolumePercent<Label: View>: View {
             fromPercentageText: draft,
             maximumPercent: maximumPercent
         ) else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return false
         }
         onCommit(volume)

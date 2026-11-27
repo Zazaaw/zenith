@@ -349,7 +349,7 @@ final class TranslateCardController {
             pasteboard.declareVorssaintSource()
             return pasteboard.setString(translation, forType: .string)
         }, then: { ok in
-            if ok { QuickToolHUD.show(icon: "translate", message: copied) } else { NSSound.beep() }
+            if ok { QuickToolHUD.show(icon: "translate", message: copied) } else { ZenithQuiet.beep() }
         })
     }
 
@@ -361,10 +361,10 @@ final class TranslateCardController {
               case .selection(let pid, _)? = model.origin else { return }
         close()
         guard NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
-        if !TransientPaste.shared.paste(translation, didFail: { NSSound.beep() }) { NSSound.beep() }
+        if !TransientPaste.shared.paste(translation, didFail: { ZenithQuiet.beep() }) { ZenithQuiet.beep() }
     }
 
     private func download() {

@@ -591,7 +591,7 @@ enum CommandBarCatalog {
                 guard let value else { return }
                 let level = Double(value) / 100
                 guard AppVolumeMixer.setSystemOutputVolume(level) else {
-                    NSSound.beep()
+                    ZenithQuiet.beep()
                     return
                 }
                 // Dynamic Island shows the level itself, and a floating copy
@@ -610,7 +610,7 @@ enum CommandBarCatalog {
                 icon: .symbol(muted ? "speaker.slash.fill" : "speaker.wave.2"),
                 isActive: muted,
                 run: { _ in
-                    if !AppVolumeMixer.setSystemOutputMuted(!muted) { NSSound.beep() }
+                    if !AppVolumeMixer.setSystemOutputMuted(!muted) { ZenithQuiet.beep() }
                 }))
         }
 
@@ -735,7 +735,7 @@ enum CommandBarCatalog {
                     run: { _ in
                         afterBeat {
                             if case .failure = WindowLayoutService.shared.apply(action) {
-                                NSSound.beep()
+                                ZenithQuiet.beep()
                             }
                         }
                     }))
@@ -1008,7 +1008,7 @@ enum CommandBarCatalog {
                 icon: .symbol("gearshape.2"),
                 run: { _ in
                     guard let url = CommandBarSystemSettings.url(for: pane.bundleID) else {
-                        NSSound.beep()
+                        ZenithQuiet.beep()
                         return
                     }
                     NSWorkspace.shared.open(url)
@@ -1073,7 +1073,7 @@ enum CommandBarCatalog {
                 run: { _ in
                     NSWorkspace.shared.openApplication(at: app.url,
                                                        configuration: NSWorkspace.OpenConfiguration()) { _, error in
-                        if error != nil { DispatchQueue.main.async { NSSound.beep() } }
+                        if error != nil { DispatchQueue.main.async { ZenithQuiet.beep() } }
                     }
                 })
         }
@@ -1106,7 +1106,7 @@ enum CommandBarCatalog {
                 // count of runs would mean nothing the next time around.
                 countsUsage: false,
                 run: { _ in
-                    if !CommandBarMenus.press(item) { NSSound.beep() }
+                    if !CommandBarMenus.press(item) { ZenithQuiet.beep() }
                 })
         }
     }
@@ -1134,7 +1134,7 @@ enum CommandBarCatalog {
                 run: { _ in
                     guard let running = NSRunningApplication(processIdentifier: pid),
                           !running.isTerminated else {
-                        NSSound.beep()
+                        ZenithQuiet.beep()
                         return
                     }
                     // An app with unsaved work answers a quit with a dialog.
@@ -1432,7 +1432,7 @@ enum CommandBarCatalog {
     static func typeAtCursor(_ text: String) {
         guard NSWorkspace.shared.frontmostApplication?.processIdentifier
                 != ProcessInfo.processInfo.processIdentifier else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         guard AXIsProcessTrusted() else {
@@ -1504,7 +1504,7 @@ enum CommandBarCatalog {
                                                   selection: selection,
                                                   date: date)
             guard let url = CommandBarLinks.url(for: link, expanded: expanded) else {
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
             if link.kind == .place, !FileManager.default.fileExists(atPath: url.path) {
@@ -1538,7 +1538,7 @@ enum CommandBarCatalog {
         let path = (link.destination as NSString).expandingTildeInPath
         DispatchQueue.global(qos: .userInitiated).async {
             let (status, _) = Shell.run(path, [], maxOutputBytes: 64 * 1024)
-            if status != 0 { DispatchQueue.main.async { NSSound.beep() } }
+            if status != 0 { DispatchQueue.main.async { ZenithQuiet.beep() } }
         }
     }
 
@@ -1722,7 +1722,7 @@ enum CommandBarCatalog {
         board.clearContents()
         board.setString(text, forType: .string)
         guard ShelfService.shared.accept(pasteboard: board) else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         QuickToolHUD.show(icon: "tray.full", message: L10n.shared.s.shelfName)
@@ -1936,7 +1936,7 @@ enum CommandBarCatalog {
             return
         }
         guard display == nil, let target else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         service.refresh()
