@@ -127,7 +127,7 @@ enum ZenithSettingsSearch {
                    aliases: ["teleprompter", "naskah", "skrip", "script", "autocue"]),
             section(.zenithCameraAutoStart, in: .module(.camera), title: camera.autoStart, icon: "web.camera",
                     keywords: [], aliases: ["mirror kamera", "cermin kamera", "kamera otomatis"], feature: .cameraPreview),
-            section(.zenithReply, in: .module(.notifications), title: reply.autoWhatsApp,
+            page(.zenithReply, title: reply.autoWhatsApp,
                     icon: "arrowshape.turn.up.left", keywords: [],
                     aliases: ["reply", "balas", "balas pesan", "WhatsApp", "iMessage"], feature: .notchNotifications),
             // Lock Screen: one result per tab, each landing on its tab.
@@ -289,9 +289,9 @@ enum ZenithSettingsSearch {
                                aliases: ["menu bar", "sembunyikan ikon", "sembunyikan ikon menu bar", "ikon menu bar",
                                          "hidden bar", "Bartender"]),
         ]
-        // Claude Code's hooks show under the AI agents options while Claude is on.
+        // Claude Code's hooks show on the Agents page while Claude is on.
         if state.on(DefaultsKey.notchAgentsClaude) {
-            items.append(section(.zenithClaudeHooks, in: .module(.agents), title: hooks.section, icon: "sparkles",
+            items.append(page(.zenithClaudeHooks, title: hooks.section, icon: "sparkles",
                                  keywords: [hooks.connect, hooks.sound, chime.alert, chime.soundAndIsland, chime.needsYou],
                                  aliases: ["Claude Code", "hooks", "live steps", "langkah Claude", "chime", "Tink", "bunyi",
                                            "suara Claude", "Claude butuh kamu"], feature: .notchAgents))

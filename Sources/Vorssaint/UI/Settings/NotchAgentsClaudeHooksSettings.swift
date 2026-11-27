@@ -23,8 +23,7 @@ struct NotchAgentsClaudeHooksSettings: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(text.section).font(.subheadline.weight(.medium))
-                .accessibilityAddTraits(.isHeader)
+            // The section's title is the Agents page's (ZenithSection).
             Text(text.caption).font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             status

@@ -151,14 +151,14 @@ enum SettingsFeatureTests {
                           hiddenWithout: Set<AppFeature>?, needsBattery: Bool)] = [
             (FeatureStrings.screenshot(.enUS).scrollingAutoScrollToggle, .screenshot, [], [.screenshot], false),
             (Strings.enUS.uninstallerWatchTrashToggle, .uninstaller, [], [.uninstaller], false),
-            (music.enableLyrics, .notch, [.notchLyrics], nil, false),
-            (music.enableQueue, .notch, [.notchQueue], nil, false),
-            (music.online, .notch, [], [.notchLyrics], false),
+            (music.enableLyrics, .notchMusic, [.notchLyrics], nil, false),
+            (music.enableQueue, .notchMusic, [.notchQueue], nil, false),
+            (music.online, .notchMusic, [], [.notchLyrics], false),
             (FeatureStrings.notchClipboardSize(.enUS).entrySize, .notch, [], [.clipboardHistory], false),
             (notch.clipboardActivity, .notch, [], [.clipboardHistory], false),
             (notch.dragReveal, .notch, [], [.shelf], false),
-            (FeatureStrings.notchCalendar(.enUS).weekNumbers, .notch, [], [.notchCalendar], false),
-            (FeatureStrings.notchActivities(.enUS).hideTimerCountdown, .notch, [], [.notchTimer], false),
+            (FeatureStrings.notchCalendar(.enUS).weekNumbers, .notchCalendar, [], [.notchCalendar], false),
+            (FeatureStrings.notchActivities(.enUS).hideTimerCountdown, .notchTimer, [], [.notchTimer], false),
             (notch.captureActivity, .notch, captureTools.subtracting([.colorPicker]), captureTools, false),
             (lowBattery.title, .notch, [], [.monitorPower], true),
             (lowBattery.early, .notch, [], [.monitorPower], true),
@@ -251,16 +251,17 @@ enum SettingsFeatureTests {
         verify(alerts.diskThreshold, opens: monitorAlerts, commandID: alertID, shown: false)
         verify(alerts.disk, opens: monitorAlerts, commandID: alertID)
 
-        let musicDestination = FeatureSettingsDestination(notch: .module(.music))
+        // Zenith fork: the island's sections with options open pages of their own.
+        let musicDestination = FeatureSettingsDestination(.notchMusic)
         verify(music.online, opens: musicDestination, commandID: "settings.feature.notchLyrics")
         defaults.set(false, forKey: DefaultsKey.notchLyricsEnabled)
         verify(music.online, opens: musicDestination, commandID: "settings.feature.notchLyrics", shown: false)
-        verify(music.enableLyrics, opens: musicDestination, commandID: "settings.notch.content.music", without: [.notchLyrics])
+        verify(music.enableLyrics, opens: musicDestination, commandID: "settings.notchMusic", without: [.notchLyrics])
         for language in [AppLanguage.ptBR, .enUS] {
             let lead = FeatureStrings.notchCalendar(language).countdownLead
-            let destination = FeatureSettingsDestination(notch: .module(.calendar))
-            verify(lead, opens: destination, commandID: "settings.feature.notchCalendar", language: language)
-            verify(lead, opens: destination, commandID: "settings.feature.notchCalendar", shown: false,
+            let destination = FeatureSettingsDestination(.notchCalendar)
+            verify(lead, opens: destination, commandID: "settings.notchCalendar", language: language)
+            verify(lead, opens: destination, commandID: "settings.notchCalendar", shown: false,
                    without: [.notchCalendar], language: language)
         }
         verify(Strings.enUS.hotkeyToggle, opens: FeatureSettingsDestination(.general), commandID: "action.openSettings")

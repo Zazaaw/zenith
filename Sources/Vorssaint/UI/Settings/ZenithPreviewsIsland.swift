@@ -267,13 +267,15 @@ func zenithPreviewSegment(_ phase: Double, _ start: Double, _ end: Double) -> Do
 struct ZenithNotchPreviewCard: View {
     @Binding var tab: NotchSettingsTab
     let module: NotchModule
-    let showsCompanion: Bool
+    /// Zenith fork: the button under the pills that opens the island itself.
+    var canOpen = false
+    var open: (() -> Void)?
     @ObservedObject private var l10n = L10n.shared
 
     private var text: ZenithPreviewsIslandStrings { .shared }
 
     private var tabs: [NotchSettingsTab] {
-        [.layout, .content, .activity, .behavior] + (showsCompanion ? [.companion] : [])
+        NotchSettingsTab.allCases
     }
 
     var body: some View {
@@ -284,6 +286,15 @@ struct ZenithNotchPreviewCard: View {
                                                         set: { if tabs.indices.contains($0) { tab = tabs[$0] } }),
             highlight: highlight) {
             picture
+        } footer: {
+            if let open {
+                let title = FeatureStrings.notch(l10n.language).open
+                Button(action: open) { Label(title, systemImage: "arrow.up.forward.app") }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(!canOpen)
+                    .help(title)
+            }
         }
     }
 
@@ -293,7 +304,6 @@ struct ZenithNotchPreviewCard: View {
         case .content: return text.notchContent
         case .activity: return text.notchActivity
         case .behavior: return text.notchBehavior
-        case .companion: return text.notchCompanion
         }
     }
 
@@ -303,7 +313,6 @@ struct ZenithNotchPreviewCard: View {
         case .content: return text.notchContentCaption
         case .activity: return text.notchActivityCaption
         case .behavior: return text.notchBehaviorCaption
-        case .companion: return text.notchCompanionCaption
         }
     }
 
@@ -313,7 +322,6 @@ struct ZenithNotchPreviewCard: View {
         case .content: return module.title(l10n.language)
         case .activity: return text.notices
         case .behavior: return text.opening
-        case .companion: return text.companion
         }
     }
 
@@ -323,7 +331,6 @@ struct ZenithNotchPreviewCard: View {
         case .content: open(module)
         case .activity: activity
         case .behavior: ZenithNotchOpeningPicture { tab = .behavior }
-        case .companion: ZenithMascotPicture(highlighted: true) { tab = .companion }
         }
     }
 
@@ -430,8 +437,7 @@ struct ZenithMascotPicture: View {
     }
 }
 
-/// The Companion page's own card, when it shows as a page of its own (as a
-/// tab of the Dynamic Island page, that page's card shows it).
+/// The Mascot page's card: the companion resting in the island, as it looks now.
 struct ZenithMascotPreviewCard: View {
     var action: () -> Void
 

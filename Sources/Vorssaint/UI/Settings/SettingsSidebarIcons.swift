@@ -60,6 +60,14 @@ enum SettingsSidebarIcons {
         case .meetings: return "Meetings"
         case .translate: return "Quick Translate"
         case .mechakey: return "Mechakey"
+        // Zenith fork: the island's sections, pages of their own.
+        case .notchCalendar: return "Calendar"
+        case .notchNotifications: return "Notifications"
+        case .notchMusic: return "Music"
+        case .notchTimer: return "Timer"
+        case .notchAgents: return "Agents"
+        case .notchDownloads: return "Downloads"
+        case .notchWatch: return "Watch"
         case .mouse, .keyDebounce, .quitProtection, .quickTools, .killProcess,
              .shortcuts, .advanced, .about, .releaseNotes, .support:
             return nil

@@ -2138,14 +2138,14 @@ def main():
           + "var size: NotchClipboardSizeStrings { FeatureStrings.notchClipboardSize(language) }\n"
           + "var body: some View {\n"
           + declaration("Sources/Vorssaint/UI/Settings/NotchSettings.swift",
-                        '                    SettingsChoiceRow(symbol: "rectangle.compress.vertical"')
+                        '                SettingsChoiceRow(symbol: "rectangle.compress.vertical"')
           + "}\n"
           + "}\nstruct Limits: View {\nlet language: AppLanguage\n"
           + "@State var limitDisplay = NotchAgentLimitDisplay.remaining.rawValue\n"
           + "var text: NotchAgentStrings { FeatureStrings.notchAgents(language) }\n"
           + "var body: some View {\n"
           + declaration("Sources/Vorssaint/UI/Settings/NotchAgentsSettings.swift",
-                        "            SettingsChoiceRow(symbol: NotchAgentCard.limits.symbol")
+                        "                SettingsChoiceRow(symbol: NotchAgentCard.limits.symbol")
           + "}\n}\n"
           # The AI agents card's menu rows, each with the indent it has there.
           + "".join(f"struct {name}: View {{\nlet language: AppLanguage\n"
@@ -2160,11 +2160,11 @@ def main():
                     + declaration("Sources/Vorssaint/UI/Settings/NotchAgentsSettings.swift", prefix)
                     + "}\n" + (".padding(.leading, settingsRowTextInset)\n" if indented else "") + "}\n}\n"
                     for name, prefix, indented in [
-                        ("Readout", '                SettingsMenuRow(symbol: "camera.metering.center.weighted"', True),
-                        ("FinishAfter", '                SettingsMenuRow(symbol: "timer"', True),
-                        ("LimitAt", '                SettingsMenuRow(symbol: "gauge.with.dots.needle.67percent"', True),
-                        ("Budget", '            SettingsMenuRow(symbol: "dollarsign.circle"', False),
-                        ("LimitFocus", '            SettingsMenuRow(symbol: "rectangle.topthird.inset.filled"', False)])
+                        ("Readout", '                    SettingsMenuRow(symbol: "camera.metering.center.weighted"', True),
+                        ("FinishAfter", '                    SettingsMenuRow(symbol: "timer"', True),
+                        ("LimitAt", '                    SettingsMenuRow(symbol: "gauge.with.dots.needle.67percent"', True),
+                        ("Budget", '                SettingsMenuRow(symbol: "dollarsign.circle"', False),
+                        ("LimitFocus", '                SettingsMenuRow(symbol: "rectangle.topthird.inset.filled"', False)])
           + "}\n")
     # The clipboard page's size, keys, pointer and highlight handling, on a page that only keeps their state.
     clipboard_view = "Sources/Vorssaint/UI/Notch/NotchClipboardView.swift"
