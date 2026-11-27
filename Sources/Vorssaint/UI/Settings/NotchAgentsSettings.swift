@@ -88,7 +88,7 @@ struct NotchAgentsSettingsControls: View {
                 }
                 // The resting island shows this allowance whatever the live
                 // reading, and the live reading uses it when it shows a limit.
-                ZenithRow(text.limitFocus, selection: $limitFocus) {
+                SettingsMenuRow(symbol: "rectangle.topthird.inset.filled", title: text.limitFocus, selection: $limitFocus) {
                     ForEach(NotchAgentLimitFocus.allCases) { focus in
                         Text(text.limitFocus(focus)).tag(focus.rawValue)
                     }
@@ -97,7 +97,7 @@ struct NotchAgentsSettingsControls: View {
             ZenithSection(text.liveTitle) {
                 ZenithRow(text.liveActivity, isOn: $liveActivity)
                 if liveActivity {
-                    ZenithRow(text.readout, selection: $readout) {
+                    SettingsMenuRow(symbol: "camera.metering.center.weighted", title: text.readout, selection: $readout) {
                         ForEach(NotchAgentReadout.allCases) { option in
                             Text(text.readout(option)).tag(option.rawValue)
                         }
@@ -120,7 +120,7 @@ struct NotchAgentsSettingsControls: View {
             ZenithSection(text.alerts, footer: text.valueNote) {
                 ZenithRow(text.finishAlert, isOn: $finishAlert)
                 if finishAlert {
-                    ZenithRow(text.finishAfter, selection: $finishMinimum) {
+                    SettingsMenuRow(symbol: "timer", title: text.finishAfter, selection: $finishMinimum) {
                         ForEach(NotchAgentSupport.finishMinimums, id: \.self) { seconds in
                             Text(seconds == 0 ? text.anyLength : AgentFormat.duration(seconds, locale: locale, style: .short))
                                 .tag(seconds)
@@ -129,13 +129,13 @@ struct NotchAgentsSettingsControls: View {
                 }
                 ZenithRow(text.limitAlert, isOn: $limitAlert)
                 if limitAlert {
-                    ZenithRow(text.limitAt, selection: $limitThreshold) {
+                    SettingsMenuRow(symbol: "gauge.with.dots.needle.67percent", title: text.limitAt, selection: $limitThreshold) {
                         ForEach(NotchAgentSupport.limitThresholds, id: \.self) { value in
                             Text(text.usedShare(AgentFormat.percent(value / 100))).tag(value)
                         }
                     }
                 }
-                ZenithRow(text.budget, selection: $dailyBudget) {
+                SettingsMenuRow(symbol: "dollarsign.circle", title: text.budget, selection: $dailyBudget) {
                     ForEach(NotchAgentSupport.budgets, id: \.self) { value in
                         Text(value == 0 ? text.off : AgentFormat.cost(value)).tag(value)
                     }

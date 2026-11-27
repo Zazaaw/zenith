@@ -2423,12 +2423,13 @@ enum FeatureCatalogTests {
         let settingsRouter = SettingsRouter.shared
         let companionRouter = SettingsRouter()
         companionRouter.request(AppFeature.notchMascot.settingsDestination)
-        suite.expect(companionRouter.page == .notch && companionRouter.notchCompanion
+        suite.expect(companionRouter.page == .notchMascot
                      && pageVisible(companionRouter.page, available: [.notchMascot]),
-                     "the companion's settings remain reachable when it alone is installed, including the install-island prompt")
+                     "the companion's settings remain reachable on its own page when it alone is installed, including the install-island prompt")
         suite.expect(pageVisible(companionRouter.page, available: [.notch, .notchMascot])
+                     && !pageVisible(companionRouter.page, available: [.notch])
                      && !pageVisible(companionRouter.page, available: []),
-                     "the companion shares the installed island's page without exposing it when every extension is uninstalled")
+                     "the companion's page leaves with the companion, whether or not the island stays")
         var settingsRequestCount = 0
         var settingsRequestsPublishedReady = true
         let settingsRequestObservation = settingsRouter.$requestID

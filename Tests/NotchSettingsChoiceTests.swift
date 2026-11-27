@@ -17,7 +17,7 @@ enum NotchSettingsChoiceTests {
         // The Content tab's options column at the Settings window's minimum
         // width: less the sidebar at its widest, the page's margins, and the
         // list of sections with the space after it.
-        let narrowest = CGFloat(SettingsWindowSupport.minContentWidth) - 240 - 22 * 2 - 196 - 16
+        let narrowest = CGFloat(SettingsWindowSupport.minContentWidth) - 240 - 22 * 2 - 210 - 16
         // Where a row's title text starts in its card, and in a row indented
         // under a switch as the AI agents card indents its menus.
         let column = inset + settingsRowTextInset

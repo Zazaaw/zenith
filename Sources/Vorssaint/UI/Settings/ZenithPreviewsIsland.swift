@@ -267,6 +267,9 @@ func zenithPreviewSegment(_ phase: Double, _ start: Double, _ end: Double) -> Do
 struct ZenithNotchPreviewCard: View {
     @Binding var tab: NotchSettingsTab
     let module: NotchModule
+    /// Zenith fork: the button under the pills that opens the island itself.
+    var canOpen = false
+    var open: (() -> Void)?
     @ObservedObject private var l10n = L10n.shared
 
     private var text: ZenithPreviewsIslandStrings { .shared }
@@ -283,6 +286,15 @@ struct ZenithNotchPreviewCard: View {
                                                         set: { if tabs.indices.contains($0) { tab = tabs[$0] } }),
             highlight: highlight) {
             picture
+        } footer: {
+            if let open {
+                let title = FeatureStrings.notch(l10n.language).open
+                Button(action: open) { Label(title, systemImage: "arrow.up.forward.app") }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(!canOpen)
+                    .help(title)
+            }
         }
     }
 

@@ -558,10 +558,10 @@ enum FeatureVisibilitySupport {
         case .screenshot: return [.screenshot, .screenRecorder, .screenOCR, .colorPicker]
         case .notch: return [.notch, .notchGestures, .notchAccessories]
         // Zenith fork: the island's sections, each kept by its own feature;
-        // Music by the island, whose page it is part of.
+        // Music by the island, whose section it is, or any of its extras.
         case .notchCalendar: return [.notchCalendar]
         case .notchNotifications: return [.notchNotifications]
-        case .notchMusic: return [.notch]
+        case .notchMusic: return [.notch, .notchLyrics, .notchQueue, .notchLiveEqualizer]
         case .notchTimer: return [.notchTimer]
         case .notchAgents: return [.notchAgents]
         case .notchDownloads: return [.notchDownloads]

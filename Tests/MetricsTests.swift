@@ -132,7 +132,6 @@ struct MetricsTests {
                 NotchCapsuleTests.run(suite)
                 PlainTextLineMoverTests.run(suite)
                 NotchVolumeKeyTests.run(suite)
-                NotchSettingsTabRowTests.run(suite)
                 NotchPresentationProbeArgumentTests.run(suite)
                 ZenithIslandTests.run(suite) // Zenith fork
             }),
@@ -306,6 +305,7 @@ struct MetricsTests {
             ("fork-settings-search", { ForkSettingsSearchTests.run(suite) }),
             ("settings-sidebar", { SettingsSidebarTests.run(suite) }), // Zenith fork: the floating sidebar, its groups and icons
             ("settings-kit", { SettingsKitTests.run(suite) }), // Zenith fork: the Settings kit's tints, captions, More options, motion
+            ("island-settings", { IslandSettingsPagesTests.run(suite) }), // Zenith fork: the Island group's pages
             ("remote-lock", { RemoteControlTests.run(suite) }), // Zenith fork: lock and status from an iPhone
             ("face-unlock-flow", { FaceUnlockFlowTests.run(suite) }), // Zenith fork: security, triggers, setup
             ("face-unlock-recognition", { FaceUnlockRecognitionTests.run(suite) }), // Zenith fork

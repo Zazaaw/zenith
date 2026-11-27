@@ -144,8 +144,7 @@ struct NotchSettings: View {
                     }
                 }
                 // Zenith fork: the island on the stage, its states the tabs below.
-                ZenithNotchPreviewCard(tab: $tab, module: selectedModule)
-                NotchSettingsTabRow(tab: $tab, language: l10n.language, canOpen: enabled) { NotchService.shared.open() }
+                ZenithNotchPreviewCard(tab: $tab, module: selectedModule, canOpen: enabled) { NotchService.shared.open() }
                 Group {
                     switch tab {
                     case .layout: layoutPage

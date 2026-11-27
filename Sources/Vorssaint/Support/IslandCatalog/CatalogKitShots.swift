@@ -31,7 +31,7 @@ extension CatalogShots {
                 shots.append(shot)
             }
         }
-        return shots
+        return shots + kitIsland // Zenith fork: the Island group's pages (CatalogKitShotsIsland)
     }
 }
 #endif
