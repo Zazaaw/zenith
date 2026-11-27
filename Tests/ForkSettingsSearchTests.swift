@@ -70,7 +70,8 @@ enum ForkSettingsSearchTests {
         let reply = FeatureSettingsDestination(notch: .module(.notifications), sectionAnchor: .zenithReply)
         let camera = FeatureSettingsDestination(notch: .module(.camera), sectionAnchor: .zenithCameraAutoStart)
         let anchored = { (anchor: SettingsSectionAnchor) in FeatureSettingsDestination(anchor.page, sectionAnchor: anchor) }
-        let menuBar = FeatureSettingsDestination(.general, sectionAnchor: .panelConfiguration)
+        let menuBar = FeatureSettingsDestination(.menuBar)
+        let hiderSection = FeatureSettingsDestination(.menuBar, sectionAnchor: .zenithMenuBarHider)
 
         let english: [(String, FeatureSettingsDestination)] = [
             ("prayer", prayer), ("prayer times", prayer), ("golden hour", golden), ("sky", module(.sky)),
@@ -89,7 +90,7 @@ enum ForkSettingsSearchTests {
             ("muted", lockLyrics),
             ("terminal commands", commands), ("exports", exports), ("notices", notices), ("tab bar", tabBar),
             ("claude code", hooks), ("whatsapp", reply), ("start the mirror", camera),
-            ("menu bar hiding", menuBar), ("about", FeatureSettingsDestination(.about)),
+            ("menu bar hiding", hiderSection), ("about", FeatureSettingsDestination(.about)),
         ]
         let indonesian: [(String, FeatureSettingsDestination)] = [
             ("sholat", prayer), ("jadwal sholat", prayer), ("waktu sholat", prayer), ("adzan", prayer),
@@ -97,7 +98,7 @@ enum ForkSettingsSearchTests {
             ("tanda air", anchored(.zenithWatermark)), ("pindai", anchored(.zenithQR)), ("kode QR", anchored(.zenithQR)),
             ("teleprompter", module(.prompter)), ("naskah", module(.prompter)), ("kartu SD", module(.cardImport)),
             ("rekap", module(.recap)), ("hari ini", module(.recap)), ("menu bar", menuBar),
-            ("sembunyikan ikon", menuBar), ("ruang kerja", FeatureSettingsDestination(.workspaces)),
+            ("sembunyikan ikon", hiderSection), ("ruang kerja", FeatureSettingsDestination(.workspaces)),
             ("layar kunci", lockScreenPage), ("cuaca", lockScreen), ("lirik layar penuh", lockLyrics),
             ("progres", lockScreen), ("terminal layar kunci", lockTerminal), ("latar", lockLyrics),
             ("lirik", lockMusic), ("bayangan lirik", lockMusic), ("timing lirik", lockMusic), ("geser lirik", lockMusic),

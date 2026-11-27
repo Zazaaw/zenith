@@ -4,9 +4,10 @@
 import AppKit
 import SwiftUI
 
-/// Zenith fork: the menu bar hider's section on Settings → Menu bar, below
-/// the panel and icon card. Every switch is a `ZenithSwitchRow`; the heading
-/// is drawn here, and the Menu bar search item carries its words.
+/// Zenith fork: the menu bar hider's sections on Settings → Menu Bar, below
+/// the panel and the icon, built with the Settings kit: the switch and the
+/// two choices that shape it, rarer ones under More options, then how to
+/// arrange the icons while it is on.
 struct MenuBarHiderSettingsSection: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var service = MenuBarHiderService.shared
@@ -21,33 +22,28 @@ struct MenuBarHiderSettingsSection: View {
     private var text: ZenithMenuBarHiderStrings { ZenithStrings.menuBarHider(l10n.language) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            VStack(alignment: .leading, spacing: 10) {
-                heading(text.title)
-                SettingsCard {
-                    ZenithSwitchRow(text.enable, isOn: $enabled) {
-                        label(text.enable, caption: text.enableCaption)
-                    }
-                    if enabled {
-                        ForEach(service.blockers, id: \.self) { blocker in
-                            notice(message(for: blocker))
+        VStack(alignment: .leading, spacing: 18) {
+            ForEach(enabled ? service.blockers : [], id: \.self) { blocker in
+                ZenithCallout(.warning, message(for: blocker))
+            }
+            ZenithSection(text.title, anchor: .zenithMenuBarHider) {
+                ZenithRow(text.enable, isOn: $enabled, info: text.enableCaption)
+                if enabled {
+                    ZenithRow(text.alwaysHidden, isOn: $alwaysHidden, info: text.alwaysHiddenCaption)
+                    ZenithRow(text.delay, selection: $delay, info: text.delayCaption) {
+                        ForEach(MenuBarHiderDelay.allCases) { choice in
+                            Text(delayTitle(choice)).tag(choice.rawValue)
                         }
-                        Divider()
-                        options
                     }
+                    ZenithMoreOptions(id: "menuBar.hider") { options }
                 }
             }
             if enabled {
-                VStack(alignment: .leading, spacing: 10) {
-                    heading(text.howTo)
-                    SettingsCard {
-                        MenuBarHiderIllustration(alwaysHidden: alwaysHidden)
-                        VStack(alignment: .leading, spacing: 8) {
-                            step("command", text.stepDrag)
-                            step("cursorarrow.click", text.stepClick)
-                            if alwaysHidden { step("option", text.stepAlways) }
-                        }
-                    }
+                ZenithSection(text.howTo) {
+                    MenuBarHiderIllustration(alwaysHidden: alwaysHidden).padding(.vertical, 10)
+                    step("command", text.stepDrag)
+                    step("cursorarrow.click", text.stepClick)
+                    if alwaysHidden { step("option", text.stepAlways) }
                 }
             }
         }
@@ -64,52 +60,21 @@ struct MenuBarHiderSettingsSection: View {
 
     @ViewBuilder
     private var options: some View {
-        ZenithSwitchRow(text.alwaysHidden, isOn: $alwaysHidden) {
-            label(text.alwaysHidden, caption: text.alwaysHiddenCaption)
-        }
-        HStack(spacing: 12) {
-            label(text.delay, caption: text.delayCaption)
-            Spacer(minLength: 12)
-            Picker(text.delay, selection: $delay) {
-                ForEach(MenuBarHiderDelay.allCases) { choice in
-                    Text(delayTitle(choice)).tag(choice.rawValue)
-                }
-            }
-            .labelsHidden()
-            .pickerStyle(.menu)
-            .fixedSize()
-        }
-        ZenithSwitchRow(text.clickOutside, isOn: $collapseOnClick) {
-            Text(text.clickOutside)
-        }
-        ZenithSwitchRow(text.hover, isOn: $showOnHover) {
-            label(text.hover, caption: text.hoverCaption)
-        }
+        ZenithRow(text.clickOutside, isOn: $collapseOnClick)
+        ZenithRow(text.hover, isOn: $showOnHover, info: text.hoverCaption)
         if MenuBarHiderSystemSensing.hasNotchedScreen {
-            ZenithSwitchRow(text.notch, isOn: $notchGuard) {
-                label(text.notch, caption: text.notchCaption)
-            }
-            .disabled(!alwaysHidden)
-            if !service.behindNotch.isEmpty {
-                Text(String(format: text.behindNotch, service.behindNotch.joined(separator: ", ")))
-                    .font(ZenithType.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            ZenithRow(text.notch, isOn: $notchGuard, info: text.notchCaption,
+                      essential: service.behindNotch.isEmpty ? nil
+                        : String(format: text.behindNotch, service.behindNotch.joined(separator: ", ")))
+                .disabled(!alwaysHidden)
         }
-        Divider()
-        ZenithSwitchRow(text.shortcutToggle, isOn: $shortcutOn) {
-            Text(text.shortcutToggle)
-        }
+        ZenithRow(text.shortcutToggle, isOn: $shortcutOn,
+                  warning: shortcutOn && service.shortcutRegistrationFailed ? text.shortcutFailed : nil)
         if shortcutOn {
             ShortcutPreferenceRow(role: .menuBarHider, isEnabled: shortcutOn, label: text.shortcut) {
                 service.syncShortcut()
             }
-            if service.shortcutRegistrationFailed {
-                Text(text.shortcutFailed)
-                    .font(ZenithType.caption)
-                    .foregroundStyle(ZenithStatus.warning)
-            }
+            .padding(.vertical, 8)
         }
     }
 
@@ -125,41 +90,6 @@ struct MenuBarHiderSettingsSection: View {
         }
     }
 
-    private func heading(_ title: String) -> some View {
-        Text(title)
-            .font(ZenithType.sectionTitle)
-            .tracking(ZenithType.sectionTitleTracking)
-            .padding(.leading, 2)
-            .accessibilityAddTraits(.isHeader)
-    }
-
-    private func label(_ title: String, caption: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-            Text(caption)
-                .font(ZenithType.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    /// Something keeps the bar from hiding; amber, with words, never color alone.
-    private func notice(_ message: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(ZenithStatus.warning)
-            Text(message)
-                .font(ZenithType.footnote)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(ZenithStatus.fill(ZenithStatus.warning),
-                    in: RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous)
-            .strokeBorder(ZenithStatus.stroke(ZenithStatus.warning)))
-    }
-
     private func step(_ symbol: String, _ message: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             Image(systemName: symbol)
@@ -167,10 +97,11 @@ struct MenuBarHiderSettingsSection: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 16)
             Text(message)
-                .font(ZenithType.footnote)
-                .foregroundStyle(.secondary)
+                .font(ZenithType.body)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(.vertical, 8)
+        .accessibilityElement(children: .combine)
     }
 }
 

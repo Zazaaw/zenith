@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Vorssaint
+// Copyright (C) 2026 Satu Visual
 
 import AppKit
 import SwiftUI
@@ -23,13 +24,34 @@ struct KillProcessView: View {
         case killTree(KillProcessEntry, force: Bool)
     }
 
+    private let page = ZenithStrings.systemApps(.enUS)
+
+    // Zenith fork: built with the Settings kit: the hero, the preview, the
+    // two options, then the live list in a grouped card of its own height.
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            Divider()
-            columnHeader
-            Divider()
-            list
+        ScrollView {
+            ZenithPageColumn {
+                ZenithHero(title: strings.pageTitle, subtitle: page.killSubtitle,
+                           chips: [ZenithChip(page.killCount(service.filteredEntries.count))],
+                           animation: .killProcess)
+                KillProcessPreviewCard() // Zenith fork
+                ZenithSection(page.killOptions) {
+                    ZenithRow(strings.groupToggle, isOn: groupBinding, info: strings.groupCaption)
+                    ZenithRow(strings.commandBarToggle, isOn: $commandBarEnabled, info: strings.commandBarCaption)
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    ZenithSectionTitle(page.killList)
+                    VStack(spacing: 0) {
+                        header
+                        Divider()
+                        columnHeader
+                        Divider()
+                        list
+                    }
+                    .frame(height: 460)
+                    .zenithGroupBackground()
+                }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
@@ -56,48 +78,27 @@ struct KillProcessView: View {
     // MARK: Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            KillProcessPreviewCard() // Zenith fork
-                .zenithToolsPreviewWidth()
-            Form {
-                Section {
-                    Toggle(strings.groupToggle, isOn: groupBinding)
-                    Text(strings.groupCaption)
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-                Section {
-                    Toggle(strings.commandBarToggle, isOn: $commandBarEnabled)
-                    Text(strings.commandBarCaption)
-                        .font(.caption).foregroundStyle(.secondary)
-                }
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            TextField(strings.searchPlaceholder, text: $service.query)
+                .textFieldStyle(.plain)
+            if service.isRefreshing {
+                ProgressView().controlSize(.small)
             }
-            .formStyle(.grouped)
-            .fixedSize(horizontal: false, vertical: true)
-
-            HStack(spacing: 16) {
-                Spacer()
-                Text(String(format: strings.processCountFormat, service.filteredEntries.count))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Button {
-                    service.refresh(force: true)
-                } label: {
-                    Image(systemName: "arrow.clockwise").foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .help(strings.refreshTooltip)
+            Text(String(format: strings.processCountFormat, service.filteredEntries.count))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Button {
+                service.refresh(force: true)
+            } label: {
+                Image(systemName: "arrow.clockwise").foregroundStyle(.secondary)
             }
-
-            HStack(spacing: 10) {
-                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                TextField(strings.searchPlaceholder, text: $service.query)
-                    .textFieldStyle(.plain)
-                if service.isRefreshing {
-                    ProgressView().controlSize(.small)
-                }
-            }
+            .buttonStyle(.plain)
+            .help(strings.refreshTooltip)
+            .accessibilityLabel(strings.refreshTooltip)
         }
-        .padding(16)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
     }
 
     private var groupBinding: Binding<Bool> {
@@ -160,6 +161,7 @@ struct KillProcessView: View {
         } else {
             List(service.filteredEntries) { entry in row(entry) }
                 .listStyle(.inset)
+                .scrollContentBackground(.hidden) // Zenith fork: the card draws behind it
         }
     }
 

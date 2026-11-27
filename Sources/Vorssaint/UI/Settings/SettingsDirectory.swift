@@ -78,7 +78,6 @@ struct SettingsDirectoryItem: Identifiable {
 enum SettingsDirectory {
     /// Shared pages whose tools cover the page without a separate overview row.
     private static let toolOnlyPages: Set<SettingsPage> = [
-        .energy,
     ]
 
     /// Zenith fork: pages several features share as one page with one
@@ -86,6 +85,7 @@ enum SettingsDirectory {
     /// destination still scrolls to its section.
     static let singleRowPages: Set<SettingsPage> = [
         .clipboard, .finderTools,
+        .sleep, .brightness, // Zenith fork: the System group's split pages
         .scrolling, .pointer, .mouseButtons, .switcher, .dock, .spaces, .windowLayout,
         .quickLauncher, .quickToggles, .quitApps, .cleaningMode, .wallpaper, .scratchpad,
     ]
@@ -114,11 +114,6 @@ enum SettingsDirectory {
                         return feature.hubTitle(s, hub: hub, language: language)
                     }
                 if pageItem.page == .general {
-                    rows.insert(SettingsSidebarItem(
-                        id: .setting(.panelConfiguration),
-                        destination: FeatureSettingsDestination(
-                            .general, sectionAnchor: .panelConfiguration),
-                        title: s.menuBarSection, icon: "menubar.rectangle"), at: 1)
                     // Zenith fork: Appearance, a tile beside General.
                     rows.insert(SettingsSidebarItem(
                         id: .page(.appearance), destination: FeatureSettingsDestination(.appearance),
@@ -165,13 +160,6 @@ enum SettingsDirectory {
         }
         var items = SettingsSearchSupport.combinedItems(pageItems: pageItems,
                                                         featureItems: featureItems)
-        items.append(SettingsSearchItem(
-            id: .setting(.panelConfiguration),
-            destination: FeatureSettingsDestination(
-                .general, sectionAnchor: .panelConfiguration),
-            title: s.menuBarSection, icon: "menubar.rectangle",
-            keywords: [s.showMenuBarIcon, FeatureStrings.generalSettings(language).menuBarIconTitle,
-                       FeatureStrings.generalSettings(language).iconMissingTitle, "SF Symbols"]))
         items.append(SettingsSearchSupport.scrollingScreenshotItem(language: language))
         let alerts = FeatureStrings.monitorAlerts(language)
         items.append(SettingsSearchItem(
@@ -208,6 +196,7 @@ enum SettingsDirectory {
         }
         let quitProtection = FeatureStrings.quitProtection(language)
         let brightness = FeatureStrings.brightness(language)
+        let system = ZenithStrings.systemApps(language) // Zenith fork: the System and Apps pages' own words
         let bluetooth = FeatureStrings.bluetoothSleep(language)
         let barStyle = FeatureStrings.menuBarAppearance(language)
         let previews = FeatureStrings.windowPreviewExclusions(language)
@@ -276,7 +265,9 @@ enum SettingsDirectory {
                                        featureKeywords: AppFeature.allCases.map {
                                         ($0, [$0.hubTitle(s, hub: FeatureStrings.hub(language), language: language)])
                                        }),
-                SettingsDirectoryItem(page: .energy, title: s.tabEnergy, icon: "bolt.fill",
+                // Zenith fork: Energy split into Sleep (Keep Awake, Bluetooth on sleep) and Brightness.
+                SettingsDirectoryItem(page: .sleep, title: system.sleepTitle, icon: "moon.zzz.fill",
+                                       keywords: [s.tabEnergy],
                                        featureKeywords: [
                                         (.keepAwake, [s.keepAwakeTitle, s.clamshellTitle,
                                                       s.defaultDurationLabel, s.showCountdown,
@@ -293,8 +284,6 @@ enum SettingsDirectory {
                                                         .allowDisplaySleep,
                                                       s.keepAwakeOptions, s.keepAwakeAutoStart,
                                                       s.keepAwakeRightClickToggle, s.keepAwakeMouseJiggle]),
-                                        (.brightness, [brightness.pageTitle, brightness.enable]),
-                                        (.extraBrightness, [s.extraBrightnessName]),
                                         (.bluetoothSleep, [bluetooth.pageTitle]),
                                        ], terms: [
                                         .init([s.dimScreenOnLidCloseTitle], feature: .keepAwake,
@@ -302,6 +291,16 @@ enum SettingsDirectory {
                                         .init([s.keepAwakeMouseJiggleInterval], feature: .keepAwake,
                                               when: state.on(DefaultsKey.keepAwakeMouseJiggleEnabled)),
                                         .init([s.batteryDisableBelow], feature: .keepAwake, when: state.hardware.battery),
+                                        .init([bluetooth.enable], feature: .bluetoothSleep, when: state.hardware.bluetoothSleep),
+                                        .init([bluetooth.restoreToggle], feature: .bluetoothSleep,
+                                              when: state.hardware.bluetoothSleep && state.on(DefaultsKey.bluetoothSleepEnabled)),
+                                       ]),
+                SettingsDirectoryItem(page: .brightness, title: system.brightnessTitle, icon: "sun.max.fill",
+                                       keywords: [s.tabEnergy],
+                                       featureKeywords: [
+                                        (.brightness, [brightness.pageTitle, brightness.enable]),
+                                        (.extraBrightness, [s.extraBrightnessName]),
+                                       ], terms: [
                                         .init([brightness.keyStep, brightness.keyStepHalf, brightness.keyStepQuarter,
                                                brightness.keysToggle, brightness.displayBrightnessShortcuts, brightness.volumeToggle],
                                               feature: .brightness, when: state.on(DefaultsKey.brightnessControlEnabled)),
@@ -312,23 +311,28 @@ enum SettingsDirectory {
                                                 && state.on(DefaultsKey.displayVolumeEnabled) && state.on(DefaultsKey.displayVolumeKeysEnabled)),
                                         .init([brightness.osdToggle], feature: .brightness,
                                               when: state.hardware.brightnessOSD && state.on(DefaultsKey.brightnessControlEnabled)),
-                                        .init([bluetooth.enable], feature: .bluetoothSleep, when: state.hardware.bluetoothSleep),
-                                        .init([bluetooth.restoreToggle], feature: .bluetoothSleep,
-                                              when: state.hardware.bluetoothSleep && state.on(DefaultsKey.bluetoothSleepEnabled)),
                                        ]),
-                SettingsDirectoryItem(page: .monitor, title: s.tabMonitor, icon: "chart.line.uptrend.xyaxis",
-                                       keywords: [s.menuBarSpacingLabel, s.menuBarHideIconToggle, barStyle.label,
+                SettingsDirectoryItem(page: .monitor, title: system.monitorTitle, icon: "chart.line.uptrend.xyaxis",
+                                       keywords: [s.tabMonitor, s.menuBarSpacingLabel, s.menuBarHideIconToggle, barStyle.label,
                                                   barStyle.bars, barStyle.values, s.monitorSeparateMenuBarMetrics,
                                                   s.monitorIntervalLabel, s.temperatures, GraphScaleStrings.localized(language).title],
                                        featureKeywords: [
                                         (.monitorMemory, [s.monitorMemoryPressureDot, s.monitorMemoryMetricLabel]),
                                         (.monitorNetwork, [FeatureStrings.monitorLayout(language).networkSpeedUnit]),
-                                        (.fanControl, [FeatureStrings.fanControl(language).menuBarTitle]),
                                        ], terms: [
                                         .init([s.monitorCombineTemperatures], when: !state.bars),
                                         .init([barStyle.customize, barStyle.normalColor, barStyle.mediumColor, barStyle.highColor,
                                                barStyle.mediumFrom, barStyle.highFrom], when: state.bars),
                                        ]),
+                // Zenith fork: Fan Control, out of Monitor, and the menu bar's panel, icon and hider, out of General.
+                SettingsDirectoryItem(page: .fanControl, title: FeatureStrings.fanControl(language).title,
+                                       icon: "fanblades.fill",
+                                       keywords: [FeatureStrings.fanControl(language).menuBarTitle,
+                                                  FeatureStrings.fanControl(language).showInPanel]),
+                SettingsDirectoryItem(page: .menuBar, title: system.menuBarTitle, icon: "menubar.rectangle",
+                                       keywords: [s.menuBarSection, s.showMenuBarIcon,
+                                                  FeatureStrings.generalSettings(language).menuBarIconTitle,
+                                                  FeatureStrings.generalSettings(language).iconMissingTitle, "SF Symbols"]),
                 // Zenith fork: every device's battery, a page of its own under Monitor (no hub feature).
                 SettingsDirectoryItem(page: .batteries, title: ZenithStrings.batteries(language).title,
                                       icon: "battery.75percent", keywords: BatteriesSearch.keywords(language)),

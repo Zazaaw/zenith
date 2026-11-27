@@ -157,7 +157,7 @@ enum SettingsFeatureTests {
             (lowBattery.early, .notch, [], [.monitorPower], true),
             (lowBattery.menuBar, .notch, [], [.monitorPower], true),
             (Strings.enUS.globalHotkeySection, .general, [], [.keepAwake], false),
-            (Strings.enUS.batteryDisableBelow, .energy, [], [.keepAwake], true),
+            (Strings.enUS.batteryDisableBelow, .sleep, [], [.keepAwake], true),
             (alerts.battery, .monitor, [], [.monitorPower], true),
             (alerts.batteryThreshold, .monitor, [], [.monitorPower], true),
             (alerts.batteryTemperature, .monitor, [], [.monitorPower], true),
@@ -176,7 +176,7 @@ enum SettingsFeatureTests {
                              "search hides \"\(row.label)\" on \(row.page) on a Mac without a battery")
             }
         }
-        suite.expect(pages(of: Strings.enUS.keepAwakeMouseJiggle, query: "jiggle").contains(.energy),
+        suite.expect(pages(of: Strings.enUS.keepAwakeMouseJiggle, query: "jiggle").contains(.sleep),
                      "searching \"jiggle\" offers the Keep Awake pointer movement")
         suite.expect(pages(of: Strings.enUS.monitorIntervalLabel, query: "interval").contains(.monitor),
                      "searching \"interval\" offers the Monitor update interval")
@@ -268,7 +268,7 @@ enum SettingsFeatureTests {
         for enabled in [false, true, false] {
             defaults.set(enabled, forKey: DefaultsKey.displayVolumeKeysEnabled)
             for label in [speakers.speakersStep, speakers.speakersMinimum, speakers.speakersMaximum] {
-                suite.expect(pages(of: label).contains(.energy) == enabled,
+                suite.expect(pages(of: label).contains(.brightness) == enabled,
                              "speaker key settings are searchable while the controls are visible")
             }
         }

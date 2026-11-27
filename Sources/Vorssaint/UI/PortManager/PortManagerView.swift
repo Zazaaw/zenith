@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Vorssaint
+// Copyright (C) 2026 Satu Visual
 
 import SwiftUI
 
@@ -11,59 +12,29 @@ struct PortManagerView: View {
 
     private var strings: PortManagerFeatureStrings { FeatureStrings.portManager(l10n.language) }
 
+    private let page = ZenithStrings.systemApps(.enUS)
+
+    // Zenith fork: built with the Settings kit: the hero, the preview, then
+    // the listening ports in a grouped card of its own height.
     var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 9) {
-                Image(systemName: "network")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
-                Text(strings.title).font(.headline)
-                Spacer()
-                Button {
-                    service.refresh()
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 11, weight: .semibold))
+        ScrollView {
+            ZenithPageColumn {
+                ZenithHero(title: strings.title, subtitle: page.portsSubtitle,
+                           chips: [ZenithChip(page.portsCount(service.filteredEntries.count))],
+                           animation: .portManager)
+                PortManagerPreviewCard() // Zenith fork
+                VStack(alignment: .leading, spacing: 8) {
+                    ZenithSectionTitle(page.portsList)
+                    VStack(spacing: 0) {
+                        searchRow
+                        Divider()
+                        ports
+                    }
+                    .frame(height: 420)
+                    .zenithGroupBackground()
                 }
-                .buttonStyle(.plain).help(strings.refresh)
-            }
-            .padding(.horizontal, 14).padding(.top, 10).padding(.bottom, 8)
-            PortManagerPreviewCard() // Zenith fork
-                .zenithToolsPreviewWidth()
-                .padding(.horizontal, 14).padding(.bottom, 10)
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                TextField(strings.filter, text: $service.query).textFieldStyle(.plain)
-                if service.isRefreshing {
-                    ProgressView().controlSize(.small)
-                }
-            }
-            .padding(9).background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 9))
-            .padding(.horizontal, 14).padding(.bottom, 8)
-            Divider()
-            if service.refreshFailed {
-                Label(strings.loadFailed, systemImage: "exclamationmark.triangle")
-                    .font(.callout).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(14)
-            }
-            if service.filteredEntries.isEmpty {
-                if service.refreshFailed {
-                    Spacer()
-                } else if service.hasLoadedOnce {
-                    emptyState
-                } else {
-                    loadingState
-                }
-            } else {
-                List(service.filteredEntries) { entry in
-                    portRow(entry)
-                        .listRowSeparator(.hidden)
-                }
-                .listStyle(.inset)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear { service.refresh() }
         .alert(pending.map { String(format: strings.terminateFormat, $0.processName) } ?? "",
                isPresented: Binding(get: { pending != nil }, set: { if !$0 { pending = nil } })) {
@@ -75,6 +46,53 @@ struct PortManagerView: View {
         } message: {
             Text(String(format: strings.terminateMessageFormat,
                         pending?.port ?? 0, pending?.pid ?? 0))
+        }
+    }
+
+    private var searchRow: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            TextField(strings.filter, text: $service.query).textFieldStyle(.plain)
+            if service.isRefreshing {
+                ProgressView().controlSize(.small)
+            }
+            Button {
+                service.refresh()
+            } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain).help(strings.refresh)
+            .accessibilityLabel(strings.refresh)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+
+    @ViewBuilder
+    private var ports: some View {
+        if service.refreshFailed {
+            Label(strings.loadFailed, systemImage: "exclamationmark.triangle")
+                .font(.callout).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(14)
+        }
+        if service.filteredEntries.isEmpty {
+            if service.refreshFailed {
+                Spacer()
+            } else if service.hasLoadedOnce {
+                emptyState
+            } else {
+                loadingState
+            }
+        } else {
+            List(service.filteredEntries) { entry in
+                portRow(entry)
+                    .listRowSeparator(.hidden)
+            }
+            .listStyle(.inset)
+            .scrollContentBackground(.hidden)
         }
     }
 

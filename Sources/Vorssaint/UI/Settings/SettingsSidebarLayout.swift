@@ -42,7 +42,6 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
         case .feature(let feature): return of(feature: feature)
         case .setting(let anchor):
             switch anchor {
-            case .panelConfiguration: return .system
             case .keyboardBrightnessShortcuts: return .zenith
             default: return of(page: anchor.page)
             }
@@ -61,7 +60,8 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
         case .volumeMixer, .soundOutput, .musicBlocker, .micMute: return .sound
         case .switcher, .dock, .spaces, .windowLayout, .autoQuit, .quitProtection, .workspaces, .radialMenu: return .windows
         case .scrolling, .pointer, .mouseButtons, .keyDebounce, .superKey: return .input
-        case .energy, .monitor: return .system
+        case .monitor: return .system
+        case .sleep, .brightness, .fanControl, .menuBar: return .system // Zenith fork
         case .cleaner, .uninstaller, .homebrew, .appUpdates, .killProcess, .portManager: return .apps
         case .remote, .pocket, .faceUnlock, .batteries: return .devices
         case .meetings, .translate, .mechakey,
@@ -119,7 +119,7 @@ enum SettingsSidebarLayout {
         .capture: [.page(.screenshot), .page(.screenRecording), .page(.textCapture), .page(.colorPicker),
                    .page(.cameraPreview)],
         .sound: [.page(.volumeMixer), .page(.soundOutput), .page(.musicBlocker), .page(.micMute)],
-        .system: [.page(.monitor), .feature(.fanControl)],
+        .system: [.page(.monitor), .page(.fanControl), .page(.sleep), .page(.brightness), .page(.menuBar)],
         .devices: [.page(.pocket), .page(.batteries), .page(.faceUnlock), .page(.remote)],
     ]
 

@@ -50,13 +50,27 @@ enum SettingsSidebarTests {
                                                 .page(.urlCleaner), .page(.textSnippets)]
                         && group(.devices) == [.page(.pocket), .page(.batteries), .page(.faceUnlock), .page(.remote)]
                         && group(.capture).first == .page(.screenshot)
-                        && group(.system).first == .page(.monitor),
+                        && group(.system).prefix(5) == [.page(.monitor), .page(.fanControl), .page(.sleep),
+                                                         .page(.brightness), .page(.menuBar)],
                      "the groups open with the rows the design leads with")
         // Zenith fork: one row per sound and capture tool, each its own page.
         suite.expect(group(.sound) == [.page(.volumeMixer), .page(.soundOutput), .page(.musicBlocker), .page(.micMute)]
                         && group(.capture) == [.page(.screenshot), .page(.screenRecording), .page(.textCapture),
                                                .page(.colorPicker), .page(.cameraPreview)],
                      "Sound and Capture list one page per tool")
+        let systemApps = all.filter { [.system, .apps].contains($0.group) }.flatMap(\.items)
+        suite.expect(systemApps.allSatisfy {
+                            if case .page = $0.id { return true } else { return false } }
+                        && Set(systemApps.map(\.id)).isSuperset(of: [.page(.cleaner), .page(.uninstaller), .page(.homebrew),
+                                                                .page(.appUpdates), .page(.killProcess), .page(.portManager)]),
+                     "every System and Apps row is a page of its own")
+        suite.expect(SettingsSidebarIcons.orbitName(for: .page(.sleep)) == "Sleep"
+                        && SettingsSidebarIcons.orbitName(for: .page(.brightness)) == "Brightness"
+                        && SettingsSidebarIcons.orbitName(for: .page(.fanControl)) == "Fan Control"
+                        && SettingsSidebarIcons.orbitName(for: .page(.menuBar)) == "Menu Bar Hider"
+                        && ["Sleep", "Brightness", "Fan Control", "Menu Bar Hider", "System Monitor"]
+                            .allSatisfy { OrbitIcons.named($0) != nil },
+                     "the System pages draw their Orbit icons")
         suite.expect(group(.zenith).contains(.page(.about)) && group(.zenith).contains(.page(.shortcuts)),
                      "the app's own pages close the sidebar")
         suite.expect(SettingsPage.allCases.filter { SettingsSidebarGroup.of(page: $0) == .tiles }
@@ -106,9 +120,15 @@ enum SettingsSidebarTests {
                         .allSatisfy { SettingsSidebarSupport.selection(for: $0.settingsDestination, in: items)
                             == .page($0.settingsDestination.page) },
                      "every feature on a one-row page selects its page's row")
-        suite.expect(ids.contains(.setting(.panelConfiguration)) && !ids.contains(.setting(.screenshotScrolling))
+        suite.expect(ids.contains(.page(.menuBar)) && !ids.contains(.setting(.panelConfiguration))
+                        && !ids.contains(.setting(.screenshotScrolling))
                         && ids.contains(.setting(.keyboardBrightnessShortcuts)),
-                     "the menu bar editor and keyboard light shortcuts keep their rows; scrolling capture is Screenshot's")
+                     "the menu bar is a page of its own, scrolling capture is Screenshot's, and keyboard light shortcuts keep their row")
+        suite.expect(SettingsSidebarSupport.selection(for: AppFeature.keepAwake.settingsDestination, in: items) == .page(.sleep)
+                        && SettingsSidebarSupport.selection(
+                            for: AppFeature.extraBrightness.settingsDestination, in: items) == .page(.brightness)
+                        && !ids.contains(.feature(.keepAwake)) && !ids.contains(.feature(.fanControl)),
+                     "Sleep and Brightness are one row each, their features' sections inside")
         for item in items {
             suite.expect(SettingsSidebarSupport.selection(for: item.destination, in: items,
                                                           preferredID: item.id) == item.id,

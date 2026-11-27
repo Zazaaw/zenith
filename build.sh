@@ -738,6 +738,7 @@ if (( TEST )); then
         Sources/Vorssaint/Core/ZenithMechakeyStrings.swift
         Sources/Vorssaint/Core/ZenithInputWindowsStrings.swift
         Sources/Vorssaint/Core/ZenithEverydayStrings.swift
+        Sources/Vorssaint/Core/ZenithSystemAppsStrings.swift
         Sources/Vorssaint/Core/ZenithSoundCaptureStrings.swift
         # Zenith fork: Appearance's model, its store, the motion preview and the power reading.
         Sources/Vorssaint/Services/Appearance/ZenithAppearance.swift

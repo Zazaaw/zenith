@@ -333,9 +333,9 @@ enum ZenithSettingsSearch {
             page(.zenithQR, title: qr.title, icon: "qrcode",
                  keywords: [qr.correction, qr.logo, qr.fromClipboard, qr.scan, qr.newCode],
                  aliases: ["QR", "kode QR", "pindai", "pindai QR", "scan QR", "barcode"]),
-            // General › Menu bar, where the hider's card follows the panel's.
+            // Menu Bar, where the hider's section follows the panel's and the icon's.
             SettingsSearchItem(id: .setting(.zenithMenuBarHider),
-                               destination: FeatureSettingsDestination(.general, sectionAnchor: .panelConfiguration),
+                               destination: FeatureSettingsDestination(.menuBar, sectionAnchor: .zenithMenuBarHider),
                                title: hider.title, icon: "menubar.arrow.up.rectangle",
                                keywords: [hider.enable, hider.alwaysHidden, hider.delay, hider.clickOutside, hider.hover,
                                           hider.notch, hider.shortcutToggle, hider.shortcut],
@@ -353,8 +353,8 @@ enum ZenithSettingsSearch {
     }
 
     /// The anchors that only name a search result; the page it opens has no
-    /// such section (the hider opens the Menu bar tool, where its card is).
-    static let unplacedAnchors: Set<SettingsSectionAnchor> = [.zenithMenuBarHider]
+    /// such section. Zenith fork: the hider has a section of its own on Menu Bar now.
+    static let unplacedAnchors: Set<SettingsSectionAnchor> = []
 
     // MARK: Builders
 

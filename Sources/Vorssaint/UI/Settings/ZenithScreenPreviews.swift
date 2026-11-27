@@ -141,8 +141,12 @@ enum ZenithScreenScene: String, CaseIterable {
             return
         }
         switch self {
-        case .look, .panel, .hider:
-            router.request(FeatureSettingsDestination(.general, sectionAnchor: .panelConfiguration))
+        case .look:
+            router.request(FeatureSettingsDestination(.general))
+        case .panel:
+            router.request(FeatureSettingsDestination(.menuBar, sectionAnchor: .panelConfiguration))
+        case .hider:
+            router.request(FeatureSettingsDestination(.menuBar, sectionAnchor: .zenithMenuBarHider))
         case .monitorMenuBar, .monitorPanel:
             router.request(FeatureSettingsDestination(.monitor))
         case .hub:
@@ -156,7 +160,8 @@ enum ZenithScreenScene: String, CaseIterable {
 
 /// The pages with a screen preview, and the pictures each can show.
 enum ZenithScreenPreviewGroup: String {
-    case general, sound, features, energy, monitor, switcher, dock, spaces, windowLayout, screenCapture, media, appUpdates
+    case general, sound, features, monitor, switcher, dock, spaces, windowLayout, screenCapture, media, appUpdates
+    case sleep, brightness, fans, menuBar // Zenith fork: the System group's split pages
 
     /// Keys the folded state: one per page.
     var id: String { "screen.\(rawValue)" }
@@ -167,8 +172,11 @@ enum ZenithScreenPreviewGroup: String {
         case .general: all = [.look, .panel, .hider]
         case .sound: all = [.mixer, .output, .priority, .musicBlock]
         case .features: all = [.hub]
-        case .energy: all = [.keepAwake, .brightness, .extraBrightness, .bluetoothSleep]
-        case .monitor: all = [.monitorMenuBar, .monitorPanel, .fans]
+        case .sleep: all = [.keepAwake, .bluetoothSleep]
+        case .brightness: all = [.brightness, .extraBrightness]
+        case .fans: all = [.fans]
+        case .menuBar: all = [.panel, .hider]
+        case .monitor: all = [.monitorMenuBar, .monitorPanel]
         case .switcher: all = [.switcherWindows, .switcherIcons, .switcherSimple]
         case .dock: all = [.dockPreview, .dockClick]
         case .spaces: all = [.spacesOrder]
@@ -190,7 +198,7 @@ enum ZenithScreenPreviewGroup: String {
 }
 
 extension ZenithScreenScene {
-    /// The picture for a General destination, or an Energy one.
+    /// The picture for a section destination: General's, Sleep's, Brightness's.
     init(anchor: SettingsSectionAnchor?) {
         switch anchor {
         case .panelConfiguration?: self = .panel
@@ -214,7 +222,7 @@ extension ZenithScreenScene {
 
 /// The preview card of a page about the screen.
 ///
-///     ZenithScreenPreviewCard(group: .energy, current: ZenithScreenScene(anchor: focus))
+///     ZenithScreenPreviewCard(group: .sleep, current: ZenithScreenScene(anchor: focus))
 struct ZenithScreenPreviewCard: View {
     let group: ZenithScreenPreviewGroup
     /// The picture the page is on (its sidebar row, tool or layout); nil

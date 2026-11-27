@@ -573,7 +573,7 @@ enum CommandBarCatalog {
                 icon: .symbol("sun.max"),
                 trouble: enabled ? nil
                     : .needsSetup(featureTitle: FeatureStrings.brightness(language).pageTitle,
-                                  page: .energy),
+                                  page: .brightness),
                 numericRange: enabled ? 0...100 : nil,
                 run: { value in
                     guard let value else { return }

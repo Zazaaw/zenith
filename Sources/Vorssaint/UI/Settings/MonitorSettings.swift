@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Vorssaint
+// Copyright (C) 2026 Satu Visual
 
 import AppKit
 import SwiftUI
 
-/// The "Monitor" settings page: pick what shows next to the menu bar icon, how
-/// it looks and how often it refreshes, which blocks appear in the panel, when
-/// to warn, and which metrics draw a history graph. Everything is opt-in or
-/// reversible, so users keep only what they find useful. Zenith fork: the
-/// live menu bar preview is the first picture of the page's preview card.
+/// Settings → System Monitor. Zenith fork: built with the Settings kit. The
+/// metrics as tiles, each with its own switch (it installs or removes the
+/// metric, as Orbit does) and its options in a section under the grid; then
+/// what the menu bar shows and how, the panel's blocks, the readings both
+/// share, and the alerts. Fan Control has a page of its own.
 struct MonitorSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var features = FeatureRuntime.shared
@@ -23,38 +24,36 @@ struct MonitorSettings: View {
     @AppStorage(DefaultsKey.temperatureUnit) private var temperatureUnit = TemperatureUnit.celsius.rawValue
     @AppStorage(DefaultsKey.networkSpeedUnit) private var networkSpeedUnit = NetworkSpeedUnit.bytes
     @AppStorage(DefaultsKey.monitorMemoryMetric) private var memoryMetric = "used"
-    @AppStorage(DefaultsKey.panelShowFanControl) private var showFanControl = true
+    @AppStorage(DefaultsKey.menuBarMemoryStyle) private var memoryStyle = "percent"
+    @AppStorage(DefaultsKey.menuBarNetworkUploadFirst) private var uploadFirst = false
+    @AppStorage(DiskMenuBarStyle.defaultsKey) private var diskStyle = DiskMenuBarStyle.percent
+    @AppStorage(DefaultsKey.menuBarMetricOrder) private var metricOrder = ""
+    @State private var picked: AppFeature?
+
+    private let page = ZenithStrings.systemApps(.enUS)
 
     var body: some View {
         // A plain stack, not a lazy one: a lazy stack estimates the rows it
         // has not built yet, and with the taller Bars options this page kept
         // it re-measuring and re-anchoring without ever settling, which hung
         // Settings on the first scroll.
-        // Zenith fork: the live menu bar preview, which sat pinned above the
-        // scroll view, is the preview card's first picture, under the page's
-        // title like every page's card.
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    SettingsPageHeader(title: l10n.s.tabMonitor, subtitle: FeatureStrings.settingsPages(l10n.language).monitorDescription)
-                    ZenithScreenPreviewCard(group: .monitor)
-                    groupHeading(l10n.s.monitorMenuBarSection, symbol: "menubar.rectangle")
-                    menuBarCard
-                    menuBarStyleCard
-                    groupHeading(l10n.s.monitorPanelSection, symbol: "macwindow")
-                    panelCard
-                    if AppFeature.fanControl.isAvailable {
-                        fanControlCard
-                            .settingsSectionAnchor(.fanControl, cornerRadius: ZenithRadius.panel)
-                    }
-                    groupHeading(FeatureStrings.monitorLayout(l10n.language).shared, symbol: "slider.horizontal.3")
-                    readingsCard
-                    alertsCard.settingsSectionAnchor(.monitorAlerts, cornerRadius: ZenithRadius.panel)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                ZenithHero(title: page.monitorTitle, subtitle: page.monitorSubtitle, chips: chips,
+                           animation: .systemMonitor)
+                ZenithScreenPreviewCard(group: .monitor)
+                metricsSection
+                metricSection(selected)
+                menuBarSection
+                panelSection
+                readingsSection
+                ZenithSection(FeatureStrings.monitorAlerts(l10n.language).section, anchor: .monitorAlerts) {
+                    MonitorAlertsControls(compact: false).padding(.vertical, 10)
                 }
-                .frame(maxWidth: 760)
-                .frame(maxWidth: .infinity)
-                .padding(22)
             }
+            .frame(maxWidth: 760)
+            .frame(maxWidth: .infinity)
+            .padding(22)
         }
         .toggleStyle(ZenithSwitchStyle())
         .onAppear {
@@ -67,18 +66,82 @@ struct MonitorSettings: View {
         }
     }
 
-    /// Splits the page into what the menu bar shows, what the panel shows,
-    /// and what both share, so an option is never read as the other's.
-    private func groupHeading(_ title: String, symbol: String) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Divider()
-            Label(title, systemImage: symbol)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(.primary)
-                .accessibilityAddTraits(.isHeader)
-        }
-        .padding(.top, 8)
+    private var chips: [ZenithChip] {
+        let on = MonitorMetricFamily.allCases.filter { $0.feature.isAvailable }.count
+        let shown = MenuBarMetric.enabled(in: .standard).count
+        return [ZenithChip(page.monitorOn(on)), ZenithChip(page.monitorShown(shown)),
+                ZenithChip(page.monitorEvery(Defaults.sanitizedMonitorInterval(interval)))]
     }
+
+    /// The metric whose options show under the grid: the one clicked, or the
+    /// first one switched on.
+    private var selected: MonitorMetricFamily {
+        if let picked, let family = MonitorMetricFamily(feature: picked) { return family }
+        return MonitorMetricFamily.allCases.first { $0.feature.isAvailable } ?? .cpu
+    }
+
+    private func title(_ family: MonitorMetricFamily) -> String {
+        family.feature.hubTitle(l10n.s, hub: FeatureStrings.hub(l10n.language), language: l10n.language)
+    }
+
+    // MARK: Metrics
+
+    private var metricsSection: some View {
+        ZenithSection(page.monitorMetrics, footer: page.monitorMetricsFooter) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 10)], spacing: 10) {
+                ForEach(MonitorMetricFamily.allCases) { family in
+                    MonitorMetricTile(family: family, title: title(family), selected: family == selected) {
+                        picked = family.feature
+                    }
+                }
+            }
+            .padding(.vertical, 12)
+        }
+    }
+
+    /// The chosen metric's own options: what of it the menu bar shows, and
+    /// the choices that only it has.
+    @ViewBuilder
+    private func metricSection(_ family: MonitorMetricFamily) -> some View {
+        ZenithSection(title(family)) {
+            if !family.feature.isAvailable {
+                ZenithCallout(.info, page.monitorMetricOff) {
+                    Button(page.monitorTurnOn) { FeatureRuntime.shared.setAvailable([family.feature], true) }
+                }
+                .padding(.vertical, 10)
+            } else {
+                ForEach(family.menuBarMetrics) { metric in
+                    MonitorMenuBarSwitchRow(metric: metric, title: "\(page.monitorInMenuBar): \(metric.title(l10n.s))")
+                }
+                switch family {
+                case .memory:
+                    ZenithRow(l10n.s.monitorMemoryPressureDot, isOn: Binding(
+                        get: { Defaults.sanitizedMenuBarMemoryStyle(memoryStyle) != "percent" },
+                        set: { memoryStyle = $0 ? "both" : "percent" }))
+                    ZenithRow(l10n.s.monitorMemoryMetricLabel, selection: $memoryMetric) {
+                        Text(l10n.s.memoryMetricUsed).tag("used")
+                        Text(l10n.s.memoryMetricApp).tag("app")
+                    }
+                case .network:
+                    ZenithRow(l10n.s.monitorNetworkUploadFirst, isOn: $uploadFirst)
+                    ZenithRow(FeatureStrings.monitorLayout(l10n.language).networkSpeedUnit, selection: $networkSpeedUnit) {
+                        Text(verbatim: "MB/s").tag(NetworkSpeedUnit.bytes)
+                        Text(verbatim: "Mbps").tag(NetworkSpeedUnit.bits)
+                    }
+                case .disk:
+                    ZenithRow(l10n.s.diskMenuBarStyleLabel, selection: $diskStyle) {
+                        Text(l10n.s.diskMenuBarUsedPercentage).tag(DiskMenuBarStyle.percent)
+                        Text(l10n.s.diskMenuBarAvailableSpace).tag(DiskMenuBarStyle.free)
+                        Text(l10n.s.diskMenuBarUsedSpace).tag(DiskMenuBarStyle.used)
+                    }
+                default:
+                    EmptyView()
+                }
+            }
+        }
+    }
+
+    // MARK: Menu bar
 
     private var appearanceStrings: MenuBarAppearanceStrings {
         FeatureStrings.menuBarAppearance(l10n.language)
@@ -88,195 +151,180 @@ struct MonitorSettings: View {
         MenuBarMetricAppearance(rawValue: Defaults.sanitizedMenuBarMetricAppearance(metricAppearance)) ?? .values
     }
 
-    /// The readings that can sit in the menu bar, as tiles in the order they
-    /// appear there.
-    private var menuBarCard: some View {
-        SettingsCard {
-            Text(l10n.s.monitorMenuBarCaption)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            MenuBarMetricTiles()
-            Text(FeatureStrings.notchEditor(l10n.language).reorderHint)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
+    private var appearanceBinding: Binding<MenuBarMetricAppearance> {
+        Binding(get: { appearance }, set: { metricAppearance = $0.rawValue })
     }
 
-    private var menuBarStyleCard: some View {
-        SettingsCard(title: appearanceStrings.label) {
-            HStack(spacing: 10) {
-                MenuBarStyleChoice(appearance: .values, title: appearanceStrings.values,
-                                   selected: appearance == .values) { metricAppearance = "values" }
-                MenuBarStyleChoice(appearance: .bars, title: appearanceStrings.bars,
-                                   selected: appearance == .bars) { metricAppearance = "bars" }
-            }
-            Text(appearanceStrings.caption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            if appearance == .bars {
-                MenuBarUsageBarSettings(strings: appearanceStrings)
-            } else {
-                SettingsRow(symbol: "thermometer.medium", title: l10n.s.monitorCombineTemperatures,
-                            caption: l10n.s.monitorCombineTemperaturesCaption) {
-                    Toggle(l10n.s.monitorCombineTemperatures, isOn: $combineTemperatures).labelsHidden()
+    /// How the readings look in the menu bar: values or bars as pictures,
+    /// then spacing and the icon; the order and the bars' colours fold away.
+    private var menuBarSection: some View {
+        ZenithSection(page.monitorMenuBar, footer: l10n.s.monitorMenuBarCaption) {
+            VStack(alignment: .leading, spacing: 8) {
+                ZenithRow(appearanceStrings.label, info: appearanceStrings.caption) { EmptyView() }
+                ZenithVisualPicker(appearanceStrings.label, selection: appearanceBinding, options: [
+                    ZenithPickerOption(.values, appearanceStrings.values, detail: page.monitorValuesDetail),
+                    ZenithPickerOption(.bars, appearanceStrings.bars, detail: page.monitorBarsDetail),
+                ], minimumTileWidth: 150, tileHeight: 56) { value, _ in
+                    MenuBarStyleArt(appearance: value)
                 }
             }
-            Divider()
-            SettingsRow(symbol: "arrow.left.and.right", title: l10n.s.menuBarSpacingLabel) {
-                Picker(l10n.s.menuBarSpacingLabel, selection: $metricSpacing) {
-                    Text(l10n.s.menuBarSpacingStandard).tag("standard")
-                    Text(l10n.s.menuBarSpacingCompact).tag("compact")
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .fixedSize()
+            .padding(.bottom, 12)
+            if appearance.allowsCombinedTemperatures {
+                ZenithRow(l10n.s.monitorCombineTemperatures, isOn: $combineTemperatures,
+                          info: l10n.s.monitorCombineTemperaturesCaption)
             }
-            SettingsRow(symbol: "eye.slash", title: l10n.s.menuBarHideIconToggle,
-                        caption: l10n.s.menuBarHideIconCaption) {
-                Toggle(l10n.s.menuBarHideIconToggle, isOn: $hideIconWithMetrics).labelsHidden()
+            ZenithRow(l10n.s.menuBarSpacingLabel, selection: $metricSpacing) {
+                Text(l10n.s.menuBarSpacingStandard).tag("standard")
+                Text(l10n.s.menuBarSpacingCompact).tag("compact")
             }
-            SettingsRow(symbol: "rectangle.split.3x1", title: l10n.s.monitorSeparateMenuBarMetrics,
-                        caption: appearance.allowsCombinedTemperatures
-                            ? l10n.s.monitorSeparateMenuBarMetricsCaption : nil) {
-                Toggle(l10n.s.monitorSeparateMenuBarMetrics, isOn: $separateMetrics).labelsHidden()
-            }
-        }
-    }
-
-    private var readingsCard: some View {
-        SettingsCard {
-            SettingsRow(symbol: "timer", title: l10n.s.monitorIntervalLabel) {
-                HStack(spacing: 6) {
-                    intervalChip(1, title: l10n.s.monitorInterval1)
-                    intervalChip(2, title: l10n.s.monitorInterval2)
-                    intervalChip(5, title: l10n.s.monitorInterval5)
-                }
-            }
-            SettingsRow(symbol: "thermometer.medium", title: l10n.s.temperatures) {
-                Picker(l10n.s.temperatures, selection: $temperatureUnit) {
-                    Text("°C").tag(TemperatureUnit.celsius.rawValue)
-                    Text("°F").tag(TemperatureUnit.fahrenheit.rawValue)
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .fixedSize()
-            }
-            if AppFeature.monitorNetwork.isAvailable {
-                let title = FeatureStrings.monitorLayout(l10n.language).networkSpeedUnit
-                SettingsRow(symbol: "network", title: title) {
-                    Picker(title, selection: $networkSpeedUnit) {
-                        Text("MB/s").tag(NetworkSpeedUnit.bytes)
-                        Text("Mbps").tag(NetworkSpeedUnit.bits)
+            ZenithRow(l10n.s.menuBarHideIconToggle, isOn: $hideIconWithMetrics, info: l10n.s.menuBarHideIconCaption)
+            ZenithMoreOptions(id: "monitor.menuBar") {
+                ZenithRow(l10n.s.monitorSeparateMenuBarMetrics, isOn: $separateMetrics,
+                          info: appearance.allowsCombinedTemperatures
+                            ? l10n.s.monitorSeparateMenuBarMetricsCaption : nil)
+                VStack(alignment: .leading, spacing: 8) {
+                    ZenithRow(page.monitorOrder, info: FeatureStrings.notchEditor(l10n.language).reorderHint) {
+                        EmptyView()
                     }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    .fixedSize()
+                    MenuBarMetricTiles()
                 }
-            }
-            if AppFeature.monitorMemory.isAvailable {
-                SettingsRow(symbol: "memorychip", title: l10n.s.monitorMemoryMetricLabel) {
-                    Picker(l10n.s.monitorMemoryMetricLabel, selection: $memoryMetric) {
-                        Text(l10n.s.memoryMetricUsed).tag("used")
-                        Text(l10n.s.memoryMetricApp).tag("app")
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    .fixedSize()
+                .padding(.bottom, 12)
+                if appearance == .bars {
+                    MenuBarUsageBarSettings(strings: appearanceStrings).padding(.vertical, 10)
                 }
             }
         }
     }
 
-    private func intervalChip(_ seconds: Int, title: String) -> some View {
-        let selected = interval == seconds
-        return Button {
-            interval = seconds
-        } label: {
-            Text(title)
-                .font(.system(size: 11, weight: .medium))
-                .lineLimit(1)
-                .foregroundStyle(selected ? Color.accentColor : .primary)
-                .padding(.horizontal, 10)
-                .frame(height: 26)
-                .background(selected ? Color.accentColor.opacity(0.12) : Color.secondary.opacity(0.06),
-                            in: RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous)
-                        .strokeBorder(selected ? Color.accentColor.opacity(0.7) : .clear, lineWidth: 1)
-                }
-                .contentShape(RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-    }
+    // MARK: Panel and readings
 
-    private var alertsCard: some View {
-        SettingsCard(title: FeatureStrings.monitorAlerts(l10n.language).section) {
-            MonitorAlertsControls(compact: false)
+    private var panelSection: some View {
+        ZenithSection(page.monitorPanel, footer: l10n.s.monitorPanelConfigHint) {
+            MonitorPanelConfig(tiles: true).padding(.vertical, 12)
+            ZenithRow(GraphScaleStrings.localized(l10n.language).title, isOn: $graphScale)
         }
     }
 
-    private var panelCard: some View {
-        SettingsCard {
-            MonitorPanelConfig(tiles: true)
-            Text(l10n.s.monitorPanelConfigHint)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            SettingsRow(symbol: "arrow.up.to.line", title: GraphScaleStrings.localized(l10n.language).title) {
-                Toggle(GraphScaleStrings.localized(l10n.language).title, isOn: $graphScale).labelsHidden()
+    private var readingsSection: some View {
+        ZenithSection(page.monitorReadings) {
+            ZenithRow(l10n.s.monitorIntervalLabel, selection: $interval) {
+                Text(l10n.s.monitorInterval1).tag(1)
+                Text(l10n.s.monitorInterval2).tag(2)
+                Text(l10n.s.monitorInterval5).tag(5)
             }
-        }
-    }
-
-    private var fanControlCard: some View {
-        let fanStrings = FeatureStrings.fanControl(l10n.language)
-        return SettingsCard {
-            SettingsRow(symbol: "fanblades.fill", title: fanStrings.title, badge: l10n.s.betaBadge,
-                        caption: fanStrings.settingsCaption) {
-                Toggle(fanStrings.showInPanel, isOn: $showFanControl).labelsHidden()
+            ZenithRow(l10n.s.temperatures, selection: $temperatureUnit) {
+                Text(verbatim: "°C").tag(TemperatureUnit.celsius.rawValue)
+                Text(verbatim: "°F").tag(TemperatureUnit.fahrenheit.rawValue)
             }
-            Text(l10n.s.betaFeatureWarning)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.leading, settingsRowTextInset)
         }
     }
 }
 
-/// Values or bars, each drawn the way the menu bar would draw a CPU reading.
-private struct MenuBarStyleChoice: View {
-    let appearance: MenuBarMetricAppearance
+/// The metric families System Monitor's tiles stand for, one hub feature
+/// each, in the panel's order.
+enum MonitorMetricFamily: CaseIterable, Identifiable {
+    case cpu, gpu, memory, network, disk, power, devices
+
+    var id: Self { self }
+
+    init?(feature: AppFeature) {
+        guard let family = Self.allCases.first(where: { $0.feature == feature }) else { return nil }
+        self = family
+    }
+
+    var feature: AppFeature {
+        switch self {
+        case .cpu: return .monitorCPU
+        case .gpu: return .monitorGPU
+        case .memory: return .monitorMemory
+        case .network: return .monitorNetwork
+        case .disk: return .monitorDisk
+        case .power: return .monitorPower
+        case .devices: return .connectedDevices
+        }
+    }
+
+    var symbol: String { feature.symbolName }
+
+    /// The menu bar readings of this family this Mac can show.
+    var menuBarMetrics: [MenuBarMetric] {
+        MenuBarMetric.allCases.filter { $0.feature == feature && $0.isAvailableOnCurrentHardware }
+    }
+}
+
+/// One metric: its picture on the stage (click it for the metric's options)
+/// and its switch.
+private struct MonitorMetricTile: View {
+    let family: MonitorMetricFamily
     let title: String
     let selected: Bool
-    let action: () -> Void
+    let select: () -> Void
+    @ObservedObject private var features = FeatureRuntime.shared
+    @Environment(\.zenithTint) private var tint
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                mockup
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 36)
-                    .background(Color.black.opacity(0.82), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
+        let on = family.feature.isAvailable
+        VStack(spacing: 8) {
+            Button(action: select) {
+                ZStack {
+                    ZenithStageGradient(tint: tint, dark: colorScheme == .dark)
+                    Image(systemName: family.symbol)
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(.white.opacity(on ? 0.95 : 0.45))
+                        .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
+                }
+                .frame(height: 56)
+                .frame(maxWidth: .infinity)
+                .clipShape(shape)
+                .overlay(shape.strokeBorder(selected ? Color.accentColor
+                                                : Color.primary.opacity(contrast == .increased ? 0.3 : 0.08),
+                                            lineWidth: selected ? 2.5 : 1))
+                .contentShape(shape)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(title)
+            .accessibilityAddTraits(selected ? .isSelected : [])
+            HStack(spacing: 6) {
                 Text(title)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(selected ? Color.accentColor : .primary)
+                    .font(.system(size: 11.5, weight: selected ? .semibold : .regular))
+                    .foregroundStyle(selected ? Color.accentColor : .secondary)
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                ZenithRowSwitch(title: title, isOn: Binding(
+                    get: { family.feature.isAvailable },
+                    set: { FeatureRuntime.shared.setAvailable([family.feature], $0) }))
+                    .scaleEffect(0.85)
             }
-            .padding(8)
-            .frame(maxWidth: .infinity)
-            .background(selected ? Color.accentColor.opacity(0.10) : Color.secondary.opacity(0.05),
-                        in: RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous)
-                    .strokeBorder(selected ? Color.accentColor.opacity(0.55) : .clear, lineWidth: 1)
-            }
-            .contentShape(RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+/// A switch for one menu bar reading, backed by its own key.
+private struct MonitorMenuBarSwitchRow: View {
+    let title: String
+    @AppStorage private var shown: Bool
+
+    init(metric: MenuBarMetric, title: String) {
+        self.title = title
+        _shown = AppStorage(wrappedValue: false, metric.defaultsKey)
+    }
+
+    var body: some View {
+        ZenithRow(title, isOn: $shown)
+    }
+}
+
+/// Values or bars, drawn the way the menu bar would draw a CPU reading.
+private struct MenuBarStyleArt: View {
+    let appearance: MenuBarMetricAppearance
+
+    var body: some View {
+        mockup
+            .frame(width: 110, height: 34)
+            .background(Color.black.opacity(0.82), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     // The same proportions the real blocks use (MenuBarRenderer), reduced to

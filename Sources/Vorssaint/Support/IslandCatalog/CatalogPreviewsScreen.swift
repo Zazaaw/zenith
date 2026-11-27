@@ -13,11 +13,11 @@ extension CatalogShots {
     static var previewsScreen: [CatalogShot] {
         let pages: [(String, FeatureSettingsDestination, [String: Any])] = [
             ("general", FeatureSettingsDestination(.general), [:]),
-            ("menu-bar", FeatureSettingsDestination(.general, sectionAnchor: .panelConfiguration), [:]),
+            ("menu-bar", FeatureSettingsDestination(.menuBar), [:]),
             ("mixer", FeatureSettingsDestination(.general, sectionAnchor: .mixer), [:]),
             ("features", FeatureSettingsDestination(.features), [:]),
-            ("energy-keep-awake", FeatureSettingsDestination(.energy, sectionAnchor: .keepAwake), [:]),
-            ("energy-displays", FeatureSettingsDestination(.energy, sectionAnchor: .brightness), [:]),
+            ("sleep", FeatureSettingsDestination(.sleep), [:]),
+            ("brightness", FeatureSettingsDestination(.brightness), [:]),
             ("monitor", FeatureSettingsDestination(.monitor),
              [DefaultsKey.menuBarCPU: true, DefaultsKey.menuBarMemory: true, DefaultsKey.menuBarNetwork: true]),
             ("switcher", FeatureSettingsDestination(.switcher), [:]),

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Vorssaint
+// Copyright (C) 2026 Satu Visual
 
 import SwiftUI
 
@@ -33,16 +34,35 @@ struct UninstallerView: View {
     @State private var showingAppPicker = false
     @State private var pendingHomebrewRemoval: AppUninstaller.HomebrewRemovalConfirmation?
 
+    private let page = ZenithStrings.systemApps(.enUS)
+
+    // Zenith fork: built with the Settings kit: the hero, the preview, the
+    // two options as rows, then the uninstaller itself in a grouped card of
+    // its own height, where its steps (drop, review, remove) follow.
     var body: some View {
-        VStack(spacing: 0) {
-            UninstallerPreviewCard() // Zenith fork
-                .zenithToolsPreviewWidth()
-                .padding(.horizontal, 24)
-                .padding(.top, 14)
-            content
-            UninstallerHomebrewLastLog(compact: false)
+        ScrollView {
+            ZenithPageColumn {
+                ZenithHero(title: l10n.s.uninstallerName, subtitle: page.uninstallerSubtitle,
+                           chips: chips, animation: .uninstaller)
+                UninstallerPreviewCard() // Zenith fork
+                ZenithSection(page.uninstallerOptions) {
+                    ZenithRow(l10n.s.uninstallerCommandBarToggle, isOn: $commandBarEnabled,
+                              info: l10n.s.uninstallerCommandBarCaption)
+                    ZenithRow(l10n.s.uninstallerWatchTrashToggle, isOn: $watchesTrash,
+                              info: l10n.s.uninstallerWatchTrashCaption)
+                        .onChange(of: watchesTrash) { _, _ in TrashAppWatcher.shared.syncWithPreferences() }
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    ZenithSectionTitle(page.uninstallerWorkspace)
+                    VStack(spacing: 0) {
+                        content
+                        UninstallerHomebrewLastLog(compact: false)
+                    }
+                    .frame(height: 500)
+                    .zenithGroupBackground()
+                }
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { uninstaller.clearRefusal() }
         .onDisappear { uninstaller.clearRefusal() }
         .alert(l10n.s.homebrewConfirmUninstallTitle,
@@ -57,6 +77,14 @@ struct UninstallerView: View {
         } message: { confirmation in
             Text(String(format: l10n.s.homebrewConfirmUninstallBodyFormat, confirmation.package.displayName))
         }
+    }
+
+    private var chips: [ZenithChip] {
+        var chips: [ZenithChip] = []
+        if let target = uninstaller.target { chips.append(ZenithChip(target.name)) }
+        if commandBarEnabled { chips.append(ZenithChip(FeatureStrings.commandBar(l10n.language).pageTitle)) }
+        if chips.isEmpty { chips.append(ZenithChip(page.uninstallerDrop)) }
+        return chips
     }
 
     @ViewBuilder
@@ -76,27 +104,6 @@ struct UninstallerView: View {
     }
 
     // MARK: Empty / drop
-
-    private var commandBarToggle: some View {
-        Form {
-            Section {
-                Toggle(l10n.s.uninstallerCommandBarToggle, isOn: $commandBarEnabled)
-                Text(l10n.s.uninstallerCommandBarCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Section {
-                Toggle(l10n.s.uninstallerWatchTrashToggle, isOn: $watchesTrash)
-                    .onChange(of: watchesTrash) { _, _ in TrashAppWatcher.shared.syncWithPreferences() }
-                Text(l10n.s.uninstallerWatchTrashCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .formStyle(.grouped)
-        .fixedSize(horizontal: false, vertical: true)
-        .frame(width: 360)
-    }
 
     private var emptyState: some View {
         VStack(spacing: 20) {
@@ -133,8 +140,6 @@ struct UninstallerView: View {
             Text(l10n.s.uninstallerEmptyNote)
                 .font(.caption)
                 .foregroundStyle(.tertiary)
-
-            commandBarToggle
 
             if !permissions.fullDiskAccess {
                 FullDiskAccessNote().frame(width: 360)
@@ -194,6 +199,7 @@ struct UninstallerView: View {
                 }
             }
             .listStyle(.inset)
+            .scrollContentBackground(.hidden) // Zenith fork: the card draws behind it
             Divider()
             homebrewStatus
             footer

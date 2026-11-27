@@ -94,13 +94,8 @@ struct SettingsView: View {
             ?? items.first?.id
     }
 
-    /// Zenith fork: the Orbit icon the open page's header draws: the page's
-    /// own, or the tool's when General shows one of its tools on its own.
+    /// Zenith fork: the Orbit icon the open page's header draws.
     private var pageIcon: SettingsPageIcon {
-        if router.page == .general, detailShowsGeneralTool, let selected = selectedSidebarItem,
-           let item = sidebarItems.first(where: { $0.id == selected }) {
-            return SettingsPageIcon(id: item.id, symbol: item.icon)
-        }
         return SettingsPageIcon(id: .page(router.page),
                                 symbol: SettingsSidebarIcons.fallbackSymbol(page: router.page) ?? "gearshape")
     }
@@ -119,12 +114,6 @@ struct SettingsView: View {
         case .general:
             // General stays visible when one of its tools is uninstalled.
             router.request(FeatureSettingsDestination(.general), replacingVisit: true)
-        case .energy:
-            // Energy has no overview row. A history visit to an uninstalled
-            // tool should show another available tool, not an empty detail.
-            if let available = sidebarItems.first(where: { $0.destination.page == .energy }) {
-                router.request(available.destination, replacingVisit: true)
-            }
         default:
             break
         }
@@ -137,7 +126,7 @@ struct SettingsView: View {
     /// Zenith fork: the title Settings draws above a page, nil for the pages
     /// that open with their own `SettingsPageHeader` or hero.
     private var zenithPageTitle: String? {
-        let ownHeader: Set<SettingsPage> = [.features, .notch, .notchMascot, .energy, .monitor,
+        let ownHeader: Set<SettingsPage> = [.features, .notch, .notchMascot, .monitor,
                                             .switcher, .dock, .homebrew, .releaseNotes, .about, .support,
                                             .portManager, .workspaces, .lockScreen, .remote,
                                             .faceUnlock, .batteries, .pocket,
@@ -154,36 +143,30 @@ struct SettingsView: View {
         // Zenith fork: the Everyday pages open with their own hero.
         if [.shelf, .clipboard, .finderTools, .media, .urlCleaner, .textSnippets].contains(router.page) { return nil }
         if router.page.isNotchModulePage { return nil } // Zenith fork: the island's sections open with their hero
-        if router.page == .general, !(detailShowsGeneralTool) { return nil }
+        // Zenith fork: the System and Apps pages open with their own hero.
+        if [.sleep, .brightness, .fanControl, .menuBar, .commandBar, .cleaner, .uninstaller, .homebrew, .appUpdates,
+            .killProcess, .portManager].contains(router.page) { return nil }
+        if router.page == .general { return nil }
         let selected = selectedSidebarItem
         return sidebarItems.first(where: { $0.id == selected })?.title
-    }
-
-    private var detailShowsGeneralTool: Bool {
-        guard let anchor = router.destination.sectionAnchor else { return false }
-        return anchor == .panelConfiguration
-            && sidebarItems.contains(where: { $0.destination == router.destination })
     }
 
     @ViewBuilder
     private var detail: some View {
         switch router.page {
-        case .general:
-            if let anchor = router.destination.sectionAnchor,
-               anchor == .panelConfiguration,
-               sidebarItems.contains(where: { $0.destination == router.destination }) {
-                GeneralToolSettings(anchor: anchor)
-            } else {
-                GeneralSettings()
-            }
+        case .general: GeneralSettings() // Zenith fork: its tools have pages of their own
         case .features: FeatureHubSettings()
         case .textSnippets: TextSnippetsSettings()
         case .notch: NotchSettings()
         case .notchMascot: NotchMascotSettings()
         case .radialMenu: RadialMenuSettings()
         case .commandBar: CommandBarSettings()
-        case .energy: EnergySettings(focus: router.destination.sectionAnchor)
         case .monitor: MonitorSettings()
+        // Zenith fork: the System group's pages split out of Energy, Monitor and General.
+        case .sleep: SleepSettingsPage()
+        case .brightness: BrightnessSettingsPage()
+        case .fanControl: FanControlSettingsPage()
+        case .menuBar: MenuBarSettingsPage()
         case .scrolling: ScrollingSettingsPage() // Zenith fork: the Mouse page, split
         case .pointer: PointerSettingsPage()
         case .mouseButtons: MouseButtonsSettingsPage()

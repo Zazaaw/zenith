@@ -1,51 +1,48 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Vorssaint
+// Copyright (C) 2026 Satu Visual
 
 import AppKit
 import SwiftUI
 
-/// Tools that share General's destination have their own detail content.
-/// Zenith fork: the sound tools moved to pages of their own (SoundSettingsPages).
-struct GeneralToolSettings: View {
-    let anchor: SettingsSectionAnchor
+/// Zenith fork: Settings → Menu Bar, built with the Settings kit. What used
+/// to be General's Menu bar tool: the panel behind Zenith's icon (its tabs
+/// and their order), the icon itself, and the menu bar hider. The menu bar
+/// metrics stay on System Monitor, whose readings they are.
+struct MenuBarSettingsPage: View {
     @ObservedObject private var l10n = L10n.shared
+    @AppStorage(DefaultsKey.menuBarIconSymbol) private var symbolName = ""
+    @AppStorage(DefaultsKey.menuBarHiderEnabled) private var hiderEnabled = false
 
+    private let page = ZenithStrings.systemApps(.enUS)
     private var text: GeneralSettingsStrings { FeatureStrings.generalSettings(l10n.language) }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                // Zenith fork: the preview card, on the tool opened.
-                ZenithScreenPreviewCard(group: ZenithScreenPreviewGroup(general: anchor),
-                                        current: ZenithScreenScene(anchor: anchor))
-                switch anchor {
-                case .panelConfiguration:
-                    SettingsCard(title: l10n.s.menuBarSection) {
-                        Text(text.panelIntro)
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        PanelLayoutEditor()
-                        Divider()
-                        MenuBarIconSymbolRow()
-                        Divider()
-                        SettingsRow(symbol: nil, title: text.iconMissingTitle,
-                                    caption: text.iconMissingCaption) {
-                            Button(l10n.s.showMenuBarIcon) {
-                                appDelegate()?.reshowStatusItem()
-                            }
-                        }
-                    }
-                    .settingsSectionAnchor(.panelConfiguration, cornerRadius: ZenithRadius.panel)
-                    MenuBarHiderSettingsSection() // Zenith fork
-                default:
-                    EmptyView()
+            ZenithPageColumn {
+                ZenithHero(title: page.menuBarTitle, subtitle: page.menuBarSubtitle, chips: chips,
+                           animation: .menuBar)
+                ZenithScreenPreviewCard(group: .menuBar)
+                ZenithSection(page.menuBarPanel, anchor: .panelConfiguration) {
+                    ZenithRow(l10n.s.menuBarSection, info: text.panelIntro) { EmptyView() }
+                    PanelLayoutEditor().padding(.vertical, 12)
                 }
+                ZenithSection(page.menuBarIcon) {
+                    MenuBarIconSymbolRow()
+                    ZenithRow(text.iconMissingTitle, info: text.iconMissingCaption, button: l10n.s.showMenuBarIcon) {
+                        appDelegate()?.reshowStatusItem()
+                    }
+                }
+                MenuBarHiderSettingsSection()
             }
-            .frame(maxWidth: 760)
-            .frame(maxWidth: .infinity)
-            .padding(22)
         }
+    }
+
+    private var chips: [ZenithChip] {
+        let name = Defaults.sanitizedMenuBarIconSymbol(symbolName)
+        var chips = [ZenithChip(name.isEmpty ? page.menuBarZenithIcon : name)]
+        if hiderEnabled { chips.append(ZenithChip(page.menuBarHiderOn, dot: ZenithStatus.success)) }
+        return chips
     }
 }
 
@@ -69,9 +66,7 @@ private struct MenuBarIconSymbolRow: View {
         let name = Defaults.sanitizedMenuBarIconSymbol(savedName)
         let otherName = name.isEmpty || Self.symbols.contains(name) ? "" : name
         VStack(alignment: .leading, spacing: 10) {
-            SettingsRow(symbol: nil, title: text.menuBarIconTitle, caption: text.menuBarIconCaption) {
-                EmptyView()
-            }
+            ZenithRow(text.menuBarIconTitle, info: text.menuBarIconCaption) { EmptyView() }
             // Eager, so the cell the name popover hangs from is never
             // released while the page scrolls.
             FlowLayoutLite(spacing: 6) {
@@ -103,8 +98,8 @@ private struct MenuBarIconSymbolRow: View {
                     MenuBarIconNameField()
                 }
             }
-            .padding(.leading, settingsRowTextInset)
         }
+        .padding(.bottom, 12)
     }
 
     /// The bundled mark even while a symbol replaces it in the menu bar.

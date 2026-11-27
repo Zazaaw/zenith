@@ -191,7 +191,7 @@ final class MenuBarHiderService: ObservableObject {
         case .trigger(let trigger):
             self?.perform(trigger)
         case .settings:
-            SettingsRouter.shared.request(FeatureSettingsDestination(.general, sectionAnchor: .panelConfiguration))
+            SettingsRouter.shared.request(FeatureSettingsDestination(.menuBar, sectionAnchor: .zenithMenuBarHider))
             appDelegate()?.openSettingsWindow()
         }
     }
