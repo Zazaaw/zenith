@@ -895,7 +895,7 @@ final class CommandBarService: ObservableObject {
                 show(promptingFor: key)
                 return
             }
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         // A script marked to run directly does its work at once, with no
@@ -2294,7 +2294,7 @@ final class CommandBarService: ObservableObject {
     /// window on nothing, the same answer a saved folder already gives.
     func revealInFinder(_ entry: CommandBarEntry) {
         guard let path = entry.revealPath else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         guard FileManager.default.fileExists(atPath: path) else {
@@ -2340,7 +2340,7 @@ final class CommandBarService: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
             guard let running = NSRunningApplication(processIdentifier: pid),
                   !running.isTerminated, running.terminate() else {
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
         }
@@ -2367,7 +2367,7 @@ final class CommandBarService: ObservableObject {
                   let running = NSRunningApplication(processIdentifier: pid),
                   !running.isTerminated, running.terminate() else {
                 self?.cancelPendingRestart()
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
         }
@@ -2387,7 +2387,7 @@ final class CommandBarService: ObservableObject {
             NSWorkspace.shared.openApplication(at: url,
                                                configuration: NSWorkspace.OpenConfiguration()) {
                 _, error in
-                if error != nil { DispatchQueue.main.async { NSSound.beep() } }
+                if error != nil { DispatchQueue.main.async { ZenithQuiet.beep() } }
             }
         }
     }
@@ -2415,7 +2415,7 @@ final class CommandBarService: ObservableObject {
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         guard let running = NSRunningApplication(processIdentifier: app.processIdentifier),
               !running.isTerminated, running.forceTerminate() else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
     }
@@ -2642,7 +2642,7 @@ final class CommandBarService: ObservableObject {
             // A bare letter would take that letter away from every app
             // on the Mac, so the bar waits for a real combination.
             guard CommandBarRowShortcuts.isUsable(shortcut) else {
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
             guard let entry = entry(withID: entryID) else {
@@ -2723,7 +2723,7 @@ final class CommandBarService: ObservableObject {
         case .argument(let id):
             guard let entry = entry(withID: id), let range = entry.numericRange,
                   let value = CommandBarSearch.argumentValue(query, in: range) else {
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
             finish(entry, value: value)
@@ -2930,7 +2930,7 @@ final class CommandBarService: ObservableObject {
         hide()
         if NSWorkspace.shared.frontmostApplication?.processIdentifier
             == ProcessInfo.processInfo.processIdentifier {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         // Without Accessibility the synthetic paste is dropped by the system.
@@ -2938,7 +2938,7 @@ final class CommandBarService: ObservableObject {
         // failing would throw away what the person had copied, for nothing.
         guard AXIsProcessTrusted() else {
             if promptedForAccessibility {
-                NSSound.beep()
+                ZenithQuiet.beep()
             } else {
                 promptedForAccessibility = true
                 Permissions.shared.requestAccessibility()
@@ -2947,7 +2947,7 @@ final class CommandBarService: ObservableObject {
         }
         ClipboardHistoryService.shared.copy(entry) { copied in
             guard copied else {
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
@@ -2964,7 +2964,7 @@ final class CommandBarService: ObservableObject {
         let held = CGEventSource.flagsState(.combinedSessionState)
             .intersection([.maskCommand, .maskAlternate, .maskShift, .maskControl])
         if attempt >= 100 {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         guard held.isEmpty else {
@@ -2975,7 +2975,7 @@ final class CommandBarService: ObservableObject {
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) {
             guard !IsSecureEventInputEnabled() else {
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
             guard let source = CGEventSource(stateID: .hidSystemState),

@@ -236,6 +236,7 @@ final class SkyService: ObservableObject {
     }
 
     func playSound() {
+        guard !ZenithQuiet.isOn else { return } // Zenith fork: tests stay silent
         sound?.stop()
         let chosen = Self.customSoundURL.flatMap { NSSound(contentsOf: $0, byReference: false) }
         guard let sound = chosen ?? NSSound(named: NSSound.Name(Self.systemSoundName)) else { return }

@@ -356,7 +356,7 @@ final class RecentCaptureService: ObservableObject {
         case .recording:
             guard let url = entry.recordingURL, RecentCaptureStore.isRegularFile(url) else {
                 remove(entry)
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
             appDelegate()?.closePopover()
@@ -371,7 +371,7 @@ final class RecentCaptureService: ObservableObject {
             guard let self, let capture = self.loadScreenshot(entry) else {
                 DispatchQueue.main.async { [weak self] in
                     self?.remove(entry)
-                    NSSound.beep()
+                    ZenithQuiet.beep()
                 }
                 return
             }

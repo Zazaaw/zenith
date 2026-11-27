@@ -27,7 +27,7 @@ enum QRExport {
                 QRService.shared.record(payload)
                 QuickToolHUD.show(icon: "qrcode", message: ZenithStrings.qr(L10n.shared.language).copied)
             } else {
-                NSSound.beep()
+                ZenithQuiet.beep()
             }
             completion(ok)
         })
@@ -38,7 +38,7 @@ enum QRExport {
         let correction = QRSettings.correction()
         let logo = QRSettings.logo()
         guard let matrix = QRService.shared.matrix(payload, correction: correction) else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         let panel = NSSavePanel()
@@ -56,7 +56,7 @@ enum QRExport {
             case .svg: data = QRRender.svg(matrix, logo: logo).data(using: .utf8)
             }
             guard let data, (try? data.write(to: url, options: .atomic)) != nil else {
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
             QRService.shared.record(payload)
@@ -66,7 +66,7 @@ enum QRExport {
     /// The share menu with the code as a PNG file (AirDrop, Messages, Mail…).
     static func share(_ payload: String, from view: NSView) {
         guard let data = pngData(payload) else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("Zenith QR", isDirectory: true)
@@ -75,7 +75,7 @@ enum QRExport {
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
             try data.write(to: url, options: .atomic)
         } catch {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         QRService.shared.record(payload)

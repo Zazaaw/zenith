@@ -260,6 +260,7 @@ if (( TEST )); then
     TEST_OBJECT_DIR="build/objects/tests"
     mkdir -p "$TEST_OBJECT_DIR"
     TEST_SOURCES=(
+        Sources/Vorssaint/Support/ZenithQuiet.swift # Zenith fork: tests make no sound
         Sources/Vorssaint/Services/Media/MediaSupport.swift
         Sources/Vorssaint/Core/QuitProtectionSupport.swift
         Sources/Vorssaint/Core/QuitProtectionStrings.swift
@@ -752,6 +753,14 @@ if (( TEST )); then
         # Zenith fork: Meetings' link parser, schedule and call tracker, and its words.
         Sources/Vorssaint/Services/Meetings/MeetingsSupport.swift
         Sources/Vorssaint/Core/ZenithMeetingsStrings.swift
+        # Zenith fork: Orbit wave 2, Remove Background, the Emoji Picker and the Calculator.
+        Sources/Vorssaint/Services/RemoveBackground/RemoveBackgroundSupport.swift
+        Sources/Vorssaint/Services/EmojiPicker/EmojiPickerSupport.swift
+        Sources/Vorssaint/Services/Calculator/CalculatorEngine.swift
+        Sources/Vorssaint/Services/Calculator/CalculatorSupport.swift
+        Sources/Vorssaint/Core/ZenithCalculatorStrings.swift
+        Sources/Vorssaint/Core/ZenithEmojiPickerStrings.swift
+        Sources/Vorssaint/Core/ZenithRemoveBackgroundStrings.swift
         # Zenith fork: Orbit, the Features page's catalog, its words and its icons.
         Sources/Vorssaint/UI/Settings/OrbitCatalog.swift
         Sources/Vorssaint/Core/ZenithOrbitStrings.swift
@@ -945,6 +954,9 @@ cp Resources/FaceUnlock/NOTICE.txt "$STAGE/Contents/Resources/FaceUnlock/NOTICE.
 # Zenith fork: Mechakey's sound packs (Mechvibes, MIT), cut down and re-encoded
 # by Tools/zenith-mechakey-packs.py, and their notice.
 ditto Resources/Mechakey "$STAGE/Contents/Resources/Mechakey"
+# Zenith fork: the Emoji Picker's list, generated from Unicode's data by
+# Tools/zenith-emoji-data.py, and its notice (Unicode License v3).
+ditto Resources/Emoji "$STAGE/Contents/Resources/Emoji"
 xattr -c -r "$STAGE" 2>/dev/null || true
 
 # Signing, in order of preference:

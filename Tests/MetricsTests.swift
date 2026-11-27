@@ -8,10 +8,14 @@ import Foundation
 @main
 struct MetricsTests {
     static func main() {
+        // Zenith fork: the tests run real code on the owner's Mac; nothing beeps,
+        // chimes or listens to the keyboard while they do.
+        ZenithQuiet.isOn = true
         let suite = TestSuite()
         let groups: [(String, () -> Void)] = [
             ("harness", {
                 TestHarnessTests.run(suite)
+                ZenithQuietTests.run(suite) // Zenith fork: tests make no sound
                 PreferenceNamespaceTests.run(suite)
             }),
             ("metrics", {
@@ -320,6 +324,9 @@ struct MetricsTests {
             ("meetings", { MeetingsTests.run(suite) }), // Zenith fork: call links, the next meeting, notice timing
             ("orbit-catalog", { OrbitCatalogTests.run(suite) }), // Zenith fork: the Features page's catalog, routing and search
             ("appearance", { AppearanceSettingsTests.run(suite) }), // Zenith fork: Settings → Appearance, its glass and battery saver
+            ("remove-background", { RemoveBackgroundTests.run(suite) }), // Zenith fork: naming, sources, crop bounds
+            ("emoji-picker", { EmojiPickerTests.run(suite) }), // Zenith fork: Unicode's list, search, tones, recents
+            ("calculator", { CalculatorTests.run(suite) }), // Zenith fork: the parser, evaluator, format and history
         ]
         var selected = Set<String>()
         var listOnly = false

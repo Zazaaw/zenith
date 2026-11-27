@@ -355,7 +355,7 @@ final class RadialMenuService: ObservableObject {
         let defaults = UserDefaults.standard
         let items = availableItems(profile.items)
         guard !items.isEmpty else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         // Summoned again mid-close, the wheel is taken back rather than left
@@ -727,12 +727,12 @@ final class RadialMenuService: ObservableObject {
         case .app:
             let url = URL(fileURLWithPath: (item.payload as NSString).expandingTildeInPath)
             NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration()) { _, error in
-                if error != nil { DispatchQueue.main.async { NSSound.beep() } }
+                if error != nil { DispatchQueue.main.async { ZenithQuiet.beep() } }
             }
         case .file:
             let path = (item.payload as NSString).expandingTildeInPath
             guard FileManager.default.fileExists(atPath: path) else {
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
             NSWorkspace.shared.open(URL(fileURLWithPath: path))
@@ -819,7 +819,7 @@ final class RadialMenuService: ObservableObject {
         // Let the non-activating wheel disappear before resolving the window
         // that was active behind it, matching the delay used by visual tools.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            if case .failure = WindowLayoutService.shared.apply(action) { NSSound.beep() }
+            if case .failure = WindowLayoutService.shared.apply(action) { ZenithQuiet.beep() }
         }
     }
 
@@ -828,7 +828,7 @@ final class RadialMenuService: ObservableObject {
     private func ensureAccessibilityPermission() -> Bool {
         guard AXIsProcessTrusted() else {
             if promptedForAccessibility {
-                NSSound.beep()
+                ZenithQuiet.beep()
             } else {
                 promptedForAccessibility = true
                 Permissions.shared.requestAccessibility()

@@ -269,7 +269,7 @@ final class ExportTrackerService: ObservableObject {
                 Notifier.post(title: title, body: body, revealing: url)
             }
         }
-        if defaults.bool(forKey: DefaultsKey.notchExportSound), let sound = NSSound(named: NSSound.Name("Glass")) {
+        if defaults.bool(forKey: DefaultsKey.notchExportSound), !ZenithQuiet.isOn, let sound = NSSound(named: NSSound.Name("Glass")) {
             sound.volume = 0.5
             sound.play()
         }

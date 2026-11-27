@@ -157,12 +157,12 @@ final class SnippetLibraryService: ObservableObject {
         // example), the synthetic typing would land in our own fields.
         if NSWorkspace.shared.frontmostApplication?.processIdentifier
             == ProcessInfo.processInfo.processIdentifier {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         guard AXIsProcessTrusted() else {
             if promptedForAccessibility {
-                NSSound.beep()
+                ZenithQuiet.beep()
             } else {
                 promptedForAccessibility = true
                 Permissions.shared.requestAccessibility()
@@ -195,7 +195,7 @@ final class SnippetLibraryService: ObservableObject {
         // clean; typing anyway would turn every character into a shortcut in
         // the target app. Give up audibly instead.
         if attempt >= 100 {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         guard held.isEmpty else {
@@ -206,7 +206,7 @@ final class SnippetLibraryService: ObservableObject {
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) {
             guard !IsSecureEventInputEnabled() else {
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
             TextSnippetService.postExpansion(deleteCount: 0,

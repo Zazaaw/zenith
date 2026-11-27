@@ -257,6 +257,9 @@ struct ZenithOrbitStrings {
         case .remote: return "iPhone Remote"
         case .batteries: return "Batteries"
         case .faceUnlock: return "Face Unlock"
+        case .removeBackground: return "Remove Background" // Zenith fork: Orbit wave 2
+        case .emojiPicker: return "Emoji Picker"
+        case .calculator: return "Calculator"
         default: return ""
         }
     }
@@ -272,6 +275,9 @@ struct ZenithOrbitStrings {
         case .remote: return "Lock this Mac or check on it from your iPhone"
         case .batteries: return "Every device’s battery, and when to warn"
         case .faceUnlock: return "Unlock the Mac by looking at it"
+        case .removeBackground: return "A transparent PNG of a picture’s subject" // Zenith fork: Orbit wave 2
+        case .emojiPicker: return "Find an emoji by name and type it anywhere"
+        case .calculator: return "Sums and functions, answered as you type"
         default: return ""
         }
     }

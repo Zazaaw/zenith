@@ -901,7 +901,7 @@ struct ScreenshotEditorView: View {
             Button {
                 commitEditingTextIfNeeded()
                 guard let url = controller.shareFile() else {
-                    NSSound.beep()
+                    ZenithQuiet.beep()
                     return
                 }
                 shareAnchor.present([url]) { chosen in
@@ -1792,7 +1792,7 @@ private struct ScreenshotEditorSharedLinkView: View {
                     if ScreenshotShareService.shared.copy(record.url) {
                         QuickToolHUD.show(icon: "link", message: strings.sharedHUD)
                     } else {
-                        NSSound.beep()
+                        ZenithQuiet.beep()
                     }
                 } label: {
                     Label(strings.copyLink, systemImage: "doc.on.doc")

@@ -362,8 +362,8 @@ final class NotchWatchService: ObservableObject {
         state = .finished(outcome)
         let strings = FeatureStrings.notchWatch(L10n.shared.language)
         let title = strings.outcome(outcome)
-        if UserDefaults.standard.bool(forKey: DefaultsKey.notchWatchSound) {
-            if let tone { tone.stop(); tone.play() } else { NSSound.beep() }
+        if UserDefaults.standard.bool(forKey: DefaultsKey.notchWatchSound), !ZenithQuiet.isOn {
+            if let tone { tone.stop(); tone.play() } else { ZenithQuiet.beep() }
         }
         let notch = NotchService.shared
         let onPage = notch.expanded && notch.selected == .watch

@@ -294,7 +294,7 @@ final class PrompterService: ObservableObject {
               let store else { return }
         let body = script.id == selectedID ? draft : store.text(of: script)
         let paragraphs = PrompterText.paragraphs(body)
-        guard !paragraphs.isEmpty, NotchSupport.isEnabled() else { NSSound.beep(); return }
+        guard !paragraphs.isEmpty, NotchSupport.isEnabled() else { ZenithQuiet.beep(); return }
         if script.id != selectedID { select(script.id) }
         let settings = PrompterSettings.current()
         let timeline = PrompterLayout.estimate(paragraphs, textSize: settings.textSize, lineSpacing: settings.lineSpacing,

@@ -608,7 +608,7 @@ private struct RecorderSharedLinkView: View {
                     if RecordingShareService.shared.copy(record.url) {
                         QuickToolHUD.show(icon: "link", message: strings.sharedHUD)
                     } else {
-                        NSSound.beep()
+                        ZenithQuiet.beep()
                     }
                 } label: {
                     Label(strings.copyLink, systemImage: "doc.on.doc")

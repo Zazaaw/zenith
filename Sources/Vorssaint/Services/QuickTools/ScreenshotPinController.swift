@@ -121,7 +121,7 @@ private final class ScreenshotPinWindow: OverlayPanel {
         guard ScreenshotEditorController.copyImage(
             ScreenshotRenderer.Export(image: image, scale: scale),
             fileNamePrefix: strings.fileNamePrefix) else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         QuickToolHUD.show(icon: "camera.viewfinder", message: strings.copiedHUD)
@@ -140,7 +140,7 @@ private final class ScreenshotPinWindow: OverlayPanel {
             do {
                 try data.write(to: url, options: .atomic)
             } catch {
-                NSSound.beep()
+                ZenithQuiet.beep()
             }
         }
     }

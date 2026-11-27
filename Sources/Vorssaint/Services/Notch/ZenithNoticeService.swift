@@ -594,7 +594,7 @@ final class ZenithNoticeCenter: ObservableObject {
             DispatchQueue.main.async { CardImportService.shared.openImport(volume: volume) }
             return
         case .openURL(let url):
-            if !NSWorkspace.shared.open(url) { NSSound.beep() }
+            if !NSWorkspace.shared.open(url) { ZenithQuiet.beep() }
         case .openRecap:
             // Zenith fork: as a card's Import, after the capsule has gone.
             dismiss(quickly: true)

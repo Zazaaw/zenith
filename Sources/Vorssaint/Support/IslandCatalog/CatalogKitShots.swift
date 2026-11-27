@@ -35,7 +35,9 @@ extension CatalogShots {
             ("text-capture", .textCapture, [AppFeature.screenOCR.availabilityKey: true], 1100),
             ("color-picker", .colorPicker, [AppFeature.colorPicker.availabilityKey: true], 1200),
             ("camera-preview", .cameraPreview, [AppFeature.cameraPreview.availabilityKey: true], 1050),
-        ] + kitEverydayPages + kitSystemPages // Zenith fork: the System and Apps pages (CatalogKitShotsSystem)
+        ] + kitEverydayPages
+            + kitWave2Pages // Zenith fork: Orbit wave 2 (CatalogKitShotsWave2)
+            + kitSystemPages // Zenith fork: the System and Apps pages (CatalogKitShotsSystem)
         var shots: [CatalogShot] = []
         for (name, page, preferences, height) in pages {
             for (suffix, appearance) in [("dark", NSAppearance.Name.darkAqua), ("light", .aqua)] {

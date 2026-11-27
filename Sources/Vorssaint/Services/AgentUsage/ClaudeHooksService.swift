@@ -247,7 +247,7 @@ final class ClaudeHooksService: ObservableObject {
         // An open island already shows the AI page's own row; the burst
         // waits a moment for it to close. Anything else keeps quiet.
         guard island.showZenithBurst(.agent(burst)) || island.expanded else { return }
-        guard let sound = NSSound(named: "Tink")?.copy() as? NSSound else { return }
+        guard !ZenithQuiet.isOn, let sound = NSSound(named: "Tink")?.copy() as? NSSound else { return }
         sound.volume = 0.35
         sound.play()
     }

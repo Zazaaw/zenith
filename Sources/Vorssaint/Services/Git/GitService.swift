@@ -457,7 +457,7 @@ final class GitService: ObservableObject {
 
     func openInEditor() {
         guard let root = current?.root, let (editor, app) = editor(for: root) else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         var target = URL(fileURLWithPath: root, isDirectory: true)
@@ -468,7 +468,7 @@ final class GitService: ObservableObject {
     func openInTerminal() {
         guard let root = current?.root,
               let app = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Terminal") else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         open([URL(fileURLWithPath: root, isDirectory: true)], with: app)
@@ -476,7 +476,7 @@ final class GitService: ObservableObject {
 
     func openOnGitHub() {
         guard let url = snapshot?.gitHubURL, NSWorkspace.shared.open(url) else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
     }
@@ -490,7 +490,7 @@ final class GitService: ObservableObject {
         }, then: { [weak self] copied in
             guard let self else { return }
             guard copied else {
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
             self.copied = true
@@ -505,7 +505,7 @@ final class GitService: ObservableObject {
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = true
         NSWorkspace.shared.open(urls, withApplicationAt: app, configuration: configuration) { _, error in
-            if error != nil { DispatchQueue.main.async { NSSound.beep() } }
+            if error != nil { DispatchQueue.main.async { ZenithQuiet.beep() } }
         }
     }
 

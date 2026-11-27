@@ -13,7 +13,7 @@ enum CommandBarTyping {
         let held = CGEventSource.flagsState(.combinedSessionState)
             .intersection([.maskCommand, .maskAlternate, .maskShift, .maskControl])
         if attempt >= 100 {
-            NSSound.beep()
+            ZenithQuiet.beep()
             return
         }
         guard held.isEmpty else {
@@ -24,7 +24,7 @@ enum CommandBarTyping {
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) {
             guard !IsSecureEventInputEnabled() else {
-                NSSound.beep()
+                ZenithQuiet.beep()
                 return
             }
             TextSnippetService.postExpansion(deleteCount: 0,
@@ -86,7 +86,7 @@ enum CommandBarExtras {
             }
             let result = AppleScriptRunner.runDetailed(script)
             if !result.ok {
-                DispatchQueue.main.async { NSSound.beep() }
+                DispatchQueue.main.async { ZenithQuiet.beep() }
             }
         }
     }
@@ -111,13 +111,13 @@ enum CommandBarExtras {
     static func setWiFiPower(_ on: Bool) {
         DispatchQueue.global(qos: .userInitiated).async {
             guard let interface = CWWiFiClient.shared().interface() else {
-                DispatchQueue.main.async { NSSound.beep() }
+                DispatchQueue.main.async { ZenithQuiet.beep() }
                 return
             }
             do {
                 try interface.setPower(on)
             } catch {
-                DispatchQueue.main.async { NSSound.beep() }
+                DispatchQueue.main.async { ZenithQuiet.beep() }
             }
         }
     }

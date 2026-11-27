@@ -564,7 +564,7 @@ final class CardBackupService: ObservableObject {
 
     func reveal(_ record: CardBackupRecord) {
         let folder = CardImportDestination.baseURL(stored: record.folder)
-        guard FileManager.default.fileExists(atPath: folder.path) else { return NSSound.beep() }
+        guard FileManager.default.fileExists(atPath: folder.path) else { return ZenithQuiet.beep() }
         NSWorkspace.shared.activateFileViewerSelecting([folder])
     }
 }

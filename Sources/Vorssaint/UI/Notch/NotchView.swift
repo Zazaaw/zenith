@@ -646,6 +646,7 @@ struct NotchView: View {
             case .git: GitPage(size: pageSize) // Zenith fork
             case .prompter: PrompterPage(size: pageSize) // Zenith fork
             case .batteries: BatteriesPage(size: pageSize).notchBand(trailing: { BatteriesPageActions() }) // Zenith fork
+            case .calculator: CalculatorPage(size: pageSize) // Zenith fork
             }
         }
     }
@@ -871,6 +872,7 @@ extension NotchModule: PanelOrderItem {
         case .git: return ZenithStrings.git(language).title // Zenith fork
         case .prompter: return ZenithStrings.prompter(language).title // Zenith fork
         case .batteries: return ZenithStrings.batteriesIsland(language).title // Zenith fork
+        case .calculator: return ZenithStrings.calculator(language).title // Zenith fork
         }
     }
 }

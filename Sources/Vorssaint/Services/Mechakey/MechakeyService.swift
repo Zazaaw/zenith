@@ -45,7 +45,7 @@ final class MechakeyService: ObservableObject {
 
     /// At launch: the shortcut, and the sounds when Mechakey is on.
     func start() {
-        guard !started else { return }
+        guard !started, !ZenithQuiet.isOn else { return } // Zenith fork: never a real tap in tests
         started = true
         let center = NotificationCenter.default
         // A restored backup, the shortcut or another window changed a preference.
@@ -67,6 +67,8 @@ final class MechakeyService: ObservableObject {
     /// every defaults change. Input Monitoring is read again only by
     /// `refreshAccess`, not here.
     func sync() {
+        // Zenith fork: tests and the catalog never listen to the keyboard or play.
+        guard !ZenithQuiet.isOn else { player.apply(nil); return }
         let preferences = preferences
         syncShortcut()
         guard preferences.enabled else {

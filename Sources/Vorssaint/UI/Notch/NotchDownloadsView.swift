@@ -182,7 +182,7 @@ struct NotchDownloadsView: View {
                 }
                 if item.completed {
                     Button {
-                        if !NSWorkspace.shared.open(item.url) { NSSound.beep() }
+                        if !NSWorkspace.shared.open(item.url) { ZenithQuiet.beep() }
                     } label: {
                         fileLabel.frame(minHeight: 28).contentShape(Rectangle())
                     }

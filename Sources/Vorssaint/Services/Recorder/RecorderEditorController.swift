@@ -1639,10 +1639,10 @@ final class RecorderEditorController: NSObject, NSWindowDelegate {
             case .failure(.cancelled):
                 break
             case .failure(.tooLarge):
-                NSSound.beep()
+                ZenithQuiet.beep()
                 QuickToolHUD.show(icon: "link", message: self.shareStrings.tooLarge)
             case .failure(.failed):
-                NSSound.beep()
+                ZenithQuiet.beep()
                 QuickToolHUD.show(icon: "link", message: self.shareStrings.failed)
             }
         }
@@ -1666,7 +1666,7 @@ final class RecorderEditorController: NSObject, NSWindowDelegate {
 
     private func finishClipboardPublication(_ published: Bool, deletesRecording: Bool) {
         guard published else {
-            NSSound.beep()
+            ZenithQuiet.beep()
             QuickToolHUD.show(icon: "record.circle", message: strings.exportFailed)
             return
         }
@@ -1743,7 +1743,7 @@ final class RecorderEditorController: NSObject, NSWindowDelegate {
             case .cancelled:
                 break
             default:
-                NSSound.beep()
+                ZenithQuiet.beep()
                 QuickToolHUD.show(icon: "record.circle", message: self.strings.exportFailed)
             }
         }

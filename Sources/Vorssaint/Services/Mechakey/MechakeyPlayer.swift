@@ -148,6 +148,7 @@ final class MechakeyPlayer {
 
     /// Plays with these settings, or stops everything for nil.
     func apply(_ playback: MechakeyPlayback?) {
+        let playback = ZenithQuiet.isOn ? nil : playback // Zenith fork: tests stay silent
         guard playback != active else { return }
         active = playback
         if let playback {
@@ -159,6 +160,7 @@ final class MechakeyPlayer {
 
     /// A few keys of a pack, whether or not Mechakey is on.
     func preview(_ pack: MechakeyPack, volume: Float, keyUpSounds: Bool) {
+        guard !ZenithQuiet.isOn else { return } // Zenith fork: tests stay silent
         previewToken += 1
         let token = previewToken
         previewing = true

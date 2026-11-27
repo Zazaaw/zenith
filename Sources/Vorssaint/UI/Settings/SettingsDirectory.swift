@@ -672,6 +672,14 @@ enum SettingsDirectory {
                 // Zenith fork: Translate, a page of its own beside the text tools (no hub feature).
                 SettingsDirectoryItem(page: .translate, title: ZenithStrings.translate(language).title,
                                       icon: "translate", keywords: TranslateSearch.keywords(language)),
+                // Zenith fork: Orbit wave 2, pages of their own (no hub feature).
+                SettingsDirectoryItem(page: .removeBackground, title: ZenithStrings.removeBackground(language).title,
+                                      icon: "person.and.background.dotted",
+                                      keywords: RemoveBackgroundSearch.keywords(language)),
+                SettingsDirectoryItem(page: .emojiPicker, title: ZenithStrings.emojiPicker(language).title,
+                                      icon: "face.smiling", keywords: EmojiPickerSearch.keywords(language)),
+                SettingsDirectoryItem(page: .calculator, title: ZenithStrings.calculator(language).title,
+                                      icon: "plus.forwardslash.minus", keywords: CalculatorSearch.keywords(language)),
                 SettingsDirectoryItem(page: .radialMenu,
                                       title: FeatureStrings.radialMenu(language).pageTitle,
                                       icon: "circle.grid.cross",

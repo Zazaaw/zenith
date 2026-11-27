@@ -43,7 +43,7 @@ final class PastePlainService: ObservableObject {
         // shortcut, which reads as "the feature does nothing" (issue #186).
         guard AXIsProcessTrusted() else {
             if promptedForAccessibility {
-                NSSound.beep()
+                ZenithQuiet.beep()
             } else {
                 promptedForAccessibility = true
                 Permissions.shared.requestAccessibility()

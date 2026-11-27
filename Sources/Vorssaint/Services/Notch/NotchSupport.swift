@@ -23,6 +23,8 @@ enum NotchModule: String, CaseIterable, Identifiable {
     case prompter
     /// Zenith fork: the batteries of this Mac and its devices (BatteriesStore).
     case batteries
+    /// Zenith fork: the Calculator, while it is on and asked to show here (CalculatorService).
+    case calculator
     var id: String { rawValue }
 
     var symbol: String {
@@ -56,6 +58,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .git: return GitSupportSymbols.module // Zenith fork
         case .prompter: return "scroll" // Zenith fork
         case .batteries: return "battery.75percent" // Zenith fork
+        case .calculator: return "plus.forwardslash.minus" // Zenith fork
         }
     }
 
@@ -88,6 +91,7 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .git: return "h" // Zenith fork: HEAD
         case .prompter: return "x" // Zenith fork: teXt
         case .batteries: return "z" // Zenith fork: the last letter left
+        case .calculator: return "=" // Zenith fork: past the letters, the equals key
         }
     }
 
@@ -132,6 +136,8 @@ enum NotchModule: String, CaseIterable, Identifiable {
         case .prompter: return true
         // Zenith fork: always listed; it shows while Batteries is on in Settings.
         case .batteries: return true
+        // Zenith fork: listed only while the Calculator is on (Settings → Calculator).
+        case .calculator: return CalculatorPreferences(defaults: defaults).enabled
         case .system:
             return [.monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork,
                     .monitorDisk, .monitorPower, .fanControl, .connectedDevices].contains { (feature: AppFeature) in
@@ -2057,6 +2063,7 @@ enum NotchSupport {
                 && ($0 != .cardImport || CardImportOptions.isEnabled(in: defaults)) // Zenith fork
                 && ($0 != .devServers || DevServersOptions.isEnabled(in: defaults)) // Zenith fork
                 && ($0 != .batteries || BatteriesIslandSupport.isEnabled(in: defaults)) // Zenith fork
+                && ($0 != .calculator || CalculatorPreferences.showsInIsland(defaults)) // Zenith fork
         }
     }
 
@@ -3020,7 +3027,8 @@ struct NotchGeometry: Equatable {
                 contentHeight = zones > 0 ? min(budget, zones) : budget
             // Lists and previews fill the chosen content budget.
             case .mixer, .calendar, .clipboard, .captures, .files, .notifications, .downloads, .camera, .scratchpad, .watch,
-                 .wakatime, .vercel, .github, .cardImport, .devServers, .recap, .sky, .git: // Zenith fork: devServers, recap, sky, git
+                 .wakatime, .vercel, .github, .cardImport, .devServers, .recap, .sky, .git,
+                 .calculator: // Zenith fork: devServers, recap, sky, git, calculator
                 contentHeight = budget
             case .batteries: // Zenith fork: as tall as its rings or rows, a long list scrolling
                 contentHeight = zenithBatteriesHeight.map { min(budget, $0) } ?? budget

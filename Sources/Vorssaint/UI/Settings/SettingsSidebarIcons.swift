@@ -69,6 +69,9 @@ enum SettingsSidebarIcons {
         case .meetings: return "Meetings"
         case .translate: return "Quick Translate"
         case .mechakey: return "Mechakey"
+        case .removeBackground: return "Remove Background" // Zenith fork: Orbit wave 2
+        case .emojiPicker: return "Emoji Picker"
+        case .calculator: return "Calculator"
         // Zenith fork: the island's sections, pages of their own.
         case .notchCalendar: return "Calendar"
         case .notchNotifications: return "Notifications"
