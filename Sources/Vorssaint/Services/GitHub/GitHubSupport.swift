@@ -222,13 +222,16 @@ enum GitHubCLI {
     private static var loginShellPath: String?
     private static var cached: (url: URL?, at: Date)?
     private static let cacheLifetime: TimeInterval = 10
+    /// The app's own PATH, read once: it does not change while the app runs,
+    /// and reading it copies the whole environment.
+    private static let appPath = ProcessInfo.processInfo.environment["PATH"]
 
     /// `gh`, from the usual folders, the app's PATH and any PATH a look again found.
     static func installed(now: Date = Date()) -> URL? {
         lock.lock()
         defer { lock.unlock() }
         if let cached, now.timeIntervalSince(cached.at) < cacheLifetime, now >= cached.at { return cached.url }
-        let path = [ProcessInfo.processInfo.environment["PATH"], loginShellPath].compactMap { $0 }.joined(separator: ":")
+        let path = [appPath, loginShellPath].compactMap { $0 }.joined(separator: ":")
         let url = GitHubSupport.executable(home: FileManager.default.homeDirectoryForCurrentUser, searchPath: path)
         cached = (url, now)
         return url

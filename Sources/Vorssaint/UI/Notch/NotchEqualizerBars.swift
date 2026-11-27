@@ -59,6 +59,7 @@ final class NotchEqualizerView: NSView {
     private var animates = false
     private var levels: [Double]?
     private var visibilityObservers: [NSObjectProtocol] = []
+    private var gateObserver: NSObjectProtocol?
     /// Each bar's swing: its lowest and highest height, how long it takes
     /// to rise, and how far into its swing it starts.
     private var swings: [(low: CGFloat, high: CGFloat, rise: Double, lead: Double)] = []
@@ -81,12 +82,18 @@ final class NotchEqualizerView: NSView {
         super.init(frame: frameRect)
         wantsLayer = true
         setAccessibilityElement(false)
+        // Zenith fork: the battery saver stills the bars at once, wherever they show.
+        gateObserver = NotificationCenter.default.addObserver(forName: IslandAgentMotionGate.didChange, object: nil,
+                                                              queue: .main) { [weak self] _ in
+            self?.updateBars()
+        }
     }
 
     required init?(coder: NSCoder) { nil }
 
     deinit {
         visibilityObservers.forEach(NotificationCenter.default.removeObserver)
+        if let gateObserver { NotificationCenter.default.removeObserver(gateObserver) }
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
@@ -157,6 +164,8 @@ final class NotchEqualizerView: NSView {
     override func layout() { super.layout(); updateBars() }
 
     var isMoving: Bool { clock.isRunning }
+    /// Zenith fork: what the bars were last drawn as.
+    private(set) var motion = NotchEqualizerMotion.resting
 
     private func updateBars() {
         let exposed = !isHiddenOrHasHiddenAncestor
@@ -164,8 +173,11 @@ final class NotchEqualizerView: NSView {
         // Offscreen only to change displays: keep the pose. Dropping to dots
         // and rising again is the blink while music plays.
         let held = (window as? NotchWaveHold)?.holdsWave == true
-        let moving = animates && (exposed || held)
-        let live = moving ? levels.flatMap { $0.isEmpty ? nil : $0 } : nil
+        motion = NotchEqualizerMotion.decide(playing: animates, shown: exposed || held,
+                                             savingBattery: IslandAgentMotionGate.shared.savingBattery,
+                                             hasLevels: levels?.isEmpty == false)
+        let moving = motion == .live || motion == .swinging
+        let live = motion == .live ? levels : nil
         let center = Double(bars.count - 1) / 2
         swings = bars.indices.map { index in
             let distance = abs(Double(index) - center) / max(1, center)
@@ -174,7 +186,7 @@ final class NotchEqualizerView: NSView {
                     high: max(barWidth, height * (0.12 + envelope * 0.88)),
                     rise: .pi / (5.2 + Double(index) * 0.61), lead: Double(index) * 0.17)
         }
-        let swinging = moving && live == nil && swings.contains { $0.high > $0.low }
+        let swinging = motion == .swinging && swings.contains { $0.high > $0.low }
         // Metadata, tint and layout updates must not restart the motion.
         // Neither does becoming visible again: every copy shares one origin.
         if swinging, !joinedWave {
@@ -185,7 +197,8 @@ final class NotchEqualizerView: NSView {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         for (index, bar) in bars.enumerated() {
-            var resting: CGFloat = moving ? swings[index].low : barWidth
+            // The saver's still pose is the wave at its lowest: still playing, nothing stepped.
+            var resting: CGFloat = moving || motion == .still ? swings[index].low : barWidth
             // The reader already smooths its levels and sends thirty a
             // second, so a live bar is set straight onto the layer.
             if let live {
@@ -224,6 +237,27 @@ final class NotchEqualizerView: NSView {
             bar.bounds.size.height = swingHeight(index, at: time)
         }
         CATransaction.commit()
+    }
+}
+
+/// Zenith fork: what the music bars draw. Only a playing, visible meter
+/// moves; the battery saver keeps the playing shape but steps nothing, and
+/// the player's levels are not read meanwhile (NotchAudioLevelSupport.reads).
+enum NotchEqualizerMotion: Equatable {
+    /// Paused, stopped or out of sight: dots.
+    case resting
+    /// Playing in the battery saver: the wave's lowest pose, no clock.
+    case still
+    /// Playing, following the player's own levels.
+    case live
+    /// Playing, stepping the synthetic wave at the decorations' rate.
+    case swinging
+
+    static func decide(playing: Bool, shown: Bool, savingBattery: Bool, hasLevels: Bool) -> NotchEqualizerMotion {
+        guard playing else { return .resting }
+        if savingBattery { return .still }
+        guard shown else { return .resting }
+        return hasLevels ? .live : .swinging
     }
 }
 

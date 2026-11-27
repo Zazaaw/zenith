@@ -72,13 +72,19 @@ enum WakaTimeSupport {
         return Configuration(apiKey: key, apiURL: url ?? defaultAPIURL)
     }
 
-    static func loadConfiguration(at url: URL = configURL()) -> Configuration? {
+    static func loadConfiguration(at url: URL = WakaTimeConfigPresence.shared.url) -> Configuration? {
         (try? String(contentsOf: url, encoding: .utf8)).flatMap(configuration(from:))
     }
 
     /// Whether this Mac has a WakaTime key to read with. Cheap enough for the
-    /// island's section list: a file check, not a read.
-    static func hasConfiguration(at url: URL = configURL()) -> Bool {
+    /// island's hot path: the answer is remembered (WakaTimeConfigPresence),
+    /// so most calls touch neither the environment nor the disk.
+    static func hasConfiguration() -> Bool {
+        WakaTimeConfigPresence.shared.isPresent()
+    }
+
+    /// The same question about a file elsewhere, asked of the disk every time.
+    static func hasConfiguration(at url: URL) -> Bool {
         FileManager.default.isReadableFile(atPath: url.path)
     }
 

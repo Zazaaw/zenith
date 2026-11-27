@@ -130,11 +130,18 @@ enum NotchAudioRingContract {
 /// The production service is extracted here; only its preference inputs,
 /// playback publisher and asynchronous hardware reader are replaced.
 typealias NotchAudioTestSilenceMemory = NotchAudioLevelSupport.SilenceMemory
+typealias NotchAudioTestRealSupport = NotchAudioLevelSupport
 
 enum NotchAudioLevelLifecycleContract {
     final class NSWorkspace {
         static let shared = NSWorkspace()
         var accessibilityDisplayShouldReduceMotion = false
+    }
+    /// Zenith fork: the battery saver, as Settings → Appearance publishes it.
+    @MainActor
+    final class ZenithAppearance: ObservableObject {
+        static let shared = ZenithAppearance()
+        @Published var isSavingBattery = false
     }
     enum AppFeature {
         case notchLiveEqualizer
@@ -146,6 +153,10 @@ enum NotchAudioLevelLifecycleContract {
         static let isSupported = true
         static var enabled = false
         static func isEnabled() -> Bool { enabled }
+        static func reads(chosen: Bool, supported: Bool, reduceMotion: Bool, savingBattery: Bool) -> Bool {
+            NotchAudioTestRealSupport.reads(chosen: chosen, supported: supported, reduceMotion: reduceMotion,
+                                            savingBattery: savingBattery)
+        }
     }
     final class NotchMusicService {
         static let shared = NotchMusicService()
@@ -201,6 +212,7 @@ enum NotchAudioLevelLifecycleContract {
             drain()
         }
         defer {
+            MainActor.assumeIsolated { ZenithAppearance.shared.isSavingBattery = false }
             enable(false)
             NSWorkspace.shared.accessibilityDisplayShouldReduceMotion = false
             music.playback = nil
@@ -354,5 +366,24 @@ enum NotchAudioLevelLifecycleContract {
         drain()
         expect(Reader.instances.count == beforeAudiblePause + 1 && Reader.instances.last?.stopped == false,
                "restoring motion resumes the chosen live equalizer on the current player")
+
+        // Zenith fork: the battery saver releases the tap, not only the bars.
+        guard let beforeSaver = Reader.instances.last else { return }
+        beforeSaver.onLevels([0.5])
+        drain()
+        let readersBeforeSaver = Reader.instances.count
+        let appearance = MainActor.assumeIsolated { ZenithAppearance.shared }
+        MainActor.assumeIsolated { appearance.isSavingBattery = true }
+        drain()
+        expect(beforeSaver.stopped && service.levels == nil,
+               "the battery saver stops the reader, releasing its tap, and clears the levels")
+        music.playback = playback()
+        drain()
+        expect(Reader.instances.count == readersBeforeSaver,
+               "playback updates do not start a reader while the saver lasts")
+        MainActor.assumeIsolated { appearance.isSavingBattery = false }
+        drain()
+        expect(Reader.instances.count == readersBeforeSaver + 1 && Reader.instances.last?.stopped == false,
+               "the saver ending reads the current player again")
     }
 }

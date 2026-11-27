@@ -77,6 +77,14 @@ enum NotchAudioLevelSupport {
         defaults.bool(forKey: DefaultsKey.notchLiveEqualizer)
     }
 
+    /// Zenith fork: whether the player's audio is read at all. Chosen, on a
+    /// macOS that can tap, without Reduce Motion and outside the battery
+    /// saver: in the saver the tap is released, not only hidden, and the bars
+    /// hold a still pose until it ends.
+    static func reads(chosen: Bool, supported: Bool, reduceMotion: Bool, savingBattery: Bool) -> Bool {
+        chosen && supported && !reduceMotion && !savingBattery
+    }
+
     /// The bins of a real spectrum with `size / 2` usable bins that belong to
     /// each band. Every band keeps at least one bin, and bin 0, the DC
     /// offset, belongs to none.
