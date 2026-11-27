@@ -7,7 +7,7 @@ import Foundation
 /// The Settings pages. Lives here (without SwiftUI) so the visibility rules
 /// below and the unit tests can reason about pages without pulling UI in.
 enum SettingsPage: Hashable, CaseIterable {
-    case general, features, energy, monitor
+    case general, features, monitor
     case mouse, switcher, dock, keyDebounce, superKey, finderTools, autoQuit, quitProtection, cleaner, uninstaller, urlCleaner, homebrew, appUpdates, media, clipboard, windowLayout, shelf, quickTools, textSnippets, screenshot, radialMenu, commandBar, killProcess, portManager, notch, notchMascot
     case shortcuts, advanced, about, releaseNotes, support
     case workspaces // Zenith fork: part of the app, no hub feature gates it
@@ -22,6 +22,8 @@ enum SettingsPage: Hashable, CaseIterable {
     case appearance // Zenith fork: how the island moves and what it is made of, a sidebar tile
     // Zenith fork: the island's sections with options of their own, each a page in the Island group.
     case notchCalendar, notchNotifications, notchMusic, notchTimer, notchAgents, notchDownloads, notchWatch
+    // Zenith fork: the System group's pages split out of Energy, Monitor and General.
+    case sleep, brightness, fanControl, menuBar
 }
 
 /// Stable, non-localized identities for destinations inside shared Settings
@@ -92,10 +94,12 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
 
     var page: SettingsPage {
         switch self {
-        case .panelConfiguration, .mixer, .audioPriority, .musicBlocking,
+        case .mixer, .audioPriority, .musicBlocking,
              .soundOutputSwitcher:
             return .general
-        case .keepAwake, .brightness, .extraBrightness, .bluetoothSleep: return .energy
+        case .panelConfiguration, .zenithMenuBarHider: return .menuBar // Zenith fork
+        case .keepAwake, .bluetoothSleep: return .sleep // Zenith fork
+        case .brightness, .extraBrightness: return .brightness // Zenith fork
         case .scrollDirection, .scrollZoom, .focusFollowsMouse, .smoothScroll, .linearScroll, .scrollSpeed, .mouseAcceleration, .mouseNavigation, .mouseButtonShortcuts,
              .middleClick, .mouseClickDebounce:
             return .mouse
@@ -109,7 +113,8 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
         case .screenshot, .screenshotScrolling, .screenRecorder, .colorPicker, .screenOCR:
             return .screenshot
         case .keyboardBrightnessShortcuts: return .shortcuts
-        case .fanControl, .monitorAlerts: return .monitor
+        case .fanControl: return .fanControl // Zenith fork
+        case .monitorAlerts: return .monitor
         case .windowMaximizer: return .windowLayout
         // Zenith fork
         case .zenithWakaTime, .zenithVercel, .zenithGitHub, .zenithCardImport, .zenithDevServers, .zenithGit, .zenithSky,
@@ -131,7 +136,6 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
         case .zenithDropZones, .zenithWatermark: return .shelf
         case .zenithDesignOverlay, .zenithBeautify: return .screenshot
         case .zenithQR: return .clipboard
-        case .zenithMenuBarHider: return .general
         }
     }
 }
@@ -312,8 +316,8 @@ final class SettingsRouter: ObservableObject {
         self.sidebarFeature = sidebarFeature?.settingsDestination == destination ? sidebarFeature : nil
         let entry = HistoryEntry(destination: destination, sidebarFeature: self.sidebarFeature)
         // Section requests refine the current page visit, not a new history
-        // entry. General and Energy show one tool per anchor, so switching
-        // tools there is a visit of its own.
+        // entry. General shows one tool per anchor, so switching tools there
+        // is a visit of its own.
         if samePage && !isTraversingHistory && !replacingVisit
             && Self.anchorSelectsTool(on: destination.page)
             && history[historyIndex].destination != destination {
@@ -332,7 +336,7 @@ final class SettingsRouter: ObservableObject {
     }
 
     private static func anchorSelectsTool(on page: SettingsPage) -> Bool {
-        page == .general || page == .energy || page == .screenshot
+        page == .general || page == .screenshot
     }
 
     func goBack(isPageVisible: (SettingsPage) -> Bool = { _ in true }) {
@@ -458,14 +462,15 @@ extension AppFeature {
         case .musicBlock:
             return FeatureSettingsDestination(.general, sectionAnchor: .musicBlocking)
 
+        // Zenith fork: Energy split into Sleep and Brightness.
         case .keepAwake:
-            return FeatureSettingsDestination(.energy, sectionAnchor: .keepAwake)
+            return FeatureSettingsDestination(.sleep, sectionAnchor: .keepAwake)
         case .brightness:
-            return FeatureSettingsDestination(.energy, sectionAnchor: .brightness)
+            return FeatureSettingsDestination(.brightness, sectionAnchor: .brightness)
         case .extraBrightness:
-            return FeatureSettingsDestination(.energy, sectionAnchor: .extraBrightness)
+            return FeatureSettingsDestination(.brightness, sectionAnchor: .extraBrightness)
         case .bluetoothSleep:
-            return FeatureSettingsDestination(.energy, sectionAnchor: .bluetoothSleep)
+            return FeatureSettingsDestination(.sleep, sectionAnchor: .bluetoothSleep)
 
         case .quickLauncher:
             return FeatureSettingsDestination(.quickTools, sectionAnchor: .quickLauncher)
@@ -514,8 +519,7 @@ extension AppFeature {
 
         case .monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower, .connectedDevices:
             return FeatureSettingsDestination(.monitor)
-        case .fanControl:
-            return FeatureSettingsDestination(.monitor, sectionAnchor: .fanControl)
+        case .fanControl: return FeatureSettingsDestination(.fanControl) // Zenith fork: a page of its own
         }
     }
 }
@@ -532,8 +536,11 @@ enum FeatureVisibilitySupport {
     /// always shows (General, Shortcuts, About and friends).
     static func features(for page: SettingsPage) -> [AppFeature] {
         switch page {
-        case .energy: return [.keepAwake, .brightness, .extraBrightness, .bluetoothSleep]
-        case .monitor: return monitorFeatures
+        // Zenith fork: Energy split into Sleep and Brightness; Fan Control left Monitor.
+        case .sleep: return [.keepAwake, .bluetoothSleep]
+        case .brightness: return [.brightness, .extraBrightness]
+        case .fanControl: return [.fanControl]
+        case .monitor: return monitorFeatures.filter { $0 != .fanControl }
         case .mouse: return [.scrollInverter, .scrollHorizontal, .scrollZoom, .focusFollowsMouse, .smoothScroll, .linearScroll, .scrollSpeed, .mouseAcceleration, .mouseNavigation, .mouseButtonShortcuts,
                              .middleClick, .mouseClickDebounce]
         case .switcher: return [.switcher]
@@ -575,7 +582,8 @@ enum FeatureVisibilitySupport {
         case .translate: return [] // Zenith fork: a page of the app's own, which no hub feature hides
         case .general, .features, .shortcuts, .advanced, .about, .releaseNotes, .support,
              .workspaces, .remote, .pocket, .faceUnlock, .batteries,
-             .meetings, .mechakey, .appearance: // Zenith fork
+             .meetings, .mechakey, .appearance, // Zenith fork
+             .menuBar: // Zenith fork: the app's own menu bar, which no hub feature hides
             return []
         }
     }

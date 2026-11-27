@@ -42,7 +42,6 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
         case .feature(let feature): return of(feature: feature)
         case .setting(let anchor):
             switch anchor {
-            case .panelConfiguration: return .system
             case .screenshotScrolling: return .capture
             case .keyboardBrightnessShortcuts: return .zenith
             default: return of(page: anchor.page)
@@ -60,7 +59,8 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
         case .screenshot: return .capture
         case .switcher, .dock, .windowLayout, .autoQuit, .quitProtection, .workspaces, .radialMenu: return .windows
         case .mouse, .keyDebounce, .superKey: return .input
-        case .energy, .monitor, .quickTools: return .system
+        case .monitor, .quickTools: return .system
+        case .sleep, .brightness, .fanControl, .menuBar: return .system // Zenith fork
         case .cleaner, .uninstaller, .homebrew, .appUpdates, .killProcess, .portManager: return .apps
         case .remote, .pocket, .faceUnlock, .batteries: return .devices
         case .meetings, .translate, .mechakey: return .fromOrbit
@@ -114,7 +114,7 @@ enum SettingsSidebarLayout {
         .everyday: [.page(.shelf), .page(.clipboard), .page(.finderTools), .page(.media), .page(.urlCleaner),
                     .page(.textSnippets)],
         .capture: [.feature(.screenshot), .setting(.screenshotScrolling), .feature(.screenRecorder)],
-        .system: [.page(.monitor), .feature(.fanControl)],
+        .system: [.page(.monitor), .page(.fanControl), .page(.sleep), .page(.brightness), .page(.menuBar)],
         .devices: [.page(.pocket), .page(.batteries), .page(.faceUnlock), .page(.remote)],
     ]
 

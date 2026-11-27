@@ -119,12 +119,6 @@ struct SettingsView: View {
         case .general:
             // General stays visible when one of its tools is uninstalled.
             router.request(FeatureSettingsDestination(.general), replacingVisit: true)
-        case .energy:
-            // Energy has no overview row. A history visit to an uninstalled
-            // tool should show another available tool, not an empty detail.
-            if let available = sidebarItems.first(where: { $0.destination.page == .energy }) {
-                router.request(available.destination, replacingVisit: true)
-            }
         default:
             break
         }
@@ -137,7 +131,7 @@ struct SettingsView: View {
     /// Zenith fork: the title Settings draws above a page, nil for the pages
     /// that open with their own `SettingsPageHeader` or hero.
     private var zenithPageTitle: String? {
-        let ownHeader: Set<SettingsPage> = [.features, .notch, .notchMascot, .energy, .monitor, .mouse,
+        let ownHeader: Set<SettingsPage> = [.features, .notch, .notchMascot, .monitor, .mouse,
                                             .switcher, .dock, .homebrew, .releaseNotes, .about, .support,
                                             .portManager, .workspaces, .lockScreen, .remote,
                                             .faceUnlock, .batteries, .pocket,
@@ -147,6 +141,9 @@ struct SettingsView: View {
         // Zenith fork: the Everyday pages open with their own hero.
         if [.shelf, .clipboard, .finderTools, .media, .urlCleaner, .textSnippets].contains(router.page) { return nil }
         if router.page.isNotchModulePage { return nil } // Zenith fork: the island's sections open with their hero
+        // Zenith fork: the System and Apps pages open with their own hero.
+        if [.sleep, .brightness, .fanControl, .menuBar, .commandBar, .cleaner, .uninstaller, .homebrew, .appUpdates,
+            .killProcess, .portManager].contains(router.page) { return nil }
         if router.page == .general, !(detailShowsGeneralTool) { return nil }
         let selected = selectedSidebarItem
         return sidebarItems.first(where: { $0.id == selected })?.title
@@ -154,7 +151,7 @@ struct SettingsView: View {
 
     private var detailShowsGeneralTool: Bool {
         guard let anchor = router.destination.sectionAnchor else { return false }
-        return [.panelConfiguration, .mixer, .soundOutputSwitcher, .audioPriority, .musicBlocking].contains(anchor)
+        return [.mixer, .soundOutputSwitcher, .audioPriority, .musicBlocking].contains(anchor)
             && sidebarItems.contains(where: { $0.destination == router.destination })
     }
 
@@ -163,7 +160,7 @@ struct SettingsView: View {
         switch router.page {
         case .general:
             if let anchor = router.destination.sectionAnchor,
-               [.panelConfiguration, .mixer, .soundOutputSwitcher,
+               [.mixer, .soundOutputSwitcher,
                 .audioPriority, .musicBlocking].contains(anchor),
                sidebarItems.contains(where: { $0.destination == router.destination }) {
                 GeneralToolSettings(anchor: anchor)
@@ -176,8 +173,12 @@ struct SettingsView: View {
         case .notchMascot: NotchMascotSettings()
         case .radialMenu: RadialMenuSettings()
         case .commandBar: CommandBarSettings()
-        case .energy: EnergySettings(focus: router.destination.sectionAnchor)
         case .monitor: MonitorSettings()
+        // Zenith fork: the System group's pages split out of Energy, Monitor and General.
+        case .sleep: SleepSettingsPage()
+        case .brightness: BrightnessSettingsPage()
+        case .fanControl: FanControlSettingsPage()
+        case .menuBar: MenuBarSettingsPage()
         case .mouse: MouseSettings()
         case .switcher: SwitcherSettings()
         case .dock: DockSettings()

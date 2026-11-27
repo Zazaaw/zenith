@@ -15,7 +15,6 @@ enum SettingsSidebarIcons {
         case .feature(let feature): return orbitName(feature: feature)
         case .setting(let anchor):
             switch anchor {
-            case .panelConfiguration: return "Menu Bar Hider"
             case .screenshotScrolling: return "Scrolling Screenshot"
             case .keyboardBrightnessShortcuts: return nil
             default: return orbitName(page: anchor.page)
@@ -46,7 +45,10 @@ enum SettingsSidebarIcons {
         case .workspaces: return "Workspaces"
         case .radialMenu: return "Radial Menu"
         case .superKey: return "Super Key"
-        case .energy: return "Keep Awake"
+        case .sleep: return "Sleep" // Zenith fork: the System group's split pages
+        case .brightness: return "Brightness"
+        case .fanControl: return "Fan Control"
+        case .menuBar: return "Menu Bar Hider"
         case .monitor: return "System Monitor"
         case .cleaner: return "Cleaner"
         case .uninstaller: return "Uninstaller"
