@@ -2366,10 +2366,22 @@ enum FeatureCatalogTests {
         }, "every feature destination is either always visible or gated by that feature")
         suite.expect(AppFeature.allCases.allSatisfy { $0.settingsDestination.hasValidSectionAnchor },
                "every feature anchor belongs to its destination page")
+        // Zenith fork: a sound or capture tool's anchor is a section of its own page,
+        // which its feature opens at the top.
+        let toolPageAnchors: [SettingsSectionAnchor: AppFeature] = [
+            .mixer: .mixer, .soundOutputSwitcher: .soundOutputSwitcher, .audioPriority: .audioPriority,
+            .musicBlocking: .musicBlock, .micMute: .micMute, .cameraPreview: .cameraPreview,
+            .screenshot: .screenshot, .screenRecorder: .screenRecorder, .screenOCR: .screenOCR,
+            .colorPicker: .colorPicker,
+        ]
+        suite.expect(toolPageAnchors.allSatisfy { anchor, feature in
+            feature.settingsDestination == FeatureSettingsDestination(anchor.page)
+        }, "each sound and capture tool opens its own page, where its anchor sits")
         suite.expect(Set(AppFeature.allCases.compactMap(\.settingsDestination.sectionAnchor))
                 == Set(SettingsSectionAnchor.allCases).subtracting([
                     .panelConfiguration, .keyboardBrightnessShortcuts, .monitorAlerts, .screenshotScrolling,
-                ]).filter { !$0.rawValue.hasPrefix("zenith") } // Zenith fork: search-only sections
+                ]).subtracting(toolPageAnchors.keys)
+                .filter { !$0.rawValue.hasPrefix("zenith") } // Zenith fork: search-only sections
                 && SettingsSectionAnchor.panelConfiguration.page == .general
                 && SettingsSectionAnchor.keyboardBrightnessShortcuts.page == .shortcuts
                 && SettingsSectionAnchor.screenshotScrolling.page == .screenshot
@@ -2393,13 +2405,12 @@ enum FeatureCatalogTests {
                 && !dockNeedsAccessibility(available: [.dockPreview], on: [DefaultsKey.dockClickMinimize])
                 && !dockNeedsAccessibility(available: allFeatures, on: [DefaultsKey.switcherEnabled]),
                "the Dock page asks for Accessibility while Dock Preview or any Dock click action is on")
-        suite.expect(AppFeature.mixer.settingsDestination
-                == FeatureSettingsDestination(.general, sectionAnchor: .mixer)
-                && AppFeature.soundOutputSwitcher.settingsDestination
-                    == FeatureSettingsDestination(.general, sectionAnchor: .soundOutputSwitcher)
-                && AppFeature.audioPriority.settingsDestination
-                    == FeatureSettingsDestination(.general, sectionAnchor: .audioPriority),
-               "Mixer, output switcher and audio priority have separate General controls")
+        suite.expect(AppFeature.mixer.settingsDestination == FeatureSettingsDestination(.volumeMixer)
+                && AppFeature.soundOutputSwitcher.settingsDestination == FeatureSettingsDestination(.soundOutput)
+                && AppFeature.audioPriority.settingsDestination == FeatureSettingsDestination(.soundOutput)
+                && pageVisible(.soundOutput, available: [.audioPriority])
+                && !pageVisible(.volumeMixer, available: [.soundOutputSwitcher, .audioPriority]),
+               "Volume Mixer has its page, and the output switcher shares Sound Output with audio priority")
         suite.expect(AppFeature.windowMaximizer.settingsDestination
                 == FeatureSettingsDestination(.windowLayout, sectionAnchor: .windowMaximizer)
                 && pageVisible(.windowLayout, available: [.windowMaximizer])
@@ -2410,7 +2421,7 @@ enum FeatureCatalogTests {
                 == FeatureSettingsDestination(.quickTools, sectionAnchor: .cleaningMode),
                "cleaning mode lands on Quick Tools cleaning mode section")
         suite.expect(AppFeature.musicBlock.settingsDestination
-                == FeatureSettingsDestination(.general, sectionAnchor: .musicBlocking)
+                == FeatureSettingsDestination(.musicBlocker)
                 && AppFeature.diskImageInstaller.settingsDestination
                 == FeatureSettingsDestination(.finderTools, sectionAnchor: .diskImageInstaller),
                "features without dedicated pages use explicit nearest Settings destinations")

@@ -68,6 +68,14 @@ enum SettingsSidebarIcons {
         case .notchAgents: return "Agents"
         case .notchDownloads: return "Downloads"
         case .notchWatch: return "Watch"
+        case .volumeMixer: return "Volume Mixer"
+        case .soundOutput: return "Sound Output"
+        case .musicBlocker: return "Music Blocker"
+        case .micMute: return "Mic Mute"
+        case .screenRecording: return "Screen Recording"
+        case .textCapture: return "Text Capture"
+        case .colorPicker: return "Color Picker"
+        case .cameraPreview: return "Camera Preview"
         case .mouse, .keyDebounce, .quitProtection, .quickTools, .killProcess,
              .shortcuts, .advanced, .about, .releaseNotes, .support:
             return nil
@@ -91,6 +99,7 @@ enum SettingsSidebarIcons {
         case .scratchpad: return "Scratchpad"
         case .mixer: return "Volume Mixer"
         case .soundOutputSwitcher: return "Sound Output"
+        case .musicBlock: return "Music Blocker"
         case .micMute: return "Mic Mute"
         case .keepAwake: return "Keep Awake"
         case .brightness: return "Brightness"
@@ -119,7 +128,7 @@ enum SettingsSidebarIcons {
              .scrollInverter, .scrollHorizontal, .scrollZoom, .focusFollowsMouse, .linearScroll, .scrollSpeed,
              .mouseAcceleration, .mouseNavigation, .mouseButtonShortcuts, .middleClick, .mouseClickDebounce,
              .keyboardDebounce, .pastePlain, .finderCutPaste, .finderRename, .diskImageInstaller,
-             .audioPriority, .musicBlock, .extraBrightness, .bluetoothSleep,
+             .audioPriority, .extraBrightness, .bluetoothSleep,
              .quickLauncher, .quickToggles, .quitApps, .wallpaper, .killProcess,
              .notchGestures, .notchAccessories, .notchQueue, .notchLiveEqualizer, .notchDownloads, .notchWatch,
              .monitorPower, .connectedDevices:

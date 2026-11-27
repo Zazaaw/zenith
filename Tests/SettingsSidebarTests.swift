@@ -48,9 +48,14 @@ enum SettingsSidebarTests {
                         && group(.everyday).prefix(6) == [.page(.shelf), .page(.clipboard), .page(.finderTools), .page(.media),
                                                 .page(.urlCleaner), .page(.textSnippets)]
                         && group(.devices) == [.page(.pocket), .page(.batteries), .page(.faceUnlock), .page(.remote)]
-                        && group(.capture).first == .feature(.screenshot)
+                        && group(.capture).first == .page(.screenshot)
                         && group(.system).first == .page(.monitor),
                      "the groups open with the rows the design leads with")
+        // Zenith fork: one row per sound and capture tool, each its own page.
+        suite.expect(group(.sound) == [.page(.volumeMixer), .page(.soundOutput), .page(.musicBlocker), .page(.micMute)]
+                        && group(.capture) == [.page(.screenshot), .page(.screenRecording), .page(.textCapture),
+                                               .page(.colorPicker), .page(.cameraPreview)],
+                     "Sound and Capture list one page per tool")
         suite.expect(group(.zenith).contains(.page(.about)) && group(.zenith).contains(.page(.shortcuts)),
                      "the app's own pages close the sidebar")
         suite.expect(SettingsPage.allCases.filter { SettingsSidebarGroup.of(page: $0) == .tiles }
@@ -93,9 +98,9 @@ enum SettingsSidebarTests {
                         && SettingsSidebarSupport.selection(
             for: AppFeature.diskImageInstaller.settingsDestination, in: items) == .page(.finderTools),
                      "a feature's section on a one-row page selects that page's row")
-        suite.expect(ids.contains(.setting(.panelConfiguration)) && ids.contains(.setting(.screenshotScrolling))
+        suite.expect(ids.contains(.setting(.panelConfiguration)) && !ids.contains(.setting(.screenshotScrolling))
                         && ids.contains(.setting(.keyboardBrightnessShortcuts)),
-                     "the menu bar editor, scrolling capture and keyboard light shortcuts keep their rows")
+                     "the menu bar editor and keyboard light shortcuts keep their rows; scrolling capture is Screenshot's")
         for item in items {
             suite.expect(SettingsSidebarSupport.selection(for: item.destination, in: items,
                                                           preferredID: item.id) == item.id,

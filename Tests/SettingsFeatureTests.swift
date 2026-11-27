@@ -75,25 +75,17 @@ enum SettingsFeatureTests {
                          "the sidebar places Zoom beside scrolling in \(language.rawValue)")
         }
         for (language, strings) in LocalizationTests.languages {
+            // Zenith fork: scrolling capture is a section of the Screenshot page,
+            // whose single sidebar row it selects.
             let captureRows = SettingsSidebarSupport.items(
-                page: .screenshot, title: "Screen capture", icon: "camera.viewfinder",
-                preferredFeatures: [.screenshot, .screenRecorder, .screenOCR, .colorPicker],
-                includePage: false, isAvailable: { _ in true }, featureTitle: { $0.rawValue })
-            let rows = SettingsSidebarSupport.screenshotRows(captureRows, language: language)
+                page: .screenshot, title: "Screenshot", icon: "camera.viewfinder",
+                preferredFeatures: [.screenshot], includePage: true,
+                isAvailable: { _ in true }, featureTitle: { $0.rawValue })
             let destination = ScreenCaptureTool.scrolling.settingsDestination
-            suite.expect(rows.prefix(3).map(\.id)
-                    == [.feature(.screenshot), .setting(.screenshotScrolling), .feature(.screenRecorder)]
-                    && rows[1].title == FeatureStrings.screenshot(language).scrollingCaptureTitle
-                    && SettingsSidebarSupport.selection(for: destination, in: rows)
-                        == .setting(.screenshotScrolling),
-                         "scrolling screenshot has a localized sidebar row beside Screenshot")
-            let hiddenRows = SettingsSidebarSupport.items(
-                page: .screenshot, title: "Screen capture", icon: "camera.viewfinder",
-                preferredFeatures: [.screenRecorder], includePage: false,
-                isAvailable: { $0 == .screenRecorder }, featureTitle: { $0.rawValue })
-            suite.expect(!SettingsSidebarSupport.screenshotRows(hiddenRows, language: language)
-                .contains { $0.id == .setting(.screenshotScrolling) },
-                         "removing Screenshot also hides its scrolling sidebar row")
+            suite.expect(captureRows.map(\.id) == [.page(.screenshot)]
+                    && destination == FeatureSettingsDestination(.screenshot, sectionAnchor: .screenshotScrolling)
+                    && SettingsSidebarSupport.selection(for: destination, in: captureRows) == .page(.screenshot),
+                         "scrolling screenshot lands on its section of the Screenshot page")
             let search = SettingsSearchSupport.scrollingScreenshotItem(language: language)
             suite.expect(search.destination == destination && search.destination.hasValidSectionAnchor
                     && SettingsSearchSupport.matches(query: search.title, title: search.title)
@@ -107,14 +99,14 @@ enum SettingsFeatureTests {
                          "Keyboard shortcuts includes scrolling screenshot among installed capture tools")
         }
         let captureRouter = SettingsRouter()
-        captureRouter.request(ScreenCaptureTool.screenshot.settingsDestination)
+        captureRouter.request(ScreenCaptureTool.text.settingsDestination)
         captureRouter.request(ScreenCaptureTool.scrolling.settingsDestination)
         captureRouter.goBack()
-        suite.expect(captureRouter.destination == ScreenCaptureTool.screenshot.settingsDestination,
-                     "Back returns from scrolling screenshot to Screenshot")
+        suite.expect(captureRouter.destination == ScreenCaptureTool.text.settingsDestination,
+                     "Back returns from scrolling screenshot to the capture page before it")
         captureRouter.goForward()
         suite.expect(captureRouter.destination == ScreenCaptureTool.scrolling.settingsDestination,
-                     "Forward restores scrolling screenshot and its sidebar selection")
+                     "Forward restores scrolling screenshot's section")
         func directory(battery: Bool) -> [SettingsSearchItem] {
             SettingsDirectory.searchItems(.enUS, language: .enUS, state: state(battery: battery))
         }

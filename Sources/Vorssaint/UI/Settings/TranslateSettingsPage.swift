@@ -5,11 +5,12 @@ import AppKit
 import SwiftUI
 import Translation
 
-/// Zenith fork: Settings → Translate, a page of its own beside the text
-/// tools. The switch and the shortcut, the languages to read in, and which
-/// pairs are downloaded, with the system's download prompt for a missing one
-/// (this window can show it; the card under the pointer can't). Off by
-/// default; the page writes `TranslateDefaults` and tells the service.
+/// Zenith fork: Settings → Translate, a feature page in the kit
+/// (docs/SETTINGS-KIT.md). The hero with the switch, the shortcut, the
+/// languages to read in, and which pairs are downloaded, with the system's
+/// download prompt for a missing one (this window can show it; the card under
+/// the pointer can't). Off by default; the page writes `TranslateDefaults`
+/// and tells the service.
 struct TranslateSettingsPage: View {
     private let text = ZenithStrings.translate(.enUS)
 
@@ -17,17 +18,10 @@ struct TranslateSettingsPage: View {
         if #available(macOS 15.0, *) {
             TranslateSettingsContent()
         } else {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    SettingsPageHeader(title: text.title, subtitle: text.subtitle)
-                    // Search still lands here; the sections it names only exist from macOS 15 on.
-                    SettingsCard {
-                        SettingsRow(symbol: "translate", title: text.enable, caption: text.needsMacOS15) { EmptyView() }
-                    }
-                }
-                .frame(maxWidth: 760)
-                .frame(maxWidth: .infinity)
-                .padding(22)
+            ZenithToolPage {
+                ZenithHero(title: text.title, subtitle: text.subtitle, animation: .translate)
+                // Search still lands here; the sections it names only exist from macOS 15 on.
+                ZenithCallout(.info, text.needsMacOS15)
             }
         }
     }
@@ -73,20 +67,25 @@ private struct TranslateSettingsContent: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                SettingsPageHeader(title: text.title, subtitle: text.subtitle)
-                mainCard.zenithSectionAnchor(.zenithTranslate)
-                VStack(alignment: .leading, spacing: 20) {
-                    languagesCard.zenithSectionAnchor(.zenithTranslateLanguages)
-                    downloadsCard.zenithSectionAnchor(.zenithTranslateDownloads)
+        ZenithToolPage {
+            ZenithHero(title: text.title, subtitle: text.subtitle, chips: chips,
+                       isOn: enabledBinding, switchLabel: text.enable, switchHint: text.enableCaption,
+                       animation: .translate)
+                .zenithSectionAnchor(.zenithTranslate, cornerRadius: ZenithKitSurface.heroRadius + 6, inset: 6)
+            if enabled, !permissions.accessibility {
+                ZenithCallout(.warning, text.accessibilityNeeded) {
+                    Button(text.openAccessibility) { Permissions.shared.requestAccessibility() }
                 }
-                .disabled(!enabled)
-                .opacity(enabled ? 1 : 0.5)
             }
-            .frame(maxWidth: 760)
-            .frame(maxWidth: .infinity)
-            .padding(22)
+            // Kept in view while Translate is off, greyed, so the page reads
+            // the same whichever way the switch is.
+            VStack(alignment: .leading, spacing: 18) {
+                ZenithSection(text.shortcutSection) { shortcutRow }
+                languagesSection
+                downloadsSection
+            }
+            .disabled(!enabled)
+            .opacity(enabled ? 1 : 0.5)
         }
         // The system's download prompt, for a pair asked for here or by the card.
         .translationTask(downloadConfiguration) { session in
@@ -107,89 +106,66 @@ private struct TranslateSettingsContent: View {
         .onChange(of: service.pendingDownload) { _, _ in takePendingDownload() }
     }
 
-    // MARK: Switch and shortcut
-
-    private var mainCard: some View {
-        SettingsCard {
-            ZenithSwitchRow(text.enable, isOn: Binding(get: { enabled }, set: { on in
-                enabled = on
-                service.syncWithPreferences()
-            })) {
-                SettingsRow(symbol: "translate", title: text.enable, caption: text.enableCaption) { EmptyView() }
-            }
-            Divider()
-            shortcutRow
-                .disabled(!enabled)
-                .opacity(enabled ? 1 : 0.5)
-            if enabled, !permissions.accessibility {
-                HStack(spacing: 10) {
-                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(ZenithStatus.warning)
-                    Text(text.accessibilityNeeded).font(ZenithType.caption).foregroundStyle(.secondary)
-                    Spacer(minLength: 8)
-                    Button(text.openAccessibility) { Permissions.shared.requestAccessibility() }
-                }
-            }
-        }
+    private var enabledBinding: Binding<Bool> {
+        Binding(get: { enabled }, set: { on in
+            enabled = on
+            service.syncWithPreferences()
+        })
     }
+
+    /// The languages it reads in, and the shortcut.
+    private var chips: [ZenithChip] {
+        let current = preferences
+        let pair = current.second.map { "\(TranslateLanguageCode.displayName($0)) ↔ \(TranslateLanguageCode.displayName(current.primary))" }
+            ?? TranslateLanguageCode.displayName(current.primary)
+        let keys = GlobalShortcut(storageValue: shortcut)?.displayString
+        return [ZenithChip(pair)] + (keys.map { [ZenithChip($0)] } ?? [])
+    }
+
+    // MARK: Shortcut
 
     private var shortcutRow: some View {
         let s = L10n.shared.s
-        return VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 12) {
-                SettingsRow(symbol: "keyboard", title: text.shortcutTitle, caption: text.shortcutCaption) { EmptyView() }
-                if service.shortcutRefused {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(ZenithStatus.warning)
-                        .help(s.shortcutNotCaptured)
-                }
-                ShortcutRecorderButton(
-                    shortcut: GlobalShortcut(storageValue: shortcut) ?? TranslateService.defaultShortcut,
-                    isEnabled: enabled,
-                    waitingTitle: s.shortcutPressKeys,
-                    emptyTitle: shortcut.isEmpty ? s.shortcutNone : nil,
-                    clearAction: {
-                        shortcutMessage = nil
-                        shortcut = ""
-                        service.syncWithPreferences()
-                    },
-                    notCapturedAction: { shortcutMessage = s.shortcutNotCaptured },
-                    recordingChanged: { recording in if recording { shortcutMessage = nil } },
-                    invalidAction: { shortcutMessage = s.shortcutInvalid },
-                    captureAction: { captured in
-                        if let owner = service.conflict(for: captured) {
-                            shortcutMessage = s.shortcutConflictFormat.replacingOccurrences(of: "%@", with: owner)
-                            return
-                        }
-                        shortcutMessage = nil
-                        shortcut = captured.storageValue
-                        service.syncWithPreferences()
+        let warning = shortcutMessage ?? (service.shortcutRefused ? s.shortcutNotCaptured : nil)
+        return ZenithRow(text.shortcutTitle, info: text.shortcutCaption, warning: warning, shortcut: {
+            ShortcutRecorderButton(
+                shortcut: GlobalShortcut(storageValue: shortcut) ?? TranslateService.defaultShortcut,
+                isEnabled: enabled,
+                waitingTitle: s.shortcutPressKeys,
+                emptyTitle: shortcut.isEmpty ? s.shortcutNone : nil,
+                clearAction: {
+                    shortcutMessage = nil
+                    shortcut = ""
+                    service.syncWithPreferences()
+                },
+                notCapturedAction: { shortcutMessage = s.shortcutNotCaptured },
+                recordingChanged: { recording in if recording { shortcutMessage = nil } },
+                invalidAction: { shortcutMessage = s.shortcutInvalid },
+                captureAction: { captured in
+                    if let owner = service.conflict(for: captured) {
+                        shortcutMessage = s.shortcutConflictFormat.replacingOccurrences(of: "%@", with: owner)
+                        return
                     }
-                )
-                .frame(width: 150)
-            }
-            if let shortcutMessage {
-                Text(shortcutMessage)
-                    .font(ZenithType.caption)
-                    .foregroundStyle(ZenithStatus.warning)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
+                    shortcutMessage = nil
+                    shortcut = captured.storageValue
+                    service.syncWithPreferences()
+                }
+            )
+        })
     }
 
     // MARK: Languages
 
-    private var languagesCard: some View {
-        SettingsCard(title: text.languagesSection) {
-            SettingsMenuRow(symbol: "character.bubble", title: text.target, selection: $target) {
+    private var languagesSection: some View {
+        ZenithSection(text.languagesSection, anchor: .zenithTranslateLanguages) {
+            ZenithRow(text.target, selection: $target, info: text.targetCaption) {
                 Text(text.name(text.systemLanguage, TranslateLanguageCode.displayName(system.primary))).tag("")
                 Divider()
                 ForEach(languages, id: \.self) { code in
                     Text(TranslateLanguageCode.displayName(code)).tag(code)
                 }
             }
-            Text(text.targetCaption).font(ZenithType.caption).foregroundStyle(.secondary)
-            Divider()
-            SettingsMenuRow(symbol: "arrow.left.arrow.right", title: text.secondTarget, selection: $secondTarget) {
+            ZenithRow(text.secondTarget, selection: $secondTarget, info: text.secondTargetCaption) {
                 let fallback = TranslateLanguageCode.systemTargets(Locale.preferredLanguages,
                                                                    primary: preferences.primary).second
                 Text(text.name(text.systemLanguage, fallback.map(TranslateLanguageCode.displayName) ?? text.none)).tag("")
@@ -199,41 +175,32 @@ private struct TranslateSettingsContent: View {
                     Text(TranslateLanguageCode.displayName(code)).tag(code)
                 }
             }
-            Text(text.secondTargetCaption).font(ZenithType.caption).foregroundStyle(.secondary)
-            Divider()
-            ZenithSwitchRow(text.showDetection, isOn: $showDetection) {
-                SettingsRow(symbol: "text.magnifyingglass", title: text.showDetection,
-                            caption: text.showDetectionCaption) { EmptyView() }
-            }
+            ZenithRow(text.showDetection, isOn: $showDetection, info: text.showDetectionCaption)
         }
     }
 
     // MARK: Downloads
 
-    private var downloadsCard: some View {
-        SettingsCard(title: text.downloadsSection) {
-            Text(text.downloadsCaption).font(ZenithType.caption).foregroundStyle(.secondary)
-            let current = preferences
+    private var downloadsSection: some View {
+        let current = preferences
+        return ZenithSection(text.downloadsSection, anchor: .zenithTranslateDownloads, footer: text.downloadsCaption) {
             if let second = current.second {
                 pairRow(from: second, to: current.primary)
-                Divider()
                 pairRow(from: current.primary, to: second)
-                Divider()
             }
-            HStack(spacing: 10) {
-                Text(text.checkPair).font(ZenithType.rowTitle)
-                Spacer(minLength: 8)
-                languagePicker(text.from, selection: $checkFrom)
-                Image(systemName: "arrow.right").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
-                languagePicker(text.to, selection: $checkTo)
-            }
-            pairRow(from: checkFrom, to: checkTo.isEmpty ? current.primary : checkTo)
-            Divider()
-            HStack(spacing: 10) {
-                Text(text.manageCaption).font(ZenithType.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 8)
-                Button(text.manageDownloads, action: openLanguageSettings)
+            ZenithRow(text.manageTitle, info: text.manageCaption, button: text.manageDownloads,
+                      action: openLanguageSettings)
+            ZenithMoreOptions(id: "translate.downloads") {
+                ZenithRow(text.checkPair) {
+                    HStack(spacing: 8) {
+                        languagePicker(text.from, selection: $checkFrom)
+                        Image(systemName: "arrow.right").font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
+                        languagePicker(text.to, selection: $checkTo)
+                    }
+                }
+                pairRow(from: checkFrom, to: checkTo.isEmpty ? current.primary : checkTo)
             }
         }
     }
@@ -252,22 +219,21 @@ private struct TranslateSettingsContent: View {
     private func pairRow(from: String, to: String) -> some View {
         let key = Self.key(from, to)
         let status = statuses[key]
-        return HStack(spacing: 10) {
-            Text("\(TranslateLanguageCode.displayName(from)) → \(TranslateLanguageCode.displayName(to))")
-                .font(ZenithType.body)
-            Spacer(minLength: 8)
-            if TranslateLanguageCode.same(from, to) {
-                EmptyView()
-            } else if downloadingKey == key {
-                ProgressView().controlSize(.small)
-                Text(text.downloading).font(ZenithType.caption).foregroundStyle(.secondary)
-            } else if let status {
-                statusChip(status)
-                if status == .notDownloaded {
-                    Button(text.download) { startDownload(from: from, to: to) }
+        return ZenithRow("\(TranslateLanguageCode.displayName(from)) → \(TranslateLanguageCode.displayName(to))") {
+            HStack(spacing: 8) {
+                if TranslateLanguageCode.same(from, to) {
+                    EmptyView()
+                } else if downloadingKey == key {
+                    ProgressView().controlSize(.small)
+                    Text(text.downloading).font(ZenithType.caption).foregroundStyle(.secondary)
+                } else if let status {
+                    statusChip(status)
+                    if status == .notDownloaded {
+                        Button(text.download) { startDownload(from: from, to: to) }
+                    }
+                } else {
+                    Text(text.checking).font(ZenithType.caption).foregroundStyle(.secondary)
                 }
-            } else {
-                Text(text.checking).font(ZenithType.caption).foregroundStyle(.secondary)
             }
         }
     }
@@ -280,14 +246,7 @@ private struct TranslateSettingsContent: View {
             case .unsupported: return (text.unsupported, ZenithStatus.neutral)
             }
         }()
-        return Text(label.uppercased())
-            .font(ZenithType.mono(9.5, weight: .semibold))
-            .tracking(0.6)
-            .foregroundStyle(color)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 2.5)
-            .background(ZenithStatus.fill(color), in: Capsule())
-            .overlay(Capsule().strokeBorder(ZenithStatus.stroke(color)))
+        return ZenithChip(label, dot: color)
     }
 
     // MARK: Work
@@ -321,6 +280,7 @@ private struct TranslateSettingsContent: View {
         service.pendingDownload = nil
         if let from = request.from { checkFrom = from }
         checkTo = request.to
+        UserDefaults.standard.set(true, forKey: ZenithMoreOptionsRule.key("translate.downloads"))
         startDownload(from: request.from, to: request.to)
     }
 
