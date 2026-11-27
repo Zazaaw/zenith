@@ -137,11 +137,12 @@ struct SettingsView: View {
     /// Zenith fork: the title Settings draws above a page, nil for the pages
     /// that open with their own `SettingsPageHeader` or hero.
     private var zenithPageTitle: String? {
-        let ownHeader: Set<SettingsPage> = [.features, .notch, .notchMascot, .energy, .monitor, .mouse,
+        let ownHeader: Set<SettingsPage> = [.features, .notch, .notchMascot, .energy, .monitor,
                                             .switcher, .dock, .homebrew, .releaseNotes, .about, .support,
                                             .portManager, .workspaces, .lockScreen, .remote,
                                             .faceUnlock, .batteries, .pocket,
-                                            .meetings, .mechakey, .appearance] // Zenith fork: Meetings, Mechakey, Appearance
+                                            .meetings, .mechakey, .appearance, // Zenith fork: Meetings, Mechakey, Appearance
+                                            .scrolling, .pointer, .mouseButtons] // Zenith fork: the Mouse page, split
         if ownHeader.contains(router.page) { return nil }
         if router.page == .translate { return nil } // Zenith fork: Translate opens with its own header
         if router.page == .general, !(detailShowsGeneralTool) { return nil }
@@ -175,7 +176,9 @@ struct SettingsView: View {
         case .commandBar: CommandBarSettings()
         case .energy: EnergySettings(focus: router.destination.sectionAnchor)
         case .monitor: MonitorSettings()
-        case .mouse: MouseSettings()
+        case .scrolling: ScrollingSettingsPage() // Zenith fork: the Mouse page, split
+        case .pointer: PointerSettingsPage()
+        case .mouseButtons: MouseButtonsSettingsPage()
         case .switcher: SwitcherSettings()
         case .dock: DockSettings()
         case .keyDebounce: KeyboardDebounceSettings()

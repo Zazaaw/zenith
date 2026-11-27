@@ -59,7 +59,10 @@ enum SettingsSidebarIcons {
         case .meetings: return "Meetings"
         case .translate: return "Quick Translate"
         case .mechakey: return "Mechakey"
-        case .mouse, .keyDebounce, .cutPaste, .quitProtection, .quickTools, .killProcess,
+        case .scrolling: return "Scrolling"
+        case .pointer: return "Pointer"
+        case .mouseButtons: return "Mouse Buttons"
+        case .keyDebounce, .cutPaste, .quitProtection, .quickTools, .killProcess,
              .shortcuts, .advanced, .about, .releaseNotes, .support:
             return nil
         }
@@ -122,7 +125,6 @@ enum SettingsSidebarIcons {
     /// the one its sidebar row shows; nil for the pages `orbitName` covers.
     static func fallbackSymbol(page: SettingsPage) -> String? {
         switch page {
-        case .mouse: return "computermouse"
         case .keyDebounce: return "keyboard"
         case .cutPaste: return "filemenu.and.selection"
         case .quitProtection: return "shield.lefthalf.filled"

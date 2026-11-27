@@ -8,7 +8,7 @@ import Foundation
 /// below and the unit tests can reason about pages without pulling UI in.
 enum SettingsPage: Hashable, CaseIterable {
     case general, features, energy, monitor
-    case mouse, switcher, dock, keyDebounce, superKey, cutPaste, autoQuit, quitProtection, cleaner, uninstaller, urlCleaner, homebrew, appUpdates, media, clipboard, windowLayout, shelf, quickTools, textSnippets, screenshot, radialMenu, commandBar, killProcess, portManager, notch, notchMascot
+    case switcher, dock, keyDebounce, superKey, cutPaste, autoQuit, quitProtection, cleaner, uninstaller, urlCleaner, homebrew, appUpdates, media, clipboard, windowLayout, shelf, quickTools, textSnippets, screenshot, radialMenu, commandBar, killProcess, portManager, notch, notchMascot
     case shortcuts, advanced, about, releaseNotes, support
     case workspaces // Zenith fork: part of the app, no hub feature gates it
     case lockScreen // Zenith fork: the island's lock screen, a page of its own
@@ -20,6 +20,7 @@ enum SettingsPage: Hashable, CaseIterable {
     case meetings // Zenith fork: calls from the calendar, Join and the mic, beside the lock screen
     case mechakey // Zenith fork: mechanical keyboard sounds as you type, a page of its own
     case appearance // Zenith fork: how the island moves and what it is made of, a sidebar tile
+    case scrolling, pointer, mouseButtons // Zenith fork: the Mouse page, one page per job
 }
 
 /// Stable, non-localized identities for destinations inside shared Settings
@@ -93,9 +94,9 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
              .soundOutputSwitcher:
             return .general
         case .keepAwake, .brightness, .extraBrightness, .bluetoothSleep: return .energy
-        case .scrollDirection, .scrollZoom, .focusFollowsMouse, .smoothScroll, .linearScroll, .scrollSpeed, .mouseAcceleration, .mouseNavigation, .mouseButtonShortcuts,
-             .middleClick, .mouseClickDebounce:
-            return .mouse
+        case .scrollDirection, .scrollZoom, .smoothScroll, .linearScroll, .scrollSpeed: return .scrolling
+        case .focusFollowsMouse, .mouseAcceleration: return .pointer
+        case .mouseNavigation, .mouseButtonShortcuts, .middleClick, .mouseClickDebounce: return .mouseButtons
         case .switcher: return .switcher
         case .dock, .dockClick, .spacesOrder: return .dock
         case .finderCutPaste, .finderRename: return .cutPaste
@@ -386,27 +387,27 @@ extension AppFeature {
         case .quitWindowProtection: return FeatureSettingsDestination(.quitProtection)
 
         case .scrollInverter, .scrollHorizontal:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .scrollDirection)
+            return FeatureSettingsDestination(.scrolling, sectionAnchor: .scrollDirection)
         case .scrollZoom:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .scrollZoom)
+            return FeatureSettingsDestination(.scrolling, sectionAnchor: .scrollZoom)
         case .focusFollowsMouse:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .focusFollowsMouse)
+            return FeatureSettingsDestination(.pointer, sectionAnchor: .focusFollowsMouse)
         case .smoothScroll:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .smoothScroll)
+            return FeatureSettingsDestination(.scrolling, sectionAnchor: .smoothScroll)
         case .linearScroll:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .linearScroll)
+            return FeatureSettingsDestination(.scrolling, sectionAnchor: .linearScroll)
         case .scrollSpeed:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .scrollSpeed)
+            return FeatureSettingsDestination(.scrolling, sectionAnchor: .scrollSpeed)
         case .mouseAcceleration:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .mouseAcceleration)
+            return FeatureSettingsDestination(.pointer, sectionAnchor: .mouseAcceleration)
         case .mouseNavigation:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .mouseNavigation)
+            return FeatureSettingsDestination(.mouseButtons, sectionAnchor: .mouseNavigation)
         case .mouseButtonShortcuts:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .mouseButtonShortcuts)
+            return FeatureSettingsDestination(.mouseButtons, sectionAnchor: .mouseButtonShortcuts)
         case .middleClick:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .middleClick)
+            return FeatureSettingsDestination(.mouseButtons, sectionAnchor: .middleClick)
         case .mouseClickDebounce:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .mouseClickDebounce)
+            return FeatureSettingsDestination(.mouseButtons, sectionAnchor: .mouseClickDebounce)
         case .keyboardDebounce: return FeatureSettingsDestination(.keyDebounce)
         case .textSnippets: return FeatureSettingsDestination(.textSnippets)
         case .superKey: return FeatureSettingsDestination(.superKey)
@@ -509,8 +510,9 @@ enum FeatureVisibilitySupport {
         switch page {
         case .energy: return [.keepAwake, .brightness, .extraBrightness, .bluetoothSleep]
         case .monitor: return monitorFeatures
-        case .mouse: return [.scrollInverter, .scrollHorizontal, .scrollZoom, .focusFollowsMouse, .smoothScroll, .linearScroll, .scrollSpeed, .mouseAcceleration, .mouseNavigation, .mouseButtonShortcuts,
-                             .middleClick, .mouseClickDebounce]
+        case .scrolling: return [.scrollInverter, .scrollHorizontal, .scrollZoom, .smoothScroll, .linearScroll, .scrollSpeed]
+        case .pointer: return [.mouseAcceleration, .focusFollowsMouse]
+        case .mouseButtons: return [.mouseNavigation, .mouseButtonShortcuts, .middleClick, .mouseClickDebounce]
         case .switcher: return [.switcher]
         case .dock: return [.dockPreview, .dockClick, .spacesOrder]
         case .windowLayout: return [.windowLayout, .windowMaximizer]

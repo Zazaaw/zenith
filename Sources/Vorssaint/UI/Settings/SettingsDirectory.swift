@@ -78,7 +78,7 @@ struct SettingsDirectoryItem: Identifiable {
 enum SettingsDirectory {
     /// Shared pages whose tools cover the page without a separate overview row.
     private static let toolOnlyPages: Set<SettingsPage> = [
-        .energy, .mouse, .switcher, .dock, .clipboard, .cutPaste, .quickTools, .screenshot,
+        .energy, .switcher, .dock, .clipboard, .cutPaste, .quickTools, .screenshot,
     ]
 
     /// The sidebar: the directory's rows (one per page, or one per tool on a
@@ -211,6 +211,7 @@ enum SettingsDirectory {
         let mascot = FeatureStrings.notchMascot(language)
         let activities = FeatureStrings.notchActivities(language)
         let lockScreen = FeatureStrings.notchLockScreen(language)
+        let pagesText = ZenithStrings.inputWindows(language) // Zenith fork
         let hover = state.on(DefaultsKey.notchOpenOnHover)
         let hideFullscreen = state.on(DefaultsKey.notchHideInFullscreen)
         let hoverDelay = hover || (hideFullscreen && state.on(DefaultsKey.notchHoverInFullscreen))
@@ -344,23 +345,34 @@ enum SettingsDirectory {
                                       icon: "battery.75percent", keywords: BatteriesSearch.keywords(language)),
             ]),
             (categories.windowsControls, [
-                SettingsDirectoryItem(page: .mouse, title: s.tabMouse, icon: "computermouse",
+                // Zenith fork: the Mouse page split into Scrolling, Pointer and Mouse Buttons.
+                SettingsDirectoryItem(page: .scrolling, title: pagesText.scrollingTitle, icon: "scroll",
+                                       keywords: [s.tabMouse, s.scrollTrackpadNote],
                                        featureKeywords: [
-                                        // The scrolling card shows while either of its features is on.
+                                        // The direction section shows while either of its features is on.
                                         (.scrollInverter, [s.invertMouseScroll, s.invertVerticalScroll,
                                                            s.invertHorizontalScroll, s.scrollSection]),
                                         (.scrollHorizontal, [s.scrollHorizontalName,
                                                             s.scrollHorizontalModifierLabel, s.scrollSection]),
                                         (.scrollZoom, [s.zoomSection, s.pinchZoom]),
-                                        (.middleClick, [s.middleClickTapPicker, s.middleClickEnable]),
+                                        (.smoothScroll, [s.smoothScrollName, s.smoothScrollStepLabel,
+                                                         s.smoothScrollResponseLabel, s.smoothScrollCoastLabel]),
+                                        (.linearScroll, [s.linearScrollName, s.linearScrollLinesLabel]),
+                                        (.scrollSpeed, [s.scrollSpeedName, s.scrollSpeedMultiplierLabel]),
+                                       ]),
+                SettingsDirectoryItem(page: .pointer, title: pagesText.pointerTitle, icon: "cursorarrow.motionlines",
+                                       keywords: [s.tabMouse],
+                                       featureKeywords: [
+                                        (.mouseAcceleration, [s.mouseAccelerationName]),
                                         (.focusFollowsMouse, [s.focusFollowsMouseName,
                                                               s.focusFollowsMouseDelay,
                                                               s.focusFollowsMouseRaise,
                                                               s.focusFollowsMouseWaitForStop]),
-                                        (.smoothScroll, [s.smoothScrollName]),
-                                        (.linearScroll, [s.linearScrollName, s.linearScrollLinesLabel]),
-                                        (.scrollSpeed, [s.scrollSpeedName, s.scrollSpeedMultiplierLabel]),
-                                        (.mouseAcceleration, [s.mouseAccelerationName]),
+                                       ]),
+                SettingsDirectoryItem(page: .mouseButtons, title: pagesText.mouseButtonsTitle,
+                                       icon: "computermouse",
+                                       keywords: [s.tabMouse],
+                                       featureKeywords: [
                                         (.mouseNavigation, [s.mouseNavigationEnable, s.mouseNavigationSection]),
                                         (.mouseButtonShortcuts,
                                          [FeatureStrings.mouseButtons(language).pageTitle,
@@ -369,6 +381,7 @@ enum SettingsDirectory {
                                           FeatureStrings.mouseExceptions(language).listTitle,
                                           FeatureStrings.mouseButtons(language).enableLabel,
                                           FeatureStrings.mouseButtons(language).spacesEnableLabel]),
+                                        (.middleClick, [s.middleClickTapPicker, s.middleClickEnable]),
                                         (.mouseClickDebounce,
                                          [FeatureStrings.mouseClickDebounce(language).title,
                                           FeatureStrings.mouseClickDebounce(language).windowLabel,

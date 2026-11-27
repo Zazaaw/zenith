@@ -27,6 +27,11 @@ struct SettingsSidebarSection: Identifiable {
 
 /// Builds one row per tool, even when several tools share one Settings card.
 enum SettingsSidebarSupport {
+    /// Zenith fork: pages that hold several features yet keep a single row,
+    /// as every page does now: one sidebar row, one page, one feature's job.
+    /// Their features land on their sections without rows of their own.
+    static let onePageRows: Set<SettingsPage> = [.scrolling, .pointer, .mouseButtons]
+
     static func items(page: SettingsPage, title: String, icon: String,
                       preferredFeatures: [AppFeature], includePage: Bool,
                       isAvailable: (AppFeature) -> Bool,
@@ -37,7 +42,7 @@ enum SettingsSidebarSupport {
                                            title: title, icon: icon)
         var rows = includePage ? [pageItem] : []
         var seenFeatures: Set<AppFeature> = []
-        for feature in preferredFeatures + AppFeature.allCases {
+        for feature in preferredFeatures + AppFeature.allCases where !onePageRows.contains(page) {
             guard seenFeatures.insert(feature).inserted else { continue }
             let destination = feature.settingsDestination
             guard destination.page == page, destination.sectionAnchor != nil,

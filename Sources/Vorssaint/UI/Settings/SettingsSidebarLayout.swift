@@ -57,7 +57,7 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
         case .clipboard, .cutPaste, .shelf, .media, .urlCleaner, .textSnippets: return .everyday
         case .screenshot: return .capture
         case .switcher, .dock, .windowLayout, .autoQuit, .quitProtection, .workspaces, .radialMenu: return .windows
-        case .mouse, .keyDebounce, .superKey: return .input
+        case .scrolling, .pointer, .mouseButtons, .keyDebounce, .superKey: return .input
         case .energy, .monitor, .quickTools: return .system
         case .cleaner, .uninstaller, .homebrew, .appUpdates, .killProcess, .portManager: return .apps
         case .remote, .pocket, .faceUnlock, .batteries: return .devices
