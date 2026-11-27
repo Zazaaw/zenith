@@ -35,6 +35,7 @@ enum SettingsSidebarIcons {
         case .clipboard: return "Clipboard"
         case .shelf: return "Shelf"
         case .media: return "Media Tools"
+        case .finderTools: return "Finder Tools"
         case .urlCleaner: return "URL Cleaner"
         case .textSnippets: return "Text Snippets"
         case .screenshot: return "Screenshot"
@@ -66,10 +67,27 @@ enum SettingsSidebarIcons {
         case .meetings: return "Meetings"
         case .translate: return "Quick Translate"
         case .mechakey: return "Mechakey"
+        // Zenith fork: the island's sections, pages of their own.
+        case .notchCalendar: return "Calendar"
+        case .notchNotifications: return "Notifications"
+        case .notchMusic: return "Music"
+        case .notchTimer: return "Timer"
+        case .notchAgents: return "Agents"
+        case .notchDownloads: return "Downloads"
+        case .notchWatch: return "Watch"
+        case .volumeMixer: return "Volume Mixer"
+        case .soundOutput: return "Sound Output"
+        case .musicBlocker: return "Music Blocker"
+        case .micMute: return "Mic Mute"
+        case .screenRecording: return "Screen Recording"
+        case .textCapture: return "Text Capture"
+        case .colorPicker: return "Color Picker"
+        case .cameraPreview: return "Camera Preview"
+        // Zenith fork: the Mouse page, split.
         case .scrolling: return "Scrolling"
         case .pointer: return "Pointer"
         case .mouseButtons: return "Mouse Buttons"
-        case .keyDebounce, .cutPaste, .quitProtection, .quickTools, .killProcess,
+        case .keyDebounce, .quitProtection, .killProcess,
              .shortcuts, .advanced, .about, .releaseNotes, .support:
             return nil
         }
@@ -92,6 +110,7 @@ enum SettingsSidebarIcons {
         case .scratchpad: return "Scratchpad"
         case .mixer: return "Volume Mixer"
         case .soundOutputSwitcher: return "Sound Output"
+        case .musicBlock: return "Music Blocker"
         case .micMute: return "Mic Mute"
         case .keepAwake: return "Keep Awake"
         case .brightness: return "Brightness"
@@ -129,7 +148,7 @@ enum SettingsSidebarIcons {
         case .wallpaper: return "Wallpaper"
         case .quitWindowProtection,
              .keyboardDebounce, .pastePlain, .finderCutPaste, .finderRename, .diskImageInstaller,
-             .audioPriority, .musicBlock, .extraBrightness, .bluetoothSleep,
+             .audioPriority, .extraBrightness, .bluetoothSleep,
              .killProcess,
              .notchGestures, .notchAccessories, .notchQueue, .notchLiveEqualizer, .notchDownloads, .notchWatch,
              .monitorPower, .connectedDevices:
@@ -142,9 +161,7 @@ enum SettingsSidebarIcons {
     static func fallbackSymbol(page: SettingsPage) -> String? {
         switch page {
         case .keyDebounce: return "keyboard"
-        case .cutPaste: return "filemenu.and.selection"
         case .quitProtection: return "shield.lefthalf.filled"
-        case .quickTools: return "wand.and.rays"
         case .killProcess: return "xmark.octagon"
         case .shortcuts: return "command"
         case .advanced: return "wrench.and.screwdriver"

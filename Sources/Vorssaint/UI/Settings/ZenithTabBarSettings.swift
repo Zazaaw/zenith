@@ -36,12 +36,8 @@ struct ZenithTabBarSettings: View {
         let full = pins.isFull(available: routed)
         // A heading drawn here rather than through SettingsCard's title, whose
         // labels Settings search indexes from upstream's catalogs.
-        VStack(alignment: .leading, spacing: 10) {
-            Text(text.section)
-                .font(ZenithType.sectionTitle)
-                .tracking(ZenithType.sectionTitleTracking)
-                .padding(.leading, 2)
-                .accessibilityAddTraits(.isHeader)
+        VStack(alignment: .leading, spacing: 8) {
+            ZenithSectionTitle(text.section) // the kit's section title, as the island page's others
             SettingsCard {
                 preview(routed: routed, pinned: pinned)
                 ZenithSwitchRow(text.show, isOn: $enabled) { label(text.show, caption: text.showHint) }

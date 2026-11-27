@@ -3,10 +3,10 @@
 
 import SwiftUI
 
-/// Zenith fork: the Mac tab's two switches, at the end of the iPhone & Watch
-/// page's Sharing card: sharing the clipboard, and letting the phone quit
-/// apps. Both off until the person turns them on. Each row brings the
-/// hairline above it, so the page adds them with a single line.
+/// Zenith fork: the Mac tab's two switches, under More options in the iPhone &
+/// Watch page's Sharing section: sharing the clipboard, and letting the phone
+/// quit apps. Both off until the person turns them on. Two kit rows with the
+/// hairline between them, so the page adds them with a single line.
 struct PocketMacSettingsRows: View {
     @AppStorage(PocketDefaults.shareClipboard) private var shareClipboard = false
     @AppStorage(PocketDefaults.allowQuit) private var allowQuit = false
@@ -14,30 +14,17 @@ struct PocketMacSettingsRows: View {
     private let text = ZenithStrings.pocketMac(.enUS)
 
     var body: some View {
-        Group {
-            divider
+        VStack(alignment: .leading, spacing: 0) {
             row(text.shareClipboard, caption: text.shareClipboardCaption, isOn: $shareClipboard)
-            divider
+            ZenithRowSeparator()
             row(text.allowQuit, caption: text.allowQuitCaption, isOn: $allowQuit)
         }
-    }
-
-    private var divider: some View {
-        Rectangle().fill(ZenithSurface.hairline).frame(height: 1).padding(.horizontal, 16)
+        .zenithFullBleed()
     }
 
     private func row(_ title: String, caption: String, isOn: Binding<Bool>) -> some View {
-        ZenithSwitchRow(title, isOn: isOn) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(ZenithType.rowTitle)
-                Text(caption)
-                    .font(ZenithType.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        ZenithRow(title, isOn: isOn, info: caption)
+            .padding(.horizontal, ZenithKitSurface.rowInset)
+            .frame(maxWidth: .infinity, minHeight: ZenithKitSurface.rowHeight, alignment: .leading)
     }
 }

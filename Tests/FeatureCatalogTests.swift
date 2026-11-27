@@ -2338,7 +2338,7 @@ enum FeatureCatalogTests {
         suite.expect([AppFeature.quickLauncher, .quickToggles, .quitApps, .cleaningMode, .wallpaper, .scratchpad]
                 .allSatisfy { feature in
                     let page = feature.settingsDestination.page
-                    return page != .quickTools && pageVisible(page, available: [feature])
+                    return pageVisible(page, available: [feature])
                         && !pageVisible(page, available: allFeatures.subtracting([feature]))
                 },
                "each quick tool has a page of its own, shown while the tool is installed")
@@ -2361,19 +2361,20 @@ enum FeatureCatalogTests {
                "app pages never hide")
         suite.expect(!pageVisible(.shelf, available: allFeatures.subtracting([.shelf])),
                "single-feature pages follow their feature")
-        suite.expect(pageVisible(.cutPaste, available: [.finderRename])
-                && pageVisible(.cutPaste, available: [.finderCutPaste])
-                && !pageVisible(.cutPaste, available: []),
-               "either Finder shortcut keeps their shared page visible")
+        suite.expect(pageVisible(.finderTools, available: [.finderRename])
+                && pageVisible(.finderTools, available: [.finderCutPaste])
+                && pageVisible(.finderTools, available: [.diskImageInstaller])
+                && !pageVisible(.finderTools, available: []),
+               "any Finder tool keeps the Finder Tools page visible")
         suite.expect(!pageVisible(.cleaner,
                             available: allFeatures.subtracting([.cleaner])),
                "cleaner settings, including WhatsApp downloads, follow the cleaner module")
-        suite.expect(pageVisible(.quickTools, available: [.micMute])
-                && pageVisible(.quickTools, available: [.cameraPreview])
-                && !pageVisible(.quickTools, available: [.quickToggles, .quitApps]),
-               "Quick Tools follows the tools still on it, Mic Mute and Camera Preview")
-        suite.expect(pageVisible(.clipboard, available: [.finderCutPaste]),
-               "the image paste option keeps the Clipboard page available")
+        suite.expect(!SettingsPage.allCases.contains { "\($0)" == "quickTools" }
+                && [AppFeature.micMute, .cameraPreview].allSatisfy { pageVisible($0.settingsDestination.page, available: [$0]) },
+               "Quick Tools is gone: Mic Mute and Camera Preview have pages of their own too")
+        suite.expect(!pageVisible(.clipboard, available: [.finderCutPaste])
+                && pageVisible(.clipboard, available: [.pastePlain]),
+               "the image paste option lives on Finder Tools, and plain paste alone keeps the Clipboard page")
         suite.expect(AppFeature.allCases.allSatisfy { feature in
             let destination = feature.settingsDestination
             let gate = FeatureVisibilitySupport.features(for: destination.page)
@@ -2381,10 +2382,22 @@ enum FeatureCatalogTests {
         }, "every feature destination is either always visible or gated by that feature")
         suite.expect(AppFeature.allCases.allSatisfy { $0.settingsDestination.hasValidSectionAnchor },
                "every feature anchor belongs to its destination page")
+        // Zenith fork: a sound or capture tool's anchor is a section of its own page,
+        // which its feature opens at the top.
+        let toolPageAnchors: [SettingsSectionAnchor: AppFeature] = [
+            .mixer: .mixer, .soundOutputSwitcher: .soundOutputSwitcher, .audioPriority: .audioPriority,
+            .musicBlocking: .musicBlock, .micMute: .micMute, .cameraPreview: .cameraPreview,
+            .screenshot: .screenshot, .screenRecorder: .screenRecorder, .screenOCR: .screenOCR,
+            .colorPicker: .colorPicker,
+        ]
+        suite.expect(toolPageAnchors.allSatisfy { anchor, feature in
+            feature.settingsDestination == FeatureSettingsDestination(anchor.page)
+        }, "each sound and capture tool opens its own page, where its anchor sits")
         suite.expect(Set(AppFeature.allCases.compactMap(\.settingsDestination.sectionAnchor))
                 == Set(SettingsSectionAnchor.allCases).subtracting([
                     .panelConfiguration, .keyboardBrightnessShortcuts, .monitorAlerts, .screenshotScrolling,
-                ]).filter { !$0.rawValue.hasPrefix("zenith") } // Zenith fork: search-only sections
+                ]).subtracting(toolPageAnchors.keys)
+                .filter { !$0.rawValue.hasPrefix("zenith") } // Zenith fork: search-only sections
                 && SettingsSectionAnchor.panelConfiguration.page == .general
                 && SettingsSectionAnchor.keyboardBrightnessShortcuts.page == .shortcuts
                 && SettingsSectionAnchor.screenshotScrolling.page == .screenshot
@@ -2408,13 +2421,12 @@ enum FeatureCatalogTests {
                 && !dockNeedsAccessibility(available: [.dockPreview], on: [DefaultsKey.dockClickMinimize])
                 && !dockNeedsAccessibility(available: allFeatures, on: [DefaultsKey.switcherEnabled]),
                "the Dock page asks for Accessibility while Dock Preview or any Dock click action is on")
-        suite.expect(AppFeature.mixer.settingsDestination
-                == FeatureSettingsDestination(.general, sectionAnchor: .mixer)
-                && AppFeature.soundOutputSwitcher.settingsDestination
-                    == FeatureSettingsDestination(.general, sectionAnchor: .soundOutputSwitcher)
-                && AppFeature.audioPriority.settingsDestination
-                    == FeatureSettingsDestination(.general, sectionAnchor: .audioPriority),
-               "Mixer, output switcher and audio priority have separate General controls")
+        suite.expect(AppFeature.mixer.settingsDestination == FeatureSettingsDestination(.volumeMixer)
+                && AppFeature.soundOutputSwitcher.settingsDestination == FeatureSettingsDestination(.soundOutput)
+                && AppFeature.audioPriority.settingsDestination == FeatureSettingsDestination(.soundOutput)
+                && pageVisible(.soundOutput, available: [.audioPriority])
+                && !pageVisible(.volumeMixer, available: [.soundOutputSwitcher, .audioPriority]),
+               "Volume Mixer has its page, and the output switcher shares Sound Output with audio priority")
         suite.expect(AppFeature.windowMaximizer.settingsDestination
                 == FeatureSettingsDestination(.windowLayout, sectionAnchor: .windowMaximizer)
                 && pageVisible(.windowLayout, available: [.windowMaximizer])
@@ -2425,14 +2437,12 @@ enum FeatureCatalogTests {
                 == FeatureSettingsDestination(.cleaningMode, sectionAnchor: .cleaningMode),
                "cleaning mode lands on its own page")
         suite.expect(AppFeature.musicBlock.settingsDestination
-                == FeatureSettingsDestination(.general, sectionAnchor: .musicBlocking)
+                == FeatureSettingsDestination(.musicBlocker)
                 && AppFeature.diskImageInstaller.settingsDestination
-                == FeatureSettingsDestination(.features),
+                == FeatureSettingsDestination(.finderTools, sectionAnchor: .diskImageInstaller),
                "features without dedicated pages use explicit nearest Settings destinations")
-        suite.expect(!AppFeature.diskImageInstaller.hasNavigableSettingsDestination
-                && AppFeature.allCases.filter { $0 != .diskImageInstaller }
-                    .allSatisfy(\.hasNavigableSettingsDestination),
-               "a feature without a separate configuration surface does not show a dead-end link")
+        suite.expect(AppFeature.allCases.allSatisfy(\.hasNavigableSettingsDestination),
+               "every feature has a configuration surface, so none shows a dead-end link")
         suite.expect(AppFeature.monitorCPU.settingsDestination == FeatureSettingsDestination(.monitor)
                 && AppFeature.fanControl.settingsDestination
                 == FeatureSettingsDestination(.monitor, sectionAnchor: .fanControl),
@@ -2440,12 +2450,13 @@ enum FeatureCatalogTests {
         let settingsRouter = SettingsRouter.shared
         let companionRouter = SettingsRouter()
         companionRouter.request(AppFeature.notchMascot.settingsDestination)
-        suite.expect(companionRouter.page == .notch && companionRouter.notchCompanion
+        suite.expect(companionRouter.page == .notchMascot
                      && pageVisible(companionRouter.page, available: [.notchMascot]),
-                     "the companion's settings remain reachable when it alone is installed, including the install-island prompt")
+                     "the companion's settings remain reachable on its own page when it alone is installed, including the install-island prompt")
         suite.expect(pageVisible(companionRouter.page, available: [.notch, .notchMascot])
+                     && !pageVisible(companionRouter.page, available: [.notch])
                      && !pageVisible(companionRouter.page, available: []),
-                     "the companion shares the installed island's page without exposing it when every extension is uninstalled")
+                     "the companion's page leaves with the companion, whether or not the island stays")
         var settingsRequestCount = 0
         var settingsRequestsPublishedReady = true
         let settingsRequestObservation = settingsRouter.$requestID

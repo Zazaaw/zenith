@@ -70,30 +70,23 @@ enum SettingsFeatureTests {
             }
             let sidebar = SettingsSidebarSupport.items(page: .scrolling, title: mouse.title, icon: mouse.icon,
                 preferredFeatures: mouse.terms.compactMap(\.feature), includePage: true,
+                includeFeatures: !SettingsDirectory.singleRowPages.contains(.scrolling),
                 isAvailable: { _ in true }, featureTitle: { $0.rawValue })
             suite.expect(sidebar.map(\.id) == [.page(.scrolling)],
                          "Zoom sits on the Scrolling page, which keeps one sidebar row in \(language.rawValue)")
         }
         for (language, strings) in LocalizationTests.languages {
+            // Zenith fork: scrolling capture is a section of the Screenshot page,
+            // whose single sidebar row it selects.
             let captureRows = SettingsSidebarSupport.items(
-                page: .screenshot, title: "Screen capture", icon: "camera.viewfinder",
-                preferredFeatures: [.screenshot, .screenRecorder, .screenOCR, .colorPicker],
-                includePage: false, isAvailable: { _ in true }, featureTitle: { $0.rawValue })
-            let rows = SettingsSidebarSupport.screenshotRows(captureRows, language: language)
+                page: .screenshot, title: "Screenshot", icon: "camera.viewfinder",
+                preferredFeatures: [.screenshot], includePage: true,
+                isAvailable: { _ in true }, featureTitle: { $0.rawValue })
             let destination = ScreenCaptureTool.scrolling.settingsDestination
-            suite.expect(rows.prefix(3).map(\.id)
-                    == [.feature(.screenshot), .setting(.screenshotScrolling), .feature(.screenRecorder)]
-                    && rows[1].title == FeatureStrings.screenshot(language).scrollingCaptureTitle
-                    && SettingsSidebarSupport.selection(for: destination, in: rows)
-                        == .setting(.screenshotScrolling),
-                         "scrolling screenshot has a localized sidebar row beside Screenshot")
-            let hiddenRows = SettingsSidebarSupport.items(
-                page: .screenshot, title: "Screen capture", icon: "camera.viewfinder",
-                preferredFeatures: [.screenRecorder], includePage: false,
-                isAvailable: { $0 == .screenRecorder }, featureTitle: { $0.rawValue })
-            suite.expect(!SettingsSidebarSupport.screenshotRows(hiddenRows, language: language)
-                .contains { $0.id == .setting(.screenshotScrolling) },
-                         "removing Screenshot also hides its scrolling sidebar row")
+            suite.expect(captureRows.map(\.id) == [.page(.screenshot)]
+                    && destination == FeatureSettingsDestination(.screenshot, sectionAnchor: .screenshotScrolling)
+                    && SettingsSidebarSupport.selection(for: destination, in: captureRows) == .page(.screenshot),
+                         "scrolling screenshot lands on its section of the Screenshot page")
             let search = SettingsSearchSupport.scrollingScreenshotItem(language: language)
             suite.expect(search.destination == destination && search.destination.hasValidSectionAnchor
                     && SettingsSearchSupport.matches(query: search.title, title: search.title)
@@ -107,14 +100,14 @@ enum SettingsFeatureTests {
                          "Keyboard shortcuts includes scrolling screenshot among installed capture tools")
         }
         let captureRouter = SettingsRouter()
-        captureRouter.request(ScreenCaptureTool.screenshot.settingsDestination)
+        captureRouter.request(ScreenCaptureTool.text.settingsDestination)
         captureRouter.request(ScreenCaptureTool.scrolling.settingsDestination)
         captureRouter.goBack()
-        suite.expect(captureRouter.destination == ScreenCaptureTool.screenshot.settingsDestination,
-                     "Back returns from scrolling screenshot to Screenshot")
+        suite.expect(captureRouter.destination == ScreenCaptureTool.text.settingsDestination,
+                     "Back returns from scrolling screenshot to the capture page before it")
         captureRouter.goForward()
         suite.expect(captureRouter.destination == ScreenCaptureTool.scrolling.settingsDestination,
-                     "Forward restores scrolling screenshot and its sidebar selection")
+                     "Forward restores scrolling screenshot's section")
         func directory(battery: Bool) -> [SettingsSearchItem] {
             SettingsDirectory.searchItems(.enUS, language: .enUS, state: state(battery: battery))
         }
@@ -151,14 +144,14 @@ enum SettingsFeatureTests {
                           hiddenWithout: Set<AppFeature>?, needsBattery: Bool)] = [
             (FeatureStrings.screenshot(.enUS).scrollingAutoScrollToggle, .screenshot, [], [.screenshot], false),
             (Strings.enUS.uninstallerWatchTrashToggle, .uninstaller, [], [.uninstaller], false),
-            (music.enableLyrics, .notch, [.notchLyrics], nil, false),
-            (music.enableQueue, .notch, [.notchQueue], nil, false),
-            (music.online, .notch, [], [.notchLyrics], false),
+            (music.enableLyrics, .notchMusic, [.notchLyrics], nil, false),
+            (music.enableQueue, .notchMusic, [.notchQueue], nil, false),
+            (music.online, .notchMusic, [], [.notchLyrics], false),
             (FeatureStrings.notchClipboardSize(.enUS).entrySize, .notch, [], [.clipboardHistory], false),
             (notch.clipboardActivity, .notch, [], [.clipboardHistory], false),
             (notch.dragReveal, .notch, [], [.shelf], false),
-            (FeatureStrings.notchCalendar(.enUS).weekNumbers, .notch, [], [.notchCalendar], false),
-            (FeatureStrings.notchActivities(.enUS).hideTimerCountdown, .notch, [], [.notchTimer], false),
+            (FeatureStrings.notchCalendar(.enUS).weekNumbers, .notchCalendar, [], [.notchCalendar], false),
+            (FeatureStrings.notchActivities(.enUS).hideTimerCountdown, .notchTimer, [], [.notchTimer], false),
             (notch.captureActivity, .notch, captureTools.subtracting([.colorPicker]), captureTools, false),
             (lowBattery.title, .notch, [], [.monitorPower], true),
             (lowBattery.early, .notch, [], [.monitorPower], true),
@@ -251,16 +244,17 @@ enum SettingsFeatureTests {
         verify(alerts.diskThreshold, opens: monitorAlerts, commandID: alertID, shown: false)
         verify(alerts.disk, opens: monitorAlerts, commandID: alertID)
 
-        let musicDestination = FeatureSettingsDestination(notch: .module(.music))
+        // Zenith fork: the island's sections with options open pages of their own.
+        let musicDestination = FeatureSettingsDestination(.notchMusic)
         verify(music.online, opens: musicDestination, commandID: "settings.feature.notchLyrics")
         defaults.set(false, forKey: DefaultsKey.notchLyricsEnabled)
         verify(music.online, opens: musicDestination, commandID: "settings.feature.notchLyrics", shown: false)
-        verify(music.enableLyrics, opens: musicDestination, commandID: "settings.notch.content.music", without: [.notchLyrics])
+        verify(music.enableLyrics, opens: musicDestination, commandID: "settings.notchMusic", without: [.notchLyrics])
         for language in [AppLanguage.ptBR, .enUS] {
             let lead = FeatureStrings.notchCalendar(language).countdownLead
-            let destination = FeatureSettingsDestination(notch: .module(.calendar))
-            verify(lead, opens: destination, commandID: "settings.feature.notchCalendar", language: language)
-            verify(lead, opens: destination, commandID: "settings.feature.notchCalendar", shown: false,
+            let destination = FeatureSettingsDestination(.notchCalendar)
+            verify(lead, opens: destination, commandID: "settings.notchCalendar", language: language)
+            verify(lead, opens: destination, commandID: "settings.notchCalendar", shown: false,
                    without: [.notchCalendar], language: language)
         }
         verify(Strings.enUS.hotkeyToggle, opens: FeatureSettingsDestination(.general), commandID: "action.openSettings")

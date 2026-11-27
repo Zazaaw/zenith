@@ -27,15 +27,9 @@ struct SettingsSidebarSection: Identifiable {
 
 /// Builds one row per tool, even when several tools share one Settings card.
 enum SettingsSidebarSupport {
-    /// Zenith fork: pages that hold several features yet keep a single row,
-    /// as every page does now: one sidebar row, one page, one feature's job.
-    /// Their features land on their sections without rows of their own.
-    static let onePageRows: Set<SettingsPage> = [.scrolling, .pointer, .mouseButtons, .dock, .spaces, .switcher,
-                                                  .windowLayout, .quickLauncher, .quickToggles, .quitApps,
-                                                  .cleaningMode, .wallpaper, .scratchpad]
-
     static func items(page: SettingsPage, title: String, icon: String,
                       preferredFeatures: [AppFeature], includePage: Bool,
+                      includeFeatures: Bool = true,
                       isAvailable: (AppFeature) -> Bool,
                       featureTitle: (AppFeature) -> String) -> [SettingsSidebarItem] {
         guard FeatureVisibilitySupport.isPageVisible(page, isAvailable: isAvailable) else { return [] }
@@ -44,7 +38,7 @@ enum SettingsSidebarSupport {
                                            title: title, icon: icon)
         var rows = includePage ? [pageItem] : []
         var seenFeatures: Set<AppFeature> = []
-        for feature in preferredFeatures + AppFeature.allCases where !onePageRows.contains(page) {
+        for feature in includeFeatures ? preferredFeatures + AppFeature.allCases : [] {
             guard seenFeatures.insert(feature).inserted else { continue }
             let destination = feature.settingsDestination
             guard destination.page == page, destination.sectionAnchor != nil,
@@ -56,21 +50,6 @@ enum SettingsSidebarSupport {
         }
         if rows.isEmpty { rows.append(pageItem) }
         return rows
-    }
-
-    /// Scrolling capture shares screenshot ownership but has its own destination.
-    static func screenshotRows(_ rows: [SettingsSidebarItem], language: AppLanguage)
-        -> [SettingsSidebarItem] {
-        guard let index = rows.firstIndex(where: { $0.id == .feature(.screenshot) }) else {
-            return rows
-        }
-        var result = rows
-        result.insert(SettingsSidebarItem(
-            id: .setting(.screenshotScrolling),
-            destination: ScreenCaptureTool.scrolling.settingsDestination,
-            title: FeatureStrings.screenshot(language).scrollingCaptureTitle,
-            icon: ScreenCaptureTool.scrolling.systemImageName), at: index + 1)
-        return result
     }
 
     static func selection(for destination: FeatureSettingsDestination,

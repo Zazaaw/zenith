@@ -5,22 +5,19 @@ import AppKit
 import SwiftUI
 
 struct NotchWatchSettingsControls: View {
-    @ObservedObject private var permissions = Permissions.shared
     @ObservedObject private var l10n = L10n.shared
     @AppStorage(DefaultsKey.notchWatchEnabled) private var enabled = true
     @AppStorage(DefaultsKey.notchWatchSound) private var sound = true
     private var text: NotchWatchStrings { FeatureStrings.notchWatch(l10n.language) }
 
+    // Zenith fork: Settings → Watch. Its page's hero holds the section's
+    // switch (the same preference), so the rows are what it does once on.
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Toggle(text.title, isOn: $enabled)
-                .disabled(!AppFeature.notchWatch.isAvailable)
-            Text(text.description).font(.caption).foregroundStyle(.secondary)
-            if enabled {
-                Toggle(text.sound, isOn: $sound)
-                PermissionRow(kind: .screenRecording)
-            }
+        ZenithSection(ZenithStrings.islandPages(l10n.language).watching) {
+            ZenithRow(text.sound, isOn: $sound, info: text.description)
+            PermissionRow(kind: .screenRecording).padding(.vertical, 8)
         }
+        .disabled(!enabled)
         .onChange(of: enabled) { NotchService.shared.syncWithPreferences() }
     }
 }

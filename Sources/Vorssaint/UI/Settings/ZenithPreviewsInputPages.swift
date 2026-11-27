@@ -209,7 +209,7 @@ struct ZenithCutPastePreviewCard: View {
     }
 
     private var routed: Int? {
-        guard router.page == .cutPaste, let anchor = router.destination.sectionAnchor else { return nil }
+        guard router.page == .finderTools, let anchor = router.destination.sectionAnchor else { return nil }
         return states.firstIndex(of: anchor)
     }
 
@@ -231,7 +231,7 @@ struct ZenithCutPastePreviewCard: View {
 
     private func open(_ anchor: SettingsSectionAnchor) {
         picked = nil
-        router.request(FeatureSettingsDestination(.cutPaste, sectionAnchor: anchor))
+        router.request(FeatureSettingsDestination(.finderTools, sectionAnchor: anchor))
     }
 
     private func cutPaste(_ phase: Double) -> some View {

@@ -78,7 +78,16 @@ struct SettingsDirectoryItem: Identifiable {
 enum SettingsDirectory {
     /// Shared pages whose tools cover the page without a separate overview row.
     private static let toolOnlyPages: Set<SettingsPage> = [
-        .energy, .clipboard, .cutPaste, .quickTools, .screenshot,
+        .energy,
+    ]
+
+    /// Zenith fork: pages several features share as one page with one
+    /// sidebar row (one row, one page, one feature's job). Each feature's
+    /// destination still scrolls to its section.
+    static let singleRowPages: Set<SettingsPage> = [
+        .clipboard, .finderTools,
+        .scrolling, .pointer, .mouseButtons, .switcher, .dock, .spaces, .windowLayout,
+        .quickLauncher, .quickToggles, .quitApps, .cleaningMode, .wallpaper, .scratchpad,
     ]
 
     /// The sidebar: the directory's rows (one per page, or one per tool on a
@@ -97,15 +106,13 @@ enum SettingsDirectory {
                     page: pageItem.page, title: pageItem.title, icon: pageItem.icon,
                     preferredFeatures: pageItem.terms.compactMap(\.feature),
                     includePage: !toolOnlyPages.contains(pageItem.page),
+                    includeFeatures: !singleRowPages.contains(pageItem.page),
                     isAvailable: isAvailable) { feature in
                         if feature == .clipboardHistory {
                             return FeatureStrings.commandBar(language).sourceClipboard
                         }
                         return feature.hubTitle(s, hub: hub, language: language)
                     }
-                if pageItem.page == .screenshot {
-                    rows = SettingsSidebarSupport.screenshotRows(rows, language: language)
-                }
                 if pageItem.page == .general {
                     rows.insert(SettingsSidebarItem(
                         id: .setting(.panelConfiguration),
@@ -125,9 +132,7 @@ enum SettingsDirectory {
                         title: FeatureStrings.brightness(language).keyboardLight,
                         icon: "keyboard"))
                 }
-                // The companion lives in the island, and its settings in a tab
-                // of the island's page rather than a row of their own.
-                return rows.filter { $0.id != .page(.notchMascot) }
+                return rows
             }
         return SettingsSidebarLayout.sections(rows)
     }
@@ -197,6 +202,10 @@ enum SettingsDirectory {
                          state: SettingsSearchState)
         -> [(title: String, items: [SettingsDirectoryItem])] {
         let categories = FeatureStrings.settingsCategories(language)
+        let capture = SettingsSearchSupport.screenCaptureFeatureKeywords(s, language: language)
+        func captureKeywords(_ feature: AppFeature) -> [(feature: AppFeature, titles: [String])] {
+            capture.filter { $0.feature == feature }
+        }
         let quitProtection = FeatureStrings.quitProtection(language)
         let brightness = FeatureStrings.brightness(language)
         let bluetooth = FeatureStrings.bluetoothSleep(language)
@@ -226,27 +235,11 @@ enum SettingsDirectory {
             .init([notch.capsuleFit, notch.width, notch.height, notch.fromTop],
                   notch: .layout, when: state.hardware.plainDisplay && state.capsule),
             .init([activities.keepAwakeActivity], notch: .module(.controls)),
-            .init([notch.playingMusic, notchMusic.includeOtherPlayers, notchMusic.showVolume, notchMusic.preferredPlayer,
-                   notchMusic.enableLyrics, notchMusic.browserCovers, notchMusic.enableQueue, notchMusic.liveEqualizer,
-                   "music"], notch: .module(.music)),
-            .init([notchMusic.online], feature: .notchLyrics, notch: .module(.music), when: state.on(DefaultsKey.notchLyricsEnabled)),
-            .init([notchCalendar.countdown, notchCalendar.countdownLead, notchCalendar.timeLeft, notchCalendar.weekNumbers],
-                  feature: .notchCalendar, notch: .module(.calendar)),
-            .init([FeatureStrings.notchNotifications(language).hideSystemBanner], feature: .notchNotifications, notch: .module(.notifications)),
-            .init([activities.soundEnabled, activities.hideTimerCountdown], feature: .notchTimer, notch: .module(.timer)),
             .init([notch.dragReveal], feature: .shelf, notch: .module(.files), when: state.on(DefaultsKey.notchShelf)),
             .init([notch.clipboardActivity, "clipboard"], feature: .clipboardHistory, notch: .module(.clipboard)),
             .init([FeatureStrings.notchClipboardSize(language).entrySize], feature: .clipboardHistory,
                   notch: .module(.clipboard), when: state.on(DefaultsKey.notchClipboardWindow)),
             .init(["camera"], feature: .cameraPreview, notch: .module(.camera)),
-            .init([notchAgents.title, "Claude", "Codex", "OpenCode", "GitHub Copilot", "Cursor", "AI", "tokens", notchAgents.resetsCard,
-                   notchAgents.limitsAs, notchAgents.limitFocus, notchAgents.liveActivity, notchAgents.finishAlert,
-                   notchAgents.limitAlert, notchAgents.budget, notchAgents.priceUpdates], feature: .notchAgents, notch: .module(.agents)),
-            .init([notchAgents.readout], feature: .notchAgents, notch: .module(.agents), when: state.on(DefaultsKey.notchAgentsLiveActivity)),
-            .init([notchAgents.finishAfter], feature: .notchAgents, notch: .module(.agents), when: state.on(DefaultsKey.notchAgentsFinishAlert)),
-            .init([notchAgents.limitAt], feature: .notchAgents, notch: .module(.agents), when: state.on(DefaultsKey.notchAgentsLimitAlert)),
-            .init([FeatureStrings.claudeAccount(language).title], feature: .notchAgents,
-                  notch: .module(.agents), when: state.on(DefaultsKey.notchAgentsClaude)),
             .init([notchEditor.activity, notchEditor.resting, notch.coverMenus, notchEditor.feedback, notch.inputSource,
                    notch.newTrack], notch: .activity),
             .init([notchLowBattery.title], feature: .monitorPower, notch: .activity, when: batteryRest),
@@ -274,10 +267,6 @@ enum SettingsDirectory {
                                        // The first title of each feature places its sidebar row,
                                        // so these follow the sidebar's order.
                                        featureKeywords: [
-                                        (.musicBlock, [s.musicBlockTitle, s.musicBlockSection]),
-                                        (.mixer, [s.mixerSection]),
-                                        (.soundOutputSwitcher, [s.soundOutputSwitcherTitle]),
-                                        (.audioPriority, [s.audioPrioritySection]),
                                         (.keepAwake, [s.globalHotkeySection, s.hotkeyToggle]),
                                        ]),
                 // Searching any feature name lands here even when the feature
@@ -464,7 +453,6 @@ enum SettingsDirectory {
                                                              FeatureStrings.clipboardRetention(language).title,
                                                              FeatureStrings.clipboard(language).historyLayout,
                                                              FeatureStrings.clipboard(language).skipSensitive,
-                                                             FeatureStrings.clipboard(language).pasteImageAsFile,
                                                              FeatureStrings.clipboard(language).autoClearEnable,
                                                              FeatureStrings.clipboard(language).autoClearOnSleep,
                                                              FeatureStrings.clipboard(language)
@@ -475,13 +463,21 @@ enum SettingsDirectory {
                                                                 .listTitle]),
                                         (.pastePlain, [s.pastePlainName]),
                                        ]),
-                SettingsDirectoryItem(page: .cutPaste,
-                                       title: FeatureStrings.finderRename(language).pageTitle,
+                // Zenith fork: Finder's tools on one page: cut and paste, rename, disk images.
+                SettingsDirectoryItem(page: .finderTools,
+                                       title: ZenithStrings.everyday(language).finderTitle,
                                        icon: "filemenu.and.selection",
+                                       keywords: [FeatureStrings.finderRename(language).pageTitle],
                                        featureKeywords: [
-                                        (.finderCutPaste, [s.cutPasteEnable]),
+                                        (.finderCutPaste, [s.cutPasteEnable,
+                                                           FeatureStrings.clipboard(language).pasteImageAsFile]),
                                         (.finderRename,
                                          [FeatureStrings.finderRename(language).enableLabel]),
+                                        (.diskImageInstaller,
+                                         [FeatureStrings.diskImageInstaller(language).title,
+                                          FeatureStrings.diskImageInstaller(language).trashDownloadOption,
+                                          FeatureStrings.diskImageInstaller(language).revealAppOption,
+                                          FeatureStrings.diskImageInstaller(language).useUserApplications]),
                                        ]),
                 SettingsDirectoryItem(page: .shelf, title: s.shelfName, icon: "tray.full",
                                       keywords: [s.shelfEnable, s.shelfDropZoneToggle, s.shelfEdgeToggle,
@@ -525,6 +521,41 @@ enum SettingsDirectory {
                                       title: notch.title,
                                       icon: "macbook",
                                       keywords: [notch.description, "notch"], terms: islandTerms),
+                // Zenith fork: the island's sections with options of their own, each a page.
+                SettingsDirectoryItem(page: .notchCalendar, title: NotchModule.calendar.title(language), icon: "calendar",
+                                      keywords: [notchCalendar.countdown, notchCalendar.countdownLead, notchCalendar.timeLeft,
+                                                 notchCalendar.weekNumbers, notchCalendar.calendars]),
+                SettingsDirectoryItem(page: .notchNotifications, title: NotchModule.notifications.title(language),
+                                      icon: "bell", keywords: [FeatureStrings.notchNotifications(language).hideSystemBanner]),
+                SettingsDirectoryItem(page: .notchMusic, title: NotchModule.music.title(language), icon: "music.note",
+                                      keywords: [notch.playingMusic, notchMusic.includeOtherPlayers, notchMusic.preferredPlayer,
+                                                 notchMusic.browserCovers, notchMusic.showVolume, notchMusic.enableLyrics,
+                                                 notchMusic.enableQueue, notchMusic.liveEqualizer, "music"],
+                                      terms: [
+                                        .init([notchMusic.online], feature: .notchLyrics,
+                                              when: state.on(DefaultsKey.notchLyricsEnabled)),
+                                      ]),
+                SettingsDirectoryItem(page: .notchTimer, title: NotchModule.timer.title(language), icon: "timer",
+                                      keywords: [activities.soundEnabled, activities.hideTimerCountdown]),
+                SettingsDirectoryItem(page: .notchAgents, title: NotchModule.agents.title(language), icon: "sparkles",
+                                      keywords: [notchAgents.title, "Claude", "Codex", "OpenCode", "GitHub Copilot", "Cursor",
+                                                 "AI", "tokens", notchAgents.resetsCard, notchAgents.limitsAs,
+                                                 notchAgents.limitFocus, notchAgents.liveActivity, notchAgents.finishAlert,
+                                                 notchAgents.limitAlert, notchAgents.budget, notchAgents.priceUpdates],
+                                      terms: [
+                                        .init([notchAgents.readout], when: state.on(DefaultsKey.notchAgentsLiveActivity)),
+                                        .init([notchAgents.finishAfter], when: state.on(DefaultsKey.notchAgentsFinishAlert)),
+                                        .init([notchAgents.limitAt], when: state.on(DefaultsKey.notchAgentsLimitAlert)),
+                                        .init([FeatureStrings.claudeAccount(language).title],
+                                              when: state.on(DefaultsKey.notchAgentsClaude)),
+                                      ]),
+                SettingsDirectoryItem(page: .notchDownloads, title: NotchModule.downloads.title(language),
+                                      icon: "arrow.down.circle",
+                                      keywords: [FeatureStrings.notchFiles(language).downloadsTitle,
+                                                 FeatureStrings.notchFiles(language).chooseFolder]),
+                SettingsDirectoryItem(page: .notchWatch, title: NotchModule.watch.title(language), icon: "eye",
+                                      keywords: [FeatureStrings.notchWatch(language).title,
+                                                 FeatureStrings.notchWatch(language).sound]),
                 SettingsDirectoryItem(page: .notchMascot, title: mascot.title,
                                       icon: AppFeature.notchMascot.symbolName, keywords: mascot.searchKeywords,
                                       terms: [
@@ -560,13 +591,7 @@ enum SettingsDirectory {
                 SettingsDirectoryItem(page: .workspaces, title: ZenithStrings.workspaces(language).title,
                                       icon: "square.grid.2x2",
                                       keywords: ZenithWorkspacesSearch.keywords(language)),
-                SettingsDirectoryItem(page: .quickTools, title: s.quickToolsTab, icon: "wand.and.rays",
-                                       featureKeywords: [
-                                        (.micMute, [s.micMuteName, s.micMuteFollowCallAppsToggle, s.micMuteMenuBarToggle]),
-                                        (.cameraPreview,
-                                         [FeatureStrings.cameraPreview(language).pageTitle]),
-                                       ]),
-                // Zenith fork: the other quick tools, a page each.
+                // Zenith fork: the quick tools, a page each (Quick Tools was split).
                 SettingsDirectoryItem(page: .quickLauncher, title: s.launcherName, icon: "square.grid.2x2",
                                       featureKeywords: [(.quickLauncher, [s.launcherOpenNow])]),
                 SettingsDirectoryItem(page: .quickToggles, title: FeatureStrings.quickToggles(language).pageTitle,
@@ -587,11 +612,41 @@ enum SettingsDirectory {
                                       icon: "note.text",
                                       featureKeywords: [(.scratchpad, [FeatureStrings.scratchpad(language).retentionTitle,
                                                                        FeatureStrings.scratchpad(language).closeOnClickOutside])]),
+                // Zenith fork: each capture tool on a page of its own.
                 SettingsDirectoryItem(page: .screenshot,
-                                       title: FeatureStrings.screenshot(language).screenCaptureTitle,
+                                       title: FeatureStrings.screenshot(language).pageTitle,
                                        icon: "camera.viewfinder",
-                                       featureKeywords: SettingsSearchSupport
-                                        .screenCaptureFeatureKeywords(s, language: language)),
+                                       featureKeywords: captureKeywords(.screenshot)),
+                SettingsDirectoryItem(page: .screenRecording,
+                                       title: FeatureStrings.recorder(language).pageTitle,
+                                       icon: "record.circle", featureKeywords: captureKeywords(.screenRecorder)),
+                SettingsDirectoryItem(page: .textCapture, title: s.ocrName, icon: "text.viewfinder",
+                                       featureKeywords: captureKeywords(.screenOCR)),
+                SettingsDirectoryItem(page: .colorPicker, title: s.colorPickerName, icon: "eyedropper",
+                                       featureKeywords: captureKeywords(.colorPicker)),
+                SettingsDirectoryItem(page: .cameraPreview, title: FeatureStrings.cameraPreview(language).pageTitle,
+                                       icon: "web.camera",
+                                       featureKeywords: [(.cameraPreview, [FeatureStrings.cameraPreview(language).pageTitle,
+                                                                           FeatureStrings.cameraPreview(language).openButton])]),
+                // Zenith fork: the sound tools, a page each (they were sections of General).
+                SettingsDirectoryItem(page: .volumeMixer, title: s.mixerSection, icon: "slider.vertical.3",
+                                       featureKeywords: [(.mixer, [s.mixerSection, s.mixerSystemOutputTitle,
+                                                                   s.mixerLowerOnHeadphonesDisconnect,
+                                                                   s.preciseVolumeRollerEnable, s.mixerVisibleApps])]),
+                SettingsDirectoryItem(page: .soundOutput, title: s.soundOutputSwitcherTitle, icon: "hifispeaker",
+                                       featureKeywords: [
+                                        (.soundOutputSwitcher, [s.soundOutputSwitcherTitle, s.soundOutputSwitcherEnable,
+                                                                s.soundOutputSwitcherDevices]),
+                                        (.audioPriority, [s.audioPrioritySection]),
+                                       ]),
+                SettingsDirectoryItem(page: .musicBlocker, title: FeatureStrings.hub(language).titleMusicBlock,
+                                       icon: "music.note",
+                                       featureKeywords: [(.musicBlock, [s.musicBlockTitle, s.musicBlockSection,
+                                                                        s.musicBlockReplacementLabel,
+                                                                        s.musicBlockPlayReplacement])]),
+                SettingsDirectoryItem(page: .micMute, title: s.micMuteName, icon: "mic.slash",
+                                       featureKeywords: [(.micMute, [s.micMuteName, s.micMuteFollowCallAppsToggle,
+                                                                     s.micMuteMenuBarToggle])]),
                 SettingsDirectoryItem(page: .urlCleaner, title: s.urlCleanerName, icon: "link"),
                 SettingsDirectoryItem(page: .keyDebounce, title: s.keyDebounceName, icon: "keyboard"),
                 // Zenith fork: keyboard sounds as you type, a page of its own (no hub feature).

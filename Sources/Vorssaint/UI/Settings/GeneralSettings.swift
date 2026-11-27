@@ -26,6 +26,7 @@ struct GeneralSettings: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 ZenithSystemHeader(title: l10n.s.tabGeneral, subtitle: text.pageDescription)
+                MicLeftMutedCallout() // Zenith fork: once Mic Mute is gone, its warning lives here
                 ZenithScreenPreviewCard(group: .general, current: .look)
                 startup
                 if AppFeature.keepAwake.isAvailable {
@@ -128,6 +129,26 @@ struct GeneralSettings: View {
         }
     }
 
+}
+
+/// Zenith fork: a microphone Mic Mute left muted, or could not restore, after
+/// Mic Mute was removed in Orbit. Its own page is gone then and Quick Tools,
+/// which kept the warning before, no longer exists, so General, which always
+/// shows, carries it until the mic is restored.
+struct MicLeftMutedCallout: View {
+    @ObservedObject private var l10n = L10n.shared
+    @ObservedObject private var features = FeatureRuntime.shared
+    @ObservedObject private var micMute = MicMuteService.shared
+
+    var body: some View {
+        if !AppFeature.micMute.isAvailable, let warning = micMute.warning {
+            ZenithCallout(.warning, title: l10n.s.micMuteName, warning.message) {
+                if warning == .manualRestore {
+                    Button(l10n.s.micManualRestoreChecked) { micMute.acknowledgeManualRestore() }
+                }
+            }
+        }
+    }
 }
 
 /// The idle menu bar glyph, tinted white for dark surfaces.

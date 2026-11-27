@@ -43,7 +43,6 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
         case .setting(let anchor):
             switch anchor {
             case .panelConfiguration: return .system
-            case .screenshotScrolling: return .capture
             case .keyboardBrightnessShortcuts: return .zenith
             default: return of(page: anchor.page)
             }
@@ -53,13 +52,16 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
     static func of(page: SettingsPage) -> SettingsSidebarGroup {
         switch page {
         case .general, .appearance, .commandBar, .features: return .tiles
-        case .notch, .notchMascot, .lockScreen: return .island
-        case .clipboard, .cutPaste, .shelf, .media, .urlCleaner, .textSnippets: return .everyday
+        case .notch, .notchMascot, .lockScreen,
+             .notchCalendar, .notchNotifications, .notchMusic, .notchTimer, .notchAgents, .notchDownloads,
+             .notchWatch: return .island
+        case .clipboard, .finderTools, .shelf, .media, .urlCleaner, .textSnippets: return .everyday
         case .quickLauncher, .quickToggles, .quitApps, .cleaningMode, .wallpaper, .scratchpad: return .everyday
-        case .screenshot: return .capture
+        case .screenshot, .screenRecording, .textCapture, .colorPicker, .cameraPreview: return .capture
+        case .volumeMixer, .soundOutput, .musicBlocker, .micMute: return .sound
         case .switcher, .dock, .spaces, .windowLayout, .autoQuit, .quitProtection, .workspaces, .radialMenu: return .windows
         case .scrolling, .pointer, .mouseButtons, .keyDebounce, .superKey: return .input
-        case .energy, .monitor, .quickTools: return .system
+        case .energy, .monitor: return .system
         case .cleaner, .uninstaller, .homebrew, .appUpdates, .killProcess, .portManager: return .apps
         case .remote, .pocket, .faceUnlock, .batteries: return .devices
         case .meetings, .translate, .mechakey: return .fromOrbit
@@ -108,9 +110,14 @@ enum SettingsSidebarLayout {
 
     /// Rows that open their group, ahead of the directory's order.
     static let leading: [SettingsSidebarGroup: [SettingsSidebarItem.ID]] = [
-        .island: [.page(.notch), .page(.lockScreen)],
-        .everyday: [.page(.shelf), .feature(.clipboardHistory)],
-        .capture: [.feature(.screenshot), .setting(.screenshotScrolling), .feature(.screenRecorder)],
+        .island: [.page(.notch), .page(.lockScreen), .page(.notchCalendar), .page(.notchNotifications),
+                  .page(.notchMusic), .page(.notchTimer), .page(.notchAgents), .page(.notchDownloads),
+                  .page(.notchWatch), .page(.notchMascot)],
+        .everyday: [.page(.shelf), .page(.clipboard), .page(.finderTools), .page(.media), .page(.urlCleaner),
+                    .page(.textSnippets)],
+        .capture: [.page(.screenshot), .page(.screenRecording), .page(.textCapture), .page(.colorPicker),
+                   .page(.cameraPreview)],
+        .sound: [.page(.volumeMixer), .page(.soundOutput), .page(.musicBlocker), .page(.micMute)],
         .system: [.page(.monitor), .feature(.fanControl)],
         .devices: [.page(.pocket), .page(.batteries), .page(.faceUnlock), .page(.remote)],
     ]

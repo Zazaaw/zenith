@@ -8,7 +8,7 @@ import Foundation
 /// below and the unit tests can reason about pages without pulling UI in.
 enum SettingsPage: Hashable, CaseIterable {
     case general, features, energy, monitor
-    case switcher, dock, keyDebounce, superKey, cutPaste, autoQuit, quitProtection, cleaner, uninstaller, urlCleaner, homebrew, appUpdates, media, clipboard, windowLayout, shelf, quickTools, textSnippets, screenshot, radialMenu, commandBar, killProcess, portManager, notch, notchMascot
+    case switcher, dock, keyDebounce, superKey, finderTools, autoQuit, quitProtection, cleaner, uninstaller, urlCleaner, homebrew, appUpdates, media, clipboard, windowLayout, shelf, textSnippets, screenshot, radialMenu, commandBar, killProcess, portManager, notch, notchMascot
     case shortcuts, advanced, about, releaseNotes, support
     case workspaces // Zenith fork: part of the app, no hub feature gates it
     case lockScreen // Zenith fork: the island's lock screen, a page of its own
@@ -23,6 +23,12 @@ enum SettingsPage: Hashable, CaseIterable {
     case scrolling, pointer, mouseButtons // Zenith fork: the Mouse page, one page per job
     case spaces // Zenith fork: Spaces in a fixed order, apart from the Dock
     case quickLauncher, quickToggles, quitApps, cleaningMode, wallpaper, scratchpad // Zenith fork: Quick Tools, one page each
+    // Zenith fork: the island's sections with options of their own, each a page in the Island group.
+    case notchCalendar, notchNotifications, notchMusic, notchTimer, notchAgents, notchDownloads, notchWatch
+    // Zenith fork: the sound tools, a page each (they were sections of General and Quick Tools).
+    case volumeMixer, soundOutput, musicBlocker, micMute
+    // Zenith fork: the capture tools, a page each (Screen capture and Quick Tools were split).
+    case screenRecording, textCapture, colorPicker, cameraPreview
 }
 
 /// Stable, non-localized identities for destinations inside shared Settings
@@ -74,6 +80,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
     case fanControl
     case monitorAlerts
     case windowMaximizer
+    case diskImageInstaller // Zenith fork: its prompt's remembered choices, on Finder Tools
     // Zenith fork: the fork's own sections, which Settings search lands on
     // (ZenithSettingsSearch). Their raw values all start with "zenith".
     case zenithWakaTime, zenithVercel, zenithGitHub, zenithCardImport, zenithDevServers, zenithGit, zenithSky, zenithRecap, zenithPrompter
@@ -89,12 +96,17 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
     case zenithMeetings, zenithMeetingsCalls, zenithMeetingsProviders // Zenith fork
     case zenithMechakey, zenithMechakeyRepeat // Zenith fork: the repeat switch sits under More options
     case zenithAppearanceTheme, zenithAppearanceMotion, zenithAppearanceGlass, zenithAppearanceBattery
+    // Zenith fork: rows under More options on the sound and capture pages, which search opens.
+    case zenithMixerVisibleApps, zenithScreenshotMore, zenithScreenshotLoupe, zenithRecordingMore
 
     var page: SettingsPage {
         switch self {
-        case .panelConfiguration, .mixer, .audioPriority, .musicBlocking,
-             .soundOutputSwitcher:
-            return .general
+        case .panelConfiguration: return .general
+        case .mixer, .zenithMixerVisibleApps: return .volumeMixer
+        case .audioPriority, .soundOutputSwitcher: return .soundOutput
+        case .musicBlocking: return .musicBlocker
+        case .micMute: return .micMute
+        case .cameraPreview: return .cameraPreview
         case .keepAwake, .brightness, .extraBrightness, .bluetoothSleep: return .energy
         case .scrollDirection, .scrollZoom, .smoothScroll, .linearScroll, .scrollSpeed: return .scrolling
         case .focusFollowsMouse, .mouseAcceleration: return .pointer
@@ -102,26 +114,29 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
         case .switcher: return .switcher
         case .dock, .dockClick: return .dock
         case .spacesOrder: return .spaces
-        case .finderCutPaste, .finderRename: return .cutPaste
+        case .finderCutPaste, .finderRename, .diskImageInstaller: return .finderTools
         case .clipboardHistory, .pastePlain: return .clipboard
-        case .micMute, .cameraPreview: return .quickTools
         case .quickLauncher: return .quickLauncher
         case .quickToggles: return .quickToggles
         case .quitApps: return .quitApps
         case .cleaningMode: return .cleaningMode
         case .wallpaper: return .wallpaper
         case .scratchpad: return .scratchpad
-        case .screenshot, .screenshotScrolling, .screenRecorder, .colorPicker, .screenOCR:
-            return .screenshot
+        case .screenshot, .screenshotScrolling, .zenithScreenshotMore, .zenithScreenshotLoupe: return .screenshot
+        case .screenRecorder, .zenithRecordingMore: return .screenRecording
+        case .screenOCR: return .textCapture
+        case .colorPicker: return .colorPicker
         case .keyboardBrightnessShortcuts: return .shortcuts
         case .fanControl, .monitorAlerts: return .monitor
         case .windowMaximizer: return .windowLayout
         // Zenith fork
         case .zenithWakaTime, .zenithVercel, .zenithGitHub, .zenithCardImport, .zenithDevServers, .zenithGit, .zenithSky,
              .zenithRecap, .zenithPrompter,
-             .zenithClaudeHooks, .zenithCardBackup, .zenithPrayerTimes, .zenithGoldenHour, .zenithCameraAutoStart,
-             .zenithReply, .zenithCommandActivity, .zenithExportTracker, .zenithNotices, .zenithTabBar:
+             .zenithCardBackup, .zenithPrayerTimes, .zenithGoldenHour, .zenithCameraAutoStart,
+             .zenithCommandActivity, .zenithExportTracker, .zenithNotices, .zenithTabBar:
             return .notch
+        case .zenithReply: return .notchNotifications // Zenith fork: the island's sections, pages of their own
+        case .zenithClaudeHooks: return .notchAgents
         case .zenithLockScreen, .zenithLockScreenTerminal, .zenithLockScreenLyrics, .zenithLockScreenMusic: return .lockScreen
         case .zenithRemote: return .remote
         case .zenithPocket, .zenithPocketRelay, .zenithPocketPairing, .zenithPocketSharing, .zenithPocketWatchtower: return .pocket
@@ -172,11 +187,35 @@ enum NotchSettingsLocation: Hashable {
     }
 }
 
+extension NotchModule {
+    /// Zenith fork: the page of its own a section's options live on, or nil
+    /// for the sections whose options stay on the island page's Content tab.
+    var settingsPage: SettingsPage? {
+        switch self {
+        case .calendar: return .notchCalendar
+        case .notifications: return .notchNotifications
+        case .music: return .notchMusic
+        case .timer: return .notchTimer
+        case .agents: return .notchAgents
+        case .downloads: return .notchDownloads
+        case .watch: return .notchWatch
+        default: return nil
+        }
+    }
+}
+
+extension SettingsPage {
+    /// Zenith fork: one of the island's sections on a page of its own.
+    var isNotchModulePage: Bool {
+        NotchModule.allCases.contains { $0.settingsPage == self }
+    }
+}
+
 /// A feature's nearest configuration surface. The optional anchor distinguishes
 /// a feature section on a shared page; nil means the page itself is the target.
 struct FeatureSettingsDestination: Hashable {
     let page: SettingsPage
-    let sectionAnchor: SettingsSectionAnchor?
+    private(set) var sectionAnchor: SettingsSectionAnchor?
     let notchLocation: NotchSettingsLocation?
 
     init(_ page: SettingsPage, sectionAnchor: SettingsSectionAnchor? = nil) {
@@ -185,17 +224,23 @@ struct FeatureSettingsDestination: Hashable {
         self.notchLocation = nil
     }
 
+    /// Zenith fork: a section with a page of its own (Calendar, Music, Agents…)
+    /// lands on that page rather than on the island's Content tab.
     init(notch location: NotchSettingsLocation) {
-        page = .notch
+        if case .module(let module) = location, let page = module.settingsPage {
+            self.page = page
+            notchLocation = nil
+        } else {
+            page = .notch
+            notchLocation = location
+        }
         sectionAnchor = nil
-        notchLocation = location
     }
 
     /// Zenith fork: a section inside one of the island's tabs or module options.
     init(notch location: NotchSettingsLocation, sectionAnchor: SettingsSectionAnchor) {
-        page = .notch
+        self.init(notch: location)
         self.sectionAnchor = sectionAnchor
-        notchLocation = location
     }
 
     var hasValidSectionAnchor: Bool {
@@ -266,9 +311,6 @@ final class SettingsRouter: ObservableObject {
     /// One-shot hint for the Cleaner page's tool switcher, so a panel surface
     /// can land directly on a specific tool. Consumed and cleared on arrival.
     @Published var cleanerTool: String?
-    /// One-shot hint for the Dynamic Island page to show the companion's tab,
-    /// where its settings live. Consumed and cleared on arrival.
-    @Published var notchCompanion = false
 
     private var history = [HistoryEntry(destination: FeatureSettingsDestination(.general),
                                         sidebarFeature: nil)]
@@ -281,15 +323,6 @@ final class SettingsRouter: ObservableObject {
     /// history entry, for a fallback when the visited tool went away.
     func request(_ destination: FeatureSettingsDestination, targetFeature: AppFeature? = nil,
                  sidebarFeature: AppFeature? = nil, replacingVisit: Bool = false) {
-        // The companion's settings are a tab of the Dynamic Island page.
-        if destination.page == .notchMascot {
-            request(FeatureSettingsDestination(.notch), targetFeature: targetFeature,
-                    sidebarFeature: sidebarFeature, replacingVisit: replacingVisit)
-            notchCompanion = true
-            return
-        }
-        // Any other request, history included, drops a hint nobody took.
-        notchCompanion = false
         let requestID = UUID()
         let samePage = page == destination.page
         page = destination.page
@@ -317,7 +350,7 @@ final class SettingsRouter: ObservableObject {
     }
 
     private static func anchorSelectsTool(on page: SettingsPage) -> Bool {
-        page == .general || page == .energy || page == .screenshot
+        page == .general || page == .energy
     }
 
     func goBack(isPageVisible: (SettingsPage) -> Bool = { _ in true }) {
@@ -424,23 +457,19 @@ extension AppFeature {
         case .pastePlain:
             return FeatureSettingsDestination(.clipboard, sectionAnchor: .pastePlain)
         case .finderCutPaste:
-            return FeatureSettingsDestination(.cutPaste, sectionAnchor: .finderCutPaste)
+            return FeatureSettingsDestination(.finderTools, sectionAnchor: .finderCutPaste)
         case .finderRename:
-            return FeatureSettingsDestination(.cutPaste, sectionAnchor: .finderRename)
+            return FeatureSettingsDestination(.finderTools, sectionAnchor: .finderRename)
         case .shelf: return FeatureSettingsDestination(.shelf)
         case .urlCleaner: return FeatureSettingsDestination(.urlCleaner)
-        case .diskImageInstaller: return FeatureSettingsDestination(.features)
+        case .diskImageInstaller:
+            return FeatureSettingsDestination(.finderTools, sectionAnchor: .diskImageInstaller)
 
-        case .mixer:
-            return FeatureSettingsDestination(.general, sectionAnchor: .mixer)
-        case .soundOutputSwitcher:
-            return FeatureSettingsDestination(.general, sectionAnchor: .soundOutputSwitcher)
-        case .audioPriority:
-            return FeatureSettingsDestination(.general, sectionAnchor: .audioPriority)
-        case .micMute:
-            return FeatureSettingsDestination(.quickTools, sectionAnchor: .micMute)
-        case .musicBlock:
-            return FeatureSettingsDestination(.general, sectionAnchor: .musicBlocking)
+        // Zenith fork: the sound tools open their own pages.
+        case .mixer: return FeatureSettingsDestination(.volumeMixer)
+        case .soundOutputSwitcher, .audioPriority: return FeatureSettingsDestination(.soundOutput)
+        case .micMute: return FeatureSettingsDestination(.micMute)
+        case .musicBlock: return FeatureSettingsDestination(.musicBlocker)
 
         case .keepAwake:
             return FeatureSettingsDestination(.energy, sectionAnchor: .keepAwake)
@@ -457,10 +486,8 @@ extension AppFeature {
             return FeatureSettingsDestination(.quickToggles, sectionAnchor: .quickToggles)
         case .quitApps:
             return FeatureSettingsDestination(.quitApps, sectionAnchor: .quitApps)
-        case .colorPicker:
-            return FeatureSettingsDestination(.screenshot, sectionAnchor: .colorPicker)
-        case .screenOCR:
-            return FeatureSettingsDestination(.screenshot, sectionAnchor: .screenOCR)
+        case .colorPicker: return FeatureSettingsDestination(.colorPicker) // Zenith fork
+        case .screenOCR: return FeatureSettingsDestination(.textCapture) // Zenith fork
         case .cleaningMode:
             return FeatureSettingsDestination(.cleaningMode, sectionAnchor: .cleaningMode)
         case .mediaTools: return FeatureSettingsDestination(.media)
@@ -470,30 +497,28 @@ extension AppFeature {
         case .portManager: return FeatureSettingsDestination(.portManager)
         case .homebrew: return FeatureSettingsDestination(.homebrew)
         case .appUpdates: return FeatureSettingsDestination(.appUpdates)
-        case .screenshot:
-            return FeatureSettingsDestination(.screenshot, sectionAnchor: .screenshot)
-        case .cameraPreview:
-            return FeatureSettingsDestination(.quickTools, sectionAnchor: .cameraPreview)
+        case .screenshot: return FeatureSettingsDestination(.screenshot) // Zenith fork
+        case .cameraPreview: return FeatureSettingsDestination(.cameraPreview) // Zenith fork
         case .wallpaper:
             return FeatureSettingsDestination(.wallpaper, sectionAnchor: .wallpaper)
         case .notch: return FeatureSettingsDestination(.notch)
-        case .notchCalendar: return FeatureSettingsDestination(notch: .module(.calendar))
-        case .notchNotifications: return FeatureSettingsDestination(notch: .module(.notifications))
+        // Zenith fork: the island's sections with options open their own pages.
+        case .notchCalendar: return FeatureSettingsDestination(.notchCalendar)
+        case .notchNotifications: return FeatureSettingsDestination(.notchNotifications)
         case .notchGestures: return FeatureSettingsDestination(notch: .behavior)
-        case .notchTimer: return FeatureSettingsDestination(notch: .module(.timer))
+        case .notchTimer: return FeatureSettingsDestination(.notchTimer)
         case .notchAccessories: return FeatureSettingsDestination(notch: .activity)
         case .notchLyrics, .notchQueue, .notchLiveEqualizer:
-            return FeatureSettingsDestination(notch: .module(.music))
-        case .notchDownloads: return FeatureSettingsDestination(notch: .module(.downloads))
-        case .notchAgents: return FeatureSettingsDestination(notch: .module(.agents))
-        case .notchWatch: return FeatureSettingsDestination(notch: .module(.watch))
+            return FeatureSettingsDestination(.notchMusic)
+        case .notchDownloads: return FeatureSettingsDestination(.notchDownloads)
+        case .notchAgents: return FeatureSettingsDestination(.notchAgents)
+        case .notchWatch: return FeatureSettingsDestination(.notchWatch)
         case .notchMascot: return FeatureSettingsDestination(.notchMascot)
         case .radialMenu: return FeatureSettingsDestination(.radialMenu)
         case .scratchpad:
             return FeatureSettingsDestination(.scratchpad, sectionAnchor: .scratchpad)
         case .commandBar: return FeatureSettingsDestination(.commandBar)
-        case .screenRecorder:
-            return FeatureSettingsDestination(.screenshot, sectionAnchor: .screenRecorder)
+        case .screenRecorder: return FeatureSettingsDestination(.screenRecording) // Zenith fork
 
         case .monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower, .connectedDevices:
             return FeatureSettingsDestination(.monitor)
@@ -526,11 +551,10 @@ enum FeatureVisibilitySupport {
         case .windowLayout: return [.windowLayout, .windowMaximizer]
         case .autoQuit: return [.autoQuit]
         case .quitProtection: return [.quitWindowProtection]
-        case .clipboard: return [.clipboardHistory, .pastePlain, .finderCutPaste]
-        case .cutPaste: return [.finderCutPaste, .finderRename]
+        case .clipboard: return [.clipboardHistory, .pastePlain]
+        case .finderTools: return [.finderCutPaste, .finderRename, .diskImageInstaller]
         case .shelf: return [.shelf]
         case .media: return [.mediaTools]
-        case .quickTools: return [.micMute, .cameraPreview]
         case .quickLauncher: return [.quickLauncher]
         case .quickToggles: return [.quickToggles]
         case .quitApps: return [.quitApps]
@@ -547,8 +571,26 @@ enum FeatureVisibilitySupport {
         case .keyDebounce: return [.keyboardDebounce]
         case .superKey: return [.superKey]
         case .textSnippets: return [.textSnippets]
-        case .screenshot: return [.screenshot, .screenRecorder, .screenOCR, .colorPicker]
-        case .notch: return [.notch, .notchCalendar, .notchNotifications, .notchGestures, .notchTimer, .notchAccessories, .notchLyrics, .notchQueue, .notchLiveEqualizer, .notchDownloads, .notchAgents, .notchWatch, .notchMascot]
+        case .screenshot: return [.screenshot]
+        // Zenith fork: the sound and capture tools' own pages.
+        case .volumeMixer: return [.mixer]
+        case .soundOutput: return [.soundOutputSwitcher, .audioPriority]
+        case .musicBlocker: return [.musicBlock]
+        case .micMute: return [.micMute]
+        case .screenRecording: return [.screenRecorder]
+        case .textCapture: return [.screenOCR]
+        case .colorPicker: return [.colorPicker]
+        case .cameraPreview: return [.cameraPreview]
+        case .notch: return [.notch, .notchGestures, .notchAccessories]
+        // Zenith fork: the island's sections, each kept by its own feature;
+        // Music by the island, whose section it is, or any of its extras.
+        case .notchCalendar: return [.notchCalendar]
+        case .notchNotifications: return [.notchNotifications]
+        case .notchMusic: return [.notch, .notchLyrics, .notchQueue, .notchLiveEqualizer]
+        case .notchTimer: return [.notchTimer]
+        case .notchAgents: return [.notchAgents]
+        case .notchDownloads: return [.notchDownloads]
+        case .notchWatch: return [.notchWatch]
         case .notchMascot: return [.notchMascot]
         case .lockScreen: return [.notch] // Zenith fork: the island draws the lock screen
         case .radialMenu: return [.radialMenu]

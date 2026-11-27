@@ -3,9 +3,10 @@
 
 import SwiftUI
 
-/// Zenith fork: the QR codes' section on the Clipboard page: the level codes
-/// are made at, the star in the middle, and the two shortcuts with their
-/// switches. The heading is drawn here, with Zenith's own switches, so
+/// Zenith fork: the QR codes' section on the Clipboard page, in the Settings
+/// kit: the two shortcuts with their switches and the three actions first,
+/// then the level codes are made at and the star in the middle under More
+/// options. The heading is drawn here, with Zenith's own switches, so
 /// nothing here reaches upstream's Settings search catalogs.
 struct QRSettingsSection: View {
     @ObservedObject private var l10n = L10n.shared
@@ -19,47 +20,29 @@ struct QRSettingsSection: View {
     private var text: ZenithQRStrings { ZenithStrings.qr(l10n.language) }
 
     var body: some View {
-        Section {
-            Text(text.settingsCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            VStack(alignment: .leading, spacing: 4) {
-                Picker(text.correction, selection: $correction) {
-                    ForEach(QRCorrection.allCases) { level in
-                        Text("\(level.rawValue) · \(level.percent)%").tag(level.rawValue)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .disabled(logo)
-                Text(text.correctionCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            ZenithSwitchRow(text.logo, isOn: $logo) { Text(text.logo) }
+        ZenithSection(text.title, anchor: .zenithQR, footer: text.settingsCaption) {
             if GlobalShortcutRole.zenithQR.isAvailable(using: { $0.isAvailable }) {
-                ZenithSwitchRow(text.fromClipboard, isOn: $shortcutOn) { Text(text.fromClipboard) }
+                ZenithRow(text.fromClipboard, isOn: $shortcutOn)
                     .onChange(of: shortcutOn) { _, _ in service.syncWithPreferences() }
-                ShortcutPreferenceRow(role: .zenithQR, isEnabled: shortcutOn, label: text.fromClipboard) {
+                ShortcutPreferenceRow(role: .zenithQR, isEnabled: shortcutOn) {
                     service.syncWithPreferences()
                 }
+                .padding(.vertical, 8)
                 if shortcutOn, service.shortcutFailed {
-                    Text(l10n.s.shortcutUnavailable)
-                        .font(.caption)
-                        .foregroundStyle(ZenithStatus.warning)
+                    ZenithRowStatus(text: l10n.s.shortcutUnavailable, symbol: "exclamationmark.triangle.fill",
+                                    color: ZenithStatus.warning)
                 }
             }
             if service.canScan {
-                ZenithSwitchRow(text.scan, isOn: $scanOn) { Text(text.scan) }
+                ZenithRow(text.scan, isOn: $scanOn)
                     .onChange(of: scanOn) { _, _ in service.syncWithPreferences() }
-                ShortcutPreferenceRow(role: .zenithQRScan, isEnabled: scanOn, label: text.scan) {
+                ShortcutPreferenceRow(role: .zenithQRScan, isEnabled: scanOn) {
                     service.syncWithPreferences()
                 }
+                .padding(.vertical, 8)
                 if scanOn, service.scanShortcutFailed {
-                    Text(l10n.s.shortcutUnavailable)
-                        .font(.caption)
-                        .foregroundStyle(ZenithStatus.warning)
+                    ZenithRowStatus(text: l10n.s.shortcutUnavailable, symbol: "exclamationmark.triangle.fill",
+                                    color: ZenithStatus.warning)
                 }
             }
             HStack(spacing: 8) {
@@ -68,10 +51,18 @@ struct QRSettingsSection: View {
                 if service.canScan {
                     Button(text.scan) { service.scanScreen() }
                 }
+                Spacer(minLength: 0)
             }
-        } header: {
-            Text(text.title)
+            .padding(.vertical, 8)
+            ZenithMoreOptions(id: "clipboard.qr") {
+                ZenithRow(text.correction, selection: $correction, info: text.correctionCaption) {
+                    ForEach(QRCorrection.allCases) { level in
+                        Text(verbatim: "\(level.rawValue) · \(level.percent)%").tag(level.rawValue)
+                    }
+                }
+                .disabled(logo)
+                ZenithRow(text.logo, isOn: $logo)
+            }
         }
-        .settingsFormSectionAnchor(.zenithQR) // Settings search lands here
     }
 }

@@ -106,7 +106,10 @@ centred on the icon with `ZenithHeroArtContext`: `t` (seconds), `tint`, `dark`,
 `icon` (the page's icon at 88 pt from the bitmap cache) and `base` (its empty
 squircle, for art that draws its own glyph). Available: `.icon` (default, gentle
 float), `.mechakey`, `.translate`, `.meetings`, `.shelf`, `.batteries`,
-`.lockScreen`. Add new ones to `ZenithHeroAnimations.swift`.
+`.lockScreen`. Add new ones to `ZenithHeroAnimations.swift`. The Everyday and
+Devices pages keep theirs in `ZenithHeroAnimationsEveryday.swift`: `.clipboard`,
+`.finderTools`, `.mediaTools`, `.urlCleaner`, `.textSnippets`, `.pocket`,
+`.remote`, `.faceUnlock`.
 
 Rules:
 

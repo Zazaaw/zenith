@@ -318,12 +318,8 @@ struct CommandActivitySettings: View {
     var body: some View {
         // A heading drawn here rather than through SettingsCard's title, whose
         // labels Settings search indexes from upstream's catalogs.
-        VStack(alignment: .leading, spacing: 10) {
-            Text(text.section)
-                .font(ZenithType.sectionTitle)
-                .tracking(ZenithType.sectionTitleTracking)
-                .padding(.leading, 2)
-                .accessibilityAddTraits(.isHeader)
+        VStack(alignment: .leading, spacing: 8) {
+            ZenithSectionTitle(text.section) // the kit's section title, as the island page's others
             SettingsCard {
                 ZenithSwitchRow(text.toggle, isOn: $enabled) {
                     label(text.toggle, caption: text.toggleCaption)

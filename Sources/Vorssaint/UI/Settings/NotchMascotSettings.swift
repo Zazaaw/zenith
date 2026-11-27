@@ -3,12 +3,12 @@
 
 import SwiftUI
 
-/// The companion's own page. It lives at the top in a slice of the island,
-/// bigger than life, and acts out what it does on request; below are how it
-/// looks, how it behaves and whether the Command Bar comes out with it.
+/// Settings → Mascot, the companion's own page. Zenith fork: a feature page of
+/// the kit (docs/SETTINGS-KIT.md): the hero with its switch and the star
+/// hopping, the companion resting in the island on the stage and acting out
+/// what it does on request, how it looks as pictures, how it behaves, and
+/// whether the Command Bar comes out with it.
 struct NotchMascotSettings: View {
-    /// Shown as a tab of the Dynamic Island page, which keeps its own margins.
-    var embedded = false
     @ObservedObject private var l10n = L10n.shared
     /// Redraws when the island or the Command Bar is installed or removed.
     @ObservedObject private var features = FeatureRuntime.shared
@@ -51,56 +51,40 @@ struct NotchMascotSettings: View {
 
     var body: some View {
         ScrollViewReader { proxy in // Zenith fork: the preview card scrolls to the look
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                header
-                // Zenith fork: the shared preview card; as the Dynamic Island
-                // page's tab, that page's card shows the companion.
-                if !embedded {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    ZenithHero(title: text.title, subtitle: ZenithStrings.islandPages(l10n.language).mascotSubtitle,
+                               chips: [ZenithChip(text.style(look.style)), ZenithChip(text.palette(look.palette))],
+                               isOn: $enabled, switchLabel: text.title, switchHint: text.hint, animation: .mascot)
+                    if !islandOn { islandNote }
                     ZenithMascotPreviewCard {
-                        withAnimation(.easeInOut(duration: 0.3)) { proxy.scrollTo(Self.appearanceID, anchor: .top) }
+                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
+                            proxy.scrollTo(Self.appearanceID, anchor: .top)
+                        }
                     }
+                    NotchMascotStageCard(look: look, side: restingSide, awake: enabled, canGreet: enabled && islandOn,
+                                         visits: visits, reactions: reactions, hides: hidesWhenIdle, text: text,
+                                         language: l10n.language)
+                    appearance.id(Self.appearanceID)
+                    behavior
+                    commandBarSection
                 }
-                if !islandOn { islandNote }
-                NotchMascotStageCard(look: look, side: restingSide, awake: enabled, canGreet: enabled && islandOn,
-                                     visits: visits, reactions: reactions, hides: hidesWhenIdle, text: text,
-                                     language: l10n.language)
-                appearance.id(Self.appearanceID)
-                behavior
-                commandBarCard
+                .frame(maxWidth: 760)
+                .frame(maxWidth: .infinity)
+                .padding(22)
             }
-            .padding(embedded ? [.bottom] : .all, 22)
-        }
         }
     }
 
     private static let appearanceID = "zenith.preview.appearance" // Zenith fork
-
-    private var header: some View {
-        SettingsPageHeader(title: text.title, subtitle: text.hint) {
-            Toggle(text.title, isOn: $enabled).labelsHidden().toggleStyle(ZenithSwitchStyle())
-                .accessibilityLabel(text.title)
-        }
-    }
 
     /// With the island off or uninstalled the companion has nowhere to live,
     /// so the page says so and offers the way to bring the island back.
     private var islandNote: some View {
         let installed = features.isAvailable(.notch)
         let notch = FeatureStrings.notch(l10n.language)
-        return HStack(spacing: 12) {
-            Image(systemName: AppFeature.notch.symbolName)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 26, height: 26)
-                .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-            VStack(alignment: .leading, spacing: 2) {
-                Text(text.livesInIsland)
-                if !installed {
-                    Text(AppFeature.notch.enableReason(l10n)).font(.caption).foregroundStyle(.secondary)
-                }
-            }
-            Spacer(minLength: 12)
+        let line = installed ? text.livesInIsland : text.livesInIsland + " " + AppFeature.notch.enableReason(l10n)
+        return ZenithCallout(.info, line) {
             if installed {
                 Button(notch.enable) {
                     islandEnabled = true
@@ -110,59 +94,50 @@ struct NotchMascotSettings: View {
                 Button(editor.openFeatures) { AppFeature.notch.showInFeatures() }
             }
         }
-        .padding(12)
-        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
     // MARK: Appearance
 
     private var appearance: some View {
-        SettingsCard(title: text.appearance) {
-            SettingsRow(symbol: "paintpalette", title: text.style) { EmptyView() }
-            HStack(spacing: 10) {
-                ForEach(NotchMascotStyle.allCases) { item in
-                    NotchMascotChoiceTile(title: text.style(item), selected: look.style == item) {
-                        style = item.rawValue
-                    } preview: {
-                        NotchMascotView(look: NotchMascotLook(style: item, shape: look.shape, palette: look.palette),
-                                        size: 30, idles: false)
-                            .frame(width: 30, height: 30)
-                            .frame(width: 64, height: 42)
-                            .background(Color.black, in: Capsule())
-                    }
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 10) {
+                ZenithSectionTitle(text.appearance)
+                ZenithVisualPicker(text.style, selection: Binding(get: { look.style }, set: { style = $0.rawValue }),
+                                   options: NotchMascotStyle.allCases.map { ZenithPickerOption($0, text.style($0)) },
+                                   minimumTileWidth: 110) { item, _ in
+                    NotchMascotView(look: NotchMascotLook(style: item, shape: look.shape, palette: look.palette),
+                                    size: 30, idles: false)
+                        .frame(width: 30, height: 30)
+                        .frame(width: 64, height: 42)
+                        .background(Color.black, in: Capsule())
+                        .accessibilityHidden(true)
                 }
             }
-            .padding(.leading, settingsRowTextInset)
-            if look.style == .minimal {
-                SettingsRow(symbol: "circle.square", title: text.shape) {
-                    Text(text.shape(look.shape)).foregroundStyle(.secondary)
+            ZenithSection {
+                if look.style == .minimal {
+                    ZenithRow(text.shape) { shapes }
+                        .transition(.opacity)
                 }
-                .transition(.opacity)
-                shapes
-                    .transition(.opacity)
+                ZenithRow(text.color) { swatches }
             }
-            SettingsRow(symbol: "swatchpalette", title: text.color) {
-                Text(text.palette(look.palette)).foregroundStyle(.secondary)
-            }
-            swatches
+            .animation(animation, value: look.style)
         }
-        .animation(animation, value: look.style)
     }
 
     private var shapes: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             ForEach(NotchMascotShape.allCases) { item in
                 let selected = look.shape == item
                 Button { shape = item.rawValue } label: {
                     NotchMascotView(look: NotchMascotLook(style: .minimal, shape: item, palette: look.palette),
-                                    size: 24, idles: false)
-                        .frame(width: 24, height: 24)
-                        .frame(width: 58, height: 40)
-                        .background(Color.black, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                    size: 18, idles: false)
+                        .frame(width: 18, height: 18)
+                        .frame(width: 40, height: 28)
+                        .background(Color.black, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                         .padding(2)
-                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .strokeBorder(selected ? Color.accentColor : .clear, lineWidth: 2))
-                        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .help(text.shape(item))
@@ -171,18 +146,17 @@ struct NotchMascotSettings: View {
                 .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: selected)
             }
         }
-        .padding(.leading, settingsRowTextInset)
     }
 
     private var swatches: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             ForEach(NotchMascotPalette.allCases) { item in
                 let selected = look.palette == item
                 Button { palette = item.rawValue } label: {
                     Circle()
                         .fill(LinearGradient(colors: [Color(cgColor: item.light.cgColor), Color(cgColor: item.shade.cgColor)],
                                              startPoint: .top, endPoint: .bottom))
-                        .frame(width: 22, height: 22)
+                        .frame(width: 20, height: 20)
                         .overlay(Circle().strokeBorder(Color.primary.opacity(0.15), lineWidth: 0.5))
                         .padding(3)
                         .overlay(Circle().strokeBorder(selected ? Color.accentColor : .clear, lineWidth: 2))
@@ -195,73 +169,64 @@ struct NotchMascotSettings: View {
                 .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: selected)
             }
         }
-        .padding(.leading, settingsRowTextInset)
     }
 
     // MARK: Behavior
 
     private var behavior: some View {
-        SettingsCard(title: text.behavior) {
+        VStack(alignment: .leading, spacing: 18) {
             if restsBesideCamera {
-                SettingsRow(symbol: "arrow.left.and.right", title: text.side) { EmptyView() }
-                HStack(spacing: 10) {
-                    ForEach(NotchMascotSide.allCases) { item in
-                        NotchMascotChoiceTile(title: text.side(item), selected: restingSide == item) {
-                            side = item.rawValue
-                        } preview: {
-                            NotchMascotSideSample(look: look, side: item)
-                        }
+                VStack(alignment: .leading, spacing: 10) {
+                    ZenithSectionTitle(text.side)
+                    ZenithVisualPicker(text.side, selection: Binding(get: { restingSide }, set: { side = $0.rawValue }),
+                                       options: NotchMascotSide.allCases.map { ZenithPickerOption($0, text.side($0)) },
+                                       minimumTileWidth: 150) { item, _ in
+                        NotchMascotSideSample(look: look, side: item)
                     }
                 }
-                .padding(.leading, settingsRowTextInset)
             }
-            switchRow("eye.slash", text.hidesWhenIdle, caption: text.hidesWhenIdleHint, isOn: $hidesWhenIdle)
-            switchRow("figure.walk", text.visits, caption: text.visitsHint, isOn: $visits)
-            if visits {
-                SettingsChoiceRow(symbol: "clock", title: text.frequency, selection: $frequency) {
-                    ForEach(NotchMascotVisitFrequency.allCases) { Text(text.frequency($0)).tag($0.rawValue) }
+            ZenithSection(text.behavior) {
+                ZenithRow(text.hidesWhenIdle, isOn: $hidesWhenIdle, info: text.hidesWhenIdleHint)
+                ZenithRow(text.visits, isOn: $visits, info: text.visitsHint)
+                if visits {
+                    SettingsChoiceRow(symbol: "clock", title: text.frequency, selection: $frequency) {
+                        ForEach(NotchMascotVisitFrequency.allCases) { Text(text.frequency($0)).tag($0.rawValue) }
+                    }
+                    .transition(.opacity)
                 }
-                .padding(.leading, settingsRowTextInset)
-                .transition(.opacity)
+                ZenithRow(text.reactions, isOn: $reactions, info: text.reactionsHint)
             }
-            switchRow("theatermasks", text.reactions, caption: text.reactionsHint, isOn: $reactions)
+            .animation(animation, value: visits)
         }
-        .animation(animation, value: visits)
     }
 
     // MARK: Command Bar
 
-    private var commandBarCard: some View {
+    private var commandBarSection: some View {
         let available = features.isAvailable(.commandBar)
         let bar = FeatureStrings.commandBar(l10n.language)
-        return SettingsCard(title: bar.pageTitle) {
-            SettingsFeatureSwitchRow(symbol: "command", title: text.commandBar, caption: text.commandBarHint,
-                                     isOn: $commandBar, feature: .commandBar)
+        return VStack(alignment: .leading, spacing: 18) {
+            ZenithSection(bar.pageTitle) {
+                SettingsFeatureSwitchRow(symbol: "command", title: text.commandBar, caption: text.commandBarHint,
+                                         isOn: $commandBar, feature: .commandBar)
+            }
             if available, commandBar {
-                SettingsRow(symbol: "drop", title: text.opensAs) { EmptyView() }
-                    .transition(.opacity)
-                HStack(spacing: 10) {
-                    ForEach(NotchCommandBarStyle.allCases) { item in
-                        NotchMascotChoiceTile(title: text.commandBarStyle(item),
-                                              selected: (NotchCommandBarStyle(rawValue: commandBarStyle) ?? .droplet) == item) {
-                            commandBarStyle = item.rawValue
-                        } preview: {
-                            NotchCommandBarStyleSample(style: item, look: look)
-                        }
+                VStack(alignment: .leading, spacing: 10) {
+                    ZenithSectionTitle(text.opensAs)
+                    ZenithVisualPicker(text.opensAs,
+                                       selection: Binding(get: { NotchCommandBarStyle(rawValue: commandBarStyle) ?? .droplet },
+                                                          set: { commandBarStyle = $0.rawValue }),
+                                       options: NotchCommandBarStyle.allCases.map {
+                                           ZenithPickerOption($0, text.commandBarStyle($0))
+                                       },
+                                       minimumTileWidth: 150, tileHeight: 70) { item, _ in
+                        NotchCommandBarStyleSample(style: item, look: look)
                     }
                 }
-                .padding(.leading, settingsRowTextInset)
                 .transition(.opacity)
             }
         }
         .animation(animation, value: available && commandBar)
-    }
-
-    /// An option with its icon, a line about it and a switch, like the rest of Settings.
-    private func switchRow(_ symbol: String, _ title: String, caption: String? = nil, isOn: Binding<Bool>) -> some View {
-        SettingsRow(symbol: symbol, title: title, caption: caption) {
-            Toggle(title, isOn: isOn).labelsHidden().toggleStyle(ZenithSwitchStyle())
-        }
     }
 }
 
@@ -726,38 +691,6 @@ private struct NotchMascotMomentChip: View {
 
 /// A choice drawn as what it gives, with its name under it, like the size
 /// and shape choices on the Dynamic Island page.
-private struct NotchMascotChoiceTile<Preview: View>: View {
-    let title: String
-    let selected: Bool
-    let action: () -> Void
-    @ViewBuilder let preview: () -> Preview
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                preview()
-                Text(title).font(.system(size: 11, weight: .medium)).lineLimit(2).multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity, minHeight: 68)
-            .padding(8)
-            .foregroundStyle(selected ? Color.accentColor : .primary)
-            .background(selected ? Color.accentColor.opacity(0.12) : Color.secondary.opacity(0.06),
-                        in: RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous)
-                    .strokeBorder(selected ? Color.accentColor.opacity(0.7) : .clear, lineWidth: 1)
-            }
-            .contentShape(RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        // The button keeps its own element, so VoiceOver can press it.
-        .accessibilityLabel(title)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: selected)
-    }
-}
-
 /// Black reads as the island's own color on a light page, and needs a faint
 /// edge to stand off a dark one.
 private extension Shape {

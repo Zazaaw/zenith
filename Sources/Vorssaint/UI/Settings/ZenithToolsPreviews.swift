@@ -213,7 +213,8 @@ extension View {
 
 // MARK: - Quick Tools
 
-/// The features of Quick Tools, in the order of the page's sections.
+/// The quick tools, each on a page of its own now (Zenith fork); their
+/// pictures are drawn here, where the shared Quick Tools card drew them.
 enum QuickToolsPreviewFeature: CaseIterable {
     case launcher, toggles, quitApps, micMute, cameraPreview, wallpaper, scratchpad, cleaningMode
 
@@ -270,9 +271,8 @@ enum QuickToolsPreviewFeature: CaseIterable {
     }
 }
 
-/// The card's states on Quick Tools: the features drawn together. Wallpaper
-/// and Cleaning mode have pictures of their own, shown when Settings lands
-/// on them.
+/// Where the quick tools appear on screen: the panel, floating windows, the
+/// apps. Wallpaper and Cleaning mode have pictures of their own.
 enum QuickToolsPreviewGroup: CaseIterable {
     case panel, windows, apps
 
@@ -287,81 +287,7 @@ enum QuickToolsPreviewGroup: CaseIterable {
     var features: [QuickToolsPreviewFeature] { QuickToolsPreviewFeature.allCases.filter { $0.group == self } }
 }
 
-/// The card on Quick Tools. It follows the feature Settings opened the page
-/// on (a sidebar row or a search result lands on its section); the states
-/// switch between groups of features, and clicking a part of the picture
-/// lands on that feature's section the same way.
-struct QuickToolsPreviewCard: View {
-    @ObservedObject private var router = SettingsRouter.shared
-    @ObservedObject private var features = FeatureRuntime.shared
-    /// The group picked in the card; nil follows the routed feature.
-    @State private var pickedGroup: QuickToolsPreviewGroup?
-
-    private var available: [QuickToolsPreviewFeature] {
-        _ = features.revision
-        // Zenith fork: only the tools still on this page; the others have pages of their own.
-        return QuickToolsPreviewFeature.allCases.filter {
-            $0.feature.isAvailable && $0.feature.settingsDestination.page == .quickTools
-        }
-    }
-
-    private var groups: [QuickToolsPreviewGroup] {
-        QuickToolsPreviewGroup.allCases.filter { group in available.contains { $0.group == group } }
-    }
-
-    private var routed: QuickToolsPreviewFeature? {
-        guard router.destination.page == .quickTools,
-              let feature = QuickToolsPreviewFeature(anchor: router.destination.sectionAnchor),
-              available.contains(feature) else { return nil }
-        return feature
-    }
-
-    private var group: QuickToolsPreviewGroup {
-        if let pickedGroup, groups.contains(pickedGroup) { return pickedGroup }
-        return routed?.group ?? groups.first ?? .panel
-    }
-
-    /// The feature outlined: the routed one when its group is shown, else the group's first.
-    private var shown: QuickToolsPreviewFeature {
-        if let routed, routed.group == group { return routed }
-        return group.features.first(where: available.contains) ?? .launcher
-    }
-
-    var body: some View {
-        let states = self.groups
-        ZenithSettingsPreviewCard(
-            id: "quickTools", caption: caption,
-            states: states.map(\.title),
-            selection: Binding(get: { states.firstIndex(of: group) ?? 0 },
-                               set: { pickedGroup = states.indices.contains($0) ? states[$0] : nil }),
-            highlight: shown.name
-        ) {
-            QuickToolsPreviewPicture(group: group, shown: shown, available: available, open: open)
-        }
-        .onChange(of: router.requestID) { _, _ in pickedGroup = nil }
-    }
-
-    private var caption: String {
-        switch shown {
-        case .wallpaper: return toolsText.quickWallpaperCaption
-        case .cleaningMode: return toolsText.quickCleaningCaption
-        default:
-            switch group {
-            case .panel: return toolsText.quickPanelCaption
-            case .windows: return toolsText.quickWindowsCaption
-            case .apps: return toolsText.quickAppsCaption
-            }
-        }
-    }
-
-    private func open(_ feature: QuickToolsPreviewFeature) {
-        pickedGroup = nil
-        router.request(feature.feature.settingsDestination)
-    }
-}
-
-/// The picture for a group of Quick Tools: the features where they appear,
-/// the `shown` one outlined.
+/// The picture of a quick tool where it appears, the `shown` one outlined.
 struct QuickToolsPreviewPicture: View {
     let group: QuickToolsPreviewGroup
     let shown: QuickToolsPreviewFeature

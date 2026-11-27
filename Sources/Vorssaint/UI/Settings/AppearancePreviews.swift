@@ -8,55 +8,6 @@ import SwiftUI
 // and the island in each glass. They draw over a fixed sample wallpaper: the
 // colours are the subject, so they stay the same in Light and Dark Mode.
 
-// MARK: - Choice tile
-
-/// A picture over a name, outlined in the accent colour when chosen.
-struct AppearanceChoiceTile<Picture: View>: View {
-    let title: String
-    var symbol: String? = nil
-    let selected: Bool
-    var enabled = true
-    var pictureHeight: CGFloat = 66
-    let action: () -> Void
-    @ViewBuilder let picture: () -> Picture
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                picture()
-                    .frame(height: pictureHeight)
-                    .frame(maxWidth: .infinity)
-                    .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 9, style: .continuous)
-                            .strokeBorder(selected ? Color.accentColor : Color.primary.opacity(0.12),
-                                          lineWidth: selected ? 2 : 1)
-                    }
-                HStack(spacing: 4) {
-                    if let symbol {
-                        Image(systemName: symbol).font(.system(size: 10, weight: .semibold))
-                    }
-                    Text(title)
-                        .font(.system(size: 11, weight: selected ? .semibold : .medium))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
-                }
-                .foregroundStyle(selected ? Color.accentColor : .primary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(8)
-            .background(selected ? Color.accentColor.opacity(0.08) : Color.clear,
-                        in: RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .disabled(!enabled)
-        .opacity(enabled ? 1 : 0.45)
-        .accessibilityLabel(title)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-}
-
 // MARK: - Theme
 
 /// Three little desktops with a window on each: the same picture System

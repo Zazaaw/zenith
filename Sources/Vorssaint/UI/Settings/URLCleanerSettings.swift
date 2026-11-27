@@ -4,6 +4,8 @@
 import AppKit
 import SwiftUI
 
+/// Settings → URL Cleaner. Zenith fork: rebuilt with the Settings kit: the
+/// switch in the hero, the preview, a field to try a link, and the rules.
 struct URLCleanerSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var cleaner = URLCleanerService.shared
@@ -17,6 +19,7 @@ struct URLCleanerSettings: View {
     @State private var input = ""
     @State private var copied: String?
     @State private var showingAddSite = false
+    private let page = ZenithStrings.everyday(.enUS)
     /// Worked out from the field on every render, so Copy always takes the
     /// link that is in the field now under the rules in force now.
     private var result: URLCleaning.Result? {
@@ -29,111 +32,120 @@ struct URLCleanerSettings: View {
     }
 
     var body: some View {
-        Form {
-            ZenithPreviewFormSection { ZenithURLCleanerPreviewCard() } // Zenith fork: the preview card
-            Section {
-                Toggle(l10n.s.urlCleanerEnable, isOn: $enabled)
-                    .onChange(of: enabled) { _, _ in
-                        URLCleanerService.shared.syncWithPreferences()
-                    }
-                Text(l10n.s.urlCleanerEnableCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(l10n.s.urlCleanerLocalNote)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                if enabled, cleaner.isRunning {
-                    Label(l10n.s.urlCleanerActiveNow, systemImage: "checkmark.circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(ZenithStatus.success)
-                    // The automatic rewrite is silent by design. Naming what it
-                    // took out is the only place someone can see that the
-                    // rules did anything to a link they copied.
-                    if !cleaner.lastRemoved.isEmpty {
-                        Text(removedSummary(cleaner.lastRemoved))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+        ScrollView {
+            ZenithPageColumn {
+                ZenithHero(title: l10n.s.urlCleanerName, subtitle: l10n.s.urlCleanerEnableCaption, chips: chips,
+                           isOn: Binding(get: { enabled }, set: { on in
+                               enabled = on
+                               URLCleanerService.shared.syncWithPreferences()
+                           }),
+                           switchLabel: l10n.s.urlCleanerEnable, switchHint: l10n.s.urlCleanerLocalNote,
+                           animation: .urlCleaner)
+                ZenithURLCleanerPreviewCard() // Zenith fork: the preview card
+                // The automatic rewrite is silent by design. Naming what it
+                // took out is the only place someone can see that the rules
+                // did anything to a link they copied.
+                if enabled, cleaner.isRunning, !cleaner.lastRemoved.isEmpty {
+                    ZenithCallout(.success, title: l10n.s.urlCleanerActiveNow, removedSummary(cleaner.lastRemoved))
                 }
+                trySection
+                rulesSection
+                    .zenithPreviewTarget("urlCleaner.rules") // Zenith fork
             }
+        }
+        .zenithPreviewJumps() // Zenith fork
+    }
 
-            Section(l10n.s.urlCleanerRulesTitle) {
-                ForEach(URLCleaning.ruleGroups(rules: rules)) { group in
-                    DisclosureGroup {
-                        parameterGrid(for: group)
-                        addParameterRow(site: group.site)
-                    } label: {
-                        HStack {
-                            Text(title(for: group.site))
-                            Spacer()
-                            Text(countLabel(group.enabledCount))
-                                .foregroundStyle(.secondary)
-                            siteSwitch(for: group)
-                        }
-                    }
+    private var chips: [ZenithChip] {
+        let groups = URLCleaning.ruleGroups(rules: rules)
+        return [ZenithChip(page.urlSites(groups.count)),
+                ZenithChip(page.urlRules(groups.reduce(0) { $0 + $1.enabledCount }))]
+    }
+
+    // MARK: Try it
+
+    private var trySection: some View {
+        ZenithSection(l10n.s.urlCleanerManualTitle, footer: l10n.s.urlCleanerLocalNote) {
+            HStack(spacing: 8) {
+                TextField("", text: $input, prompt: Text(l10n.s.urlCleanerInputPlaceholder))
+                    .textFieldStyle(.roundedBorder)
+                    .labelsHidden()
+                    .accessibilityLabel(l10n.s.urlCleanerInputPlaceholder)
+                Button {
+                    clearInput()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(Color.secondary.opacity(input.isEmpty ? 0.35 : 1))
+                        .frame(width: 22, height: 22)
                 }
-                DisclosureHeaderRow(isExpanded: $showingAddSite) {
-                    Text(l10n.s.urlCleanerRulesAddSite)
-                    Spacer()
-                }
-                if showingAddSite {
-                    addSiteRow
-                        .disclosureIndent()
-                }
-                Text(l10n.s.urlCleanerRulesCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                // Why the list is as long as it is. Without this the length
-                // reads as "we delete a lot from your links", when a real link
-                // only ever carries a handful of these.
-                Text(l10n.s.urlCleanerRulesCoverageCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                .buttonStyle(.plain)
+                .help(l10n.s.urlCleanerClearButton)
+                .accessibilityLabel(l10n.s.urlCleanerClearButton)
+                .disabled(input.isEmpty)
+                Button(l10n.s.urlCleanerPasteButton) { paste() }
+                Button(l10n.s.urlCleanerCopyButton) { copy() }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(result == nil)
             }
-            .zenithPreviewTarget("urlCleaner.rules") // Zenith fork
-
-            Section(l10n.s.urlCleanerManualTitle) {
-                HStack(spacing: 8) {
-                    TextField("", text: $input, prompt: Text(l10n.s.urlCleanerInputPlaceholder))
-                        .textFieldStyle(.roundedBorder)
-                        .labelsHidden()
-                        .accessibilityLabel(l10n.s.urlCleanerInputPlaceholder)
-                    Button {
-                        clearInput()
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(Color.secondary.opacity(input.isEmpty ? 0.35 : 1))
-                            .frame(width: 22, height: 22)
-                    }
-                    .buttonStyle(.plain)
-                    .help(l10n.s.urlCleanerClearButton)
-                    .disabled(input.isEmpty)
-                }
-                HStack {
-                    Button(l10n.s.urlCleanerPasteButton) { paste() }
-                    Spacer()
-                    Button(l10n.s.urlCleanerCopyButton) { copy() }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(result == nil)
-                }
+            .padding(.vertical, 8)
+            VStack(alignment: .leading, spacing: 4) {
                 if let output = result?.url {
                     Text(output)
-                        .font(.system(.caption, design: .monospaced))
+                        .font(ZenithType.mono(11.5))
                         .lineLimit(3)
                         .truncationMode(.middle)
                         .textSelection(.enabled)
                     Text(message)
-                        .font(.caption)
+                        .font(ZenithType.caption)
                         .foregroundStyle(.secondary)
                 } else {
                     Text(input.isEmpty ? l10n.s.urlCleanerOutputPlaceholder : message)
-                        .font(.caption)
+                        .font(ZenithType.caption)
                         .foregroundStyle(.tertiary)
                 }
             }
+            .padding(.vertical, 8)
         }
-        .formStyle(.grouped)
-        .zenithPreviewJumps() // Zenith fork
+    }
+
+    // MARK: Rules
+
+    private var rulesSection: some View {
+        // Why the list is as long as it is. Without the second line the
+        // length reads as "we delete a lot from your links", when a real link
+        // only ever carries a handful of these.
+        ZenithSection(l10n.s.urlCleanerRulesTitle,
+                      footer: l10n.s.urlCleanerRulesCaption + " " + l10n.s.urlCleanerRulesCoverageCaption) {
+            ForEach(URLCleaning.ruleGroups(rules: rules)) { group in
+                DisclosureGroup {
+                    VStack(alignment: .leading, spacing: 8) {
+                        parameterGrid(for: group)
+                        addParameterRow(site: group.site)
+                    }
+                    .padding(.vertical, 6)
+                } label: {
+                    HStack {
+                        Text(title(for: group.site)).font(ZenithType.rowTitle)
+                        Spacer()
+                        Text(countLabel(group.enabledCount))
+                            .font(ZenithType.caption)
+                            .foregroundStyle(.secondary)
+                        siteSwitch(for: group)
+                    }
+                }
+                .padding(.vertical, 6)
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                DisclosureHeaderRow(isExpanded: $showingAddSite) {
+                    Text(l10n.s.urlCleanerRulesAddSite).font(ZenithType.rowTitle)
+                    Spacer()
+                }
+                if showingAddSite {
+                    addSiteRow
+                }
+            }
+            .padding(.vertical, 8)
+        }
     }
 
     /// Two dozen names for one site is a lot of clicking to say "not this

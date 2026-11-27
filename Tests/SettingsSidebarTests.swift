@@ -45,10 +45,17 @@ enum SettingsSidebarTests {
                      "From Orbit lists the features Zenith added: Meetings, Translate and Mechakey")
         suite.expect(group(.island).prefix(2) == [.page(.notch), .page(.lockScreen)]
                         && group(.devices).first == .page(.pocket)
-                        && group(.everyday).prefix(2) == [.page(.shelf), .feature(.clipboardHistory)]
-                        && group(.capture).first == .feature(.screenshot)
+                        && group(.everyday).prefix(6) == [.page(.shelf), .page(.clipboard), .page(.finderTools), .page(.media),
+                                                .page(.urlCleaner), .page(.textSnippets)]
+                        && group(.devices) == [.page(.pocket), .page(.batteries), .page(.faceUnlock), .page(.remote)]
+                        && group(.capture).first == .page(.screenshot)
                         && group(.system).first == .page(.monitor),
                      "the groups open with the rows the design leads with")
+        // Zenith fork: one row per sound and capture tool, each its own page.
+        suite.expect(group(.sound) == [.page(.volumeMixer), .page(.soundOutput), .page(.musicBlocker), .page(.micMute)]
+                        && group(.capture) == [.page(.screenshot), .page(.screenRecording), .page(.textCapture),
+                                               .page(.colorPicker), .page(.cameraPreview)],
+                     "Sound and Capture list one page per tool")
         suite.expect(group(.zenith).contains(.page(.about)) && group(.zenith).contains(.page(.shortcuts)),
                      "the app's own pages close the sidebar")
         suite.expect(SettingsPage.allCases.filter { SettingsSidebarGroup.of(page: $0) == .tiles }
@@ -82,21 +89,25 @@ enum SettingsSidebarTests {
         let tools = AppFeature.allCases.filter { feature in
             let destination = feature.settingsDestination
             return destination.sectionAnchor != nil && destination.page != .notchMascot
-                && !SettingsSidebarSupport.onePageRows.contains(destination.page)
+                && !SettingsDirectory.singleRowPages.contains(destination.page)
         }
         let missingTools = tools.filter { !ids.contains(.feature($0)) }
         suite.expect(missingTools.isEmpty, "every tool on a shared page keeps its row (missing: \(missingTools))")
-        let onePage = items.filter { SettingsSidebarSupport.onePageRows.contains($0.destination.page) }
-        suite.expect(!onePage.isEmpty && onePage.allSatisfy { $0.id == .page($0.destination.page) }
-                        && Set(onePage.map(\.destination.page)) == SettingsSidebarSupport.onePageRows,
-                     "each page of the Input, Windows and quick tools has exactly one row, its own")
-        suite.expect(AppFeature.allCases.filter { SettingsSidebarSupport.onePageRows.contains($0.settingsDestination.page) }
+        suite.expect(SettingsDirectory.singleRowPages.allSatisfy { page in
+            items.filter { $0.destination.page == page }.map(\.id) == [.page(page)]
+        }, "every page several features share is one row, their features' sections inside")
+        suite.expect(SettingsSidebarSupport.selection(
+            for: FeatureSettingsDestination(.clipboard, sectionAnchor: .pastePlain), in: items) == .page(.clipboard)
+                        && SettingsSidebarSupport.selection(
+            for: AppFeature.diskImageInstaller.settingsDestination, in: items) == .page(.finderTools),
+                     "a feature's section on a one-row page selects that page's row")
+        suite.expect(AppFeature.allCases.filter { SettingsDirectory.singleRowPages.contains($0.settingsDestination.page) }
                         .allSatisfy { SettingsSidebarSupport.selection(for: $0.settingsDestination, in: items)
                             == .page($0.settingsDestination.page) },
-                     "a feature on a one-row page selects its page's row")
-        suite.expect(ids.contains(.setting(.panelConfiguration)) && ids.contains(.setting(.screenshotScrolling))
+                     "every feature on a one-row page selects its page's row")
+        suite.expect(ids.contains(.setting(.panelConfiguration)) && !ids.contains(.setting(.screenshotScrolling))
                         && ids.contains(.setting(.keyboardBrightnessShortcuts)),
-                     "the menu bar editor, scrolling capture and keyboard light shortcuts keep their rows")
+                     "the menu bar editor and keyboard light shortcuts keep their rows; scrolling capture is Screenshot's")
         for item in items {
             suite.expect(SettingsSidebarSupport.selection(for: item.destination, in: items,
                                                           preferredID: item.id) == item.id,

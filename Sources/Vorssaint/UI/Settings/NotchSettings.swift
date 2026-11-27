@@ -2,8 +2,13 @@
 // Copyright (C) 2026 Vorssaint
 
 import SwiftUI
-import EventKit
 
+/// Settings → Dynamic Island. Zenith fork: a feature page of the kit
+/// (docs/SETTINGS-KIT.md): the hero with the island's switch, the island on
+/// the stage, then its tabs: the layout and size, the sections and their
+/// order, what it rests with and the notices it shows, and how it opens. The
+/// sections with options of their own (Calendar, Notifications, Music, Timer,
+/// Agents, Downloads, Watch) and the companion have pages in the Island group.
 struct NotchSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var features = FeatureRuntime.shared
@@ -13,26 +18,14 @@ struct NotchSettings: View {
     @AppStorage(DefaultsKey.notchGesturesEnabled) private var gesturesEnabled = true
     @AppStorage(DefaultsKey.notchKeyboardLight) private var keyboardLight = true
     @AppStorage(DefaultsKey.notchNotificationsEnabled) private var notificationsEnabled = true
-    @AppStorage(DefaultsKey.notchDismissNativeNotifications) private var dismissNativeNotifications = false
     @AppStorage(DefaultsKey.notchTimerEnabled) private var timerEnabled = true
-    @AppStorage(DefaultsKey.notchTimerSoundEnabled) private var timerSoundEnabled = true
-    @AppStorage(DefaultsKey.notchHideTimerCountdown) private var hideTimerCountdown = false
     @AppStorage(DefaultsKey.notchCameraEnabled) private var cameraEnabled = true
     @AppStorage(DefaultsKey.notchCameraAutoStart) private var cameraAutoStart = true // Zenith fork
     @AppStorage(DefaultsKey.notchAccessoriesEnabled) private var accessoriesEnabled = true
     @AppStorage(DefaultsKey.notchCalendarEnabled) private var calendarEnabled = true
-    @AppStorage(DefaultsKey.notchCalendarCountdown) private var calendarCountdown = false
-    @AppStorage(DefaultsKey.notchCalendarCountdownLead) private var calendarCountdownLead = NotchCalendarSupport.defaultCountdownLeadMinutes
-    @AppStorage(DefaultsKey.notchCalendarTimeLeft) private var calendarTimeLeft = false
-    @AppStorage(DefaultsKey.notchCalendarWeekNumbers) private var calendarWeekNumbers = false
     @AppStorage(DefaultsKey.notchAgentsEnabled) private var agentsEnabled = false
     @AppStorage(DefaultsKey.notchWatchEnabled) private var watchEnabled = true
     @AppStorage(DefaultsKey.notchVercelEnabled) private var vercelEnabled = false // Zenith fork
-    @AppStorage(DefaultsKey.notchLyricsEnabled) private var lyricsEnabled = true
-    @AppStorage(DefaultsKey.notchLyricsOnline) private var lyricsOnline = false
-    @AppStorage(DefaultsKey.notchBrowserCovers) private var browserCovers = false
-    @AppStorage(DefaultsKey.notchQueueEnabled) private var queueEnabled = true
-    @AppStorage(DefaultsKey.notchLiveEqualizer) private var liveEqualizer = false
     @AppStorage(DefaultsKey.notchEnabled) private var enabled = false
     @AppStorage(DefaultsKey.notchMascotEnabled) private var mascotEnabled = false
     @AppStorage(DefaultsKey.notchMascotHidesWhenIdle) private var mascotHidesWhenIdle = true
@@ -67,10 +60,6 @@ struct NotchSettings: View {
     @AppStorage(DefaultsKey.screenshotDefaultAction) private var captureAction = ""
     @AppStorage(DefaultsKey.notchCapture) private var capture = true
     @AppStorage(DefaultsKey.notchTrackChange) private var trackChange = true
-    @AppStorage(DefaultsKey.notchShowPlayingMusic) private var showPlayingMusic = true
-    @AppStorage(DefaultsKey.notchIncludeOtherPlayers) private var includeOtherPlayers = true
-    @AppStorage(DefaultsKey.notchMusicShowVolume) private var musicShowVolume = false
-    @AppStorage(DefaultsKey.notchPreferredPlayer) private var preferredPlayer = NotchPreferredPlayer.automatic
     @AppStorage(DefaultsKey.notchIdleContent) private var idle = NotchIdleContent.music.rawValue
     @AppStorage(DefaultsKey.notchLowBatteryTint) private var lowBatteryTint = false
     @AppStorage(DefaultsKey.notchLowBatteryThreshold) private var lowBatteryThreshold = NotchSupport.defaultLowBatteryThreshold
@@ -107,18 +96,16 @@ struct NotchSettings: View {
     @State private var selectedModule = NotchModule.controls
     @State private var draggingModule: NotchModule?
     @State private var draggingControl: NotchControlItem?
-    @State private var preferredPlayers: [NotchPreferredPlayer.Choice]?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var text: NotchStrings { FeatureStrings.notch(l10n.language) }
     private var editor: NotchEditorStrings { FeatureStrings.notchEditor(l10n.language) }
+    private var pages: ZenithIslandPagesStrings { ZenithStrings.islandPages(l10n.language) }
 
     private var configuration: [String] {
-        [String(enabled), String(calendarEnabled), String(calendarCountdown), String(calendarCountdownLead),
-         String(calendarTimeLeft),
-         String(notificationsEnabled), String(dismissNativeNotifications), String(gesturesEnabled),
-         String(lyricsEnabled), String(lyricsOnline), String(queueEnabled), String(liveEqualizer),
-         String(showPlayingMusic), String(includeOtherPlayers), String(musicShowVolume), idle, hiddenControls, controlOrder, size,
-         String(timerEnabled), String(timerSoundEnabled), String(hideTimerCountdown),
+        [String(enabled), String(calendarEnabled),
+         String(notificationsEnabled), String(gesturesEnabled),
+         idle, hiddenControls, controlOrder, size,
+         String(timerEnabled),
          String(cameraEnabled), String(accessoriesEnabled), String(outlineEnabled), String(hideMenuBarGap),
          String(customWidth), String(customHeight), String(cameraFitWidth), String(cameraFitHeight),
          String(capsuleFitWidth), String(capsuleFitHeight), String(capsuleFitDrop), String(hapticFeedback),
@@ -145,66 +132,45 @@ struct NotchSettings: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            // Zenith fork: the shared large page header.
-            SettingsPageHeader(title: text.title, subtitle: text.description) {
-                Toggle(text.enable, isOn: $enabled).labelsHidden().toggleStyle(ZenithSwitchStyle())
-                    .disabled(!AppFeature.notch.isAvailable).accessibilityLabel(text.enable)
-            }
-            if enabled, AppFeature.notch.isAvailable, !(hover && hideUntilHover && !hiddenShowsActivity), !notch.geometry.isNotched, !permissions.accessibility {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(text.menuBarAccessHint)
-                        .font(.callout).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    PermissionRow(kind: .accessibility)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                ZenithHero(title: text.title, subtitle: text.description, chips: heroChips, isOn: $enabled,
+                           switchLabel: text.enable, animation: .island)
+                if enabled, AppFeature.notch.isAvailable, !(hover && hideUntilHover && !hiddenShowsActivity),
+                   !notch.geometry.isNotched, !permissions.accessibility {
+                    ZenithCallout(.warning, text.menuBarAccessHint) {
+                        Button(l10n.s.permissionRequest) { permissions.requestAccessibility() }
+                        Button(l10n.s.permissionOpenSettings) { permissions.openAccessibilitySettings() }
+                    }
                 }
+                // Zenith fork: the island on the stage, its states the tabs below.
+                ZenithNotchPreviewCard(tab: $tab, module: selectedModule, canOpen: enabled) { NotchService.shared.open() }
+                Group {
+                    switch tab {
+                    case .layout: layoutPage
+                    case .content: contentEditor
+                    case .activity: activityPage
+                    case .behavior: behaviorPage
+                    }
+                }
+                .id(tab)
             }
-            // Zenith fork: the shared preview card, its states the tabs below.
-            ZenithNotchPreviewCard(tab: $tab, module: selectedModule, showsCompanion: features.isAvailable(.notchMascot))
-            NotchSettingsTabRow(tab: $tab, language: l10n.language, showsCompanion: features.isAvailable(.notchMascot),
-                                canOpen: enabled) { NotchService.shared.open() }
-            if tab == .content {
-                GeometryReader { proxy in contentEditor(in: proxy.size) }
-            } else if tab == .companion {
-                NotchMascotSettings(embedded: true)
-            } else {
-                pageScroll
-            }
+            .frame(maxWidth: 760)
+            .frame(maxWidth: .infinity)
+            .padding(22)
         }
-        .padding(.horizontal, 22).padding(.top, 22)
         .onChange(of: configuration) { _, _ in sync() }
         .onChange(of: accessData) { _, _ in NotchService.shared.syncWithPreferences() }
-        .onChange(of: browserCovers) { _, _ in NotchMusicService.shared.syncBrowserCovers() }
         .onChange(of: tab) { _, _ in draggingModule = nil; draggingControl = nil }
         .onAppear(perform: revealDestination)
         .onChange(of: router.requestID) { _, _ in revealDestination() }
-        .onAppear(perform: consumeCompanionHint)
-        .onChange(of: router.notchCompanion) { _, _ in consumeCompanionHint() }
-        // Uninstalled while its tab shows, the companion leaves the page to the layout.
-        .onChange(of: features.isAvailable(.notchMascot)) { _, installed in
-            if !installed, tab == .companion { tab = .layout }
-        }
     }
 
-    /// The companion's own settings were asked for; the hint is one-shot.
-    private func consumeCompanionHint() {
-        guard router.notchCompanion else { return }
-        router.notchCompanion = false
-        if features.isAvailable(.notchMascot) { tab = .companion }
-    }
-
-    private var pageScroll: some View {
-        ScrollView {
-            Group {
-                switch tab {
-                case .layout: layoutPage
-                case .content: EmptyView()
-                case .activity: activityPage
-                case .behavior: behaviorPage
-                case .companion: EmptyView()
-                }
-            }.padding(.bottom, 22)
-        }.id(tab)
+    /// The island's size and how it opens, as two facts beside the switch.
+    private var heroChips: [ZenithChip] {
+        let chosen = NotchSize(rawValue: size) ?? .spacious
+        let sizeChip = chosen == .compact ? pages.compactChip : chosen == .custom ? pages.customChip : pages.spaciousChip
+        return [ZenithChip(sizeChip), ZenithChip(hover ? pages.hoverChip : pages.clickChip)]
     }
 
     private func revealDestination() {
@@ -215,95 +181,94 @@ struct NotchSettings: View {
 
     private func sync() {
         NotchService.shared.syncWithPreferences()
-        if !NotchLyricsSupport.isEnabled() { NotchLyricsService.shared.stop() }
-        NotchMusicService.shared.syncQueuePreference()
         if AppFeature.brightness.isAvailable { BrightnessService.shared.syncWithPreferences() }
     }
 
+    // MARK: Layout
+
     private var layoutPage: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 18) {
             NotchLayoutEditor(configuration: access, size: $size, width: $customWidth, height: $customHeight) {
                 selectedModule = .controls; tab = .content
             }
-            SettingsCard(title: text.size) {
-                HStack(spacing: 10) {
-                    choice(text.compact, symbol: "rectangle.compress.vertical", selected: size == NotchSize.compact.rawValue) { size = NotchSize.compact.rawValue }
-                    choice(text.spacious, symbol: "rectangle.expand.vertical", selected: size == NotchSize.spacious.rawValue) { size = NotchSize.spacious.rawValue }
-                    choice(text.custom, symbol: "arrow.up.left.and.arrow.down.right", selected: size == NotchSize.custom.rawValue) { size = NotchSize.custom.rawValue }
+            VStack(alignment: .leading, spacing: 10) {
+                ZenithSectionTitle(text.size)
+                ZenithVisualPicker(text.size, selection: Binding(get: { NotchSize(rawValue: size) ?? .spacious },
+                                                                 set: { size = $0.rawValue }),
+                                   options: [ZenithPickerOption(NotchSize.compact, text.compact),
+                                             ZenithPickerOption(NotchSize.spacious, text.spacious),
+                                             ZenithPickerOption(NotchSize.custom, text.custom)],
+                                   minimumTileWidth: 120) { item, _ in
+                    NotchSizeTileArt(size: item)
                 }
-                if size == NotchSize.custom.rawValue {
-                    // One grid starts both sliders at the same edge in every language.
-                    Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
-                        dimensionSlider(text.width, value: $customWidth, range: NotchSize.widthRange, fallback: NotchSize.defaultWidth)
-                        dimensionSlider(text.maximumHeight, value: $customHeight, range: NotchSize.heightRange, fallback: NotchSize.defaultHeight)
-                    }
-                    Text(text.sizeHint).font(.caption).foregroundStyle(.secondary)
+            }
+            if size == NotchSize.custom.rawValue {
+                ZenithSection(footer: text.sizeHint) {
+                    dimensionSlider(text.width, value: $customWidth, range: NotchSize.widthRange, fallback: NotchSize.defaultWidth)
+                    dimensionSlider(text.maximumHeight, value: $customHeight, range: NotchSize.heightRange,
+                                    fallback: NotchSize.defaultHeight)
                 }
             }
             ZenithTabBarSettings() // Zenith fork: what the tab pill under the open island holds.
             // Only a display without a camera can float the island.
             if NotchSupport.hasDisplayWithoutNotch {
-                SettingsCard(title: text.withoutNotch) {
-                    HStack(spacing: 10) {
-                        silhouetteChoice(.capsule, title: text.capsuleShape)
-                        silhouetteChoice(.notch, title: text.notchShape)
+                VStack(alignment: .leading, spacing: 10) {
+                    ZenithSectionTitle(text.withoutNotch)
+                    ZenithVisualPicker(text.withoutNotch,
+                                       selection: Binding(get: { NotchSilhouette(rawValue: silhouette) ?? .capsule },
+                                                          set: { silhouette = $0.rawValue }),
+                                       options: [ZenithPickerOption(NotchSilhouette.capsule, text.capsuleShape),
+                                                 ZenithPickerOption(NotchSilhouette.notch, text.notchShape)],
+                                       minimumTileWidth: 220) { item, _ in
+                        NotchSilhouetteSample(silhouette: item)
                     }
                     // An island kept on a camera, or away with the lid closed,
                     // shows neither shape, so the card says where to change that.
                     if enabled, !NotchService.reachesDisplayWithoutNotch(NotchDisplay(rawValue: display) ?? .automatic) {
-                        Text(text.withoutNotchUnreached).font(.caption).foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Button(text.showOnAllDisplays) { display = NotchDisplay.all.rawValue }
-                    }
-                }
-                if NotchSilhouette(rawValue: silhouette) ?? .capsule == .capsule {
-                    SettingsCard(title: text.capsuleFit) {
-                        Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
-                            // Even widths keep the capsule centred on whole points.
-                            fitSlider(text.width, card: text.capsuleFit, value: $capsuleFitWidth,
-                                      range: NotchCapsuleFit.widthRange, step: 2)
-                            fitSlider(text.height, card: text.capsuleFit, value: $capsuleFitHeight,
-                                      range: NotchCapsuleFit.heightRange, step: 1)
-                            fitSlider(text.fromTop, card: text.capsuleFit, value: $capsuleFitDrop,
-                                      range: NotchCapsuleFit.dropRange, step: 1)
+                        ZenithCallout(.info, text.withoutNotchUnreached) {
+                            Button(text.showOnAllDisplays) { display = NotchDisplay.all.rawValue }
                         }
-                        Text(text.capsuleFitHint).font(.caption).foregroundStyle(.secondary)
                     }
                 }
             }
-            SettingsCard {
+            ZenithSection {
                 switchRow("capsule", text.showOutline, isOn: $outlineEnabled)
-            }
-            // Only a physical camera has an outline to match.
-            if NotchSupport.hasNotchedDisplay {
-                SettingsCard(title: text.cameraFit) {
+                // Only a physical camera has an outline to match.
+                if NotchSupport.hasNotchedDisplay {
                     switchRow("rectangle.topthird.inset.filled", text.hideMenuBarGap,
                               caption: text.hideMenuBarGapHint, isOn: $hideMenuBarGap)
-                    Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
+                }
+                ZenithMoreOptions(id: "notch.fit") {
+                    if NotchSupport.hasDisplayWithoutNotch, NotchSilhouette(rawValue: silhouette) ?? .capsule == .capsule {
+                        // Even widths keep the capsule centred on whole points.
+                        fitSlider(text.width, card: text.capsuleFit, hint: text.capsuleFitHint, value: $capsuleFitWidth,
+                                  range: NotchCapsuleFit.widthRange, step: 2)
+                        fitSlider(text.height, card: text.capsuleFit, value: $capsuleFitHeight,
+                                  range: NotchCapsuleFit.heightRange, step: 1)
+                        fitSlider(text.fromTop, card: text.capsuleFit, value: $capsuleFitDrop,
+                                  range: NotchCapsuleFit.dropRange, step: 1)
+                    }
+                    if NotchSupport.hasNotchedDisplay {
                         // Whole points keep the island centred on the camera's pixels.
-                        fitSlider(text.width, card: text.cameraFit, value: $cameraFitWidth,
+                        fitSlider(text.width, card: text.cameraFit, hint: text.cameraFitHint, value: $cameraFitWidth,
                                   range: NotchCameraFit.widthRange, step: 1)
                         fitSlider(text.height, card: text.cameraFit, value: $cameraFitHeight,
                                   range: NotchCameraFit.heightRange, step: 0.5)
                     }
-                    Text(text.cameraFitHint).font(.caption).foregroundStyle(.secondary)
                 }
             }
         }
     }
 
-    /// The sections in a list of their own, the chosen one's options beside
-    /// it, and the island as it will look. A wide window keeps the preview
-    /// in a column that never scrolls away; a narrow one puts it above the
-    /// options, so they keep the height of the window either way.
-    private func contentEditor(in size: CGSize) -> some View {
-        let wide = size.width >= 940
-        let listWidth: CGFloat = wide ? 216 : 196
-        let previewWidth = wide ? min(560, ((size.width - listWidth - 32) * 0.5).rounded()) : 0
-        let detailWidth = max(0, size.width - listWidth - 16 - (wide ? previewWidth + 16 : 0))
-        return HStack(alignment: .top, spacing: 16) {
+    // MARK: Sections
+
+    /// The sections in a list of their own, beside the chosen one's options.
+    /// The stage above shows the island on it. A section with a page of its
+    /// own leads there.
+    private var contentEditor: some View {
+        HStack(alignment: .top, spacing: 16) {
             sectionList
-                .frame(width: listWidth, height: size.height, alignment: .top)
+                .frame(width: 210, height: 540, alignment: .top)
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     let module = selectedModule
@@ -314,29 +279,26 @@ struct NotchSettings: View {
                                            ?? (module == .github ? ZenithStrings.gitHub(l10n.language).missingCLI : text.disabled)) {
                         SettingsRouter.shared.request(FeatureSettingsDestination(.features), targetFeature: moduleFeature(module))
                     }
-                    if !wide { preview(width: detailWidth, limit: 280) }
-                    // Zenith fork: GitHub's options can look again for a gh the
-                    // usual folders missed, so they show while it is unavailable.
-                    if available || module == .github, hasOptions(module) {
+                    if let page = module.settingsPage {
+                        // Zenith fork: its options live on its own page in the Island group.
+                        ZenithSection {
+                            ZenithRow(pages.openSection, info: pages.modulePageHint, value: module.title(l10n.language)) {
+                                router.request(FeatureSettingsDestination(page))
+                            }
+                        }
+                    } else if available || module == .github, hasOptions(module) {
+                        // Zenith fork: GitHub's options can look again for a gh the
+                        // usual folders missed, so they show while it is unavailable.
                         SettingsCard { moduleOptions(module) }
                     } else if available {
-                        Text(editor.noOptions).font(.callout).foregroundStyle(.secondary)
+                        Text(editor.noOptions).font(ZenithType.caption).foregroundStyle(.secondary)
                     }
                 }
                 .padding(.bottom, 22)
             }
             .id(selectedModule)
-            .frame(width: detailWidth)
-            if wide {
-                preview(width: previewWidth, limit: size.height)
-                    .frame(width: previewWidth)
-            }
+            .frame(height: 540)
         }
-    }
-
-    private func preview(width: CGFloat, limit: CGFloat) -> some View {
-        NotchIslandPreview(module: selectedModule, hidden: !isShown(selectedModule))
-            .frame(height: NotchIslandPreview.height(width: width, limit: limit))
     }
 
     /// Every section in the island's order, each with the switch that shows it.
@@ -370,7 +332,7 @@ struct NotchSettings: View {
             }
         }
         .padding(10)
-        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .zenithGroupBackground()
     }
 
     private func isShown(_ module: NotchModule) -> Bool {
@@ -409,77 +371,6 @@ struct NotchSettings: View {
             let activities = FeatureStrings.notchActivities(l10n.language)
             SettingsFeatureSwitchRow(symbol: NotchControlItem.keepAwake.symbol, title: activities.keepAwakeActivity,
                                      caption: activities.keepAwakeActivityHint, isOn: $keepAwakeActivity, feature: .keepAwake)
-        case .music:
-            let music = FeatureStrings.notchMusicExtras(l10n.language)
-            switchRow("music.note", text.playingMusic, isOn: $showPlayingMusic)
-            switchRow("play.rectangle", music.includeOtherPlayers, isOn: $includeOtherPlayers)
-            SettingsFeatureSwitchRow(symbol: "speaker.wave.2", title: music.showVolume,
-                                     isOn: $musicShowVolume, feature: .mixer)
-            SettingsRow(symbol: "arrow.up.forward.app", title: music.preferredPlayer, caption: music.preferredPlayerHint) {
-                Picker(music.preferredPlayer, selection: $preferredPlayer) {
-                    Text(music.automaticSource).tag(NotchPreferredPlayer.automatic)
-                    ForEach(NotchPreferredPlayer.choices(in: preferredPlayers ?? [], including: preferredPlayer), id: \.bundleID) { app in
-                        Text(app.name).tag(app.bundleID)
-                    }
-                }
-                .labelsHidden()
-            }
-            .task {
-                guard let choices = await NotchPreferredPlayer.loadInstalled(), !Task.isCancelled else { return }
-                preferredPlayers = choices
-            }
-            SettingsFeatureSwitchRow(symbol: "text.quote", title: music.enableLyrics, isOn: $lyricsEnabled, feature: .notchLyrics)
-            if lyricsEnabled, AppFeature.notchLyrics.isAvailable {
-                switchRow("globe", music.online, caption: music.onlineHint, isOn: $lyricsOnline)
-                    .padding(.leading, settingsRowTextInset)
-            }
-            switchRow("photo", music.browserCovers, caption: music.browserCoversHint, isOn: $browserCovers)
-            SettingsFeatureSwitchRow(symbol: "list.bullet", title: music.enableQueue, caption: music.queueDescription,
-                                     isOn: $queueEnabled, feature: .notchQueue)
-            SettingsFeatureSwitchRow(symbol: "waveform", title: music.liveEqualizer,
-                                     caption: NotchAudioLevelSupport.isSupported ? music.liveEqualizerHint : music.liveEqualizerUnavailable,
-                                     isOn: $liveEqualizer, feature: .notchLiveEqualizer, enabled: NotchAudioLevelSupport.isSupported)
-        case .notifications:
-            let notifications = FeatureStrings.notchNotifications(l10n.language)
-            switchRow("bell.slash", notifications.hideSystemBanner, caption: notifications.hideSystemBannerHint,
-                      isOn: $dismissNativeNotifications)
-            ZenithReplySettings() // Zenith fork: replies from the island
-            if notificationsEnabled, !permissions.accessibility { PermissionRow(kind: .accessibility) }
-        case .downloads:
-            NotchDownloadsSettingsControls()
-                .toggleStyle(TrailingSwitchToggleStyle())
-        case .calendar:
-            let calendar = FeatureStrings.notchCalendar(l10n.language)
-            Text(calendar.permission).font(.callout).foregroundStyle(.secondary)
-            if permissions.calendarAccess == .fullAccess {
-                Label(l10n.s.permissionGranted, systemImage: "checkmark.circle.fill").foregroundStyle(.green)
-            } else {
-                Button(calendar.allow, action: permissions.requestCalendar).disabled(permissions.requestingCalendar)
-                Button(calendar.settings, action: permissions.openCalendarSettings)
-            }
-            Divider()
-            switchRow("calendar.badge.clock", calendar.countdown, caption: calendar.countdownHint,
-                      isOn: $calendarCountdown)
-            // Shown with the countdown off too: events chosen from their menu use the same lead.
-            // A value outside the presets, from a backup or an older build, stays selectable.
-            let lead = NotchCalendarSupport.countdownLeadMinutes(calendarCountdownLead)
-            SettingsMenuRow(symbol: "timer", title: calendar.countdownLead, selection: Binding(
-                get: { lead }, set: { calendarCountdownLead = $0 })) {
-                ForEach(Set(NotchCalendarSupport.countdownLeadPresets + [lead]).sorted(), id: \.self) { minutes in
-                    Text(AgentFormat.duration(TimeInterval(minutes * 60), locale: l10n.language.formattingLocale(),
-                                              style: .short)).tag(minutes)
-                }
-            }
-            switchRow("hourglass", calendar.timeLeft, caption: calendar.timeLeftHint, isOn: $calendarTimeLeft)
-            switchRow("number", calendar.weekNumbers, isOn: $calendarWeekNumbers)
-            if permissions.calendarAccess == .fullAccess { NotchCalendarSelection() }
-        case .timer:
-            let activities = FeatureStrings.notchActivities(l10n.language)
-            switchRow("eye.slash", activities.hideTimerCountdown,
-                      isOn: $hideTimerCountdown)
-                .disabled(!AppFeature.notchTimer.isAvailable)
-            switchRow("speaker.wave.2", activities.soundEnabled, isOn: $timerSoundEnabled)
-                .disabled(!AppFeature.notchTimer.isAvailable)
         case .camera:
             Text(FeatureStrings.notchActivities(l10n.language).cameraHint).font(.callout).foregroundStyle(.secondary)
             // Zenith fork: the page starts its mirror itself once access is granted.
@@ -493,7 +384,7 @@ struct NotchSettings: View {
             }
             .zenithSectionAnchor(.zenithCameraAutoStart) // Zenith fork: Settings search
             if permissions.camera == .granted {
-                Label(l10n.s.permissionGranted, systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                Label(l10n.s.permissionGranted, systemImage: "checkmark.circle.fill").foregroundStyle(ZenithStatus.success)
             } else {
                 Button(l10n.s.permissionRequest, action: permissions.requestCamera)
                 Button(l10n.s.permissionOpenSettings, action: permissions.openCameraSettings)
@@ -510,34 +401,25 @@ struct NotchSettings: View {
             switchRow("doc.on.clipboard", text.clipboardActivity, caption: text.privacy, isOn: $clipboard)
             if clipboardWindow, AppFeature.clipboardHistory.isAvailable {
                 let size = FeatureStrings.notchClipboardSize(l10n.language)
-                VStack(alignment: .leading, spacing: 6) {
-                    // Read as the page reads it, so a value it does not know shows comfortable here too.
-                    SettingsChoiceRow(symbol: "rectangle.compress.vertical", title: size.entrySize,
-                                      selection: Binding(get: { NotchClipboardCardSize(stored: clipboardCardSize) },
-                                                         set: { clipboardCardSize = $0.rawValue })) {
-                        Text(size.compact).tag(NotchClipboardCardSize.compact)
-                        Text(size.comfortable).tag(NotchClipboardCardSize.comfortable)
-                    }
-                    Text(size.hint)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.leading, settingsRowTextInset)
+                // Read as the page reads it, so a value it does not know shows comfortable here too.
+                SettingsChoiceRow(symbol: "rectangle.compress.vertical", title: size.entrySize,
+                                  selection: Binding(get: { NotchClipboardCardSize(stored: clipboardCardSize) },
+                                                     set: { clipboardCardSize = $0.rawValue })) {
+                    Text(size.compact).tag(NotchClipboardCardSize.compact)
+                    Text(size.comfortable).tag(NotchClipboardCardSize.comfortable)
                 }
+                Text(size.hint)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         case .captures:
             SettingsFeatureSwitchRow(symbol: "camera.viewfinder", title: text.captureActivity, isOn: $capture, feature: .screenshot)
             if capture, AppFeature.screenshot.isAvailable {
                 ScreenshotDefaultActionPicker(strings: FeatureStrings.screenshot(l10n.language), selection: $captureAction)
-                    .padding(.leading, settingsRowTextInset)
             }
         case .scratchpad:
             destination(FeatureStrings.scratchpad(l10n.language).pageTitle, symbol: "note.text", value: $scratchpad)
-        case .agents:
-            NotchAgentsSettingsControls()
-        case .watch:
-            NotchWatchSettingsControls()
-                .toggleStyle(TrailingSwitchToggleStyle())
         case .wakatime:
             // Zenith fork: the personal token that unlocks ranges and coding now.
             WakaTimeTokenSettings()
@@ -565,15 +447,19 @@ struct NotchSettings: View {
         case .prompter:
             // Zenith fork: the scripts, the reading, mirror, the guide, the voice pace and the shortcut.
             PrompterSettingsView()
-        // Zenith fork: Batteries keeps its options on its own page under Monitor.
-        case .mixer, .system, .tools, .batteries:
+        // Zenith fork: these have pages of their own in the Island group (NotchModulePages),
+        // and Batteries keeps its options on its own page under Devices.
+        case .music, .notifications, .downloads, .calendar, .timer, .agents, .watch,
+             .mixer, .system, .tools, .batteries:
             EmptyView()
         }
     }
 
+    // MARK: Activity
+
     private var activityPage: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            SettingsCard(title: editor.resting) {
+        VStack(alignment: .leading, spacing: 18) {
+            ZenithSection(editor.resting) {
                 HStack(alignment: .top, spacing: 10) {
                     // With the companion on, the island rests with it when it
                     // has nothing else to show, so that choice is the companion,
@@ -593,10 +479,17 @@ struct NotchSettings: View {
                                    reason: pageReason(.agents, feature: .notchAgents), fix: pageAction(.agents, feature: .notchAgents))
                     }
                 }
+                .padding(.vertical, 10)
                 if restingChoice == .battery { lowBatteryControls }
                 switchRow("menubar.rectangle", text.coverMenus, caption: text.coverMenusHint, isOn: $coversMenus)
+                // Zenith fork: the companion's own page, from where it rests.
+                if features.isAvailable(.notchMascot) {
+                    ZenithRow(pages.companion, info: pages.companionHint, value: mascotEnabled ? pages.on : pages.off) {
+                        router.request(FeatureSettingsDestination(.notchMascot))
+                    }
+                }
             }
-            SettingsCard(title: editor.feedback) {
+            ZenithSection(editor.feedback) {
                 let volumeAvailable = AppFeature.mixer.isAvailable
                 let brightnessAvailable = AppFeature.brightness.isAvailable && brightnessControlEnabled
                 let keyboardLightAvailable = AppFeature.brightness.isAvailable && BrightnessService.keyboardLightIsSupported
@@ -661,15 +554,23 @@ struct NotchSettings: View {
                     toggleCard(text.inputSource, symbol: "keyboard", value: $inputSource,
                                available: true, reservesReason: reserves)
                 }
-                if accessoriesEnabled { Text(FeatureStrings.notchActivities(l10n.language).accessoryDescription).font(.caption).foregroundStyle(.secondary) }
-                if enabled, (volume || brightness || keyboardLight), !permissions.accessibility { PermissionRow(kind: .accessibility) }
+                .padding(.vertical, 10)
+                if accessoriesEnabled {
+                    Text(FeatureStrings.notchActivities(l10n.language).accessoryDescription)
+                        .font(ZenithType.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.vertical, 8)
+                }
+                if enabled, (volume || brightness || keyboardLight), !permissions.accessibility {
+                    PermissionRow(kind: .accessibility).padding(.vertical, 8)
+                }
             }
             // Zenith fork: the lock screen's switches have a page of their own (ZenithLockScreenSettings).
             let locked = FeatureStrings.notchLockScreen(l10n.language)
             let lockedPage = ZenithStrings.lockScreenSettings(l10n.language)
-            SettingsCard {
-                SettingsRow(symbol: "lock.display", title: locked.title, caption: lockedPage.movedCaption) {
-                    Button(lockedPage.open) { router.request(FeatureSettingsDestination(.lockScreen)) }
+            ZenithSection {
+                ZenithRow(locked.title, info: lockedPage.movedCaption, value: nil) {
+                    router.request(FeatureSettingsDestination(.lockScreen))
                 }
             }
             CommandActivitySettings() // Zenith fork: long-running terminal commands in the closed island.
@@ -678,86 +579,89 @@ struct NotchSettings: View {
         }
     }
 
+    // MARK: Behavior
+
+    private var opening: Binding<NotchOpening> {
+        Binding(get: {
+            guard hover else { return .click }
+            if hideUntilHover { return .hiddenUntilHover }
+            return hoverExpand ? .hoverExpand : .hoverPreview
+        }, set: { choice in
+            switch choice {
+            case .click: hideUntilHover = false; hover = false
+            case .hoverPreview: hideUntilHover = false; hover = true; hoverExpand = false
+            case .hoverExpand: hideUntilHover = false; hover = true; hoverExpand = true
+            case .hiddenUntilHover: hover = true; hoverExpand = true; hideUntilHover = true
+            }
+        })
+    }
+
     private var behaviorPage: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            SettingsCard(title: editor.opening) {
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                    choice(editor.clickOpen, symbol: "cursorarrow", selected: !hover) { hideUntilHover = false; hover = false }
-                    choice(editor.hoverPreview, symbol: "rectangle.topthird.inset.filled", selected: hover && !hoverExpand && !hideUntilHover) { hideUntilHover = false; hover = true; hoverExpand = false }
-                    choice(editor.hoverExpand, symbol: "arrow.up.left.and.arrow.down.right", selected: hover && hoverExpand && !hideUntilHover) { hideUntilHover = false; hover = true; hoverExpand = true }
-                    choice(editor.hiddenUntilHover, symbol: "eye.slash", selected: hover && hideUntilHover) { hover = true; hoverExpand = true; hideUntilHover = true }
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 10) {
+                ZenithSectionTitle(editor.opening)
+                ZenithVisualPicker(editor.opening, selection: opening, options: [
+                    ZenithPickerOption(NotchOpening.click, editor.clickOpen),
+                    ZenithPickerOption(NotchOpening.hoverPreview, editor.hoverPreview),
+                    ZenithPickerOption(NotchOpening.hoverExpand, editor.hoverExpand),
+                    ZenithPickerOption(NotchOpening.hiddenUntilHover, editor.hiddenUntilHover),
+                ], minimumTileWidth: 120) { item, _ in
+                    NotchSymbolTileArt(symbol: item.symbol)
                 }
+            }
+            ZenithSection {
                 if hover && hideUntilHover {
                     switchRow("sparkles", editor.hiddenShowsActivity,
                               caption: hiddenShowsActivity ? editor.hiddenShowsActivityHint : nil, isOn: $hiddenShowsActivity)
                 }
                 if hover || (hideInFullscreen && hoverInFullscreen) {
-                    hoverDelayControl
-                    if hoverExpand { closeDelayControl }
+                    delayRow(editor.activationTime, hint: editor.activationTimeHint, value: $hoverDelay,
+                             range: NotchSupport.hoverDelayRange, sanitize: NotchSupport.sanitizedHoverDelay)
+                    if hoverExpand {
+                        delayRow(editor.closeTime, hint: editor.closeTimeHint, value: $closeDelay,
+                                 range: NotchSupport.closeDelayRange, sanitize: NotchSupport.sanitizedCloseDelay)
+                    }
                 }
-                switchRow("keyboard", l10n.s.quickToolShortcutToggle, isOn: $shortcutEnabled)
+                ZenithRow(l10n.s.quickToolShortcutToggle, isOn: $shortcutEnabled,
+                          warning: shortcutEnabled && notch.shortcutRegistrationFailed ? l10n.s.shortcutUnavailable : nil)
                 if shortcutEnabled {
                     ShortcutPreferenceRow(role: .notch) {
                         NotchService.shared.syncWithPreferences()
                     }
-                    .padding(.leading, settingsRowTextInset)
-                    if notch.shortcutRegistrationFailed {
-                        Text(l10n.s.shortcutUnavailable)
-                            .font(.caption)
-                            .foregroundStyle(.orange)
-                            .padding(.leading, settingsRowTextInset)
-                    }
+                    .padding(.vertical, 9)
                 }
                 SettingsFeatureSwitchRow(symbol: "hand.draw", title: FeatureStrings.notchGestures(l10n.language).title,
                                          caption: gesturesEnabled ? FeatureStrings.notchGestures(l10n.language).hint : nil,
                                          isOn: $gesturesEnabled, feature: .notchGestures)
-                switchRow("waveform.path", text.hapticFeedback, isOn: $hapticFeedback)
-                SettingsRow(symbol: "arrow.uturn.backward", title: editor.reopening) {
-                    Picker(editor.reopening, selection: Binding(get: {
-                        guard returnHome else { return "" }
-                        return NotchModule(rawValue: homeModule) != nil
-                            || NotchReopeningDestination(rawValue: homeModule) != nil
-                            ? homeModule : NotchModule.controls.rawValue
-                    }, set: { value in
-                        returnHome = !value.isEmpty
-                        if returnHome { homeModule = value }
-                    })) {
-                        Text(editor.lastPage).tag("")
-                        Text(text.panel).tag(NotchReopeningDestination.appPanel.rawValue)
-                        Text(text.sectionsTitle).tag(NotchReopeningDestination.explore.rawValue)
-                        ForEach(NotchSupport.modules()) { module in
-                            Text(module.title(l10n.language)).tag(module.rawValue)
-                        }
-                        if let saved = NotchModule(rawValue: homeModule), !NotchSupport.modules().contains(saved) {
-                            Text(saved.title(l10n.language)).tag(homeModule).disabled(true)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .labelsHidden()
+                ZenithMoreOptions(id: "notch.behavior") {
+                    switchRow("waveform.path", text.hapticFeedback, isOn: $hapticFeedback)
+                    reopeningRow
+                    switchRow("livephoto", editor.openActivity, caption: editor.openActivityHint, isOn: $opensActivity)
                 }
-                switchRow("livephoto", editor.openActivity, caption: editor.openActivityHint, isOn: $opensActivity)
             }
-            SettingsCard(title: text.display) {
+            VStack(alignment: .leading, spacing: 10) {
+                ZenithSectionTitle(text.display)
+                // A mode this version no longer offers is treated as automatic, as the island does.
+                ZenithVisualPicker(text.display,
+                                   selection: Binding(get: { NotchDisplay(rawValue: display) ?? .automatic },
+                                                      set: { display = $0.rawValue }),
+                                   options: [ZenithPickerOption(NotchDisplay.automatic, text.automatic),
+                                             ZenithPickerOption(NotchDisplay.builtIn, text.builtIn),
+                                             ZenithPickerOption(NotchDisplay.main, text.mainDisplay),
+                                             ZenithPickerOption(NotchDisplay.pointer, text.followPointer),
+                                             ZenithPickerOption(NotchDisplay.all, text.allDisplays)],
+                                   minimumTileWidth: 110) { item, _ in
+                    NotchSymbolTileArt(symbol: Self.displaySymbol(item))
+                }
+            }
+            ZenithSection {
                 switchRow("arrow.up.left.and.arrow.down.right", text.hideInFullscreen, isOn: $hideInFullscreen)
                 if hideInFullscreen {
                     switchRow("cursorarrow", text.hoverInFullscreen, isOn: $hoverInFullscreen)
-                        .padding(.leading, settingsRowTextInset)
-                }
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                    // A mode this version no longer offers is treated as automatic, as the island does.
-                    choice(text.automatic, symbol: "display.2",
-                           selected: (NotchDisplay(rawValue: display) ?? .automatic) == .automatic) { display = NotchDisplay.automatic.rawValue }
-                    choice(text.builtIn, symbol: "laptopcomputer", selected: display == NotchDisplay.builtIn.rawValue) { display = NotchDisplay.builtIn.rawValue }
-                    choice(text.mainDisplay, symbol: "display", selected: display == NotchDisplay.main.rawValue) { display = NotchDisplay.main.rawValue }
-                    choice(text.followPointer, symbol: "cursorarrow.motionlines",
-                           selected: display == NotchDisplay.pointer.rawValue) { display = NotchDisplay.pointer.rawValue }
-                    choice(text.allDisplays, symbol: "rectangle.on.rectangle",
-                           selected: display == NotchDisplay.all.rawValue) { display = NotchDisplay.all.rawValue }
                 }
             }
-            SettingsCard(title: editor.destinations) {
+            ZenithSection(editor.destinations, footer: editor.appPanelHint) {
                 destination(text.panel, symbol: "bubble.middle.top", value: $appPanel)
-                Text(editor.appPanelHint).font(.caption).foregroundStyle(.secondary)
                 switchRow("menubar.rectangle", editor.hideMenuBarIcon, caption: editor.hideMenuBarIconHint,
                           isOn: $hidesMenuBarIcon)
                 destination(text.tools, symbol: NotchModule.tools.symbol, value: $quickPanel, available: AppFeature.quickLauncher.isAvailable)
@@ -766,8 +670,40 @@ struct NotchSettings: View {
                 destination(text.captures, symbol: "camera.viewfinder", value: $captureControls)
                 destination(FeatureStrings.scratchpad(l10n.language).pageTitle, symbol: "note.text", value: $scratchpad, available: AppFeature.scratchpad.isAvailable)
             }
-            SettingsCard(title: editor.privacy) {
+            ZenithSection(editor.privacy) {
                 switchRow("camera.viewfinder", text.showInCaptures, isOn: $showInCaptures)
+            }
+        }
+    }
+
+    private static func displaySymbol(_ display: NotchDisplay) -> String {
+        switch display {
+        case .automatic: return "display.2"
+        case .builtIn: return "laptopcomputer"
+        case .main: return "display"
+        case .pointer: return "cursorarrow.motionlines"
+        case .all: return "rectangle.on.rectangle"
+        }
+    }
+
+    private var reopeningRow: some View {
+        ZenithRow(editor.reopening, selection: Binding(get: {
+            guard returnHome else { return "" }
+            return NotchModule(rawValue: homeModule) != nil
+                || NotchReopeningDestination(rawValue: homeModule) != nil
+                ? homeModule : NotchModule.controls.rawValue
+        }, set: { value in
+            returnHome = !value.isEmpty
+            if returnHome { homeModule = value }
+        })) {
+            Text(editor.lastPage).tag("")
+            Text(text.panel).tag(NotchReopeningDestination.appPanel.rawValue)
+            Text(text.sectionsTitle).tag(NotchReopeningDestination.explore.rawValue)
+            ForEach(NotchSupport.modules()) { module in
+                Text(module.title(l10n.language)).tag(module.rawValue)
+            }
+            if let saved = NotchModule(rawValue: homeModule), !NotchSupport.modules().contains(saved) {
+                Text(saved.title(l10n.language)).tag(homeModule).disabled(true)
             }
         }
     }
@@ -799,72 +735,17 @@ struct NotchSettings: View {
     }
 
     private func levelSlider(_ title: String, range: ClosedRange<Int>, value: Binding<Int>) -> some View {
-        let formatted = "\(value.wrappedValue)%"
         let slider = Binding(get: { Double(value.wrappedValue) }, set: { value.wrappedValue = Int($0.rounded()) })
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(title)
-                Spacer()
-                Text(formatted).monospacedDigit().foregroundStyle(.secondary)
-            }
-            Slider(value: slider, in: Double(range.lowerBound)...Double(range.upperBound), step: 1) {
-                Text(title)
-            }.labelsHidden().accessibilityValue(formatted)
-        }.padding(.leading, settingsRowTextInset)
+        return ZenithRow(title, value: slider, in: Double(range.lowerBound)...Double(range.upperBound), step: 1,
+                         valueLabel: "\(value.wrappedValue)%")
     }
 
-    private var hoverDelayControl: some View {
-        delayControl(editor.activationTime, hint: editor.activationTimeHint, value: $hoverDelay,
-                     range: NotchSupport.hoverDelayRange, sanitize: NotchSupport.sanitizedHoverDelay)
-    }
-
-    private var closeDelayControl: some View {
-        delayControl(editor.closeTime, hint: editor.closeTimeHint, value: $closeDelay,
-                     range: NotchSupport.closeDelayRange, sanitize: NotchSupport.sanitizedCloseDelay)
-    }
-
-    private func delayControl(_ title: String, hint: String, value stored: Binding<Double>,
-                              range: ClosedRange<Double>, sanitize: @escaping (Double) -> Double) -> some View {
+    private func delayRow(_ title: String, hint: String, value stored: Binding<Double>,
+                          range: ClosedRange<Double>, sanitize: @escaping (Double) -> Double) -> some View {
         let value = Binding(get: { sanitize(stored.wrappedValue) }, set: { stored.wrappedValue = sanitize($0) })
-        let formatted = String(format: editor.activationTimeFormat, locale: Locale(identifier: l10n.language.rawValue), value.wrappedValue)
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(title)
-                Spacer()
-                Text(formatted).monospacedDigit().foregroundStyle(.secondary)
-            }
-            Slider(value: value, in: range, step: 0.05) {
-                Text(title)
-            }.labelsHidden().accessibilityValue(formatted)
-            Text(hint).font(.caption).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private func choice(_ title: String, symbol: String, selected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                Image(systemName: symbol).font(.system(size: 20, weight: .medium))
-                Text(title).font(.system(size: 11, weight: .medium)).lineLimit(2).multilineTextAlignment(.center)
-            }.frame(maxWidth: .infinity, minHeight: 68).padding(8)
-                .foregroundStyle(selected ? Color.accentColor : .primary)
-                .background(selected ? Color.accentColor.opacity(0.12) : Color.secondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
-                .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(selected ? Color.accentColor.opacity(0.7) : .clear, lineWidth: 1) }
-        }.buttonStyle(.plain).accessibilityAddTraits(selected ? .isSelected : [])
-    }
-
-    /// Each outline in a slice of menu bar, drawn as the island draws it.
-    private func silhouetteChoice(_ item: NotchSilhouette, title: String) -> some View {
-        let selected = (NotchSilhouette(rawValue: silhouette) ?? .capsule) == item
-        return Button { silhouette = item.rawValue } label: {
-            VStack(spacing: 10) {
-                NotchSilhouetteSample(silhouette: item)
-                Text(title).font(.system(size: 11, weight: .medium)).lineLimit(2).multilineTextAlignment(.center)
-            }.frame(maxWidth: .infinity, minHeight: 68).padding(8)
-                .foregroundStyle(selected ? Color.accentColor : .primary)
-                .background(selected ? Color.accentColor.opacity(0.12) : Color.secondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
-                .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(selected ? Color.accentColor.opacity(0.7) : .clear, lineWidth: 1) }
-        }.buttonStyle(.plain).accessibilityAddTraits(selected ? .isSelected : [])
+        let formatted = String(format: editor.activationTimeFormat, locale: Locale(identifier: l10n.language.rawValue),
+                               value.wrappedValue)
+        return ZenithRow(title, value: value, in: range, step: 0.05, info: hint, valueLabel: formatted)
     }
 
     private func showModule(_ module: NotchModule) {
@@ -1039,29 +920,20 @@ struct NotchSettings: View {
     private func dimensionSlider(_ title: String, value: Binding<Double>, range: ClosedRange<Double>, fallback: Double) -> some View {
         let bounded = Binding(get: { NotchSize.clamped(value.wrappedValue, to: range, fallback: fallback) },
                               set: { value.wrappedValue = NotchSize.clamped($0, to: range, fallback: fallback) })
-        return GridRow {
-            // The slider carries the name for VoiceOver.
-            Text(title).fixedSize().accessibilityHidden(true)
-            Slider(value: bounded, in: range, step: 10) { Text(title) }.labelsHidden()
-            Text(Int(bounded.wrappedValue), format: .number)
-                .monospacedDigit().foregroundStyle(.secondary).frame(width: 38)
-        }
+        return ZenithRow(title, value: bounded, in: range, step: 10,
+                         valueLabel: Int(bounded.wrappedValue).formatted(.number))
     }
 
     /// A correction around zero, signed so the untouched value reads as none.
-    private func fitSlider(_ title: String, card: String, value: Binding<Double>, range: ClosedRange<Double>,
-                           step: Double) -> some View {
+    /// Titled with its kind (capsule or camera), since both share names.
+    private func fitSlider(_ title: String, card: String, hint: String? = nil, value: Binding<Double>,
+                           range: ClosedRange<Double>, step: Double) -> some View {
         let bounded = Binding(get: { NotchSize.clamped(value.wrappedValue, to: range, fallback: 0) },
                               set: { value.wrappedValue = NotchSize.clamped($0, to: range, fallback: 0) })
         let formatted = bounded.wrappedValue.formatted(.number.sign(strategy: .always(includingZero: false))
             .precision(.fractionLength(0...1)).locale(Locale(identifier: l10n.language.rawValue)))
-        return GridRow {
-            Text(title).fixedSize().accessibilityHidden(true)
-            // Other cards have sliders with the same names.
-            Slider(value: bounded, in: range, step: step) { Text("\(card), \(title)") }.labelsHidden()
-                .accessibilityValue(formatted)
-            Text(formatted).monospacedDigit().foregroundStyle(.secondary).frame(width: 38)
-        }
+        return ZenithRow("\(card) · \(title)", value: bounded, in: range, step: step, info: hint,
+                         valueLabel: formatted.isEmpty ? "0" : formatted)
     }
     private var orderedShortcuts: [NotchControlItem] {
         let stored = controlOrder.split(separator: ",").compactMap { NotchControlItem(rawValue: String($0)) }
@@ -1105,6 +977,61 @@ struct NotchSettings: View {
 }
 
 extension NotchControlItem: PanelOrderItem {}
+
+/// How the island opens, the Behavior tab's pictures.
+private enum NotchOpening: Hashable {
+    case click, hoverPreview, hoverExpand, hiddenUntilHover
+
+    var symbol: String {
+        switch self {
+        case .click: return "cursorarrow"
+        case .hoverPreview: return "rectangle.topthird.inset.filled"
+        case .hoverExpand: return "arrow.up.left.and.arrow.down.right"
+        case .hiddenUntilHover: return "eye.slash"
+        }
+    }
+}
+
+/// A choice's symbol on a picker tile's stage.
+private struct NotchSymbolTileArt: View {
+    let symbol: String
+
+    var body: some View {
+        Image(systemName: symbol)
+            .font(.system(size: 22, weight: .medium))
+            .foregroundStyle(.white)
+            .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
+            .accessibilityHidden(true)
+    }
+}
+
+/// The open island at each size, drawn small: compact, spacious, or one
+/// the person sizes.
+private struct NotchSizeTileArt: View {
+    let size: NotchSize
+
+    var body: some View {
+        let (width, height): (CGFloat, CGFloat) = switch size {
+        case .compact: (40, 18)
+        case .spacious: (62, 30)
+        case .custom: (52, 24)
+        }
+        RoundedRectangle(cornerRadius: height / 2.6, style: .continuous)
+            .fill(Color.black)
+            .overlay(RoundedRectangle(cornerRadius: height / 2.6, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.16)))
+            .frame(width: width, height: height)
+            .overlay {
+                if size == .custom {
+                    Image(systemName: "arrow.left.and.right")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.85))
+                }
+            }
+            .shadow(color: .black.opacity(0.3), radius: 3, y: 2)
+            .accessibilityHidden(true)
+    }
+}
 
 /// A standard menu bar on a display without a camera, at half size, with
 /// the resting island in it.

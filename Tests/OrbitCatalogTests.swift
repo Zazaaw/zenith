@@ -169,8 +169,9 @@ enum OrbitCatalogTests {
                              "\(page) is switched off on its own page")
             }
         }
-        suite.expect(OrbitCatalog.openDestination(for: item(.feature(.diskImageInstaller))) == nil,
-                     "a feature with no page of its own opens its details instead")
+        suite.expect(OrbitCatalog.openDestination(for: item(.feature(.diskImageInstaller)))
+                        == FeatureSettingsDestination(.finderTools, sectionAnchor: .diskImageInstaller),
+                     "the disk image installer opens its section on Finder Tools")
         suite.expect(OrbitCatalog.openDestination(for: item(.feature(.notchLyrics)))
                         == FeatureSettingsDestination(notch: .module(.music)),
                      "Open lands on the island module that holds the feature")

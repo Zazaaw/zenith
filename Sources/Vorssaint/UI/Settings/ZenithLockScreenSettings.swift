@@ -4,7 +4,7 @@
 import AppKit
 import SwiftUI
 
-/// Zenith fork: Settings → Lock Screen. The title with the island's lock
+/// Zenith fork: Settings → Lock Screen. The hero with the island's lock
 /// screen switch, a live preview drawn on this Mac's wallpaper beside the
 /// padlock sounds, then four tabs: what shows over the wallpaper (the
 /// island's items and the job rings), the song's title and lyrics, the
@@ -28,11 +28,12 @@ struct ZenithLockScreenSettings: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                SettingsPageHeader(title: locked.title, subtitle: page.subtitle) {
-                    ZenithLockScreenTitledSwitch(title: locked.show, isOn: $lockScreen)
-                        .help(locked.showHint)
-                }
+            VStack(alignment: .leading, spacing: 18) {
+                // Zenith fork: the kit's feature hero (docs/SETTINGS-KIT.md), the
+                // lock screen's switch as its "On" pill.
+                ZenithHero(title: locked.title, subtitle: page.subtitle, chips: [ZenithChip(title(tab))],
+                           isOn: $lockScreen, switchLabel: locked.show, switchHint: locked.showHint,
+                           animation: .lockScreen)
                 previewCard
                 VStack(alignment: .leading, spacing: 14) {
                     ZenithLockScreenTabBar(selection: Binding(get: { tab }, set: select), title: title)

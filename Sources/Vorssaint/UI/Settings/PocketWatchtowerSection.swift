@@ -4,7 +4,8 @@
 import AppKit
 import SwiftUI
 
-/// Zenith fork: Settings → iPhone & Watch → Watchtower: the sites to watch,
+/// Zenith fork: Settings → iPhone & Watch → Watchtower, in the Settings kit's
+/// cards: the sites to watch,
 /// the optional Vercel and Netlify tokens for deploys, and the folder whose
 /// repos are checked for work never pushed. It writes `PocketWatchtowerDefaults`
 /// and the secrets; `PocketWatchtowerPart` does the watching.
@@ -25,7 +26,7 @@ struct PocketWatchtowerSection: View {
     private let text = ZenithStrings.pocketWatchtower(.enUS)
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             header
             card {
                 row {
@@ -84,23 +85,9 @@ struct PocketWatchtowerSection: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Image(systemName: "binoculars")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 22)
-                Text(text.title)
-                    .font(ZenithType.sectionTitle)
-                    .tracking(ZenithType.sectionTitleTracking)
-                    .accessibilityAddTraits(.isHeader)
-            }
-            Text(text.caption)
-                .font(ZenithType.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.leading, 32)
+            ZenithSectionTitle(text.title)
+            ZenithFootnote(text.caption)
         }
-        .padding(.leading, 2)
     }
 
     // MARK: Sites
@@ -265,25 +252,22 @@ struct PocketWatchtowerSection: View {
 
     // MARK: Pieces
 
-    /// The page's card: a hairline panel of rows.
+    /// The page's card: the Settings kit's grouped card of rows.
     private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: ZenithRadius.panel, style: .continuous)
-        return VStack(alignment: .leading, spacing: 0) { content() }
+        VStack(alignment: .leading, spacing: 0) { content() }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 4)
-            .background(ZenithSurface.cardFill, in: shape)
-            .overlay(shape.strokeBorder(ZenithSurface.hairline))
+            .zenithGroupBackground()
     }
 
     private func row<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         HStack(spacing: 12) { content() }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, minHeight: ZenithKitSurface.rowHeight, alignment: .leading)
+            .padding(.horizontal, ZenithKitSurface.rowInset)
+            .padding(.vertical, 6)
     }
 
     private var divider: some View {
-        Rectangle().fill(ZenithSurface.hairline).frame(height: 1).padding(.horizontal, 16)
+        ZenithRowSeparator()
     }
 
     private func title(_ string: String, caption: String? = nil) -> some View {
