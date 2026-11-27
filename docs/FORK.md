@@ -209,6 +209,11 @@ dan spring Style Kit. Urutan redesign: notch, panel menu bar, lalu Settings.
   memudarkan halaman yang digulir ke bawah tepi jendela. Di full screen, jarak untuk tombol jendela
   dilepas. Renderer katalog memakai konfigurasi jendela yang sama. Ukuran tersimpan sekarang termasuk
   area title bar, jadi jendela lama terbuka sedikit lebih pendek sekali.
+- **Kit Settings (branch `feat/c1-kit`):** komponen di `UI/Settings/Kit/` (hero kiri beranimasi,
+  header sistem, stage bertint kategori, section + baris 40 pt dengan ⓘ, More options, visual picker,
+  callout) dan satu tabel tint per grup sidebar. `SettingsCard`, `SettingsRow`, header halaman dan semua
+  kartu preview ikut tampilan baru tanpa edit per halaman. Contoh halaman: Mechakey (fitur) dan General
+  (sistem). Panduan untuk halaman berikutnya: [SETTINGS-KIT.md](SETTINGS-KIT.md). Render: `ONLY=kit`.
 - **Kartu akun di sidebar Settings (branch `feat/sidebar-chrome`):** `UI/Settings/SettingsAccountCard.swift`,
   di atas kolom cari. Foto login, nama lengkap dan apakah akun admin dibaca sekali dari direktori lokal lewat
   Collaboration (`CBUserIdentity`, tanpa izin apa pun), nama komputer dari `ZenithLockScreenAccount.deviceName()`.

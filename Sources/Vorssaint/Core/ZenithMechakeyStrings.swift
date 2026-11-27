@@ -45,6 +45,13 @@ struct ZenithMechakeyStrings {
     let linearHeavy = "Linear, heavier"
     let topre = "Topre with PBT keycaps"
 
+    // The stage and the pack tiles (Settings kit).
+    let stageCaption = "Press a key on the stage to hear the pack"
+    let stageTyping = "Typing"
+    let stageSpace = "Space"
+    let stageEnter = "Enter"
+    let licenceLine = "Sounds from Mechvibes by Hải Nguyễn, MIT licence."
+
     // About.
     let credit = "Mechakey’s sound packs come from Mechvibes by Hải Nguyễn, used under the MIT License."
     let showLicense = "Show License"
@@ -59,6 +66,23 @@ struct ZenithMechakeyStrings {
         case "cherry-mx-black": return linearHeavy
         case "topre-purple": return topre
         default: return nil
+        }
+    }
+
+    /// How many packs there are, for the hero's chip.
+    func packCount(_ count: Int) -> String { "\(count) packs" }
+
+    /// A pack's name on its tile, short enough to sit under it.
+    func shortTitle(for pack: MechakeyPack) -> String {
+        switch pack.id {
+        case "cherry-mx-blue": return "Cherry Blue"
+        case "cherry-mx-brown": return "Brown"
+        case "cherry-mx-red": return "Red"
+        case "cherry-mx-black": return "Black"
+        case "topre-purple": return "Topre"
+        case "eg-oreo": return "Oreo"
+        case "eg-crystal-purple": return "Crystal"
+        default: return pack.title
         }
     }
 

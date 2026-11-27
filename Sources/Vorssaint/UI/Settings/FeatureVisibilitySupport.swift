@@ -84,7 +84,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
     case zenithBatteries, zenithBatteriesAlerts, zenithBatteriesIPhone
     case zenithTranslate, zenithTranslateLanguages, zenithTranslateDownloads
     case zenithMeetings, zenithMeetingsCalls, zenithMeetingsProviders // Zenith fork
-    case zenithMechakey
+    case zenithMechakey, zenithMechakeyRepeat // Zenith fork: the repeat switch sits under More options
     case zenithAppearanceTheme, zenithAppearanceMotion, zenithAppearanceGlass, zenithAppearanceBattery
 
     var page: SettingsPage {
@@ -121,7 +121,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
         case .zenithBatteries, .zenithBatteriesAlerts, .zenithBatteriesIPhone: return .batteries
         case .zenithTranslate, .zenithTranslateLanguages, .zenithTranslateDownloads: return .translate
         case .zenithMeetings, .zenithMeetingsCalls, .zenithMeetingsProviders: return .meetings // Zenith fork
-        case .zenithMechakey: return .mechakey
+        case .zenithMechakey, .zenithMechakeyRepeat: return .mechakey
         case .zenithAppearanceTheme, .zenithAppearanceMotion, .zenithAppearanceGlass, .zenithAppearanceBattery: return .appearance
         case .zenithDropZones, .zenithWatermark: return .shelf
         case .zenithDesignOverlay, .zenithBeautify: return .screenshot

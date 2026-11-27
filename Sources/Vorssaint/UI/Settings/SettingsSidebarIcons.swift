@@ -153,20 +153,13 @@ enum SettingsSidebarIcons {
 }
 
 extension SettingsSidebarGroup {
-    /// The colours a fallback symbol is filled with, after the Orbit kit's own groups.
+    /// The colours a fallback symbol is filled with: the group's category
+    /// tint (`ZenithCategoryTint`), and grey for Zenith's own pages, whose
+    /// symbols sit among the monochrome tiles.
     var tint: [Color] {
         switch self {
         case .tiles, .zenith: return [Color(white: 0.72), Color(white: 0.42)]
-        case .island: return [Color(red: 0.62, green: 0.6, blue: 1), Color(red: 0.38, green: 0.3, blue: 0.95)]
-        case .everyday: return [Color(red: 0.4, green: 0.7, blue: 1), Color(red: 0.12, green: 0.38, blue: 0.92)]
-        case .capture: return [Color(red: 0.4, green: 0.88, blue: 1), Color(red: 0.08, green: 0.55, blue: 0.85)]
-        case .windows: return [Color(red: 0.72, green: 0.55, blue: 1), Color(red: 0.42, green: 0.3, blue: 0.95)]
-        case .input: return [Color(red: 1, green: 0.85, blue: 0.35), Color(red: 1, green: 0.58, blue: 0.1)]
-        case .sound: return [Color(red: 1, green: 0.5, blue: 0.7), Color(red: 0.92, green: 0.2, blue: 0.45)]
-        case .system: return [Color(red: 0.45, green: 0.95, blue: 0.6), Color(red: 0.1, green: 0.65, blue: 0.4)]
-        case .apps: return [Color(red: 1, green: 0.7, blue: 0.4), Color(red: 0.95, green: 0.42, blue: 0.15)]
-        case .devices: return [Color(red: 0.3, green: 0.92, blue: 0.8), Color(red: 0.1, green: 0.5, blue: 0.75)]
-        case .fromOrbit: return [Color(red: 0.8, green: 0.5, blue: 1), Color(red: 1, green: 0.38, blue: 0.62)]
+        default: return ZenithCategoryTint.of(self).colors
         }
     }
 }

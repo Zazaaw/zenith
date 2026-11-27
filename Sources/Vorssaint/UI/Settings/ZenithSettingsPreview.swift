@@ -6,13 +6,12 @@ import Combine
 import ImageIO
 import SwiftUI
 
-// Zenith fork: the preview card every Settings page opens with, in the style
-// of the Lock Screen page: a picture of what the page changes on the left
-// (the real island, the part of the screen it touches, or a looping
-// illustration), and beside it a "Preview" column with the states to look
-// at, a line on what the picture shows, and which part is outlined. Clicking
-// an outlined part of the picture opens the settings for it. The card folds
-// away, and each page remembers whether it is folded.
+// Zenith fork: the preview every Settings page opens with: a picture of what
+// the page changes (the real island, the part of the screen it touches, or a
+// looping illustration) on the kit's stage in the page's tint, and under it
+// the states to look at, a line on what the picture shows, and which part
+// is outlined. Clicking an outlined part of the picture opens the settings
+// for it.
 //
 // The pieces:
 // - `ZenithSettingsPreviewCard`: the card itself.
@@ -28,8 +27,6 @@ import SwiftUI
 struct ZenithSettingsPreviewStrings {
     let preview = "Preview"
     let click = "Click a part of the preview to open its settings."
-    let show = "Show preview"
-    let hide = "Hide preview"
     func highlighted(_ part: String) -> String { "Highlighted: \(part)" }
 
     static let shared = ZenithSettingsPreviewStrings()
@@ -50,11 +47,10 @@ struct ZenithSettingsPreviewCard<Picture: View, Footer: View>: View {
     private let aspectRatio: CGFloat
     private let picture: Picture
     private let footer: Footer
-    @AppStorage private var collapsed: Bool
 
     /// - Parameters:
     ///   - id: stable per page (and per section where a page previews
-    ///     several features); keys the folded state.
+    ///     several features). Kept for the callers; the stage does not fold.
     ///   - caption: one or two sentences on what the picture shows.
     ///   - states: the segmented picker's labels; empty for none.
     ///   - selection: the picked state's index.
@@ -70,101 +66,33 @@ struct ZenithSettingsPreviewCard<Picture: View, Footer: View>: View {
         self.aspectRatio = aspectRatio
         self.picture = picture()
         self.footer = footer()
-        _collapsed = AppStorage(wrappedValue: false, ZenithSettingsPreviewDefaults.collapsedKey(id))
     }
 
     private var text: ZenithSettingsPreviewStrings { .shared }
 
+    // Zenith fork: drawn on the kit's stage (ZenithStage), in the page's
+    // category tint: the picture floats in the middle at its aspect ratio,
+    // the states as pills under it, the caption beside them.
     var body: some View {
-        Group {
-            if collapsed { folded } else { open }
-        }
-        .padding(collapsed ? 12 : 16)
-        .background(ZenithSurface.cardFill, in: RoundedRectangle(cornerRadius: ZenithRadius.panel, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: ZenithRadius.panel, style: .continuous).strokeBorder(ZenithSurface.hairline))
-        .animation(.spring(duration: 0.35, bounce: 0.1), value: collapsed)
-    }
-
-    private var folded: some View {
-        Button { collapsed = false } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold))
-                Text(text.show).font(.system(size: 13, weight: .medium))
-                Spacer()
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(.secondary)
-    }
-
-    private var open: some View {
-        HStack(alignment: .top, spacing: 18) {
+        ZenithStage(caption: caption, hint: highlight.map(text.highlighted), hintHelp: text.click,
+                    states: states, selection: selection, height: nil) {
             picture
                 .aspectRatio(aspectRatio, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous).strokeBorder(ZenithSurface.hairline))
-                .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
-                .frame(maxWidth: .infinity)
-
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text(text.preview)
-                        .font(.system(size: 15, weight: .semibold))
-                        .accessibilityAddTraits(.isHeader)
-                    Spacer()
-                    Button { collapsed = true } label: {
-                        Image(systemName: "chevron.up").font(.system(size: 11, weight: .semibold))
-                    }
-                    .buttonStyle(.borderless)
-                    .help(text.hide)
-                    .accessibilityLabel(text.hide)
-                }
-                if let selection, states.count > 1 {
-                    let picker = Picker(text.preview, selection: selection) {
-                        ForEach(states.indices, id: \.self) { Text(states[$0]).tag($0) }
-                    }
-                    .labelsHidden()
-                    // Segments while they fit the column; a menu when they don't.
-                    if statesFitSegments {
-                        picker.pickerStyle(.segmented)
-                    } else {
-                        picker.pickerStyle(.menu).fixedSize()
-                    }
-                }
-                Text(caption)
-                    .font(ZenithType.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                if let highlight {
-                    Text(text.click)
-                        .font(ZenithType.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Label(text.highlighted(highlight), systemImage: "hand.point.up.left")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.accentColor)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 10)
-                footer
-            }
-            .frame(width: 184, alignment: .leading)
-            .frame(maxHeight: .infinity, alignment: .top)
+                .overlay(RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.14)))
+                .shadow(color: .black.opacity(0.3), radius: 14, y: 6)
+                .frame(maxHeight: Self.pictureHeight)
+                .padding(.vertical, 20)
+                .padding(.horizontal, 24)
+        } footer: {
+            footer
         }
-        // The column takes the picture's height, so a footer sits at its foot.
-        .fixedSize(horizontal: false, vertical: true)
     }
 
-    /// Whether the states' labels fit the column as segments, each with the
-    /// control's padding around its label.
-    private var statesFitSegments: Bool {
-        let font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
-        let width = states.reduce(CGFloat(0)) { total, state in
-            total + (state as NSString).size(withAttributes: [.font: font]).width + 12
-        }
-        return width <= 184
-    }
+    /// The picture's height on the stage: as tall as the mockups' stage
+    /// allows, so a wide picture keeps a margin of tint on both sides.
+    static var pictureHeight: CGFloat { 230 }
 }
 
 extension ZenithSettingsPreviewCard where Footer == EmptyView {
@@ -173,10 +101,6 @@ extension ZenithSettingsPreviewCard where Footer == EmptyView {
         self.init(id: id, caption: caption, states: states, selection: selection, highlight: highlight,
                   aspectRatio: aspectRatio, picture: picture, footer: { EmptyView() })
     }
-}
-
-enum ZenithSettingsPreviewDefaults {
-    static func collapsedKey(_ id: String) -> String { "zenithSettingsPreviewCollapsed.\(id)" }
 }
 
 // MARK: - Desktop
@@ -298,7 +222,7 @@ struct ZenithPreviewLoop<Content: View>: View {
 }
 
 /// Reports whether the hosting window is on screen and not occluded.
-private struct ZenithWindowVisibilityReader: NSViewRepresentable {
+struct ZenithWindowVisibilityReader: NSViewRepresentable {
     @Binding var visible: Bool
 
     func makeNSView(context: Context) -> ReaderView { ReaderView(report: { visible = $0 }) }

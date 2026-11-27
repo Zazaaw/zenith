@@ -223,6 +223,9 @@ enum ZenithSettingsSearch {
                  keywords: [mechakey.title, mechakey.soundPack, mechakey.preview, mechakey.volume, mechakey.typing,
                             mechakey.keyUp, mechakey.ignoreRepeat, mechakey.shortcut],
                  aliases: MechakeySearch.aliases),
+            page(.zenithMechakeyRepeat, title: mechakey.ignoreRepeat, icon: "repeat",
+                 keywords: [mechakey.title, mechakey.ignoreRepeatCaption],
+                 aliases: ["key repeat", "held key", "tahan tombol", "ulang tombol"]),
             // Appearance: the page, then its theme, motion, glass and battery.
             SettingsSearchItem(id: .page(.appearance), destination: FeatureSettingsDestination(.appearance),
                                title: appearance.title, icon: "paintpalette", keywords: [appearance.subtitle],

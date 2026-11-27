@@ -568,6 +568,11 @@ if (( TEST )); then
         # Zenith fork: the floating sidebar's groups and icon table (the Orbit icons are listed with Orbit below).
         Sources/Vorssaint/UI/Settings/SettingsSidebarLayout.swift
         Sources/Vorssaint/UI/Settings/SettingsSidebarIcons.swift
+        # Zenith fork: the Settings kit's tints, caption rule, More options and motion rules, and
+        # the surfaces, rows and header the restyled SettingsCard and SettingsRow draw with.
+        Sources/Vorssaint/UI/Settings/Kit/ZenithKitSupport.swift
+        Sources/Vorssaint/UI/Settings/Kit/ZenithKitBase.swift
+        Sources/Vorssaint/UI/Settings/Kit/ZenithSystemHeader.swift
         # Zenith fork: the Settings window's double-click choice and the sidebar's account line.
         Sources/Vorssaint/UI/Settings/SettingsChromeSupport.swift
         Sources/Vorssaint/Core/ZenithAppearanceStrings.swift
