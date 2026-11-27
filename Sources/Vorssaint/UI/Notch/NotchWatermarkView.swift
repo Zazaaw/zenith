@@ -44,8 +44,8 @@ struct NotchWatermarkStepTile: View {
         }
         .buttonStyle(NotchPhotoPressStyle())
         .onHover { hovering = $0 }
-        .animation(ZenithMotion.respecting(.easeOut(duration: ZenithMotion.fast)), value: hovering)
-        .animation(ZenithMotion.respecting(ZenithMotion.toggle(ZenithMotion.fast)), value: selected)
+        .animation(ZenithMotion.respecting(IslandMotion.easeOut(ZenithMotion.fast)), value: hovering)
+        .animation(ZenithMotion.respecting(IslandMotion.toggle(ZenithMotion.fast)), value: selected)
         .help(title)
         .accessibilityLabel(title)
         .accessibilityAddTraits(selected ? .isSelected : [])
@@ -187,7 +187,7 @@ struct NotchWatermarkPositionPicker: View {
         }
         .opacity(disabled ? 0.35 : 1)
         .disabled(disabled)
-        .animation(.easeOut(duration: ZenithMotion.fast), value: disabled)
+        .animation(IslandMotion.easeOut(ZenithMotion.fast), value: disabled)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(title)
     }
@@ -197,7 +197,7 @@ struct NotchWatermarkPositionPicker: View {
         let name = names.indices.contains(position.rawValue) ? names[position.rawValue] : ""
         return Button {
             guard !chosen else { return }
-            withAnimation(reduceMotion ? .easeOut(duration: 0.15) : .spring(response: 0.32, dampingFraction: 0.8)) {
+            withAnimation(reduceMotion ? IslandMotion.easeOut(0.15) : IslandMotion.spring(response: 0.32, damping: 0.8)) {
                 selection = position
             }
         } label: {
@@ -233,7 +233,7 @@ private struct NotchWatermarkDot: View {
             }
         }
         .onHover { hovering = $0 }
-        .animation(ZenithMotion.respecting(.easeOut(duration: ZenithMotion.fast)), value: hovering)
+        .animation(ZenithMotion.respecting(IslandMotion.easeOut(ZenithMotion.fast)), value: hovering)
     }
 }
 
@@ -316,7 +316,7 @@ struct NotchWatermarkSlider: View {
     }
 
     private var knob: Animation {
-        reduceMotion ? .easeOut(duration: 0.1) : .spring(response: 0.28, dampingFraction: 0.7)
+        reduceMotion ? IslandMotion.easeOut(0.1) : IslandMotion.spring(response: 0.28, damping: 0.7)
     }
 
     /// The point under the pointer, on the slider's steps.
@@ -412,7 +412,7 @@ struct NotchWatermarkPresetMenu: View {
         .menuIndicator(.hidden)
         .fixedSize()
         .onHover { hovering = $0 }
-        .animation(ZenithMotion.respecting(.easeOut(duration: ZenithMotion.fast)), value: hovering)
+        .animation(ZenithMotion.respecting(IslandMotion.easeOut(ZenithMotion.fast)), value: hovering)
         .help(text.presets)
         .accessibilityLabel(text.presets)
         .accessibilityValue(current?.name ?? text.unsaved)
@@ -489,7 +489,7 @@ struct NotchWatermarkToggleTile: View {
 
     var body: some View {
         Button {
-            withAnimation(ZenithMotion.respecting(ZenithMotion.toggle(ZenithMotion.fast))) { isOn.toggle() }
+            withAnimation(ZenithMotion.respecting(IslandMotion.toggle(ZenithMotion.fast))) { isOn.toggle() }
         } label: {
             NotchWatermarkTileChrome(active: isOn) {
                 Image(systemName: symbol)
@@ -525,7 +525,7 @@ private struct NotchWatermarkTileChrome<Content: View>: View {
             }
             .contentShape(shape)
             .onHover { hovering = $0 }
-            .animation(ZenithMotion.respecting(.easeOut(duration: ZenithMotion.fast)), value: hovering)
+            .animation(ZenithMotion.respecting(IslandMotion.easeOut(ZenithMotion.fast)), value: hovering)
     }
 }
 
@@ -547,7 +547,7 @@ private struct NotchWatermarkGlyphButton: View {
         }
         .buttonStyle(NotchPhotoPressStyle())
         .onHover { hovering = $0 }
-        .animation(ZenithMotion.respecting(.easeOut(duration: ZenithMotion.fast)), value: hovering)
+        .animation(ZenithMotion.respecting(IslandMotion.easeOut(ZenithMotion.fast)), value: hovering)
         .help(title)
         .accessibilityLabel(title)
     }

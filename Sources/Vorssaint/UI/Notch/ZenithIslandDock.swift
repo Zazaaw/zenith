@@ -96,7 +96,7 @@ final class ZenithIslandDockMotion: ObservableObject {
         if visible { arrivalDelay = animated ? delay : 0 }
         let still = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         let animation: Animation? = animated
-            ? (visible ? ZenithMorph.animation(reduceMotion: still).delay(delay) : .easeIn(duration: Self.departure))
+            ? (visible ? ZenithMorph.animation(reduceMotion: still).delay(delay) : IslandMotion.easeIn(Self.departure))
             : nil
         withAnimation(animation) { self.visible = visible }
     }
@@ -229,7 +229,7 @@ struct ZenithIslandDockPill: View {
                     .animation(shown
                                    ? ZenithMorph.animation(reduceMotion: reduceMotion)
                                        .delay(arrivalDelay + ZenithMotion.layerDelay(index + 1))
-                                   : .easeIn(duration: ZenithIslandDockMotion.departure),
+                                   : IslandMotion.easeIn(ZenithIslandDockMotion.departure),
                                value: shown)
                     .transition(.zenithMorph(reduceMotion: reduceMotion))
             }
@@ -264,7 +264,7 @@ struct ZenithIslandDockPill: View {
                         .padding(.horizontal, 4)
                         .frame(minWidth: ZenithIslandDockLayout.badgeSize, minHeight: ZenithIslandDockLayout.badgeSize)
                         .background(Color.white.opacity(0.14), in: Capsule())
-                        .animation(ZenithMotion.respecting(.snappy(duration: 0.28)), value: count)
+                        .animation(ZenithMotion.respecting(IslandMotion.snappy(0.28)), value: count)
                         .transition(.zenithMorph(reduceMotion: reduceMotion))
                 }
             }
@@ -335,7 +335,7 @@ private struct ZenithIslandDockGlyph: View {
         Image(systemName: symbol)
             .font(.system(size: ZenithIslandDockLayout.glyphSize, weight: .semibold))
             .foregroundStyle(chosen ? tint : hovered ? ZenithIsland.primary : ZenithIsland.secondary)
-            .animation(ZenithMotion.respecting(.easeOut(duration: ZenithMotion.fast)), value: chosen)
+            .animation(ZenithMotion.respecting(IslandMotion.easeOut(ZenithMotion.fast)), value: chosen)
             .accessibilityHidden(true)
     }
 }
@@ -364,7 +364,7 @@ private struct ZenithIslandDockButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed && !reduceMotion ? ZenithMotion.pressedScale : 1)
-            .animation(reduceMotion ? nil : configuration.isPressed ? ZenithMotion.press : ZenithMotion.spring(),
+            .animation(reduceMotion ? nil : configuration.isPressed ? IslandMotion.press : IslandMotion.pop(),
                        value: configuration.isPressed)
     }
 }

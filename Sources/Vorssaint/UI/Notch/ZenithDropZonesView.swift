@@ -118,14 +118,14 @@ struct ZenithDropZoneTile: View {
         .opacity(shown ? (available ? (dimmed ? 0.72 : 1) : 0.45) : 0)
         .blur(radius: reduceMotion || shown ? 0 : 6)
         .scaleEffect(reduceMotion ? 1 : shown ? 1 : 0.96)
-        .animation(reduceMotion ? .easeOut(duration: ZenithMotion.fast) : .spring(response: 0.34, dampingFraction: 0.8),
+        .animation(reduceMotion ? IslandMotion.easeOut(ZenithMotion.fast) : IslandMotion.spring(response: 0.34, damping: 0.8),
                    value: selected)
-        .animation(reduceMotion ? .easeOut(duration: ZenithMotion.fast) : .spring(response: 0.34, dampingFraction: 0.86),
+        .animation(reduceMotion ? IslandMotion.easeOut(ZenithMotion.fast) : IslandMotion.spring(response: 0.34, damping: 0.86),
                    value: dimmed)
         .onAppear {
             guard animatesEntrance, !entered else { return }
-            withAnimation((reduceMotion ? Animation.easeOut(duration: 0.2)
-                           : .spring(response: ZenithMorph.response, dampingFraction: ZenithMorph.damping))
+            withAnimation((reduceMotion ? IslandMotion.easeOut(0.2)
+                           : ZenithMorph.animation)
                 .delay(ZenithMotion.layerDelay(index))) {
                 entered = true
             }

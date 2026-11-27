@@ -15,7 +15,7 @@ import SwiftUI
 // each movement into a cross-fade.
 
 /// The interactive spring: response 0.36, damping 0.86.
-private let photoSpring = Animation.spring(response: 0.36, dampingFraction: 0.86)
+private let photoSpring = IslandMotion.spring(response: 0.36, damping: 0.86)
 
 struct NotchPhotoActionsView: View {
     let session: NotchPhotoSession
@@ -51,7 +51,7 @@ struct NotchPhotoActionsView: View {
             }
             .padding(.leading, 14)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .animation(reduceMotion ? .easeInOut(duration: 0.2) : ZenithMotion.reveal(), value: phaseKey)
+            .animation(reduceMotion ? IslandMotion.easeInOut(0.2) : IslandMotion.reveal(), value: phaseKey)
         }
         .padding(.vertical, 4)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -65,7 +65,7 @@ struct NotchPhotoActionsView: View {
     /// The picture settles in and the layers of the pane follow it, 40 ms apart.
     private func arrive() {
         guard !arrived else { return }
-        withAnimation(reduceMotion ? .easeOut(duration: 0.2) : photoSpring) { arrived = true }
+        withAnimation(reduceMotion ? IslandMotion.easeOut(0.2) : photoSpring) { arrived = true }
     }
 
     @ViewBuilder private var pane: some View {
@@ -111,7 +111,7 @@ private struct NotchPhotoTransformPane: View {
                     (.convert, text.convert), (.resize, text.resize), (.compress, text.compress), (.strip, text.strip),
                 ], fontSize: 11)
                 NotchWatermarkStepTile(selected: photos.kind == .watermark, title: mark.title) {
-                    withAnimation(ZenithMotion.respecting(ZenithMotion.toggle())) { photos.kind = .watermark }
+                    withAnimation(ZenithMotion.respecting(IslandMotion.toggle())) { photos.kind = .watermark }
                 }
             }
             .modifier(NotchPhotoLayer(index: 1, shown: arrived))
@@ -205,7 +205,7 @@ private struct NotchPhotoTransformPane: View {
     private func chip(title: String, symbol: String, isOn: Bool, compact: Bool,
                       toggle: @escaping () -> Void) -> some View {
         Button {
-            withAnimation(ZenithMotion.respecting(ZenithMotion.toggle(ZenithMotion.fast))) { toggle() }
+            withAnimation(ZenithMotion.respecting(IslandMotion.toggle(ZenithMotion.fast))) { toggle() }
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: isOn ? "checkmark" : symbol)
@@ -281,7 +281,7 @@ private struct NotchPhotoWorkingPane: View {
                     .frame(width: 24, height: 24)
                 NotchPhotoCountUp(value: progress * 100, size: 24) { "\(Int($0.rounded()))%" }
             }
-            .animation(reduceMotion ? nil : .smooth(duration: 0.4), value: progress)
+            .animation(reduceMotion ? nil : IslandMotion.smooth(0.4), value: progress)
             ZenithStatusLine(color: ZenithStatus.progress, text: session.action == .transform
                              ? text.transform : text.removeBackground, live: true, mono: false)
             Spacer(minLength: 0)
@@ -355,7 +355,7 @@ private struct NotchPhotoDonePane: View {
                     let serial = photos.copySerial
                     // "Copied" for a moment, then the button reads Copy again.
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-                        withAnimation(.easeOut(duration: ZenithMotion.fast)) { copiedSerial = serial }
+                        withAnimation(IslandMotion.easeOut(ZenithMotion.fast)) { copiedSerial = serial }
                     }
                 } label: {
                     Text(copiedSerial == photos.copySerial ? text.copy : text.copied)
@@ -373,10 +373,10 @@ private struct NotchPhotoDonePane: View {
             if reduceMotion {
                 shownBytes = target
             } else {
-                withAnimation(ZenithMotion.reveal(0.7).delay(0.12)) { shownBytes = target }
+                withAnimation(IslandMotion.reveal(0.7).delay(0.12)) { shownBytes = target }
             }
         }
-        .animation(.easeOut(duration: ZenithMotion.fast), value: photos.copySerial)
+        .animation(IslandMotion.easeOut(ZenithMotion.fast), value: photos.copySerial)
     }
 }
 
@@ -448,7 +448,7 @@ private struct NotchPhotoLayer: ViewModifier {
         content
             .opacity(shown ? 1 : 0)
             .offset(y: shown || reduceMotion ? 0 : 6)
-            .animation((reduceMotion ? Animation.easeOut(duration: 0.2) : photoSpring)
+            .animation((reduceMotion ? IslandMotion.easeOut(0.2) : photoSpring)
                 .delay(ZenithMotion.layerDelay(index + 1)), value: shown)
     }
 }
@@ -501,7 +501,7 @@ private struct NotchPhotoPreview: View {
             }
         }
         // The thumbnail is read off the main thread and fades in when it arrives.
-        .animation(.easeOut(duration: ZenithMotion.fast), value: session.thumbnail != nil)
+        .animation(IslandMotion.easeOut(ZenithMotion.fast), value: session.thumbnail != nil)
         // The picture settles in from the drop: a little larger, a little high.
         .scaleEffect(arrived || reduceMotion ? 1 : 0.86)
         .offset(y: arrived || reduceMotion ? 0 : -14)
@@ -539,7 +539,7 @@ private struct NotchPhotoPreview: View {
                             .transition(.opacity)
                     }
                 }
-                .animation(.easeOut(duration: ZenithMotion.fast), value: showsWatermark && photos.watermarkPreview != nil)
+                .animation(IslandMotion.easeOut(ZenithMotion.fast), value: showsWatermark && photos.watermarkPreview != nil)
                 .overlay {
                     if session.phase.isWorking { NotchPhotoShimmer() }
                 }
@@ -635,7 +635,7 @@ private struct NotchPhotoCutoutReveal: View {
                 return
             }
             NotchPhotoRevealLedger.shared.played.insert(sessionID)
-            withAnimation(reduceMotion ? .easeInOut(duration: 0.3) : ZenithMotion.reveal(0.75).delay(0.05)) { reveal = 1 }
+            withAnimation(reduceMotion ? IslandMotion.easeInOut(0.3) : IslandMotion.reveal(0.75).delay(0.05)) { reveal = 1 }
         }
     }
 
@@ -770,7 +770,7 @@ private struct NotchPhotoCheckmark: View {
         }
         .opacity(reduceMotion ? drawn : 1)
         .onAppear {
-            withAnimation(reduceMotion ? .easeOut(duration: 0.2) : ZenithMotion.reveal(0.4).delay(0.1)) { drawn = 1 }
+            withAnimation(reduceMotion ? IslandMotion.easeOut(0.2) : IslandMotion.reveal(0.4).delay(0.1)) { drawn = 1 }
         }
         .accessibilityHidden(true)
     }
@@ -788,7 +788,7 @@ private struct NotchPhotoPress: ViewModifier {
         content
             .scaleEffect(pressed && !reduceMotion ? 0.96 : 1)
             .opacity(pressed && reduceMotion ? 0.7 : 1)
-            .animation(pressed ? .easeOut(duration: 0.1) : .spring(response: 0.32, dampingFraction: 0.82), value: pressed)
+            .animation(pressed ? IslandMotion.easeOut(0.1) : IslandMotion.spring(response: 0.32, damping: 0.82), value: pressed)
     }
 }
 
@@ -832,7 +832,7 @@ private struct NotchPhotoGlyphButton: View {
         }
         .buttonStyle(NotchPhotoPressStyle())
         .onHover { hovering = $0 }
-        .animation(ZenithMotion.respecting(.easeOut(duration: ZenithMotion.fast)), value: hovering)
+        .animation(ZenithMotion.respecting(IslandMotion.easeOut(ZenithMotion.fast)), value: hovering)
         .help(title)
         .accessibilityLabel(title)
     }

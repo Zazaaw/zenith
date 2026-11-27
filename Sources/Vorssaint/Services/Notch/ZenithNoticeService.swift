@@ -385,16 +385,15 @@ final class ZenithNoticeCenter: ObservableObject {
         DispatchQueue.main.async { [weak self] in
             guard let self, self.generation == token else { return }
             if self.reduceMotion {
-                withAnimation(.easeOut(duration: ZenithNoticeTiming.fade)) {
+                withAnimation(IslandMotion.easeOut(ZenithNoticeTiming.fade)) {
                     self.surfaceOpacity = 1
                     self.contentShown = true
                 }
                 self.phase = .shown
                 return
             }
-            withAnimation(.spring(response: ZenithNoticeTiming.springResponse,
-                                  dampingFraction: ZenithNoticeTiming.springDamping)) { self.outline = end }
-            DispatchQueue.main.asyncAfter(deadline: .now() + ZenithNoticeTiming.contentDelay) { [weak self] in
+            withAnimation(IslandMotion.spring(response: ZenithNoticeTiming.springResponse, damping: ZenithNoticeTiming.springDamping)) { self.outline = end }
+            DispatchQueue.main.asyncAfter(deadline: .now() + IslandMotion.paced(ZenithNoticeTiming.contentDelay)) { [weak self] in
                 guard let self, self.generation == token, self.phase == .growing else { return }
                 self.contentShown = true
                 self.phase = .shown
@@ -483,7 +482,7 @@ final class ZenithNoticeCenter: ObservableObject {
         let token = generation
         removeMouseMonitors()
         if reduceMotion {
-            withAnimation(.easeOut(duration: ZenithNoticeTiming.fade)) { surfaceOpacity = 0 }
+            withAnimation(IslandMotion.easeOut(ZenithNoticeTiming.fade)) { surfaceOpacity = 0 }
             DispatchQueue.main.asyncAfter(deadline: .now() + ZenithNoticeTiming.fade) { [weak self] in
                 guard let self, self.generation == token else { return }
                 self.finish()
@@ -496,13 +495,13 @@ final class ZenithNoticeCenter: ObservableObject {
         // window stays as it is, so the shrink ends inside it.
         let target = outline(closedFrame: closed.intersection(panelFrame).isNull ? closed : closed.intersection(panelFrame),
                              closed: true)
-        let contentOut = quickly ? 0.08 : ZenithNoticeTiming.contentOut
+        let contentOut = IslandMotion.paced(quickly ? 0.08 : ZenithNoticeTiming.contentOut)
         DispatchQueue.main.asyncAfter(deadline: .now() + contentOut) { [weak self] in
             guard let self, self.generation == token else { return }
-            withAnimation(.spring(response: ZenithNoticeTiming.springResponse * 0.85, dampingFraction: 1)) {
+            withAnimation(IslandMotion.spring(response: ZenithNoticeTiming.springResponse * 0.85, damping: 1)) {
                 self.outline = target
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + ZenithNoticeTiming.shrink) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + IslandMotion.paced(ZenithNoticeTiming.shrink)) { [weak self] in
                 guard let self, self.generation == token else { return }
                 self.finish()
             }
@@ -562,7 +561,7 @@ final class ZenithNoticeCenter: ObservableObject {
             self.lowPowerOn = ProcessInfo.processInfo.isLowPowerModeEnabled
             let refreshed = self.refreshedLowPower(shown)
             guard refreshed != shown else { return }
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { self.notice = refreshed }
+            withAnimation(IslandMotion.spring(response: 0.3, damping: 0.8)) { self.notice = refreshed }
         }
     }
 

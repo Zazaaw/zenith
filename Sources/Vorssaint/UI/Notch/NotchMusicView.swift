@@ -270,7 +270,7 @@ struct NotchMusicView: View {
                 Button { RadialNowPlayingApplication.open(playback.track) } label: {
                     NotchArtwork(image: service.artwork, size: NotchLayout.musicArtworkSize, source: playback.track)
                         .scaleEffect(playback.isPlaying || reduceMotion ? 1 : 0.94)
-                        .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: playback.isPlaying)
+                        .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: playback.isPlaying)
                 }
                 .buttonStyle(NotchButtonStyle(cornerRadius: NotchLayout.musicArtworkSize * 0.19))
                 .help(text.mediaNowPlaying)
@@ -407,7 +407,7 @@ private struct NotchMusicSideButton: View {
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: plate, height: plate)
                 .background(.white.opacity(active ? 0.12 : 0), in: Circle())
-                .animation(reduceMotion ? nil : .smooth(duration: 0.22), value: active)
+                .animation(reduceMotion ? nil : IslandMotion.smooth(0.22), value: active)
                 .frame(width: height, height: height)
                 .contentShape(Circle())
         }
@@ -585,7 +585,7 @@ private struct NotchMusicTransport: View {
                 .font(.system(size: compact ? 24 : slot == nil ? 28 : 30, weight: .medium))
                 .foregroundStyle(.white)
                 .contentTransition(.symbolEffect(.replace))
-                .animation(reduceMotion ? nil : .smooth(duration: 0.22), value: showsPlaying)
+                .animation(reduceMotion ? nil : IslandMotion.smooth(0.22), value: showsPlaying)
                 .frame(width: height, height: height)
                 .contentShape(Circle())
         }

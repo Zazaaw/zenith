@@ -1075,7 +1075,7 @@ private final class NotchFrameProbe {
     func close() { window.orderOut(nil) }
 }
 
-final class NotchPanel: NSPanel, NotchWaveHold {
+final class NotchPanel: NSPanel, NotchWaveHold, IslandAgentHostWindow { // Zenith fork: IslandAgentHostWindow
     static let overlayCollectionBehavior: NSWindow.CollectionBehavior = [
         .canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle
     ]
@@ -1967,7 +1967,9 @@ private final class NotchCanvas: NSView {
         }
         contentVisibility.opacity = 1
         contentVisibility.add(opacity, forKey: "notch.opacity")
-        if let filter = Self.makeArrivalBlur() {
+        // Zenith fork: plain fades (the battery saver) leave out the blur
+        // filter and the render pass it costs.
+        if frames.contains(where: { $0.blur > 0.01 }), let filter = Self.makeArrivalBlur() {
             layer.filters = [filter]
             let blur = CAKeyframeAnimation(keyPath: "filters.\(Self.arrivalBlurName).inputRadius")
             blur.values = frames.map(\.blur)

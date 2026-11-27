@@ -91,7 +91,7 @@ struct GitHomeWidget: View {
                 .font(value == nil ? .system(size: 10.5, weight: .medium) : ZenithType.mono(10.5, weight: .semibold))
                 .foregroundStyle(value == nil ? color : ZenithIsland.primary)
                 .contentTransition(reduceMotion ? .opacity : .numericText(value: Double(value ?? 0)))
-                .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: value)
+                .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: value)
         }
         .help(title)
         .accessibilityElement(children: .ignore)

@@ -45,7 +45,7 @@ struct SkyHomePrayerWidget: View {
                             .monospacedDigit()
                             .foregroundStyle(ZenithIsland.primary)
                             .contentTransition(.numericText(countsDown: true))
-                            .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: Int(interval.rounded(.up)))
+                            .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: Int(interval.rounded(.up)))
                             .lineLimit(1)
                     } else {
                         SkyLocationPrompt(text: text, access: weather.access, compact: true)
@@ -96,7 +96,7 @@ struct SkyHomeGoldenWidget: View {
                                         .monospacedDigit()
                                         .foregroundStyle(during ? SkyPalette.golden : ZenithIsland.primary)
                                         .contentTransition(.numericText(countsDown: true))
-                                        .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: Int(interval.rounded(.up)))
+                                        .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: Int(interval.rounded(.up)))
                                         .lineLimit(1)
                                 }
                             }

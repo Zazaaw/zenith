@@ -18,11 +18,11 @@ extension ZenithReplyApp {
 /// with Reduce Motion.
 enum ZenithReplyMotion {
     static func reveal(_ reduceMotion: Bool) -> Animation {
-        reduceMotion ? .easeOut(duration: 0.2) : .spring(response: 0.36, dampingFraction: 0.86)
+        reduceMotion ? IslandMotion.easeOut(0.2) : IslandMotion.spring(response: 0.36, damping: 0.86)
     }
 
     static func crossfade(_ reduceMotion: Bool) -> Animation {
-        reduceMotion ? .easeOut(duration: 0.2) : .smooth(duration: 0.35)
+        reduceMotion ? IslandMotion.easeOut(0.2) : IslandMotion.smooth(0.35)
     }
 
     /// Each control of the row blurs in 40 ms after the one before it.
@@ -240,7 +240,7 @@ struct ZenithReplyRow: View {
             }
             .frame(width: ZenithReplyHold.rowHeight, height: ZenithReplyHold.rowHeight)
             .contentShape(Circle())
-            .animation(.easeOut(duration: 0.15), value: canSend)
+            .animation(IslandMotion.easeOut(0.15), value: canSend)
         }
         .buttonStyle(.plain)
         .disabled(!canSend)
@@ -288,7 +288,7 @@ struct ZenithReplyRow: View {
     private func fadeOut(_ reply: String) {
         ghost = reply
         ghostShown = true
-        withAnimation(reduceMotion ? .easeOut(duration: 0.2) : .easeOut(duration: 0.32)) { ghostShown = false }
+        withAnimation(reduceMotion ? IslandMotion.easeOut(0.2) : IslandMotion.easeOut(0.32)) { ghostShown = false }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
             if !ghostShown { ghost = nil }
         }

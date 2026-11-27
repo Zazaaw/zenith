@@ -89,7 +89,7 @@ struct NotchAgentsLiveStrip: View {
         .padding(.horizontal, geometry.compactActivityHorizontalPadding)
         .padding(.top, geometry.compactActivityTopPadding)
         .buttonStyle(.plain)
-        .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.35, bounce: 0.2), value: strip.kind)
+        .animation(reduceMotion ? IslandMotion.easeInOut(0.2) : IslandMotion.spring(duration: 0.35, bounce: 0.2), value: strip.kind)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Claude")
         .accessibilityValue(label + NotchAgentsLiveStripLayout.detail(strip))

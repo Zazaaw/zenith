@@ -757,7 +757,7 @@ final class NotchService: ObservableObject {
     /// instead of the whole content fading through the host.
     private func switchCompactSelection(_ change: () -> Void) {
         let animation: Animation? = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-            ? nil : .smooth(duration: 0.26)
+            ? nil : IslandMotion.smooth(0.26)
         withAnimation(animation) {
             objectWillChange.send()
             change()
@@ -1439,6 +1439,7 @@ final class NotchService: ObservableObject {
         if !running {
             running = true
             installObservers()
+            MainActor.assumeIsolated { IslandMotionLive.shared.start() } // Zenith fork: the island's motion follows Settings
         }
         syncShortcut()
         if !NotchTimerSupport.isEnabled() { NotchTimerService.shared.stop() }
@@ -4412,6 +4413,11 @@ final class NotchService: ObservableObject {
         let timerCouldRun = session.canRunTimer
         let wasLocked = session.locked
         change(&session)
+        // Zenith fork: the agents' loops stop while the island cannot show or no one sees the screen.
+        let (presenting, awake) = (session.canPresent, session.hearsLockChange)
+        MainActor.assumeIsolated {
+            IslandAgentMotionGate.shared.update(islandPresenting: presenting, screenAwake: awake)
+        }
         if session.locked != wasLocked { // Zenith fork
             ZenithLockTrace.log((session.locked ? "screenIsLocked" : "screenIsUnlocked")
                                 + " canPresent=\(session.canPresent) showsLockScreen=\(session.showsLockScreen)")

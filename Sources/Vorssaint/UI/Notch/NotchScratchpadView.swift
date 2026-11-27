@@ -146,7 +146,7 @@ struct NotchScratchpadView: View {
             }
             .onChange(of: pad.selectedPadID) { _, selected in
                 guard let selected else { return }
-                withAnimation(.easeOut(duration: 0.15)) { proxy.scrollTo(selected, anchor: .center) }
+                withAnimation(IslandMotion.easeOut(0.15)) { proxy.scrollTo(selected, anchor: .center) }
             }
         }
     }
@@ -182,7 +182,7 @@ struct NotchScratchpadView: View {
             NotchIconButton(symbol: "textformat",
                             title: text.formatMarks,
                             selected: pad.marksExpanded) {
-                withAnimation(.easeOut(duration: 0.15)) { pad.toggleMarks() }
+                withAnimation(IslandMotion.easeOut(0.15)) { pad.toggleMarks() }
             }
             .disabled(pad.isPreviewing)
             NotchIconButton(symbol: pad.isPreviewing ? "pencil" : "eye",

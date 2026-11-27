@@ -181,7 +181,7 @@ private struct SkyCountdownHero<Trailing: View>: View {
                             .tracking(-0.5)
                             .foregroundStyle(ZenithIsland.primary)
                             .contentTransition(.numericText(countsDown: true))
-                            .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: Int(interval.rounded(.up)))
+                            .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: Int(interval.rounded(.up)))
                             .lineLimit(1)
                     }
                     // Fixed to the widest reading, so a tick never moves what follows.
@@ -346,7 +346,7 @@ struct SkySunArc: View {
                         .frame(width: 7, height: 7)
                         .shadow(color: (elevation > -6 ? SkyPalette.golden : SkyPalette.blue).opacity(0.7), radius: 4)
                         .position(marker)
-                        .animation(reduceMotion ? nil : .smooth(duration: 0.6), value: marker)
+                        .animation(reduceMotion ? nil : IslandMotion.smooth(0.6), value: marker)
                     Text(SkyGoldenSupport.elevationText(elevation, locale: L10n.shared.language.formattingLocale()))
                         .font(ZenithType.mono(9.5, weight: .medium))
                         .foregroundStyle(ZenithIsland.label)

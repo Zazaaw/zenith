@@ -239,9 +239,9 @@ private struct ZenithHomeClipboardWidget: View {
         Button {
             history.copy(entry) { ok in
                 guard ok else { return }
-                withAnimation(ZenithMotion.respecting(.easeOut(duration: 0.18))) { copied = entry.id }
+                withAnimation(ZenithMotion.respecting(IslandMotion.easeOut(0.18))) { copied = entry.id }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                    withAnimation(ZenithMotion.respecting(.easeOut(duration: 0.18))) {
+                    withAnimation(ZenithMotion.respecting(IslandMotion.easeOut(0.18))) {
                         if copied == entry.id { copied = nil }
                     }
                 }

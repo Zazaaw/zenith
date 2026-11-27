@@ -136,7 +136,7 @@ struct RecapCardView: View {
             }
             Spacer(minLength: 2)
             RecapCountUp(value: still || counted ? card.value : 0, figure: card.figure, locale: locale, size: 22)
-                .animation(still ? nil : ZenithMotion.reveal(0.8), value: card.value)
+                .animation(still ? nil : IslandMotion.reveal(0.8), value: card.value)
             // Always a line, so the figures of a row sit level.
             detail
                 .font(.system(size: 11))
@@ -179,12 +179,12 @@ struct RecapCardView: View {
         guard animated else { return }
         if reduceMotion {
             counted = true
-            withAnimation(.easeOut(duration: ZenithMotion.fast)) { arrived = true }
+            withAnimation(IslandMotion.easeOut(ZenithMotion.fast)) { arrived = true }
             return
         }
         let delay = ZenithMotion.layerDelay(order)
-        withAnimation(ZenithMotion.reveal(0.45).delay(delay)) { arrived = true }
-        withAnimation(ZenithMotion.reveal(0.8).delay(delay + 0.05)) { counted = true }
+        withAnimation(IslandMotion.reveal(0.45).delay(delay)) { arrived = true }
+        withAnimation(IslandMotion.reveal(0.8).delay(delay + 0.05)) { counted = true }
     }
 }
 
@@ -356,7 +356,7 @@ struct RecapHomeWidget: View {
                 if let card {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         RecapCountUp(value: card.value, figure: card.figure, locale: locale, size: 20)
-                            .animation(reduceMotion ? nil : ZenithMotion.reveal(0.8), value: card.value)
+                            .animation(reduceMotion ? nil : IslandMotion.reveal(0.8), value: card.value)
                         Text(card.label)
                             .font(.system(size: 10.5))
                             .foregroundStyle(ZenithIsland.secondary)

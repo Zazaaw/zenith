@@ -67,7 +67,7 @@ struct ZenithCameraLoading: View {
             .task {
                 try? await Task.sleep(for: .seconds(ZenithCameraAutoStart.loadingDelay))
                 guard !Task.isCancelled else { return }
-                withAnimation(reduceMotion ? nil : .easeOut(duration: ZenithMotion.fast)) { showsSpinner = true }
+                withAnimation(reduceMotion ? nil : IslandMotion.easeOut(ZenithMotion.fast)) { showsSpinner = true }
             }
     }
 }

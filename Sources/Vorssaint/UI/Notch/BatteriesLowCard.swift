@@ -351,7 +351,7 @@ private struct BatteriesStripReading: View {
         }
         .lineLimit(1)
         .fixedSize()
-        .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: indicator.percent)
+        .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: indicator.percent)
     }
 }
 

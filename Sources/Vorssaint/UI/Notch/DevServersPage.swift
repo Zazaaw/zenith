@@ -53,7 +53,7 @@ struct DevServersPage: View {
 enum DevServersMotion {
     /// Rows entering, leaving and closing ranks.
     static func list(reduceMotion: Bool) -> Animation {
-        reduceMotion ? .easeInOut(duration: ZenithMotion.fast) : ZenithMorph.animation
+        reduceMotion ? IslandMotion.easeInOut(ZenithMotion.fast) : ZenithMorph.animation
     }
 
     /// A row rises 8 points out of a blur as it arrives, and blurs out a
@@ -67,7 +67,7 @@ enum DevServersMotion {
 
     /// A small swap inside a row, such as Kill turning into "Kill?".
     static func swap(reduceMotion: Bool) -> Animation? {
-        reduceMotion ? .easeInOut(duration: ZenithMotion.fast) : .spring(response: 0.3, dampingFraction: 0.82)
+        reduceMotion ? IslandMotion.easeInOut(ZenithMotion.fast) : IslandMotion.spring(response: 0.3, damping: 0.82)
     }
 }
 
@@ -131,7 +131,7 @@ struct DevServerUptime: View {
                     .foregroundStyle(ZenithIsland.meta)
                     .lineLimit(1)
                     .contentTransition(reduceMotion ? .opacity : .numericText())
-                    .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: reading)
+                    .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: reading)
                     .frame(width: DevServersMetrics.width(DevServersFormat.uptimeTemplate(seconds), size: size),
                            alignment: .trailing)
                     .accessibilityLabel(accessibilityFormat.replacingOccurrences(of: "%@", with: reading))

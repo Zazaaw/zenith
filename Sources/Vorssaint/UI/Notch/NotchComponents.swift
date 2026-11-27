@@ -27,9 +27,9 @@ struct NotchButtonStyle: ButtonStyle {
             .opacity(enabled ? (configuration.isPressed ? 0.8 : 1) : 0.4)
             .scaleEffect(reduceMotion || !lifts ? 1
                          : configuration.isPressed ? 0.965 : (active ? 1.022 : 1))
-            .animation(reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.7),
+            .animation(reduceMotion ? nil : IslandMotion.spring(response: 0.28, damping: 0.7),
                        value: configuration.isPressed)
-            .animation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.75), value: hovered)
+            .animation(reduceMotion ? nil : IslandMotion.spring(response: 0.32, damping: 0.75), value: hovered)
             .onHover { hovered = $0 }
     }
 }
@@ -88,7 +88,7 @@ struct NotchRollingDigits: ViewModifier {
     func body(content: Content) -> some View {
         content
             .contentTransition(.numericText(countsDown: countsDown))
-            .animation(reduceMotion ? nil : .smooth(duration: 0.3),
+            .animation(reduceMotion ? nil : IslandMotion.smooth(0.3),
                        value: NotchTimerSupport.rollingValue(value, everySecond: everySecond))
     }
 }
@@ -153,7 +153,7 @@ struct NotchIconButton: View {
             Image(systemName: symbol)
                 .font(.system(size: 12, weight: .medium))
                 .contentTransition(.symbolEffect(.replace))
-                .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: symbol)
+                .animation(reduceMotion ? nil : IslandMotion.smooth(0.24), value: symbol)
                 .frame(width: 28, height: 28)
                 .modifier(ZenithIslandIconChrome(selected: selected)) // Zenith fork: grey glyph, accent when selected
                 .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
@@ -347,7 +347,7 @@ struct NotchRail<Item: Identifiable, Content: View>: View {
                 }
                 .onChange(of: targetColumn) { _, target in
                     guard let target else { return }
-                    withAnimation(reduceMotion ? nil : .easeOut(duration: 0.16)) {
+                    withAnimation(reduceMotion ? nil : IslandMotion.easeOut(0.16)) {
                         proxy.scrollTo(target, anchor: .center)
                     }
                 }

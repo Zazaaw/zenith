@@ -29,12 +29,12 @@ final class NotchDecorativeClock {
     /// stopping takes it off the run loop.
     var displayLink: CADisplayLink? { link }
 
-    /// Steps in time with the display that shows `view`.
-    func start(in view: NSView) {
+    /// Steps in time with the display that shows `view`, at most `rate`
+    /// times a second.
+    func start(in view: NSView, rate: Float = NotchDecorativeClock.rate) {
         guard link == nil else { return }
         let link = view.displayLink(target: Target(clock: self), selector: #selector(Target.fire(_:)))
-        link.preferredFrameRateRange = CAFrameRateRange(minimum: Self.rate / 2, maximum: Self.rate,
-                                                        preferred: Self.rate)
+        link.preferredFrameRateRange = CAFrameRateRange(minimum: rate / 2, maximum: rate, preferred: rate)
         link.add(to: .main, forMode: .common)
         self.link = link
     }

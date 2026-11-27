@@ -56,7 +56,7 @@ private struct DevServersCount: View {
             .foregroundStyle(.white.opacity(0.92))
             .lineLimit(1)
             .contentTransition(reduceMotion ? .opacity : .numericText(value: Double(count)))
-            .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: count)
+            .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: count)
     }
 }
 

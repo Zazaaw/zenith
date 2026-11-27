@@ -87,9 +87,9 @@ struct ZenithLockScreenMinimalLayer: View {
         .frame(width: size.width, height: size.height, alignment: .top)
         .clipped()
         .opacity(fullShown ? 0 : 1)
-        .animation(reduceMotion ? nil : .smooth(duration: 0.35), value: fullShown)
-        .animation(reduceMotion ? .easeInOut(duration: 0.2) : .smooth(duration: 0.32), value: expanded)
-        .animation(reduceMotion ? nil : .smooth(duration: 0.5), value: playback == nil)
+        .animation(reduceMotion ? nil : IslandMotion.smooth(0.35), value: fullShown)
+        .animation(reduceMotion ? IslandMotion.easeInOut(0.2) : IslandMotion.smooth(0.32), value: expanded)
+        .animation(reduceMotion ? nil : IslandMotion.smooth(0.5), value: playback == nil)
         // Left alone for four seconds, the card folds back into the title.
         .task(id: "\(expanded) \(interactions) \(hoveringCard)") {
             guard expanded, !hoveringCard else { return }
@@ -185,7 +185,7 @@ struct ZenithLockScreenMinimalLayer: View {
                         .transition(.opacity)
                 }
             }
-            .animation(reduceMotion ? nil : .smooth(duration: 0.2), value: hoveringLyric)
+            .animation(reduceMotion ? nil : IslandMotion.smooth(0.2), value: hoveringLyric)
         }
     }
 
@@ -215,7 +215,7 @@ struct ZenithLockScreenMinimalLayer: View {
                 removal: .opacity.combined(with: .offset(y: -8))))
         }
         // Quick, so the new line is in place as it starts to be sung.
-        .animation(reduceMotion ? .easeInOut(duration: 0.2) : .smooth(duration: 0.28), value: active)
+        .animation(reduceMotion ? IslandMotion.easeInOut(0.2) : IslandMotion.smooth(0.28), value: active)
     }
 
     private var hint: some View {
@@ -387,7 +387,7 @@ struct ZenithLockScreenTransport: View {
                 .font(.system(size: size, weight: .semibold))
                 .foregroundStyle(ink)
                 .contentTransition(.symbolEffect(.replace))
-                .animation(reduceMotion ? nil : .smooth(duration: 0.22), value: symbol)
+                .animation(reduceMotion ? nil : IslandMotion.smooth(0.22), value: symbol)
                 .frame(width: buttonWidth, height: buttonHeight)
                 .contentShape(Rectangle())
         }
@@ -405,7 +405,7 @@ struct ZenithLockScreenPressStyle: ButtonStyle {
         configuration.label
             .opacity(enabled ? (configuration.isPressed ? 0.6 : 1) : 0.35)
             .scaleEffect(configuration.isPressed ? ZenithMotion.pressedScale : 1)
-            .animation(ZenithMotion.press, value: configuration.isPressed)
+            .animation(IslandMotion.press, value: configuration.isPressed)
     }
 }
 
@@ -542,7 +542,7 @@ struct ZenithLockScreenJobRing: View {
                     .trim(from: 0, to: max(0.02, min(1, fraction)))
                     .stroke(tint, style: style)
                     .rotationEffect(.degrees(-90))
-                    .animation(reduceMotion ? nil : .smooth(duration: 0.4), value: fraction)
+                    .animation(reduceMotion ? nil : IslandMotion.smooth(0.4), value: fraction)
             } else {
                 Circle()
                     .trim(from: 0, to: 0.28)

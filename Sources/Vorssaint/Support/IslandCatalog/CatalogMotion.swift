@@ -157,9 +157,23 @@ enum CatalogMotion {
         return renderer.cgImage
     }
 
+    /// Zenith fork: `ZENITH_MOTION_PRESET` (zenith, snappy, calm, playful)
+    /// and `ZENITH_MOTION_SPEED` draw the frames in that motion (IslandMotion),
+    /// `ZENITH_MOTION_SAVER=1` as the battery saver does.
+    static var motion: IslandMotion {
+        let environment = ProcessInfo.processInfo.environment
+        let preset = environment["ZENITH_MOTION_PRESET"].flatMap(IslandMotionPreset.init(rawValue:)) ?? .zenith
+        let speed = environment["ZENITH_MOTION_SPEED"].flatMap(Double.init).map {
+            min(max($0, IslandMotionSettings.speedRange.lowerBound), IslandMotionSettings.speedRange.upperBound)
+        } ?? 1
+        return IslandMotion(settings: IslandMotionSettings(preset: preset, values: preset.values, speed: speed),
+                            savingBattery: environment["ZENITH_MOTION_SAVER"] == "1")
+    }
+
     /// Renders every sequence whose id starts with `prefix`; the failures' ids.
     static func render(prefix: String, into folder: URL) -> [String] {
         var failures: [String] = []
+        IslandMotion.current = motion // Zenith fork
         let shots = Dictionary(CatalogShots.all.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let sources = folder.appendingPathComponent("motion-sources", isDirectory: true)
         try? FileManager.default.createDirectory(at: sources, withIntermediateDirectories: true)

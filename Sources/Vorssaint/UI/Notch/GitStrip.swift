@@ -79,7 +79,7 @@ private struct GitStripBranch: View {
                     .transition(reduceMotion ? .opacity : .scale(scale: 0.2).combined(with: .opacity))
             }
         }
-        .animation(reduceMotion ? .easeInOut(duration: ZenithMotion.fast) : .spring(response: 0.32, dampingFraction: 0.8),
+        .animation(reduceMotion ? IslandMotion.easeInOut(ZenithMotion.fast) : IslandMotion.spring(response: 0.32, damping: 0.8),
                    value: indicator)
     }
 }

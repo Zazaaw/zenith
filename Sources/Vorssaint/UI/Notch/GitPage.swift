@@ -16,7 +16,7 @@ import SwiftUI
 
 enum GitMotion {
     static func list(reduceMotion: Bool) -> Animation {
-        reduceMotion ? .easeInOut(duration: ZenithMotion.fast) : ZenithMorph.animation
+        reduceMotion ? IslandMotion.easeInOut(ZenithMotion.fast) : ZenithMorph.animation
     }
 
     /// A row rises 6 points out of a blur; under Reduce Motion it only fades.
@@ -273,7 +273,7 @@ private struct GitBranchChip: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(branch.isDetached ? text.detached + ", " + label
                             : text.branchValue.replacingOccurrences(of: "%@", with: label))
-        .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: label)
+        .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: label)
     }
 }
 
@@ -311,7 +311,7 @@ private struct GitAheadBehind: View {
             Text("\(count)")
                 .font(ZenithType.mono(10.5, weight: .medium))
                 .contentTransition(reduceMotion ? .opacity : .numericText(value: Double(count)))
-                .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: count)
+                .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: count)
         }
         .foregroundStyle(count > 0 ? ZenithIsland.primary : ZenithIsland.tertiary)
     }
@@ -446,7 +446,7 @@ private struct GitPill: View {
                 Text("\(count)")
                     .font(ZenithType.mono(10.5, weight: .semibold))
                     .contentTransition(reduceMotion ? .opacity : .numericText(value: Double(count)))
-                    .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: count)
+                    .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: count)
             }
         }
         .foregroundStyle(color)

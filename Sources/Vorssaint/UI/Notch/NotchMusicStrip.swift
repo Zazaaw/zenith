@@ -139,7 +139,7 @@ struct NotchMusicStrip: View {
                     .transition(.opacity)
             }
         }
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: showsControl)
+        .animation(reduceMotion ? nil : IslandMotion.easeOut(0.15), value: showsControl)
     }
 
     /// The song as the pointer asked for it: the title over the artist,
@@ -197,7 +197,7 @@ struct NotchMusicStripButton: View {
             .font(.system(size: size, weight: .semibold))
             .foregroundStyle(tint)
             .contentTransition(.symbolEffect(.replace))
-            .animation(reduceMotion ? nil : .smooth(duration: 0.22), value: playing)
+            .animation(reduceMotion ? nil : IslandMotion.smooth(0.22), value: playing)
             // The ink, not the frame, sits on the bars' middle.
             .alignmentGuide(VerticalAlignment.center) {
                 $0[VerticalAlignment.center] + NotchCapsuleLayout.symbolDrop(symbol, size: size, weight: .semibold)

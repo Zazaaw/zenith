@@ -78,13 +78,13 @@ struct NotchMixerView: View {
 
     private func toggleOptions() {
         editingVolumeID = nil
-        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) { showingOptions.toggle() }
+        withAnimation(reduceMotion ? nil : IslandMotion.easeOut(0.18)) { showingOptions.toggle() }
     }
 
     /// What Escape does: it only ever closes the options.
     private func closeOptions() {
         editingVolumeID = nil
-        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) { showingOptions = false }
+        withAnimation(reduceMotion ? nil : IslandMotion.easeOut(0.18)) { showingOptions = false }
     }
 
     @ViewBuilder private var desk: some View {
@@ -182,7 +182,7 @@ private struct NotchEditablePercent: View {
                     .font(ZenithType.mono(height > 18 ? 12 : 10, weight: .medium)) // Zenith fork: figures in mono
                     .foregroundStyle(tint)
                     .contentTransition(.numericText())
-                    .animation(reduceMotion ? nil : .smooth(duration: 0.2), value: percent)
+                    .animation(reduceMotion ? nil : IslandMotion.smooth(0.2), value: percent)
             }
             .frame(maxWidth: .infinity, minHeight: height)
         } onCommit: { commit($0) }
@@ -217,7 +217,7 @@ private struct NotchMasterFader: View {
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(muted ? ZenithStatus.error : Color.white)
                     .contentTransition(.symbolEffect(.replace))
-                    .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: muted)
+                    .animation(reduceMotion ? nil : IslandMotion.smooth(0.24), value: muted)
                     .frame(width: 32, height: 32)
                     .contentShape(Circle())
             }
@@ -291,7 +291,7 @@ private struct NotchMicrophoneFader: View {
         Image(systemName: symbol)
             .font(.system(size: 15, weight: .medium))
             .contentTransition(.symbolEffect(.replace))
-            .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: symbol)
+            .animation(reduceMotion ? nil : IslandMotion.smooth(0.24), value: symbol)
             .frame(width: 32, height: 32)
             .contentShape(Circle())
     }

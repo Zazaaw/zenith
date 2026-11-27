@@ -121,7 +121,7 @@ struct CardImportPrimaryStyle: ButtonStyle {
             .background(Capsule().fill(NotchModule.cardImport.zenithTint))
             .opacity(enabled ? (configuration.isPressed ? 0.82 : 1) : 0.4)
             .scaleEffect(configuration.isPressed ? ZenithMotion.pressedScale : 1)
-            .animation(ZenithMotion.respecting(ZenithMotion.press), value: configuration.isPressed)
+            .animation(ZenithMotion.respecting(IslandMotion.press), value: configuration.isPressed)
             .contentShape(Capsule())
     }
 }
@@ -322,7 +322,7 @@ private struct CardImportCopyingView: View {
                     ZenithFigure.compose(CardImportStripLayout.percentText(progress.percent), size: 34)
                         .tracking(-0.5)
                         .contentTransition(.numericText(value: Double(progress.percent)))
-                        .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: progress.percent)
+                        .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: progress.percent)
                     Text(text.importing)
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(NotchModule.cardImport.zenithTint)
@@ -362,7 +362,7 @@ private struct CardImportCopyingView: View {
             .foregroundStyle(ZenithIsland.secondary)
             .lineLimit(1)
             .contentTransition(.numericText())
-            .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: value)
+            .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: value)
     }
 }
 
@@ -513,7 +513,7 @@ private struct CardImportResultMark: View {
         }
         .onAppear {
             guard !reduceMotion else { return }
-            withAnimation(.easeOut(duration: 0.45)) { shown = true }
+            withAnimation(IslandMotion.easeOut(0.45)) { shown = true }
         }
         .accessibilityHidden(true)
     }
