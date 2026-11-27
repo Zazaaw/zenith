@@ -474,6 +474,7 @@ struct BCameraArt: View {
 
 struct BMagnifyArt: View {
     let gold = [c(1, 0.85, 0.4), c(0.9, 0.5, 0.05)]
+    static let pixels: [Color] = [c(0.4, 0.65, 1), c(0.55, 0.9, 1), c(1, 0.6, 0.7), c(0.6, 0.92, 0.65), c(0.68, 0.55, 1)]
     var body: some View {
         ZStack {
             // handle
@@ -484,8 +485,18 @@ struct BMagnifyArt: View {
             ZStack {
                 // glass with a magnified, refracted scene
                 Circle().fill(RadialGradient(colors: [c(1, 0.97, 0.85), c(1, 0.85, 0.55), c(0.95, 0.62, 0.25)], center: UnitPoint(x: 0.4, y: 0.35), startRadius: 2, endRadius: 30))
-                Image(systemName: "sparkle").font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(vgrad([c(1, 0.6, 0.2), c(0.85, 0.35, 0.05)])).offset(x: 2, y: 2)
+                // What it magnifies: the screen, down to its pixels.
+                Grid(horizontalSpacing: 1.2, verticalSpacing: 1.2) {
+                    ForEach(0..<4) { row in
+                        GridRow {
+                            ForEach(0..<4) { col in
+                                RoundedRectangle(cornerRadius: 1.5).fill(BMagnifyArt.pixels[(row * 4 + col) % BMagnifyArt.pixels.count])
+                                    .frame(width: 8.6, height: 8.6)
+                            }
+                        }
+                    }
+                }
+                .frame(width: 46, height: 46).clipShape(Circle())
                 Path { p in p.addArc(center: CGPoint(x: 23, y: 23), radius: 16, startAngle: .degrees(195), endAngle: .degrees(255), clockwise: false) }
                     .stroke(.white.opacity(0.9), style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
                 Circle().strokeBorder(dgrad(gold), lineWidth: 6.5)
@@ -576,44 +587,54 @@ struct BSnapArt: View {
             .frame(width: w, height: h)
     }
     var body: some View {
-        BMonitor(w: 72, h: 54) {
-            HStack(spacing: 3) {
-                tile(0, 31, 42)
-                VStack(spacing: 3) { tile(1, 30, 19.5); tile(2, 30, 19.5) }
-            }
+        let frame = RoundedRectangle(cornerRadius: 10, style: .continuous)
+        let green = tiles[0]
+        ZStack {
+            // The desktop, no stand: a layout, not a display.
+            frame.fill(vgrad([c(0.86, 0.96, 0.9), c(0.66, 0.8, 0.74)])).frame(width: 80, height: 64)
+                .overlay(frame.strokeBorder(.white.opacity(0.6), lineWidth: 1))
+                .shadow(color: .black.opacity(0.45), radius: 3, y: 2)
+            tile(0, 36, 54).offset(x: -18)
+            tile(2, 34, 25).offset(x: 20, y: 13.5)
+            // The free slot a window is snapping into.
+            RoundedRectangle(cornerRadius: 4, style: .continuous).fill(green[0].opacity(0.28))
+                .overlay(RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .strokeBorder(green[1], style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [4, 3])))
+                .frame(width: 34, height: 25).offset(x: 20, y: -14.5)
+                .shadow(color: green[0].opacity(0.9), radius: 4)
+            tile(1, 30, 21).opacity(0.92).rotationEffect(.degrees(-6)).offset(x: 26, y: -20)
+                .shadow(color: .black.opacity(0.35), radius: 2.5, y: 2)
+            Image(systemName: "cursorarrow").font(.system(size: 18, weight: .bold)).foregroundStyle(.white)
+                .shadow(color: .black.opacity(0.6), radius: 1.5, y: 1).offset(x: 36, y: -4)
         }
-        .offset(y: 3)
     }
 }
 
 struct BWorkspacesArt: View {
-    let walls: [[Color]] = [
-        [c(1, 0.7, 0.45), c(1, 0.4, 0.35)],
-        [c(1, 0.55, 0.65), c(0.9, 0.3, 0.5)],
-        [c(1, 0.8, 0.5), c(1, 0.55, 0.25)],
-        [c(1, 0.6, 0.5), c(0.85, 0.3, 0.3)],
+    let skies: [[Color]] = [
+        [c(1, 0.82, 0.55), c(1, 0.55, 0.45)],
+        [c(1, 0.7, 0.6), c(0.95, 0.45, 0.6)],
+        [c(1, 0.78, 0.5), c(1, 0.5, 0.35)],
     ]
-    func desk(_ i: Int) -> some View {
-        BCard(colors: walls[i], w: 31, h: 24, r: 5) {
-            ZStack(alignment: .top) {
-                Rectangle().fill(.white.opacity(0.45)).frame(height: 3).frame(maxHeight: .infinity, alignment: .top)
-VStack(spacing: 0) { Rectangle().fill(.white).frame(height: 2.5); Rectangle().fill(.white.opacity(0.7)) }
-                    .clipShape(RoundedRectangle(cornerRadius: 2)).frame(width: 13, height: 9)
-                    .offset(x: [-4, 4, 2, -3][i], y: [8, 9, 7, 10][i])
-                    .shadow(color: .black.opacity(0.2), radius: 1, y: 1)
-            }
-        }
-    }
+    let lands: [[Color]] = [
+        [c(0.95, 0.45, 0.35), c(0.75, 0.25, 0.3)],
+        [c(0.85, 0.35, 0.55), c(0.6, 0.2, 0.45)],
+        [c(0.95, 0.4, 0.3), c(0.7, 0.2, 0.25)],
+    ]
     var body: some View {
+        // Desktops set up and stacked, one per workspace; the front one is open.
         ZStack {
-            VStack(spacing: 5) {
-                HStack(spacing: 5) { desk(0); desk(1) }
-                HStack(spacing: 5) { desk(2); desk(3) }
+            ForEach(0..<3) { i in
+                let depth = CGFloat(2 - i)
+                EDesktop(sky: skies[i], land: lands[i], w: 64, h: 44,
+                         window: i == 2 ? [c(1, 1, 1), c(0.88, 0.88, 0.92)] : nil, dock: i == 2)
+                    .opacity(i == 2 ? 1 : 0.92)
+                    .shadow(color: .black.opacity(0.4), radius: 3, y: 2)
+                    .scaleEffect(1 - depth * 0.1)
+                    .offset(x: depth * 9, y: -depth * 12)
             }
-            RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(dgrad([c(1, 0.85, 0.5), c(1, 0.45, 0.2)]), lineWidth: 2.5)
-                .frame(width: 37, height: 30).offset(x: -18, y: -14.5)
-                .shadow(color: c(1, 0.6, 0.2).opacity(0.7), radius: 4)
         }
+        .offset(x: -6, y: 10)
     }
 }
 
@@ -679,7 +700,7 @@ enum OrbitIconsB {
         OrbitIcon(name: "Window Switcher", group: "Windows", compact: "macwindow.on.rectangle", tint: [c(0.45, 0.75, 1), c(0.2, 0.4, 0.95)], art: AnyView(BSwitcherArt())),
         OrbitIcon(name: "Dock Preview", group: "Windows", compact: "dock.arrow.up.rectangle", tint: [c(0.8, 0.6, 1), c(0.5, 0.28, 0.92)], art: AnyView(BDockArt())),
         OrbitIcon(name: "Window Snap", group: "Windows", compact: "rectangle.split.2x1.fill", tint: [c(0.5, 1, 0.6), c(0.1, 0.72, 0.38)], art: AnyView(BSnapArt())),
-        OrbitIcon(name: "Workspaces", group: "Windows", compact: "square.grid.2x2.fill", tint: [c(1, 0.7, 0.45), c(0.95, 0.38, 0.35)], art: AnyView(BWorkspacesArt())),
+        OrbitIcon(name: "Workspaces", group: "Windows", compact: "rectangle.stack.fill", tint: [c(1, 0.7, 0.45), c(0.95, 0.38, 0.35)], art: AnyView(BWorkspacesArt())),
         OrbitIcon(name: "Radial Menu", group: "Windows", compact: "circle.grid.cross.fill", tint: [c(1, 0.55, 0.45), c(0.6, 0.4, 1)], art: AnyView(BRadialArt())),
         OrbitIcon(name: "Auto Quit", group: "Windows", compact: "moon.zzz.fill", tint: [c(0.55, 0.55, 1), c(0.25, 0.2, 0.7)], art: AnyView(BAutoQuitArt())),
     ]

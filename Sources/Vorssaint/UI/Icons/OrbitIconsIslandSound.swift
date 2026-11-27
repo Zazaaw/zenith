@@ -116,24 +116,63 @@ struct AWaveBars: View {
     }
 }
 
+/// The island as it hangs from the top edge of the screen: flat on top,
+/// rounded below, with small fillets where it meets the edge.
+struct ANotchShape: Shape {
+    var radius: CGFloat = 10
+    var fillet: CGFloat = 4
+    func path(in r: CGRect) -> Path {
+        var p = Path()
+        let f = fillet, rad = min(radius, r.height)
+        p.move(to: CGPoint(x: r.minX - f, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX + f, y: r.minY))
+        p.addQuadCurve(to: CGPoint(x: r.maxX, y: r.minY + f), control: CGPoint(x: r.maxX, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.maxY - rad))
+        p.addQuadCurve(to: CGPoint(x: r.maxX - rad, y: r.maxY), control: CGPoint(x: r.maxX, y: r.maxY))
+        p.addLine(to: CGPoint(x: r.minX + rad, y: r.maxY))
+        p.addQuadCurve(to: CGPoint(x: r.minX, y: r.maxY - rad), control: CGPoint(x: r.minX, y: r.maxY))
+        p.addLine(to: CGPoint(x: r.minX, y: r.minY + f))
+        p.addQuadCurve(to: CGPoint(x: r.minX - f, y: r.minY), control: CGPoint(x: r.minX, y: r.minY))
+        p.closeSubpath()
+        return p
+    }
+}
+
 struct ADynamicIslandArt: View {
     var body: some View {
+        let screen = RoundedRectangle(cornerRadius: 13, style: .continuous)
         ZStack {
-            RoundedRectangle(cornerRadius: 15, style: .continuous).fill(Color(white: 0.86)).frame(width: 74, height: 62)
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .fill(LinearGradient(colors: [aRGB(0.35, 0.85, 1), aRGB(0.3, 0.4, 1), aRGB(0.5, 0.25, 0.9)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                .frame(width: 69, height: 57)
-            RoundedRectangle(cornerRadius: 13, style: .continuous).fill(aSheen(0.35)).frame(width: 69, height: 57)
-            // The expanded island, with a ghost of its resting size.
-            AIsland(width: 60, height: 24).offset(y: -9)
-            Circle().fill(LinearGradient(colors: [aRGB(1, 0.7, 0.3), aRGB(1, 0.3, 0.5)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                .frame(width: 14, height: 14).offset(x: -19, y: -9)
-            VStack(alignment: .leading, spacing: 3) {
-                Capsule().fill(.white.opacity(0.85)).frame(width: 16, height: 2.6)
-                Capsule().fill(.white.opacity(0.4)).frame(width: 11, height: 2.6)
-            }.frame(width: 18, alignment: .leading).offset(x: -1, y: -9)
-            AWaveBars(heights: [5, 10, 7, 12, 6], colors: [aRGB(0.5, 1, 0.6), aRGB(0.15, 0.8, 0.45)]).offset(x: 18, y: -9)
-            Capsule().fill(.white.opacity(0.7)).frame(width: 22, height: 3).offset(y: 23)
+            RoundedRectangle(cornerRadius: 15, style: .continuous).fill(Color(white: 0.86)).frame(width: 80, height: 64)
+            ZStack(alignment: .top) {
+                Rectangle().fill(LinearGradient(colors: [aRGB(0.35, 0.85, 1), aRGB(0.3, 0.4, 1), aRGB(0.5, 0.25, 0.9)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                Circle().fill(RadialGradient(colors: [aRGB(1, 0.75, 0.9).opacity(0.7), .clear], center: .center, startRadius: 0, endRadius: 22))
+                    .frame(width: 44, height: 44).offset(x: 20, y: 30)
+                // The menu bar, and the island opened from the notch with what is playing.
+                Rectangle().fill(.white.opacity(0.75)).frame(height: 8)
+                HStack(spacing: 3) {
+                    ForEach(0..<3) { _ in Capsule().fill(aRGB(0.2, 0.25, 0.6).opacity(0.5)).frame(width: 5, height: 2.4) }
+                    Spacer()
+                    ForEach(0..<2) { _ in Circle().fill(aRGB(0.2, 0.25, 0.6).opacity(0.5)).frame(width: 3.2, height: 3.2) }
+                }
+                .padding(.horizontal, 6).frame(height: 8)
+                ZStack {
+                    ANotchShape(radius: 11).fill(LinearGradient(colors: [Color(white: 0.12), Color(white: 0.01)], startPoint: .top, endPoint: .bottom))
+                    ANotchShape(radius: 11).stroke(LinearGradient(colors: [.clear, .white.opacity(0.3)], startPoint: .top, endPoint: .bottom), lineWidth: 1)
+                    HStack(spacing: 4) {
+                        RoundedRectangle(cornerRadius: 3.5, style: .continuous)
+                            .fill(LinearGradient(colors: [aRGB(1, 0.7, 0.3), aRGB(1, 0.3, 0.5)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .frame(width: 13, height: 13)
+                        Capsule().fill(.white.opacity(0.85)).frame(width: 12, height: 3)
+                        Image(systemName: "play.fill").font(.system(size: 8, weight: .bold)).foregroundStyle(.white)
+                    }
+                    .padding(.top, 3)
+                }
+                .frame(width: 44, height: 24)
+                .shadow(color: .black.opacity(0.5), radius: 3, y: 2)
+                RoundedRectangle(cornerRadius: 13, style: .continuous).fill(aSheen(0.3))
+            }
+            .frame(width: 75, height: 59)
+            .clipShape(screen)
         }
         .shadow(color: .black.opacity(0.45), radius: 3, y: 3)
     }
@@ -550,35 +589,31 @@ struct AMicMuteArt: View {
 
 struct ASoundOutputArt: View {
     var body: some View {
+        let wave = [aRGB(0.55, 0.85, 1), aRGB(0.25, 0.5, 1)]
         ZStack {
-            // Speaker.
+            // One speaker, playing.
             ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: 11, style: .continuous)
                     .fill(LinearGradient(colors: [aRGB(0.45, 0.75, 1), aRGB(0.15, 0.32, 0.88)], startPoint: .top, endPoint: .bottom))
-                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(.white.opacity(0.4), lineWidth: 1))
-                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(aSheen(0.3)))
-                    .frame(width: 40, height: 60)
-                driver(10).offset(y: -17)
-                driver(26).offset(y: 8)
+                    .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(.white.opacity(0.4), lineWidth: 1))
+                    .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(aSheen(0.3)))
+                    .frame(width: 42, height: 62)
+                driver(10).offset(y: -18)
+                driver(27).offset(y: 8)
             }
             .shadow(color: .black.opacity(0.45), radius: 3, y: 3)
-            .offset(x: -14, y: -4)
-            // Headphones in front.
-            ZStack {
-                Path { p in p.addArc(center: CGPoint(x: 50, y: 52), radius: 17, startAngle: .degrees(180), endAngle: .degrees(360), clockwise: false) }
-                    .stroke(LinearGradient(colors: [Color(white: 0.98), Color(white: 0.58)], startPoint: .top, endPoint: .bottom), style: StrokeStyle(lineWidth: 6, lineCap: .round))
+            .offset(x: -12, y: -4)
+            ForEach(0..<2) { i in
+                let r: CGFloat = 12 + CGFloat(i) * 9
+                Path { p in p.addArc(center: CGPoint(x: 58, y: 38), radius: r, startAngle: .degrees(-40), endAngle: .degrees(40), clockwise: false) }
+                    .stroke(LinearGradient(colors: wave, startPoint: .top, endPoint: .bottom), style: StrokeStyle(lineWidth: 4, lineCap: .round))
                     .frame(width: 100, height: 100)
-                HStack(spacing: 19) {
-                    ForEach(0..<2) { _ in
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(LinearGradient(colors: [aRGB(0.5, 0.95, 1), aRGB(0.1, 0.55, 0.9)], startPoint: .top, endPoint: .bottom))
-                            .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(.white.opacity(0.5), lineWidth: 1))
-                            .frame(width: 14, height: 24)
-                    }
-                }.offset(y: 8)
+                    .opacity(i == 0 ? 1 : 0.65)
             }
-            .shadow(color: .black.opacity(0.5), radius: 2.5, y: 2)
-            .offset(x: 14, y: 8)
+            .shadow(color: wave[1].opacity(0.6), radius: 3)
+            // The switch to another output.
+            BBadge(symbol: "arrow.left.arrow.right", colors: [aRGB(0.5, 1, 0.65), aRGB(0.1, 0.7, 0.4)], size: 32)
+                .offset(x: 22, y: 22)
         }
     }
     func driver(_ d: CGFloat) -> some View {

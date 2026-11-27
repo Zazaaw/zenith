@@ -284,17 +284,25 @@ struct CMenuBarArt: View {
                 Rectangle().fill(ink.opacity(0.18)).frame(width: 76, height: 1).position(x: 50, y: 42)
             }
             .clipShape(screen)
-            // items sliding behind the chevron
+            // The items it hides, gone to dashed outlines, then the ones it keeps.
             ForEach(0..<3) { i in
-                RoundedRectangle(cornerRadius: 2.2).fill(ink.opacity([0.6, 0.35, 0.16][i])).frame(width: 8.5, height: 8.5)
-                    .position(x: 39 - CGFloat(i) * 10.5, y: 30)
+                RoundedRectangle(cornerRadius: 2.5).strokeBorder(ink.opacity(0.45), style: StrokeStyle(lineWidth: 1.3, dash: [2.2, 1.8]))
+                    .frame(width: 9, height: 9).position(x: 20 + CGFloat(i) * 11, y: 30)
             }
-            CSolid(path: cRound(40, 22, 19, 16, 8), colors: [cRGB(0.74, 0.6, 1), cRGB(0.42, 0.28, 0.95)])
+            CSolid(path: cRound(51, 22, 15, 16, 8), colors: [cRGB(0.74, 0.6, 1), cRGB(0.42, 0.28, 0.95)])
                 .shadow(color: ink.opacity(0.45), radius: 2, x: -1.5)
-            CGlyph(symbol: "chevron.left", colors: [.white, .white], size: 9, at: cP(49, 30), weight: .black)
-            ForEach(0..<3) { i in
-                Circle().fill(ink).frame(width: 7.5, height: 7.5).position(x: 66 + CGFloat(i) * 8.5, y: 30)
+            CGlyph(symbol: "chevron.left", colors: [.white, .white], size: 8, at: cP(58.5, 30), weight: .black)
+            ForEach(0..<2) { i in
+                RoundedRectangle(cornerRadius: 2.5).fill(ink).frame(width: 9, height: 9).position(x: 73 + CGFloat(i) * 9.5, y: 30)
             }
+            // What the bar is for.
+            ZStack {
+                Image(systemName: "eye.slash.fill").font(.system(size: 22, weight: .bold)).foregroundStyle(.white).blur(radius: 5).opacity(0.5)
+                Image(systemName: "eye.slash.fill").font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(LinearGradient(colors: [.white, cRGB(0.88, 0.84, 1)], startPoint: .top, endPoint: .bottom))
+                    .shadow(color: ink.opacity(0.5), radius: 1.5, y: 1)
+            }
+            .position(x: 50, y: 62)
         }
         .cCanvas()
     }
