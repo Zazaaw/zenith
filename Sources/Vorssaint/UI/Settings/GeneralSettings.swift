@@ -20,16 +20,18 @@ struct GeneralSettings: View {
     private var text: GeneralSettingsStrings { FeatureStrings.generalSettings(l10n.language) }
     private var feedbackStrings: FeedbackStrings { FeatureStrings.feedback(l10n.language) }
 
+    // Zenith fork: the kit's reference system page (docs/SETTINGS-KIT.md): the
+    // system header, the preview on the stage, then sections of compact rows.
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                SettingsPageHeader(title: l10n.s.tabGeneral, subtitle: text.pageDescription)
-                ZenithScreenPreviewCard(group: .general, current: .look) // Zenith fork
-                basicsCard
+            VStack(alignment: .leading, spacing: 18) {
+                ZenithSystemHeader(title: l10n.s.tabGeneral, subtitle: text.pageDescription)
+                ZenithScreenPreviewCard(group: .general, current: .look)
+                startup
                 if AppFeature.keepAwake.isAvailable {
-                    shortcutCard
+                    shortcut
                 }
-                feedbackCard
+                feedback
             }
             .frame(maxWidth: 760)
             .frame(maxWidth: .infinity)
@@ -42,80 +44,54 @@ struct GeneralSettings: View {
         }
     }
 
-    private var basicsCard: some View {
-        SettingsCard {
-            SettingsRow(symbol: "laptopcomputer", title: l10n.s.launchAtLogin,
-                        caption: text.launchAtLoginCaption) {
-                HStack {
+    private var startup: some View {
+        ZenithSection {
+            // Waiting on approval it is still registered, so it reads on and
+            // switching it off unregisters it, which also clears the note.
+            ZenithRow(l10n.s.launchAtLogin, info: text.launchAtLoginCaption,
+                      essential: loginRegistration == .needsApproval ? l10n.s.launchAtLoginNeedsApproval : nil,
+                      warning: loginRegistration == .needsApproval ? nil : loginError) {
+                HStack(spacing: 8) {
                     if loginPending { ProgressView().controlSize(.small) }
-                    // Waiting on approval it is still registered, so it reads on and
-                    // switching it off unregisters it, which also clears the note.
-                    Toggle(l10n.s.launchAtLogin, isOn: Binding(
+                    ZenithRowSwitch(title: l10n.s.launchAtLogin, isOn: Binding(
                         get: { loginRegistration != .off },
                         set: { setLaunchAtLogin($0) }
                     ))
-                        .labelsHidden()
-                        .toggleStyle(ZenithSwitchStyle())
-                        .disabled(loginPending)
+                    .disabled(loginPending)
                 }
             }
             if loginRegistration == .needsApproval {
-                Text(l10n.s.launchAtLoginNeedsApproval)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Button(l10n.s.permissionOpenSettings) {
+                ZenithRow(l10n.s.launchAtLogin, button: l10n.s.permissionOpenSettings) {
                     SMAppService.openSystemSettingsLoginItems()
                 }
-            } else if let loginError {
-                Text(loginError)
-                    .font(.caption)
-                    .foregroundStyle(ZenithStatus.error)
-                    .fixedSize(horizontal: false, vertical: true)
             }
-            Divider()
-            SettingsRow(symbol: "globe", title: l10n.s.languageLabel) {
-                Picker(l10n.s.languageLabel, selection: $l10n.language) {
-                    ForEach(AppLanguage.allCases) { language in
-                        Text(language.displayName).tag(language)
-                    }
+            ZenithRow(l10n.s.languageLabel, selection: $l10n.language) {
+                ForEach(AppLanguage.allCases) { language in
+                    Text(language.displayName).tag(language)
                 }
-                .pickerStyle(.menu)
-                .labelsHidden()
             }
         }
     }
 
-    private var shortcutCard: some View {
-        SettingsCard(title: l10n.s.globalHotkeySection) {
-            SettingsRow(symbol: "keyboard", title: l10n.s.hotkeyToggle, caption: l10n.s.hotkeyCaption) {
-                Toggle(l10n.s.hotkeyToggle, isOn: $hotkeyEnabled)
-                    .labelsHidden()
-                    .toggleStyle(ZenithSwitchStyle())
-                    .onChange(of: hotkeyEnabled) { _, enabled in
-                        HotkeyManager.shared.setEnabled(enabled)
-                    }
-            }
+    private var shortcut: some View {
+        ZenithSection(l10n.s.globalHotkeySection) {
+            ZenithRow(l10n.s.hotkeyToggle, isOn: $hotkeyEnabled, info: l10n.s.hotkeyCaption,
+                      warning: hotkeyEnabled && hotkeys.registrationFailed ? l10n.s.shortcutUnavailable : nil)
+                .onChange(of: hotkeyEnabled) { _, enabled in
+                    HotkeyManager.shared.setEnabled(enabled)
+                }
             ShortcutPreferenceRow(role: .keepAwake, isEnabled: hotkeyEnabled) {
                 HotkeyManager.shared.syncWithPreferences()
             }
-            .padding(.leading, settingsRowTextInset)
-            if hotkeyEnabled, hotkeys.registrationFailed {
-                Text(l10n.s.shortcutUnavailable)
-                    .font(.caption)
-                    .foregroundStyle(ZenithStatus.warning)
-                    .padding(.leading, settingsRowTextInset)
-            }
+            .padding(.vertical, 9)
         }
     }
 
-    private var feedbackCard: some View {
-        SettingsCard {
-            SettingsRow(symbol: "bubble.left.and.text.bubble.right", title: feedbackStrings.sectionTitle,
-                        caption: feedbackStrings.sectionCaption) {
-                Button(feedbackStrings.openButton) {
-                    appDelegate()?.openFeedbackWindow()
-                }
+    private var feedback: some View {
+        ZenithSection {
+            ZenithRow(feedbackStrings.sectionTitle, info: feedbackStrings.sectionCaption,
+                      button: feedbackStrings.openButton) {
+                appDelegate()?.openFeedbackWindow()
             }
         }
     }
