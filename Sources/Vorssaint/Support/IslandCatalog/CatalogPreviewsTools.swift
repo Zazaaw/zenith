@@ -34,10 +34,12 @@ extension CatalogShots {
         ]
     }
 
-    /// Quick Tools opened on `landing`'s section, or on the page itself.
+    /// A quick tool's page opened on `landing`, or Quick Tools itself.
+    /// Zenith fork: most quick tools have pages of their own now.
     private static func quickTools(_ id: String, landing: SettingsSectionAnchor?) -> CatalogShot {
-        settings(id, page: .quickTools) {
-            SettingsRouter.shared.request(FeatureSettingsDestination(.quickTools, sectionAnchor: landing))
+        let page = landing?.page ?? .quickTools
+        return settings(id, page: page) {
+            SettingsRouter.shared.request(FeatureSettingsDestination(page, sectionAnchor: landing))
         }
     }
 }

@@ -55,6 +55,7 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
         case .general, .appearance, .commandBar, .features: return .tiles
         case .notch, .notchMascot, .lockScreen: return .island
         case .clipboard, .cutPaste, .shelf, .media, .urlCleaner, .textSnippets: return .everyday
+        case .quickLauncher, .quickToggles, .quitApps, .cleaningMode, .wallpaper, .scratchpad: return .everyday
         case .screenshot: return .capture
         case .switcher, .dock, .spaces, .windowLayout, .autoQuit, .quitProtection, .workspaces, .radialMenu: return .windows
         case .scrolling, .pointer, .mouseButtons, .keyDebounce, .superKey: return .input
@@ -76,17 +77,18 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
              .mouseClickDebounce, .keyboardDebounce, .superKey:
             return .input
         case .clipboardHistory, .pastePlain, .finderCutPaste, .finderRename, .shelf, .urlCleaner,
-             .diskImageInstaller, .textSnippets, .mediaTools, .scratchpad, .quickLauncher:
+             .diskImageInstaller, .textSnippets, .mediaTools, .scratchpad, .quickLauncher,
+             .quickToggles, .quitApps, .wallpaper, .cleaningMode:
             return .everyday
         case .mixer, .soundOutputSwitcher, .audioPriority, .micMute, .musicBlock:
             return .sound
-        case .keepAwake, .brightness, .extraBrightness, .bluetoothSleep, .quickToggles, .wallpaper, .cleaningMode,
+        case .keepAwake, .brightness, .extraBrightness, .bluetoothSleep,
              .monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower,
              .connectedDevices, .fanControl:
             return .system
         case .screenshot, .screenRecorder, .screenOCR, .colorPicker, .cameraPreview:
             return .capture
-        case .cleaner, .uninstaller, .homebrew, .appUpdates, .killProcess, .portManager, .quitApps:
+        case .cleaner, .uninstaller, .homebrew, .appUpdates, .killProcess, .portManager:
             return .apps
         case .commandBar:
             return .tiles

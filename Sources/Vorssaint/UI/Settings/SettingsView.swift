@@ -143,7 +143,9 @@ struct SettingsView: View {
                                             .faceUnlock, .batteries, .pocket,
                                             .meetings, .mechakey, .appearance, // Zenith fork: Meetings, Mechakey, Appearance
                                             .scrolling, .pointer, .mouseButtons, .keyDebounce, .superKey, // Zenith fork: the Input pages
-                                            .spaces, .windowLayout, .autoQuit, .quitProtection, .radialMenu]
+                                            .spaces, .windowLayout, .autoQuit, .quitProtection, .radialMenu,
+                                            .quickLauncher, .quickToggles, .quitApps, .cleaningMode,
+                                            .wallpaper, .scratchpad]
         if ownHeader.contains(router.page) { return nil }
         if router.page == .translate { return nil } // Zenith fork: Translate opens with its own header
         if router.page == .general, !(detailShowsGeneralTool) { return nil }
@@ -198,6 +200,12 @@ struct SettingsView: View {
         case .media: MediaSettings()
         case .clipboard: ClipboardSettings()
         case .quickTools: QuickToolsSettings()
+        case .quickLauncher: QuickLauncherSettingsPage() // Zenith fork: Quick Tools, one page each
+        case .quickToggles: QuickTogglesSettingsPage()
+        case .quitApps: QuitAppsSettingsPage()
+        case .cleaningMode: CleaningModeSettingsPage()
+        case .wallpaper: WallpaperSettingsPage()
+        case .scratchpad: ScratchpadSettingsPage()
         case .screenshot: ScreenCaptureSettings()
         case .windowLayout: WindowLayoutSettings()
         case .shelf: ShelfSettings()

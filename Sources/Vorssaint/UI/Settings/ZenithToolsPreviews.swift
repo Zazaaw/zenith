@@ -299,7 +299,10 @@ struct QuickToolsPreviewCard: View {
 
     private var available: [QuickToolsPreviewFeature] {
         _ = features.revision
-        return QuickToolsPreviewFeature.allCases.filter { $0.feature.isAvailable }
+        // Zenith fork: only the tools still on this page; the others have pages of their own.
+        return QuickToolsPreviewFeature.allCases.filter {
+            $0.feature.isAvailable && $0.feature.settingsDestination.page == .quickTools
+        }
     }
 
     private var groups: [QuickToolsPreviewGroup] {
@@ -353,7 +356,7 @@ struct QuickToolsPreviewCard: View {
 
     private func open(_ feature: QuickToolsPreviewFeature) {
         pickedGroup = nil
-        router.request(FeatureSettingsDestination(.quickTools, sectionAnchor: feature.anchor))
+        router.request(feature.feature.settingsDestination)
     }
 }
 

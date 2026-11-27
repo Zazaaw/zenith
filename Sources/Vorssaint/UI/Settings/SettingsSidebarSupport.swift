@@ -31,7 +31,8 @@ enum SettingsSidebarSupport {
     /// as every page does now: one sidebar row, one page, one feature's job.
     /// Their features land on their sections without rows of their own.
     static let onePageRows: Set<SettingsPage> = [.scrolling, .pointer, .mouseButtons, .dock, .spaces, .switcher,
-                                                  .windowLayout]
+                                                  .windowLayout, .quickLauncher, .quickToggles, .quitApps,
+                                                  .cleaningMode, .wallpaper, .scratchpad]
 
     static func items(page: SettingsPage, title: String, icon: String,
                       preferredFeatures: [AppFeature], includePage: Bool,

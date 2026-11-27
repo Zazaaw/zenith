@@ -22,6 +22,7 @@ enum SettingsPage: Hashable, CaseIterable {
     case appearance // Zenith fork: how the island moves and what it is made of, a sidebar tile
     case scrolling, pointer, mouseButtons // Zenith fork: the Mouse page, one page per job
     case spaces // Zenith fork: Spaces in a fixed order, apart from the Dock
+    case quickLauncher, quickToggles, quitApps, cleaningMode, wallpaper, scratchpad // Zenith fork: Quick Tools, one page each
 }
 
 /// Stable, non-localized identities for destinations inside shared Settings
@@ -103,9 +104,13 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
         case .spacesOrder: return .spaces
         case .finderCutPaste, .finderRename: return .cutPaste
         case .clipboardHistory, .pastePlain: return .clipboard
-        case .quickLauncher, .quickToggles, .quitApps, .micMute, .cameraPreview, .wallpaper, .scratchpad,
-             .cleaningMode:
-            return .quickTools
+        case .micMute, .cameraPreview: return .quickTools
+        case .quickLauncher: return .quickLauncher
+        case .quickToggles: return .quickToggles
+        case .quitApps: return .quitApps
+        case .cleaningMode: return .cleaningMode
+        case .wallpaper: return .wallpaper
+        case .scratchpad: return .scratchpad
         case .screenshot, .screenshotScrolling, .screenRecorder, .colorPicker, .screenOCR:
             return .screenshot
         case .keyboardBrightnessShortcuts: return .shortcuts
@@ -447,17 +452,17 @@ extension AppFeature {
             return FeatureSettingsDestination(.energy, sectionAnchor: .bluetoothSleep)
 
         case .quickLauncher:
-            return FeatureSettingsDestination(.quickTools, sectionAnchor: .quickLauncher)
+            return FeatureSettingsDestination(.quickLauncher, sectionAnchor: .quickLauncher)
         case .quickToggles:
-            return FeatureSettingsDestination(.quickTools, sectionAnchor: .quickToggles)
+            return FeatureSettingsDestination(.quickToggles, sectionAnchor: .quickToggles)
         case .quitApps:
-            return FeatureSettingsDestination(.quickTools, sectionAnchor: .quitApps)
+            return FeatureSettingsDestination(.quitApps, sectionAnchor: .quitApps)
         case .colorPicker:
             return FeatureSettingsDestination(.screenshot, sectionAnchor: .colorPicker)
         case .screenOCR:
             return FeatureSettingsDestination(.screenshot, sectionAnchor: .screenOCR)
         case .cleaningMode:
-            return FeatureSettingsDestination(.quickTools, sectionAnchor: .cleaningMode)
+            return FeatureSettingsDestination(.cleaningMode, sectionAnchor: .cleaningMode)
         case .mediaTools: return FeatureSettingsDestination(.media)
         case .cleaner: return FeatureSettingsDestination(.cleaner)
         case .uninstaller: return FeatureSettingsDestination(.uninstaller)
@@ -470,7 +475,7 @@ extension AppFeature {
         case .cameraPreview:
             return FeatureSettingsDestination(.quickTools, sectionAnchor: .cameraPreview)
         case .wallpaper:
-            return FeatureSettingsDestination(.quickTools, sectionAnchor: .wallpaper)
+            return FeatureSettingsDestination(.wallpaper, sectionAnchor: .wallpaper)
         case .notch: return FeatureSettingsDestination(.notch)
         case .notchCalendar: return FeatureSettingsDestination(notch: .module(.calendar))
         case .notchNotifications: return FeatureSettingsDestination(notch: .module(.notifications))
@@ -485,7 +490,7 @@ extension AppFeature {
         case .notchMascot: return FeatureSettingsDestination(.notchMascot)
         case .radialMenu: return FeatureSettingsDestination(.radialMenu)
         case .scratchpad:
-            return FeatureSettingsDestination(.quickTools, sectionAnchor: .scratchpad)
+            return FeatureSettingsDestination(.scratchpad, sectionAnchor: .scratchpad)
         case .commandBar: return FeatureSettingsDestination(.commandBar)
         case .screenRecorder:
             return FeatureSettingsDestination(.screenshot, sectionAnchor: .screenRecorder)
@@ -525,8 +530,13 @@ enum FeatureVisibilitySupport {
         case .cutPaste: return [.finderCutPaste, .finderRename]
         case .shelf: return [.shelf]
         case .media: return [.mediaTools]
-        case .quickTools: return [.quickLauncher, .quickToggles, .quitApps, .micMute,
-                                  .cameraPreview, .wallpaper, .scratchpad, .cleaningMode]
+        case .quickTools: return [.micMute, .cameraPreview]
+        case .quickLauncher: return [.quickLauncher]
+        case .quickToggles: return [.quickToggles]
+        case .quitApps: return [.quitApps]
+        case .cleaningMode: return [.cleaningMode]
+        case .wallpaper: return [.wallpaper]
+        case .scratchpad: return [.scratchpad]
         case .urlCleaner: return [.urlCleaner]
         case .cleaner: return [.cleaner]
         case .homebrew: return [.homebrew]
