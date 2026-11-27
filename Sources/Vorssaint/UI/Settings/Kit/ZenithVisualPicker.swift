@@ -11,11 +11,14 @@ import SwiftUI
 struct ZenithPickerOption<Value: Hashable>: Identifiable {
     let value: Value
     let label: String
+    /// A longer word on the choice, shown on hover and read by VoiceOver.
+    var detail: String?
     var id: Value { value }
 
-    init(_ value: Value, _ label: String) {
+    init(_ value: Value, _ label: String, detail: String? = nil) {
         self.value = value
         self.label = label
+        self.detail = detail
     }
 }
 
@@ -50,7 +53,8 @@ struct ZenithVisualPicker<Value: Hashable, Art: View>: View {
     var body: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: minimumTileWidth), spacing: 10)], spacing: 12) {
             ForEach(options) { option in
-                ZenithPickerTile(label: option.label, selected: option.value == selection, height: tileHeight) {
+                ZenithPickerTile(label: option.label, detail: option.detail, selected: option.value == selection,
+                                 height: tileHeight) {
                     selection = option.value
                 } art: {
                     art(option.value, option.value == selection)
@@ -64,6 +68,7 @@ struct ZenithVisualPicker<Value: Hashable, Art: View>: View {
 
 private struct ZenithPickerTile<Art: View>: View {
     let label: String
+    let detail: String?
     let selected: Bool
     let height: CGFloat
     let action: () -> Void
@@ -96,7 +101,9 @@ private struct ZenithPickerTile<Art: View>: View {
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
+        .help(detail ?? label)
         .accessibilityLabel(label)
+        .accessibilityHint(detail ?? "")
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

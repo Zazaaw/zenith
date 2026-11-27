@@ -55,11 +55,11 @@ struct ZenithCategoryTint: Equatable {
     /// The pair as colours, light first.
     var colors: [Color] { [light.color, deep.color] }
 
-    /// The stage in either appearance. Light Mode lifts each stop most of the
-    /// way to white, so the stage reads as a soft tint behind dark content.
-    func stageStops(dark: Bool) -> [ZenithRGB] {
-        dark ? stage : stage.map { $0.mixed(with: .white, 0.7) }
-    }
+    /// The stage in Light Mode: pastels of the pair, so it reads as a soft
+    /// tint behind dark content.
+    let lightStage: [ZenithRGB]
+
+    func stageStops(dark: Bool) -> [ZenithRGB] { dark ? stage : lightStage }
 
     func stageColors(dark: Bool) -> [Color] { stageStops(dark: dark).map(\.color) }
 
@@ -69,19 +69,25 @@ struct ZenithCategoryTint: Equatable {
         dark ? light : deep.mixed(with: ZenithRGB(0, 0, 0), 0.25)
     }
 
-    /// A stage built from a pair: night into the deep tint, then towards the light one.
+    /// A stage built from a pair: night into the deep tint, then a little
+    /// towards the light one. Kept soft: the stage frames what it holds.
     private static func pair(_ light: ZenithRGB, _ deep: ZenithRGB) -> ZenithCategoryTint {
         ZenithCategoryTint(light: light, deep: deep,
-                           stage: [ZenithRGB.night.mixed(with: deep, 0.42),
-                                   ZenithRGB.night.mixed(with: deep, 0.7),
-                                   deep.mixed(with: light, 0.55).mixed(with: .night, 0.18)])
+                           stage: [ZenithRGB.night.mixed(with: deep, 0.3),
+                                   ZenithRGB.night.mixed(with: deep, 0.48),
+                                   deep.mixed(with: light, 0.35).mixed(with: .night, 0.4)],
+                           lightStage: [deep.mixed(with: .white, 0.8),
+                                        deep.mixed(with: .white, 0.72),
+                                        light.mixed(with: .white, 0.6)])
     }
 
     /// Zenith's own pages (the tiles and the app's pages): indigo into coral,
     /// the stage of the approved General mockup.
-    static let zenith = ZenithCategoryTint(
-        light: ZenithRGB(0.62, 0.62, 1), deep: ZenithRGB(0.42, 0.27, 0.62),
-        stage: [ZenithRGB(0.20, 0.22, 0.52), ZenithRGB(0.42, 0.27, 0.62), ZenithRGB(0.86, 0.50, 0.48)])
+    static let zenith: ZenithCategoryTint = {
+        let stage = [ZenithRGB(0.20, 0.22, 0.52), ZenithRGB(0.42, 0.27, 0.62), ZenithRGB(0.86, 0.50, 0.48)]
+        return ZenithCategoryTint(light: ZenithRGB(0.62, 0.62, 1), deep: ZenithRGB(0.42, 0.27, 0.62),
+                                  stage: stage, lightStage: stage.map { $0.mixed(with: .white, 0.7) })
+    }()
 
     static func of(_ group: SettingsSidebarGroup) -> ZenithCategoryTint {
         switch group {

@@ -9,27 +9,13 @@ import SwiftUI
 
 // MARK: - Section
 
-/// A section's title, bold, outside its card.
-struct ZenithSectionTitle: View {
-    let text: String
-
-    init(_ text: String) { self.text = text }
-
-    var body: some View {
-        Text(text)
-            .font(.system(size: 13, weight: .bold))
-            .padding(.leading, 4)
-            .accessibilityAddTraits(.isHeader)
-    }
-}
-
 /// A titled group of rows.
 ///
-///     ZenithSection("Typing", anchor: .zenithMechakeyTyping,
+///     ZenithSection("Typing", anchor: .myFeatureTyping,
 ///                   footer: "Password fields stay silent.") {
 ///         ZenithRow("Volume", value: $volume, in: 0...1, valueLabel: "65%")
 ///         ZenithRow("Key-up sounds", isOn: $keyUp, info: "Each key sounds again as it comes back up.")
-///         ZenithMoreOptions(id: "mechakey", anchors: [.zenithMechakeyRepeat]) { … }
+///         ZenithMoreOptions(id: "mechakey", anchors: [.myFeatureRepeat]) { … }
 ///     }
 ///
 /// Each child is one row: the section pads it to the rows' inset, gives it

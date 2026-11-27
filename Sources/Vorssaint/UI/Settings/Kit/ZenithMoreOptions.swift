@@ -11,9 +11,9 @@ import SwiftUI
 ///
 ///     ZenithSection("Typing") {
 ///         ZenithRow("Volume", value: $volume, in: 0...1)
-///         ZenithMoreOptions(id: "mechakey", anchors: [.zenithMechakeyRepeat]) {
+///         ZenithMoreOptions(id: "mechakey", anchors: [.myFeatureRepeat]) {
 ///             ZenithRow("Ignore key repeat", isOn: $ignoreRepeat, info: "…")
-///                 .zenithSectionAnchor(.zenithMechakeyRepeat)
+///                 .zenithSectionAnchor(.myFeatureRepeat)
 ///         }
 ///     }
 ///

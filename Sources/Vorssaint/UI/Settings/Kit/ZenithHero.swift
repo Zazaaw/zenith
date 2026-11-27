@@ -226,10 +226,11 @@ struct ZenithHeroSky: View {
     let t: Double
     let dark: Bool
 
-    /// x, y (from the centre), twinkle offset, size.
+    /// x, y (from the centre), twinkle offset, size. The trailing side stays
+    /// within the art's square, clear of the title.
     private static let stars: [(CGFloat, CGFloat, Double, CGFloat)] = [
-        (-105, -33, 0.0, 9.6), (94, -44, 0.7, 8), (-77, 39, 1.4, 6.4), (116, 22, 2.1, 9.6),
-        (-33, -58, 2.8, 6.4), (50, 52, 3.3, 8), (138, -11, 1.0, 6.4), (-132, 6, 1.9, 8),
+        (-105, -33, 0.0, 9.6), (82, -58, 0.7, 8), (-77, 39, 1.4, 6.4), (88, 30, 2.1, 9.6),
+        (-33, -70, 2.8, 6.4), (50, 66, 3.3, 8), (92, -12, 1.0, 6.4), (-132, 6, 1.9, 8),
     ]
 
     var body: some View {

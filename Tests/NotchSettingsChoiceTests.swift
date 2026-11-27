@@ -10,6 +10,9 @@ import SwiftUI
 /// letter. SwiftUI can measure a row of segments narrower than Settings draws
 /// it, so the checks read the AppKit controls the row draws.
 enum NotchSettingsChoiceTests {
+    /// Where a card's content starts and ends, from its edges (the Settings kit's row inset).
+    private static let inset = ZenithKitSurface.rowInset
+
     static func run(_ suite: TestSuite) {
         // The Content tab's options column at the Settings window's minimum
         // width: less the sidebar at its widest, the page's margins, and the
@@ -17,7 +20,7 @@ enum NotchSettingsChoiceTests {
         let narrowest = CGFloat(SettingsWindowSupport.minContentWidth) - 240 - 22 * 2 - 196 - 16
         // Where a row's title text starts in its card, and in a row indented
         // under a switch as the AI agents card indents its menus.
-        let column = 16 + settingsRowTextInset
+        let column = inset + settingsRowTextInset
         let indentedColumn = column + settingsRowTextInset
         for (language, _) in LocalizationTests.languages {
             let destinations = [FeatureStrings.notch(language).files, FeatureStrings.clipboard(language).title,
@@ -91,7 +94,7 @@ enum NotchSettingsChoiceTests {
         let fitsOneLine = host.fittingSize.width <= width
         for control in controls(in: host) {
             let frame = alignmentFrame(of: control, in: host)
-            if frame.minX < 16 - 0.5 || frame.maxX > width - 16 + 0.5 {
+            if frame.minX < inset - 0.5 || frame.maxX > width - inset + 0.5 {
                 found.insert("a \(type(of: control)) drawn at \(Int(frame.minX))...\(Int(frame.maxX)), past the card's content")
             }
             if let segments = control as? NSSegmentedControl, control.frame.width < segments.fittingSize.width - 0.5 {
@@ -100,13 +103,15 @@ enum NotchSettingsChoiceTests {
             // A choice drawn beside the title, rather than under it where the
             // title's text starts, squeezes the title unless the row fits on
             // one line. A menu too wide for that column may start under the
-            // icon instead, but only then.
+            // icon instead, but only then. (Zenith fork: rows without an icon
+            // tile start their text at the card's edge, so there is no icon column.)
             guard !fitsOneLine else { continue }
             let underText = abs(frame.minX - textColumn) <= 0.5
-            let underIcon = abs(frame.minX - (textColumn - settingsRowTextInset)) <= 0.5
+            let underIcon = settingsRowTextInset > 0
+                && abs(frame.minX - (textColumn - settingsRowTextInset)) <= 0.5
             if !underText, !underIcon {
                 found.insert("a \(type(of: control)) at \(Int(frame.minX)) crowds the title")
-            } else if underIcon, control is NSSegmentedControl || textColumn + frame.width <= width - 16 + 0.5 {
+            } else if underIcon, control is NSSegmentedControl || textColumn + frame.width <= width - inset + 0.5 {
                 found.insert("a \(type(of: control)) under the icon at \(Int(frame.minX)) though it fits under the title")
             }
         }
@@ -119,7 +124,7 @@ enum NotchSettingsChoiceTests {
         let host = host(row, width: width)
         return controls(in: host).contains { control in
             (control is NSSegmentedControl) == segments
-                && abs(alignmentFrame(of: control, in: host).maxX - (width - 16)) <= 0.5
+                && abs(alignmentFrame(of: control, in: host).maxX - (width - inset)) <= 0.5
         }
     }
 

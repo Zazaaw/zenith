@@ -48,7 +48,9 @@ struct ZenithStage<Art: View, Footer: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             ZenithStageSurface(height: height) { art }
-            if hasPills || caption != nil || hint != nil {
+            if !hasPills, caption != nil || hint != nil {
+                captions(alignment: .leading)
+            } else if hasPills {
                 ViewThatFits(in: .horizontal) {
                     HStack(alignment: .firstTextBaseline, spacing: 12) {
                         pills
