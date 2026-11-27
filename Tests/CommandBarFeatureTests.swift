@@ -38,6 +38,7 @@ enum CommandBarFeatureTests {
         static func workspaceEntries(_ bar: CommandBarFeatureStrings) -> [CommandBarEntry] { [] } // Zenith fork
         static func qrEntries(_ bar: CommandBarFeatureStrings) -> [CommandBarEntry] { [] } // Zenith fork
         static func translateEntries(_ bar: CommandBarFeatureStrings) -> [CommandBarEntry] { [] } // Zenith fork
+        static func orbitWave2Entries(_ bar: CommandBarFeatureStrings) -> [CommandBarEntry] { [] } // Zenith fork
         static func linkEntries(_ links: [Int], bar: CommandBarFeatureStrings) -> [CommandBarEntry] { [] }
     }
 
@@ -76,6 +77,8 @@ enum CommandBarFeatureTests {
             static func show(icon: String, message: String) { shown.append((icon, message)) }
         }
         typealias QuickToolHUD = HUD
+        /// Zenith fork: the Calculator's row, off here so the bar's own answers are what is tested.
+        static func calculatorAnswerEntry(for query: String, bar: CommandBarFeatureStrings) -> CommandBarEntry? { nil }
     }
 
     /// Runs the production `runScript` and script runner against a bar that

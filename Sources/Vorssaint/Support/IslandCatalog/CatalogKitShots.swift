@@ -36,6 +36,7 @@ extension CatalogShots {
             ("color-picker", .colorPicker, [AppFeature.colorPicker.availabilityKey: true], 1200),
             ("camera-preview", .cameraPreview, [AppFeature.cameraPreview.availabilityKey: true], 1050),
         ] + kitEverydayPages
+            + kitWave2Pages // Zenith fork: Orbit wave 2 (CatalogKitShotsWave2)
         var shots: [CatalogShot] = []
         for (name, page, preferences, height) in pages {
             for (suffix, appearance) in [("dark", NSAppearance.Name.darkAqua), ("light", .aqua)] {

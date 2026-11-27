@@ -623,6 +623,8 @@ final class ShelfTileView: NSView, NSDraggingSource {
             edit.target = self
             menu.addItem(edit)
         }
+        // Zenith fork: Remove Background, while it is on and a picture is chosen.
+        if let removeBackground = RemoveBackgroundService.shelfMenuItem(for: urls) { menu.addItem(removeBackground) }
 
         menu.addItem(sharePresenter.shareMenuItem(for: urls, title: strings.shelfActionShare))
         menu.addItem(.separator())

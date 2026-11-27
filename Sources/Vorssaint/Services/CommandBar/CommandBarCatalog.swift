@@ -210,6 +210,7 @@ enum CommandBarCatalog {
         entries.append(contentsOf: workspaceEntries(bar)) // Zenith fork: workspaces
         entries.append(contentsOf: qrEntries(bar)) // Zenith fork: QR codes
         entries.append(contentsOf: translateEntries(bar)) // Zenith fork: Translate
+        entries.append(contentsOf: orbitWave2Entries(bar)) // Zenith fork: Remove Background, Emoji Picker, Calculator
         entries.append(contentsOf: linkEntries(
             CommandBarLinks.decode(UserDefaults.standard.data(forKey: DefaultsKey.commandBarLinks)),
             bar: bar))
@@ -1749,6 +1750,8 @@ enum CommandBarCatalog {
                 countsUsage: false,
                 run: { _ in copyAnswer(result.formatted) })
         }
+        // Zenith fork: the Calculator answers what the sums above leave alone (sin, ln, 5!).
+        if let zenith = calculatorAnswerEntry(for: query, bar: bar) { return zenith }
         if let converted = CommandBarColors.convert(query) {
             return CommandBarEntry(
                 id: "color.result",
