@@ -17,6 +17,7 @@ enum CatalogShots {
         DefaultsKey.notchIdleContent: NotchIdleContent.none.rawValue,
         DefaultsKey.notchMascotEnabled: false,
         DefaultsKey.notchLiquidGlassEnabled: false,
+        ZenithAppearanceDefaults.glassStyle: IslandGlassStyle.black.rawValue, // Appearance › Glass
         DefaultsKey.notchMusicActivity: true,
         DefaultsKey.notchKeepAwakeActivity: true,
         DefaultsKey.notchCalendarCountdown: true,

@@ -188,6 +188,7 @@ private struct NotchQuickAccessGlassSurface: ViewModifier {
     @ObservedObject var presentation: NotchBackdropPresentation
     let drops: NotchQuickAccessDrops
     @Environment(\.colorSchemeContrast) private var contrast
+    @ObservedObject private var appearance = ZenithAppearance.shared // Zenith fork: the glass tint from Appearance
 
     func body(content: Content) -> some View {
         let island = presentation.usesGlass ? presentation.contour : Path()
@@ -197,7 +198,8 @@ private struct NotchQuickAccessGlassSurface: ViewModifier {
                     GeometryReader { proxy in
                         // Past the island the shade keeps the lip's tone,
                         // measured from the top edge as the island's own.
-                        LinearGradient(stops: NotchSurfaceBackground.shade(openness: presentation.openness, contrast: contrast),
+                        LinearGradient(stops: NotchSurfaceBackground.shade(openness: presentation.openness, contrast: contrast,
+                                                                           tint: appearance.glass.tint),
                                        startPoint: .top,
                                        endPoint: UnitPoint(x: 0.5, y: (island.isEmpty ? 0 : island.boundingRect.maxY)
                                                             / max(1, proxy.size.height)))

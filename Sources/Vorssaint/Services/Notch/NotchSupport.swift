@@ -3547,26 +3547,46 @@ enum NotchMenuBarLayout {
 /// The black tint over the open island's translucent background, measured in
 /// points from the top: fully black over the camera strip at every island
 /// height (the hover preview is only the strip plus 62 points), then easing
-/// toward the translucent body.
+/// toward the translucent body over `rampLength`, down to `1 - clearance`.
+/// Zenith fork: the Gradient glass sets the ramp from its height and the
+/// clearance from its tint (`gradient`); the defaults are the old background's.
 enum NotchTranslucentTint {
     static let rampLength: CGFloat = 36
+    static let clearance = 0.62
+    /// The shortest melt, so a gradient at 0% still eases rather than cuts.
+    static let minimumRamp: CGFloat = 12
 
     static func opacity(atDepth depth: CGFloat, stripHeight: CGFloat,
-                        openness: Double, increasedContrast: Bool) -> Double {
+                        openness: Double, increasedContrast: Bool,
+                        rampLength: CGFloat = rampLength, clearance: Double = clearance) -> Double {
         guard depth > stripHeight else { return 1 }
-        let ramp = Double(min(1, (depth - stripHeight) / rampLength))
+        let ramp = Double(min(1, (depth - stripHeight) / max(1, rampLength)))
         let eased = ramp * ramp * (3 - 2 * ramp)
-        return 1 - min(1, max(0, openness)) * (increasedContrast ? 0.3 : 0.62) * eased
+        let clear = increasedContrast ? min(clearance, 0.3) : clearance
+        return 1 - min(1, max(0, openness)) * clear * eased
     }
 
     /// Gradient stops over an island `height` points tall, top to bottom.
     static func stops(height: CGFloat, stripHeight: CGFloat, openness: Double,
-                      increasedContrast: Bool) -> [(location: Double, opacity: Double)] {
+                      increasedContrast: Bool, rampLength: CGFloat = rampLength,
+                      clearance: Double = clearance) -> [(location: Double, opacity: Double)] {
         guard height > 0 else { return [(0, 1), (1, 1)] }
         let depths = [0, stripHeight] + (1...8).map { stripHeight + rampLength * CGFloat($0) / 8 } + [height]
         return depths.filter { $0 >= 0 && $0 <= height }.map {
-            (Double($0 / height), opacity(atDepth: $0, stripHeight: stripHeight,
-                                          openness: openness, increasedContrast: increasedContrast))
+            (Double($0 / height), opacity(atDepth: $0, stripHeight: stripHeight, openness: openness,
+                                          increasedContrast: increasedContrast, rampLength: rampLength,
+                                          clearance: clearance))
         }
+    }
+
+    /// The Gradient glass: the black melts over `gradientHeight` of the
+    /// island below the strip, and `tint` keeps that much of the black over
+    /// the glass. The default tint (0.3) clears as much as the old background.
+    static func gradient(height: CGFloat, stripHeight: CGFloat, gradientHeight: Double,
+                         tint: Double) -> (rampLength: CGFloat, clearance: Double) {
+        let body = max(0, height - stripHeight)
+        let unitHeight = min(max(gradientHeight.isFinite ? gradientHeight : 0.6, 0), 1)
+        let unitTint = min(max(tint.isFinite ? tint : 0.3, 0), 1)
+        return (max(minimumRamp, body * CGFloat(unitHeight)), 0.83 - 0.7 * unitTint)
     }
 }
