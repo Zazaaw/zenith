@@ -261,7 +261,10 @@ struct MetricsTests {
             }),
             ("emoji", { CommandBarEmojiContract.run(suite) }),
             // Zenith fork.
-            ("wakatime", { WakaTimeTests.run(suite) }),
+            ("wakatime", {
+                WakaTimeTests.run(suite)
+                WakaTimeConfigPresenceTests.run(suite) // Zenith fork: the island's remembered config check
+            }),
             ("lockscreen-widgets", { LockScreenWidgetsTests.run(suite) }),
             ("lockscreen-terminal", { LockScreenTerminalTests.run(suite) }),
             ("lockscreen-v2", { LockScreenV2Tests.run(suite) }),

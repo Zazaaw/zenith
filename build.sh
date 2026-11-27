@@ -297,6 +297,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/DesignOverlay/DesignOverlaySupport.swift
         Sources/Vorssaint/Services/MenuBarHider/MenuBarHiderSupport.swift
         Sources/Vorssaint/Services/WakaTime/WakaTimeSupport.swift
+        Sources/Vorssaint/Services/WakaTime/WakaTimeConfigPresence.swift
         Sources/Vorssaint/Services/WakaTime/WakaTimeStats.swift
         Sources/Vorssaint/Services/ZenithSecretStore.swift
         Sources/Vorssaint/Services/Weather/WeatherSupport.swift
