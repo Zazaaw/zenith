@@ -13,60 +13,78 @@ import SwiftUI
 // SwiftUI swaps (a module's own sub-views, the tab pill) use
 // `AnyTransition.zenithMorph` with `ZenithMorph.animation`. The island's page
 // swaps run in its window host, where the content rides the shape
-// (`ZenithContentRide`); SwiftUI swaps follow the same sequence: the old view
-// fades and blurs out over 0.12 s, then the new one eases in from a blur, a
-// few points up. Reduce Motion leaves a plain cross-fade in either place.
+// (`ZenithContentRide`). Both follow the motion chosen on Settings →
+// Appearance (`IslandMotion`): Zenith's container springs with a bounce while
+// the new view grows from 90% and comes into focus; Snappy's container lands
+// first without a swing and the new view arrives sharp straight after. Reduce
+// Motion leaves a plain cross-fade, and the battery saver plain fades.
 
 enum ZenithMorph {
-    /// Peak blur on the way out and in, in points.
+    /// Zenith 1×'s peak blur and the outgoing scale, for look-alike effects
+    /// outside the island (the design overlay's HUD).
     static let blur: CGFloat = 10
-    /// Outgoing content shrinks to this, around the island's top centre.
     static let scale: CGFloat = 0.97
-    /// The spring for SwiftUI swaps and for anything that rides along.
-    static let response: Double = 0.38
-    static let damping: Double = 0.86
 
-    static var animation: Animation { .spring(response: response, dampingFraction: damping) }
+    /// The container's spring in force, for timers that wait it out.
+    static var response: Double { IslandMotion.current.morph.duration }
+    static var damping: Double {
+        if case let .spring(damping) = IslandMotion.current.morph.kind { return damping }
+        return 1
+    }
+
+    static var animation: Animation { IslandMotion.current.morph.animation }
 
     /// The swap's animation, or a short cross-fade under Reduce Motion.
     static func animation(reduceMotion: Bool) -> Animation {
-        reduceMotion ? .easeInOut(duration: ZenithMotion.fast) : animation
+        var motion = IslandMotion.current
+        if reduceMotion { motion.reduceMotion = true }
+        return motion.morph.animation
     }
 
     /// The leaving view's fade, and the arriving view's delayed ease.
-    static var leaving: Animation { .linear(duration: ZenithContentRide.outgoingFade) }
-    static var arriving: Animation {
-        .timingCurve(0.42, 0, 0.58, 1, duration: ZenithContentRide.incomingFade).delay(ZenithContentRide.incomingDelay)
-    }
+    static var leaving: Animation { IslandMotion.current.leaving.animation }
+    static var arriving: Animation { IslandMotion.current.arriving.animation }
 }
 
-/// Content `amount` of the way out: 0 in place, 1 gone; `rise` points up at 1.
-private struct ZenithMorphEffect: ViewModifier {
+/// Content `amount` of the way out: 0 in place, 1 gone, blurred `blur` points.
+private struct ZenithMorphFade: ViewModifier {
     let amount: CGFloat
     let blur: CGFloat
-    var rise: CGFloat = 0
 
     func body(content: Content) -> some View {
         content
             .blur(radius: blur * amount)
             .opacity(Double(1 - amount))
-            .offset(y: -rise * amount)
+    }
+}
+
+/// Content `amount` of the way from its size to `scale`, hung from its top.
+private struct ZenithMorphGrowth: ViewModifier {
+    let amount: CGFloat
+    let scale: CGFloat
+
+    func body(content: Content) -> some View {
+        content.scaleEffect(1 + (scale - 1) * amount, anchor: .top)
     }
 }
 
 extension AnyTransition {
-    /// Out: blur 0 → 8 and gone over 0.12 s. In, from 0.05 s over 0.3 s:
-    /// blur 12 → 0, 8 points up to its place, opacity 0 → 1.
+    /// In: from the motion's blur and scale into focus, on its arriving
+    /// curve, the growth on the container's own spring. Out: a quick fade
+    /// and blur. Read from the motion in force when the swap happens.
     static var zenithMorph: AnyTransition {
-        .asymmetric(
-            insertion: .modifier(active: ZenithMorphEffect(amount: 1, blur: ZenithContentRide.incomingBlur,
-                                                           rise: ZenithContentRide.incomingRise),
-                                 identity: ZenithMorphEffect(amount: 0, blur: ZenithContentRide.incomingBlur,
-                                                             rise: ZenithContentRide.incomingRise))
-                .animation(ZenithMorph.arriving),
-            removal: .modifier(active: ZenithMorphEffect(amount: 1, blur: ZenithContentRide.outgoingBlur),
-                               identity: ZenithMorphEffect(amount: 0, blur: ZenithContentRide.outgoingBlur))
-                .animation(ZenithMorph.leaving))
+        let motion = IslandMotion.current
+        let fadeIn = AnyTransition.modifier(active: ZenithMorphFade(amount: 1, blur: motion.morphBlurIn),
+                                            identity: ZenithMorphFade(amount: 0, blur: motion.morphBlurIn))
+            .animation(motion.arriving.animation)
+        let insertion = motion.morphScaleIn == 1 ? fadeIn
+            : fadeIn.combined(with: .modifier(active: ZenithMorphGrowth(amount: 1, scale: motion.morphScaleIn),
+                                              identity: ZenithMorphGrowth(amount: 0, scale: motion.morphScaleIn))
+                .animation(motion.arrivingGrowth.animation))
+        let removal = AnyTransition.modifier(active: ZenithMorphFade(amount: 1, blur: motion.morphBlurOut),
+                                             identity: ZenithMorphFade(amount: 0, blur: motion.morphBlurOut))
+            .animation(motion.leaving.animation)
+        return .asymmetric(insertion: insertion, removal: removal)
     }
 
     /// The morph, or a plain fade under Reduce Motion.

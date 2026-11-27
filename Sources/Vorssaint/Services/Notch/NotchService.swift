@@ -1439,6 +1439,7 @@ final class NotchService: ObservableObject {
         if !running {
             running = true
             installObservers()
+            MainActor.assumeIsolated { IslandMotionLive.shared.start() } // Zenith fork: the island's motion follows Settings
         }
         syncShortcut()
         if !NotchTimerSupport.isEnabled() { NotchTimerService.shared.stop() }

@@ -3152,11 +3152,13 @@ enum NotchMotion {
     static let settledDistance: CGFloat = 0.5
 
     static func spring(from: CGFloat, to: CGFloat, width: Bool, steady: Bool = false, landing: Bool = false) -> Spring {
-        if steady && width { return steadyWidth }
+        // Zenith fork: every spring as the motion in force runs it (IslandMotion).
+        let motion = IslandMotion.current
+        if steady && width { return motion.shape(steadyWidth) }
         // Zenith fork: a side landing on the closed island takes the softer landing spring.
         let spring = landing ? (width ? ZenithIslandMotion.landingWidth : ZenithIslandMotion.landingHeight)
             : to > from ? (width ? growingWidth : growingHeight) : (width ? shrinkingWidth : shrinkingHeight)
-        return spring.limited(travel: abs(to - from), limit: ZenithIslandMotion.swingLimit(width: width)) // Zenith fork
+        return motion.shape(spring).limited(travel: abs(to - from), limit: ZenithIslandMotion.swingLimit(width: width)) // Zenith fork
     }
 
     /// Zenith fork: one side at `time`, and its speed. A side landing on
@@ -3253,7 +3255,7 @@ enum NotchMotion {
     static func offset(at time: TimeInterval, from: CGSize, to: CGSize, start: CGFloat, steady: Bool = false,
                        floor: CGSize = .zero) -> CGFloat {
         guard start != 0 else { return 0 }
-        guard from.width != to.width else { return start * CGFloat(1 - steadyWidth.progress(at: time)) }
+        guard from.width != to.width else { return start * CGFloat(1 - IslandMotion.current.shape(steadyWidth).progress(at: time)) }
         // Zenith fork: with the width's own lag and landing.
         let landing = !steady && ZenithIslandMotion.lands(from: from.width, to: to.width, floor: floor.width)
         let spring = spring(from: from.width, to: to.width, width: true, steady: steady, landing: landing)

@@ -58,7 +58,9 @@ enum ZenithIslandMotion {
     /// the spring's own pace; an opening one leaves at once.
     static let closingEaseIn: TimeInterval = 0.04
 
-    static func easeIn(from: CGFloat, to: CGFloat) -> TimeInterval { to < from ? closingEaseIn : 0 }
+    static func easeIn(from: CGFloat, to: CGFloat) -> TimeInterval {
+        to < from ? IslandMotion.current.shapeTime(closingEaseIn) : 0
+    }
 
     /// Time as the spring sees it, and how fast it runs: slowly at first over
     /// `easeIn`, gathering pace until it runs with the clock, which it then
@@ -82,7 +84,7 @@ enum ZenithIslandMotion {
 
     /// How long a side waits before it moves.
     static func lag(width: Bool, growing: Bool) -> TimeInterval {
-        width ? (growing ? 0 : shrinkingWidthLag) : (growing ? growingHeightLag : 0)
+        IslandMotion.current.shapeTime(width ? (growing ? 0 : shrinkingWidthLag) : (growing ? growingHeightLag : 0))
     }
 
     /// The farthest a side may swing past its target. Only a sanity cap: a
@@ -102,9 +104,14 @@ enum ZenithIslandMotion {
 
     /// The body as drawn: narrower while it drops fast (wider while it pulls
     /// up), flatter while it spreads fast (taller while it draws in).
+    /// Zenith fork: as much as the motion in force swings (none without a
+    /// bounce), and the same at every speed for the same share of the way.
     static func squash(_ size: CGSize, velocity: CGSize) -> CGSize {
-        let narrowing = min(narrowingLimit, max(-narrowingLimit, velocity.height * narrowingPerSpeed))
-        let flattening = min(flatteningLimit, max(-flatteningLimit, velocity.width * flatteningPerSpeed))
+        let motion = IslandMotion.current
+        let share = motion.squashScale * CGFloat(motion.shapeTimeScale)
+        guard share > 0 else { return size }
+        let narrowing = min(narrowingLimit, max(-narrowingLimit, velocity.height * narrowingPerSpeed * share))
+        let flattening = min(flatteningLimit, max(-flatteningLimit, velocity.width * flatteningPerSpeed * share))
         return CGSize(width: max(0, size.width - narrowing), height: max(0, size.height - flattening))
     }
 }
@@ -176,20 +183,31 @@ enum ZenithContentRide {
         var incomingDelay: TimeInterval
         var incomingFade: TimeInterval
         var outgoingCap: CGFloat
+        /// Zenith fork: how the pages look on their way, from IslandMotion:
+        /// their peak blurs, the arriving page's rise, and the least each
+        /// may scale to while riding the island.
+        var outgoingBlur: CGFloat = ZenithContentRide.outgoingBlur
+        var incomingBlur: CGFloat = ZenithContentRide.incomingBlur
+        var incomingRise: CGFloat = ZenithContentRide.incomingRise
+        var incomingFloor: CGFloat = ZenithContentRide.incomingScale.lowerBound
+        var outgoingFloor: CGFloat = ZenithContentRide.outgoingFloor
 
         /// When the arriving page is fully in.
         var duration: TimeInterval { incomingDelay + incomingFade }
 
-        static let opening = Timing(outgoingFade: 0.1, incomingDelay: 0.03, incomingFade: 0.2, outgoingCap: 1.1)
+        /// Zenith fork: both from the motion in force (IslandMotion); at
+        /// Zenith 1× these are the tuned values the comments describe.
+        static var opening: Timing { IslandMotion.current.opening }
         /// The shrink onto the closed island takes about 0.28 s; the page
         /// leaving fades over the first 60% of it.
-        static let closing = Timing(outgoingFade: 0.17, incomingDelay: 0.1, incomingFade: 0.2, outgoingCap: 1)
+        static var closing: Timing { IslandMotion.current.closing }
     }
 
-    static let outgoingFade: TimeInterval = Timing.opening.outgoingFade
+    /// The tuned values at Zenith 1×; the timing in force is `Timing.opening`.
+    static let outgoingFade: TimeInterval = 0.1
     static let outgoingBlur: CGFloat = 8
-    static let incomingDelay: TimeInterval = Timing.opening.incomingDelay
-    static let incomingFade: TimeInterval = Timing.opening.incomingFade
+    static let incomingDelay: TimeInterval = 0.03
+    static let incomingFade: TimeInterval = 0.2
     static let incomingBlur: CGFloat = 6
     static let incomingRise: CGFloat = 8
     static let outgoingFloor: CGFloat = 0.35
@@ -197,7 +215,7 @@ enum ZenithContentRide {
     /// When an opening's arriving page is fully in.
     static var duration: TimeInterval { Timing.opening.duration }
     /// Reduce Motion's plain crossfade.
-    static let reducedFade: TimeInterval = 0.2
+    static let reducedFade: TimeInterval = IslandMotion.reducedFade
 
     struct Layer: Equatable {
         var opacity: Double
@@ -231,8 +249,9 @@ enum ZenithContentRide {
 
     static func outgoing(at time: TimeInterval, islandWidth: CGFloat, pageWidth: CGFloat, timing: Timing = .opening) -> Layer {
         let gone = min(max(time / timing.outgoingFade, 0), 1)
-        return Layer(opacity: 1 - gone, blur: outgoingBlur * CGFloat(gone),
-                     scale: ride(islandWidth, over: pageWidth, lower: outgoingFloor, upper: timing.outgoingCap), offset: 0)
+        return Layer(opacity: 1 - gone, blur: timing.outgoingBlur * CGFloat(gone),
+                     scale: ride(islandWidth, over: pageWidth, lower: min(timing.outgoingFloor, timing.outgoingCap),
+                                 upper: timing.outgoingCap), offset: 0)
     }
 
     /// The arriving page `time` in. `scaleFloor` is the largest scale it has
@@ -241,9 +260,9 @@ enum ZenithContentRide {
                          scaleFloor: CGFloat = 0) -> Layer {
         let shown = smoothstep((time - timing.incomingDelay) / timing.incomingFade)
         let scale = max(min(scaleFloor, incomingScale.upperBound),
-                        ride(islandWidth, over: pageWidth, lower: incomingScale.lowerBound, upper: incomingScale.upperBound))
-        return Layer(opacity: shown, blur: incomingBlur * CGFloat(1 - shown), scale: scale,
-                     offset: -incomingRise * CGFloat(1 - shown))
+                        ride(islandWidth, over: pageWidth, lower: timing.incomingFloor, upper: incomingScale.upperBound))
+        return Layer(opacity: shown, blur: timing.incomingBlur * CGFloat(1 - shown), scale: scale,
+                     offset: -timing.incomingRise * CGFloat(1 - shown))
     }
 
     /// Both pages folded into one layer at `time`. With no page leaving (a
