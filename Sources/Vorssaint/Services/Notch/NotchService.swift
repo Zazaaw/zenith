@@ -4413,6 +4413,11 @@ final class NotchService: ObservableObject {
         let timerCouldRun = session.canRunTimer
         let wasLocked = session.locked
         change(&session)
+        // Zenith fork: the agents' loops stop while the island cannot show or no one sees the screen.
+        let (presenting, awake) = (session.canPresent, session.hearsLockChange)
+        MainActor.assumeIsolated {
+            IslandAgentMotionGate.shared.update(islandPresenting: presenting, screenAwake: awake)
+        }
         if session.locked != wasLocked { // Zenith fork
             ZenithLockTrace.log((session.locked ? "screenIsLocked" : "screenIsUnlocked")
                                 + " canPresent=\(session.canPresent) showsLockScreen=\(session.showsLockScreen)")

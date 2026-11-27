@@ -1075,7 +1075,7 @@ private final class NotchFrameProbe {
     func close() { window.orderOut(nil) }
 }
 
-final class NotchPanel: NSPanel, NotchWaveHold {
+final class NotchPanel: NSPanel, NotchWaveHold, IslandAgentHostWindow { // Zenith fork: IslandAgentHostWindow
     static let overlayCollectionBehavior: NSWindow.CollectionBehavior = [
         .canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle
     ]

@@ -5,8 +5,9 @@ import AppKit
 import Combine
 
 /// Zenith fork: keeps `IslandMotion.current` in step with Settings →
-/// Appearance, the battery saver and Reduce Motion. A change takes effect
-/// with the next animation: nothing restarts.
+/// Appearance, the battery saver and Reduce Motion, and tells the agents'
+/// loops when the saver comes or goes. A change takes effect with the next
+/// animation: nothing restarts.
 @MainActor
 final class IslandMotionLive {
     static let shared = IslandMotionLive()
@@ -34,5 +35,6 @@ final class IslandMotionLive {
                                   reduceMotion: NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,
                                   savingBattery: saving)
         if motion != IslandMotion.current { IslandMotion.current = motion }
+        IslandAgentMotionGate.shared.update(savingBattery: saving)
     }
 }

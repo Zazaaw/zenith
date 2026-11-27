@@ -310,3 +310,75 @@ extension IslandMotion {
         current.curve(IslandCurve(kind, duration: duration)).animation
     }
 }
+
+// MARK: - The agents' looping decoration
+
+/// How the agents' working animation (a glyph breathing, a pulse spreading)
+/// may run. Everything else on the island runs at the display's full rate;
+/// this loop runs for as long as an agent works, so it steps at most 30
+/// times a second, and not at all while no one can see it or the battery
+/// saver is on, when it rests in its still pose.
+enum IslandAgentMotion: Equatable {
+    case paused
+    case running(framesPerSecond: Float)
+
+    /// The most steps a second.
+    static let rate: Float = 30
+
+    /// What the loop's view knows about where it is.
+    struct Conditions: Equatable {
+        /// An agent works and Reduce Motion is off.
+        var animates: Bool
+        /// The view is in a window, not hidden, and the window is on screen and not covered.
+        var visible: Bool
+        /// The view belongs to the island's own window, which only shows
+        /// while the island can present.
+        var inIsland: Bool
+        /// The island can present: unlocked, awake, displays on, this user at the Mac.
+        var islandPresenting: Bool
+        /// The Mac is awake with its displays on and this user at it (the
+        /// lock screen and Settings only need this).
+        var screenAwake: Bool
+        var savingBattery: Bool
+    }
+
+    static func decide(_ conditions: Conditions) -> IslandAgentMotion {
+        guard conditions.animates, conditions.visible, conditions.screenAwake, !conditions.savingBattery,
+              !conditions.inIsland || conditions.islandPresenting else { return .paused }
+        return .running(framesPerSecond: rate)
+    }
+
+    var isRunning: Bool { if case .running = self { return true } else { return false } }
+}
+
+/// A window that holds the island; its agent loops also stop whenever the
+/// island cannot present.
+protocol IslandAgentHostWindow: AnyObject {}
+
+/// What the agents' loops hear from the rest of the app: whether the island
+/// can present, whether the screen is awake, and the battery saver. Every
+/// change is posted, so running loops stop or resume at once.
+@MainActor
+final class IslandAgentMotionGate {
+    static let shared = IslandAgentMotionGate()
+    static let didChange = Notification.Name("IslandAgentMotionGateDidChange")
+
+    private(set) var islandPresenting = true
+    private(set) var screenAwake = true
+    private(set) var savingBattery = false
+
+    func update(islandPresenting: Bool? = nil, screenAwake: Bool? = nil, savingBattery: Bool? = nil) {
+        let next = (islandPresenting ?? self.islandPresenting, screenAwake ?? self.screenAwake,
+                    savingBattery ?? self.savingBattery)
+        guard next != (self.islandPresenting, self.screenAwake, self.savingBattery) else { return }
+        (self.islandPresenting, self.screenAwake, self.savingBattery) = next
+        NotificationCenter.default.post(name: Self.didChange, object: self)
+    }
+
+    /// The decision for a view that knows its own visibility.
+    func decide(animates: Bool, visible: Bool, inIsland: Bool) -> IslandAgentMotion {
+        IslandAgentMotion.decide(.init(animates: animates, visible: visible, inIsland: inIsland,
+                                       islandPresenting: islandPresenting, screenAwake: screenAwake,
+                                       savingBattery: savingBattery))
+    }
+}

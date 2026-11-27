@@ -7,6 +7,9 @@ import QuartzCore
 /// Small decorative layers, stepped at a limited rate while they show.
 /// Settings retains its view hierarchy when closed, so disappearance alone
 /// cannot stop motion: observe the actual window's visibility as well.
+/// Zenith fork: IslandAgentMotion decides, at most 30 steps a second, and
+/// none while the island cannot present, the screen sleeps or the battery
+/// saver is on; only these layers' properties change, never the layout.
 final class NotchAgentAnimationView: NSView {
     private let artwork = CALayer()
     private var image: NSImage?
@@ -17,6 +20,9 @@ final class NotchAgentAnimationView: NSView {
     private var size: CGFloat = 0
     private var animates = false
     private var visibilityObserver: NSObjectProtocol?
+    private var gateObserver: NSObjectProtocol?
+    /// Zenith fork: what the loop was last allowed to do.
+    private(set) var motion = IslandAgentMotion.paused
     private(set) var motionStart: CFTimeInterval = 0
     private lazy var clock = NotchDecorativeClock { [weak self] time in self?.step(at: time) }
 
@@ -29,12 +35,17 @@ final class NotchAgentAnimationView: NSView {
         ring.fillColor = nil
         ring.lineWidth = 1
         setAccessibilityElement(false)
+        gateObserver = NotificationCenter.default.addObserver(forName: IslandAgentMotionGate.didChange, object: nil,
+                                                              queue: .main) { [weak self] _ in
+            self?.updateLayers()
+        }
     }
 
     required init?(coder: NSCoder) { nil }
 
     deinit {
         if let visibilityObserver { NotificationCenter.default.removeObserver(visibilityObserver) }
+        if let gateObserver { NotificationCenter.default.removeObserver(gateObserver) }
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
@@ -123,10 +134,15 @@ final class NotchAgentAnimationView: NSView {
     override func layout() { super.layout(); updateLayers() }
 
     var isMoving: Bool { clock.isRunning }
+    /// The most steps a second the running loop asks the display for.
+    var frameRateCap: Float? { clock.displayLink?.preferredFrameRateRange.maximum }
 
     private func updateLayers() {
-        let moving = animates && !isHiddenOrHasHiddenAncestor
+        let visible = !isHiddenOrHasHiddenAncestor
             && window?.isVisible == true && window?.occlusionState.contains(.visible) == true
+        motion = IslandAgentMotionGate.shared.decide(animates: animates, visible: visible,
+                                                     inIsland: window is IslandAgentHostWindow)
+        let moving = motion.isRunning
         // Snapshot, time and geometry updates keep the motion's phase.
         if moving, !clock.isRunning { motionStart = CACurrentMediaTime() }
         CATransaction.begin()
@@ -145,7 +161,7 @@ final class NotchAgentAnimationView: NSView {
         }
         show(at: moving ? CACurrentMediaTime() : nil)
         CATransaction.commit()
-        if moving { clock.start(in: self) } else { clock.stop() }
+        if case let .running(rate) = motion { clock.start(in: self, rate: rate) } else { clock.stop() }
     }
 
     /// The glyph grows and brightens and settles back, and the pulse's ring
