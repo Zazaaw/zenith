@@ -346,31 +346,25 @@ struct ReleaseNotesSettings: View {
     @ObservedObject private var l10n = L10n.shared
     private let notes = ReleaseNotes.current
 
+    // Zenith fork: a system page of the kit (docs/SETTINGS-KIT.md): the
+    // header, the highlights on the stage, then the notes, in one scroll.
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SettingsPageHeader(title: l10n.s.obWhatsNewTitle, subtitle: versionLine)
-                .padding(.horizontal, 24)
-                .padding(.top, 24)
-            ReleaseNotesPreviewCard(notes: notes) // Zenith fork
-                .zenithToolsPreviewWidth()
-                .padding(.horizontal, 24)
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    if notes.sections.isEmpty {
-                        fallbackNote
-                    } else {
-                        ForEach(Array(notes.sections.enumerated()), id: \.offset) { _, section in
-                            releaseSection(section)
-                        }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                ZenithSystemHeader(title: l10n.s.obWhatsNewTitle, subtitle: versionLine)
+                ReleaseNotesPreviewCard(notes: notes) // Zenith fork
+                if notes.sections.isEmpty {
+                    fallbackNote
+                } else {
+                    ForEach(Array(notes.sections.enumerated()), id: \.offset) { _, section in
+                        releaseSection(section)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 24)
             }
+            .frame(maxWidth: 760, alignment: .leading)
+            .frame(maxWidth: .infinity)
+            .padding(22)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var versionLine: String {
@@ -486,83 +480,38 @@ struct SupportSettings: View {
             : thanks
     }
 
+    // Zenith fork: a system page of the kit (docs/SETTINGS-KIT.md): the
+    // header, the picture on the stage, then the two ways to help as rows.
     var body: some View {
         ScrollView {
-            VStack(spacing: 18) {
+            VStack(alignment: .leading, spacing: 18) {
+                ZenithSystemHeader(title: l10n.s.tabSupport, subtitle: l10n.s.donateHeading)
                 SupportPreviewCard() // Zenith fork
-                    .frame(maxWidth: 760)
-                    .padding(.bottom, 6)
-                ZStack {
-                    Circle()
-                        .fill(Theme.spaceGradient)
-                        .frame(width: 78, height: 78)
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 29, weight: .semibold))
-                        .foregroundStyle(.white)
-                }
-
-                VStack(spacing: 7) {
-                    Text(l10n.s.donateHeading)
-                        .font(.title2.bold())
-                        .multilineTextAlignment(.center)
-                    Text(l10n.s.donateMessage)
-                        .font(.system(size: 13.5))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: 460)
-                }
-
-                if let coffeeURL = AppInfo.coffeeURL {
-                    Button {
-                        openURL(coffeeURL)
-                    } label: {
-                        Label(l10n.s.donateButton, systemImage: "cup.and.saucer.fill")
+                ZenithSection(footer: donateThanksText) {
+                    if let coffeeURL = AppInfo.coffeeURL {
+                        ZenithRow(l10n.s.donateMessage) {
+                            Button {
+                                openURL(coffeeURL)
+                            } label: {
+                                Label(l10n.s.donateButton, systemImage: "cup.and.saucer.fill")
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+                        .padding(.vertical, 4)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                }
-
-                HStack(alignment: .top, spacing: 14) {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(.yellow)
-                        .frame(width: 38, height: 38)
-                        .background(Circle().fill(Color.yellow.opacity(0.14)))
-
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text(l10n.s.supportIntroStarMessage)
-                            .font(.system(size: 13.5, weight: .medium))
-                            .fixedSize(horizontal: false, vertical: true)
-
+                    ZenithRow(l10n.s.supportIntroStarMessage) {
                         Button {
                             openURL(AppInfo.repositoryURL)
                         } label: {
                             Label(l10n.s.supportIntroStarButton, systemImage: "star.fill")
                         }
-                        .buttonStyle(.bordered)
-                        .controlSize(.large)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 4)
                 }
-                .padding(16)
-                .frame(maxWidth: 510)
-                .background(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(Color(nsColor: .controlBackgroundColor))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(Color(nsColor: .separatorColor).opacity(0.45))
-                )
-
-                Text(donateThanksText)
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
             }
+            .frame(maxWidth: 760)
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, 28)
-            .padding(.vertical, 26)
+            .padding(22)
         }
     }
 }
