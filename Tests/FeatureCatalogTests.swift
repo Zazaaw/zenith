@@ -1785,9 +1785,9 @@ enum FeatureCatalogTests {
                 && AppFeature.quitApps.symbolName == "xmark.app",
                "Quit apps is an on-demand tool that needs no permission and keeps nothing running")
         suite.expect(AppFeature.quitApps.settingsDestination
-                == FeatureSettingsDestination(.quickTools, sectionAnchor: .quitApps)
+                == FeatureSettingsDestination(.quitApps, sectionAnchor: .quitApps)
                 && !FeaturePreset.allCases.contains { $0.features.contains(.quitApps) },
-               "Quit apps opens its own Quick tools section and joins no preset")
+               "Quit apps opens its own page and joins no preset")
         suite.expect(activeSet(.appManagement) == [.homebrew, .appUpdates, .diskImageInstaller],
                "package, update and disk-image installs declare App Management access")
         suite.expect(AppFeature.homebrew.permissions == [.appManagement],
@@ -2320,15 +2320,32 @@ enum FeatureCatalogTests {
             FeatureVisibilitySupport.isPageVisible(page) { available.contains($0) }
         }
         let allFeatures = Set(AppFeature.allCases)
-        suite.expect(pageVisible(.mouse, available: allFeatures), "mouse page shows with everything available")
-        suite.expect(pageVisible(.mouse, available: [.middleClick]),
-               "one remaining mouse feature keeps the mouse page")
-        suite.expect(pageVisible(.mouse, available: [.mouseAcceleration]),
-               "mouse acceleration alone keeps the mouse page")
-        suite.expect(pageVisible(.mouse, available: [.mouseClickDebounce]),
+        // Zenith fork: the Mouse page, split into Scrolling, Pointer and Mouse Buttons.
+        suite.expect([SettingsPage.scrolling, .pointer, .mouseButtons].allSatisfy { pageVisible($0, available: allFeatures) },
+               "the three mouse pages show with everything available")
+        suite.expect(pageVisible(.mouseButtons, available: [.middleClick])
+                && !pageVisible(.scrolling, available: [.middleClick])
+                && !pageVisible(.pointer, available: [.middleClick]),
+               "one remaining mouse feature keeps only its own page")
+        suite.expect(pageVisible(.pointer, available: [.mouseAcceleration]),
+               "mouse acceleration alone keeps the Pointer page")
+        suite.expect(pageVisible(.mouseButtons, available: [.mouseClickDebounce]),
                "mouse click debounce alone keeps its Settings page reachable")
-        suite.expect(!pageVisible(.mouse, available: []),
-               "the mouse page hides only with all eight mouse features off")
+        suite.expect(pageVisible(.scrolling, available: [.scrollZoom])
+                && !pageVisible(.scrolling, available: allFeatures.subtracting(
+                    [.scrollInverter, .scrollHorizontal, .scrollZoom, .smoothScroll, .linearScroll, .scrollSpeed])),
+               "the Scrolling page hides only with all its scrolling features off")
+        suite.expect([AppFeature.quickLauncher, .quickToggles, .quitApps, .cleaningMode, .wallpaper, .scratchpad]
+                .allSatisfy { feature in
+                    let page = feature.settingsDestination.page
+                    return page != .quickTools && pageVisible(page, available: [feature])
+                        && !pageVisible(page, available: allFeatures.subtracting([feature]))
+                },
+               "each quick tool has a page of its own, shown while the tool is installed")
+        suite.expect(AppFeature.spacesOrder.settingsDestination
+                == FeatureSettingsDestination(.spaces, sectionAnchor: .spacesOrder)
+                && pageVisible(.spaces, available: [.spacesOrder]) && !pageVisible(.dock, available: [.spacesOrder]),
+               "Spaces in a fixed order has a page of its own, apart from the Dock")
         suite.expect(!pageVisible(.energy, available: allFeatures.subtracting([.keepAwake, .brightness,
                                                                          .extraBrightness,
                                                                          .bluetoothSleep])),
@@ -2351,10 +2368,10 @@ enum FeatureCatalogTests {
         suite.expect(!pageVisible(.cleaner,
                             available: allFeatures.subtracting([.cleaner])),
                "cleaner settings, including WhatsApp downloads, follow the cleaner module")
-        suite.expect(pageVisible(.quickTools, available: [.quickToggles]),
-               "the quick toggles alone keep the quick tools page")
-        suite.expect(pageVisible(.quickTools, available: [.quitApps]),
-               "Quit apps alone keeps the quick tools page")
+        suite.expect(pageVisible(.quickTools, available: [.micMute])
+                && pageVisible(.quickTools, available: [.cameraPreview])
+                && !pageVisible(.quickTools, available: [.quickToggles, .quitApps]),
+               "Quick Tools follows the tools still on it, Mic Mute and Camera Preview")
         suite.expect(pageVisible(.clipboard, available: [.finderCutPaste]),
                "the image paste option keeps the Clipboard page available")
         suite.expect(AppFeature.allCases.allSatisfy { feature in
@@ -2405,8 +2422,8 @@ enum FeatureCatalogTests {
                                 available: allFeatures.subtracting([.windowLayout, .windowMaximizer])),
                "the green button override and its exception list keep the window layout page on their own")
         suite.expect(AppFeature.cleaningMode.settingsDestination
-                == FeatureSettingsDestination(.quickTools, sectionAnchor: .cleaningMode),
-               "cleaning mode lands on Quick Tools cleaning mode section")
+                == FeatureSettingsDestination(.cleaningMode, sectionAnchor: .cleaningMode),
+               "cleaning mode lands on its own page")
         suite.expect(AppFeature.musicBlock.settingsDestination
                 == FeatureSettingsDestination(.general, sectionAnchor: .musicBlocking)
                 && AppFeature.diskImageInstaller.settingsDestination
@@ -2439,7 +2456,7 @@ enum FeatureCatalogTests {
                     settingsRequestsPublishedReady
                     && settingsRouter.pendingDestinationRequest?.id == requestID
             }
-        let repeatedDestination = FeatureSettingsDestination(.mouse, sectionAnchor: .middleClick)
+        let repeatedDestination = FeatureSettingsDestination(.mouseButtons, sectionAnchor: .middleClick)
         settingsRouter.request(repeatedDestination)
         let firstSettingsRequestID = settingsRouter.requestID
         settingsRouter.request(repeatedDestination)
@@ -2523,8 +2540,8 @@ enum FeatureCatalogTests {
         suite.expect(historyRouter.requestID == newestHistoryRequestID,
                "Settings Forward stops at the newest visit")
 
-        historyRouter.page = .mouse
-        let refinedDestination = FeatureSettingsDestination(.mouse, sectionAnchor: .smoothScroll)
+        historyRouter.page = .mouseButtons
+        let refinedDestination = FeatureSettingsDestination(.mouseButtons, sectionAnchor: .mouseClickDebounce)
         historyRouter.request(refinedDestination)
         historyRouter.request(refinedDestination)
         historyRouter.goBack()
@@ -2577,12 +2594,12 @@ enum FeatureCatalogTests {
                "Settings Back returns to the previous Energy tool, and a fallback replaces the visit")
 
         let hiddenHistoryRouter = SettingsRouter()
-        hiddenHistoryRouter.page = .mouse
+        hiddenHistoryRouter.page = .scrolling
         hiddenHistoryRouter.page = .about
-        hiddenHistoryRouter.goBack(isPageVisible: { $0 != .mouse })
+        hiddenHistoryRouter.goBack(isPageVisible: { $0 != .scrolling })
         suite.expect(hiddenHistoryRouter.page == .general,
                "Settings Back skips pages whose features are no longer available")
-        hiddenHistoryRouter.goForward(isPageVisible: { $0 != .mouse })
+        hiddenHistoryRouter.goForward(isPageVisible: { $0 != .scrolling })
         suite.expect(hiddenHistoryRouter.page == .about,
                "skipping a hidden page preserves forward history")
         let visibleHistoryRequestID = hiddenHistoryRouter.requestID
@@ -2592,7 +2609,7 @@ enum FeatureCatalogTests {
                "Settings history stays put when no earlier page is visible")
         hiddenHistoryRouter.cleanerTool = "stale-tool"
         hiddenHistoryRouter.goBack()
-        suite.expect(hiddenHistoryRouter.page == .mouse
+        suite.expect(hiddenHistoryRouter.page == .scrolling
                 && hiddenHistoryRouter.cleanerTool == nil,
                "history can revisit re-enabled pages without replaying a stale Cleaner tool hint")
 

@@ -59,20 +59,20 @@ enum SettingsFeatureTests {
         }
         for (language, strings) in LocalizationTests.languages {
             let mouse = SettingsDirectory.sections(strings, language: language, state: state())
-                .flatMap(\.items).first { $0.page == .mouse }!
+                .flatMap(\.items).first { $0.page == .scrolling }!
             let zoomKeywords = mouse.terms.filter { $0.feature == .scrollZoom }.flatMap(\.titles)
             suite.expect(zoomKeywords == [strings.zoomSection,
                                            strings.pinchZoom],
                          "settings discovery includes every Zoom row in \(language.rawValue)")
             for query in [strings.zoomSection, strings.pinchZoom] {
                 suite.expect(SettingsSearchSupport.matches(query: query, title: mouse.title, keywords: zoomKeywords),
-                             "search finds a localized Zoom option on the Mouse page")
+                             "search finds a localized Zoom option on the Scrolling page")
             }
-            let sidebar = SettingsSidebarSupport.items(page: .mouse, title: mouse.title, icon: mouse.icon,
-                preferredFeatures: mouse.terms.compactMap(\.feature), includePage: false,
+            let sidebar = SettingsSidebarSupport.items(page: .scrolling, title: mouse.title, icon: mouse.icon,
+                preferredFeatures: mouse.terms.compactMap(\.feature), includePage: true,
                 isAvailable: { _ in true }, featureTitle: { $0.rawValue })
-            suite.expect(sidebar.prefix(3).map(\.id) == [.feature(.scrollInverter), .feature(.scrollHorizontal), .feature(.scrollZoom)],
-                         "the sidebar places Zoom beside scrolling in \(language.rawValue)")
+            suite.expect(sidebar.map(\.id) == [.page(.scrolling)],
+                         "Zoom sits on the Scrolling page, which keeps one sidebar row in \(language.rawValue)")
         }
         for (language, strings) in LocalizationTests.languages {
             let captureRows = SettingsSidebarSupport.items(

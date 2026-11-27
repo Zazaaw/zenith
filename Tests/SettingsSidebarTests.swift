@@ -76,12 +76,24 @@ enum SettingsSidebarTests {
         let missing = SettingsPage.allCases.filter { $0 != .notchMascot && !pages.contains($0) }
         suite.expect(missing.isEmpty, "every Settings page is reachable from the sidebar (missing: \(missing))")
         let ids = Set(items.map(\.id))
+        // Zenith fork: one row per page. A page of several features keeps a
+        // single row and its features land on their sections from it; only
+        // the shared pages still list their tools.
         let tools = AppFeature.allCases.filter { feature in
             let destination = feature.settingsDestination
             return destination.sectionAnchor != nil && destination.page != .notchMascot
+                && !SettingsSidebarSupport.onePageRows.contains(destination.page)
         }
         let missingTools = tools.filter { !ids.contains(.feature($0)) }
         suite.expect(missingTools.isEmpty, "every tool on a shared page keeps its row (missing: \(missingTools))")
+        let onePage = items.filter { SettingsSidebarSupport.onePageRows.contains($0.destination.page) }
+        suite.expect(!onePage.isEmpty && onePage.allSatisfy { $0.id == .page($0.destination.page) }
+                        && Set(onePage.map(\.destination.page)) == SettingsSidebarSupport.onePageRows,
+                     "each page of the Input, Windows and quick tools has exactly one row, its own")
+        suite.expect(AppFeature.allCases.filter { SettingsSidebarSupport.onePageRows.contains($0.settingsDestination.page) }
+                        .allSatisfy { SettingsSidebarSupport.selection(for: $0.settingsDestination, in: items)
+                            == .page($0.settingsDestination.page) },
+                     "a feature on a one-row page selects its page's row")
         suite.expect(ids.contains(.setting(.panelConfiguration)) && ids.contains(.setting(.screenshotScrolling))
                         && ids.contains(.setting(.keyboardBrightnessShortcuts)),
                      "the menu bar editor, scrolling capture and keyboard light shortcuts keep their rows")

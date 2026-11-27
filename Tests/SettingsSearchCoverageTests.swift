@@ -31,7 +31,6 @@ enum SettingsSearchCoverageTests {
 
     /// Labels that name no setting, so a search for them has nowhere to go.
     private static let exemptions: [String: String] = [
-        "Strings.permissionRequired": "a banner asking for a missing permission",
         "FeatureHubStrings.neverUsedTitle": "a suggestion that shows only while some features stay unused",
     ]
 

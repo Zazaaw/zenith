@@ -31,7 +31,7 @@ extension CatalogShots {
                 shots.append(shot)
             }
         }
-        return shots
+        return shots + kitInputWindows // Zenith fork: the Input, Windows and quick tool pages
     }
 }
 #endif
