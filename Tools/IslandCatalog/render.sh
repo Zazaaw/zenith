@@ -13,7 +13,8 @@
 # just those shots and skips the PDF. `ONLY=readme` draws the README's
 # pictures (the island over a sample wallpaper, the menu bar panel, Settings
 # pages in their window), and `ONLY=motion…` frame sequences, which
-# `ZENITH_MOTION_BACKDROP=wallpaper` draws over that wallpaper.
+# `ZENITH_MOTION_BACKDROP=wallpaper` draws over that wallpaper, and
+# `ZENITH_MOTION_PRESET=snappy` / `ZENITH_MOTION_SPEED=0.5` in another motion.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
