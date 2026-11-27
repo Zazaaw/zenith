@@ -5,7 +5,6 @@ import AppKit
 import SwiftUI
 
 struct NotchWatchSettingsControls: View {
-    @ObservedObject private var permissions = Permissions.shared
     @ObservedObject private var l10n = L10n.shared
     @AppStorage(DefaultsKey.notchWatchEnabled) private var enabled = true
     @AppStorage(DefaultsKey.notchWatchSound) private var sound = true

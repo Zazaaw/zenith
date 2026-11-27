@@ -437,8 +437,7 @@ struct ZenithMascotPicture: View {
     }
 }
 
-/// The Companion page's own card, when it shows as a page of its own (as a
-/// tab of the Dynamic Island page, that page's card shows it).
+/// The Mascot page's card: the companion resting in the island, as it looks now.
 struct ZenithMascotPreviewCard: View {
     var action: () -> Void
 

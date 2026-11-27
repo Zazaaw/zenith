@@ -12,8 +12,6 @@ struct ZenithIslandPagesStrings {
     // Every section's page.
     let showInIsland = "Show in the island"
     let showInIslandHint = "The section joins the open island, where the sections bar reaches it."
-    let shown = "In the island"
-    let hidden = "Hidden from the island"
     let islandOff = "The Dynamic Island is off, so this section waits until it is on."
     let turnOnIsland = "Turn On the Island"
     let previewCaption = "The section in the open island, as it looks on this Mac."
@@ -21,7 +19,6 @@ struct ZenithIslandPagesStrings {
     let openSection = "Open the section’s page"
 
     // Dynamic Island.
-    let islandSubtitle = "A living island around the camera: your music, calendar, files and what Zenith is doing."
     let compactChip = "Compact"
     let spaciousChip = "Spacious"
     let customChip = "Custom size"
@@ -31,8 +28,6 @@ struct ZenithIslandPagesStrings {
     let companionHint = "The star that lives in the island, how it looks and when it visits."
     let on = "On"
     let off = "Off"
-    let sizeCustomHint = "Drag to set the open island’s width and its tallest height."
-    let modulePage = "Settings"
     let modulePageHint = "This section has its own page in the Island group."
 
     // The sections' subtitles.
@@ -48,7 +43,6 @@ struct ZenithIslandPagesStrings {
     // Section titles on the sections' pages.
     let access = "Access"
     let countdown = "Countdown"
-    let calendars = "Calendars"
     let banners = "Banners"
     let replies = "Replies"
     let nowPlaying = "Now playing"
@@ -56,10 +50,6 @@ struct ZenithIslandPagesStrings {
     let timer = "Timer"
     let agents = "Agents"
     let accounts = "Accounts"
-    let cards = "Cards"
-    let live = "Live turns"
-    let alerts = "Alerts and budget"
-    let claudeLimits = "Claude limits"
     let folder = "Folder"
     let watching = "Watching"
 
@@ -72,10 +62,6 @@ struct ZenithIslandPagesStrings {
     let equalizerOn = "Live equalizer"
     let soundOn = "With sound"
     let silent = "Silent"
-
-    // Mascot.
-    let mascotLooks = "Look"
-    let mascotStyleHint = "How the companion is drawn."
 
     /// Every string, for the coverage tests.
     var all: [String] {
