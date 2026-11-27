@@ -62,7 +62,7 @@ Meetings, Batteries, Lock Screen, Shelf, …)
 2. The preview card, if the page has one.
 3. `ZenithSection`s; an untitled one is fine for the first, short group.
 
-**Tool collection page** (several tools on one page: Quick Tools, Energy, Monitor)
+**Tool collection page** (several tools on one page: Sleep, Brightness, System Monitor)
 
 1. `ZenithSystemHeader`, or a `ZenithHero` without `isOn` when the page reads as one feature.
 2. The shared preview card, whose states pick the tool.
@@ -109,7 +109,10 @@ float), `.mechakey`, `.translate`, `.meetings`, `.shelf`, `.batteries`,
 `.lockScreen`. Add new ones to `ZenithHeroAnimations.swift`. The Everyday and
 Devices pages keep theirs in `ZenithHeroAnimationsEveryday.swift`: `.clipboard`,
 `.finderTools`, `.mediaTools`, `.urlCleaner`, `.textSnippets`, `.pocket`,
-`.remote`, `.faceUnlock`.
+`.remote`, `.faceUnlock`. The System and Apps pages keep theirs in
+`ZenithHeroAnimationsSystem.swift`: `.systemMonitor`, `.fanControl`, `.sleep`,
+`.brightness`, `.menuBar`, `.commandBar`, `.cleaner`, `.uninstaller`, `.homebrew`,
+`.appUpdates`, `.killProcess`, `.portManager`.
 
 Rules:
 

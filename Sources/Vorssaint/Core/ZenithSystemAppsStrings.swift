@@ -26,7 +26,6 @@ struct ZenithSystemAppsStrings {
     let monitorTurnOn = "Turn On"
     let monitorValuesDetail = "Numbers, such as CPU 42%."
     let monitorBarsDetail = "A small gauge for CPU, GPU, memory and disk."
-    let monitorConnectedDevices = "Devices"
     func monitorShown(_ count: Int) -> String { count == 1 ? "1 in the menu bar" : "\(count) in the menu bar" }
     func monitorEvery(_ seconds: Int) -> String { "Every \(seconds) s" }
     func monitorOn(_ count: Int) -> String { count == 1 ? "1 metric" : "\(count) metrics" }
@@ -41,12 +40,6 @@ struct ZenithSystemAppsStrings {
     let sleepTitle = "Sleep"
     let sleepSubtitle = "Keep the Mac awake for as long as you need, and switch Bluetooth off while it sleeps."
     let sleepSession = "Keep awake"
-    let sleepDuration = "Default duration"
-    let sleepAutomation = "Starts by itself"
-    let sleepOptions = "Options"
-    let sleepMenuBarIcon = "Menu bar icon"
-    let sleepBluetooth = "Bluetooth on sleep"
-    let sleepAwake = "Awake"
     let sleepNormal = "Normal sleep"
     let sleepBluetoothOff = "Bluetooth off on sleep"
 
@@ -64,19 +57,12 @@ struct ZenithSystemAppsStrings {
     let menuBarSubtitle = "The panel behind Zenith’s icon, the icon itself, and the hider that tucks other icons away."
     let menuBarPanel = "Panel"
     let menuBarIcon = "Icon"
-    let menuBarHider = "Menu bar hider"
     let menuBarHiderOn = "Hider on"
-    let menuBarHow = "How it works"
     let menuBarZenithIcon = "Zenith icon"
-    func menuBarTabs(_ count: Int) -> String { count == 1 ? "1 tab" : "\(count) tabs" }
 
     // Command Bar.
     let commandSubtitle = "Find apps, windows, files, settings and answers, and run actions, from one bar."
     let commandBar = "The bar"
-    let commandSearch = "What it searches"
-    let commandFiles = "Files"
-    let commandSaved = "Saved"
-    let commandTry = "Try"
     func commandSources(_ count: Int) -> String { count == 1 ? "1 source" : "\(count) sources" }
 
     // Cleaner.
@@ -101,8 +87,6 @@ struct ZenithSystemAppsStrings {
     let updatesSubtitle = "See which apps have an update, from Homebrew, the App Store and their own feeds."
     let updatesList = "Updates"
     let updatesChecking = "Checking"
-    let updatesSchedule = "Checking"
-    let updatesSources = "Sources"
     func updatesCount(_ count: Int) -> String { count == 1 ? "1 update" : "\(count) updates" }
     let updatesUpToDate = "Up to date"
 
