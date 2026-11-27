@@ -8,6 +8,29 @@ notch, dan menambah fitur lain, sambil tetap mengikuti update dari upstream.
 Status: **dalam pengembangan, belum dirilis.** Kode masih memakai identitas Vorssaint;
 rebranding dikerjakan bertahap (lihat di bawah).
 
+## Arah sejak 27 Nov 2026: app Zenith baru
+
+- **Dua jalur repo.** [satuvisual/zenith](https://github.com/satuvisual/zenith) tetap fork
+  Vorssaint (`main` = cermin upstream, sync jalan terus). [Zazaaw/zenith](https://github.com/Zazaaw/zenith)
+  = **app Zenith baru**, riwayat git dilanjutkan dari fork ini tapi **putus dari upstream**:
+  file upstream boleh dirombak bebas; perubahan upstream diambil manual kalau perlu.
+  Pocket (iPhone, Watch, widget) ikut di app baru.
+- **Branch kerja:** `feat/orbit-wave1` (di-push ke Zazaaw). Isinya: Pocket, Orbit
+  (katalog fitur gaya store, pengganti halaman Features), ikon Orbit (±120, digambar dengan
+  SwiftUI, di-cache jadi bitmap), Mechakey, Translate, Meetings, Remove Background, Emoji
+  Picker, Calculator, Settings Tahoe (sidebar melayang, tombol jendela di sidebar, kartu
+  akun), Appearance (gerak island Zenith/Snappy/Calm/Playful/Custom + kecepatan, kaca
+  Black/Gradient/Liquid, hemat baterai), dan **Settings kit** (`docs/SETTINGS-KIT.md`):
+  hero rata kiri beranimasi per fitur, panggung ber-tint kategori, baris ⓘ, More options.
+- **Aturan Settings:** satu baris sidebar = satu halaman = satu fitur (halaman gabungan
+  lama dipecah: Mouse, Quick Tools, Energy, Screenshot, Dock, island per modul, suara
+  keluar dari General). Teks UI baru Zenith berbahasa Inggris.
+- **Test & render senyap:** test, selftest dan katalog offscreen jalan dengan
+  `ZenithQuiet.isOn`: tidak ada beep, chime, atau tap keyboard (Mechakey) di Mac pemilik.
+  Beep wajib lewat `ZenithQuiet.beep()` (dijaga test `harness`).
+- Kode Droppy **tidak** dipakai (repo-nya kena DMCA karena menyalin kode GPL Atoll);
+  yang diambil hanya ide dan gerak. Atoll (GPL-3) boleh dengan kredit.
+
 ## Identitas
 
 | | |
