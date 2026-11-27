@@ -61,10 +61,10 @@ enum SettingsSidebarTests {
                      "with Command Bar off in Orbit its tile steps aside and the others stay")
         suite.expect(none.allSatisfy { !$0.items.isEmpty }, "a group whose features are all off disappears")
         let appearance = ZenithStrings.appearancePage(.enUS)
-        suite.expect(!appearance.title.isEmpty && !appearance.comingSoon.isEmpty
+        suite.expect(!appearance.title.isEmpty && !appearance.subtitle.isEmpty
                         && none.first?.items.first { $0.id == .page(.appearance) }?.title == appearance.title
                         && FeatureVisibilitySupport.isPageVisible(.appearance, isAvailable: { _ in false }),
-                     "the Appearance placeholder is always reachable and says what is coming")
+                     "the Appearance page is always reachable, whatever Orbit has off")
     }
 
     /// Nothing the old sidebar reached may disappear: every page has a row

@@ -85,6 +85,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
     case zenithTranslate, zenithTranslateLanguages, zenithTranslateDownloads
     case zenithMeetings, zenithMeetingsCalls, zenithMeetingsProviders // Zenith fork
     case zenithMechakey
+    case zenithAppearanceTheme, zenithAppearanceMotion, zenithAppearanceGlass, zenithAppearanceBattery
 
     var page: SettingsPage {
         switch self {
@@ -121,6 +122,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
         case .zenithTranslate, .zenithTranslateLanguages, .zenithTranslateDownloads: return .translate
         case .zenithMeetings, .zenithMeetingsCalls, .zenithMeetingsProviders: return .meetings // Zenith fork
         case .zenithMechakey: return .mechakey
+        case .zenithAppearanceTheme, .zenithAppearanceMotion, .zenithAppearanceGlass, .zenithAppearanceBattery: return .appearance
         case .zenithDropZones, .zenithWatermark: return .shelf
         case .zenithDesignOverlay, .zenithBeautify: return .screenshot
         case .zenithQR: return .clipboard

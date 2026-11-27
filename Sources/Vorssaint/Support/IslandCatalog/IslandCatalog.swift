@@ -63,9 +63,10 @@ enum IslandCatalog {
         var manifest: [[String: Any]] = []
         var failures: [String] = []
         // Zenith fork: `--only readme…` draws the README's pictures instead,
-        // and `--only orbit…` the Features page.
+        // `--only orbit…` the Features page and `--only appearance…` Appearance.
         let shots = only?.hasPrefix("readme") == true ? CatalogShots.readme
-            : only?.hasPrefix("orbit") == true ? CatalogShots.orbit : CatalogShots.all
+            : only?.hasPrefix("orbit") == true ? CatalogShots.orbit
+            : only?.hasPrefix("appearance") == true ? CatalogShots.appearance : CatalogShots.all
         for shot in shots where only.map({ shot.id.hasPrefix($0) }) ?? true {
             let url = folder.appendingPathComponent(shot.id + ".png")
             if let entry = CatalogRenderer.render(shot, to: url) {

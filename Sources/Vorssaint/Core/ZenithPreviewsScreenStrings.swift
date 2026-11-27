@@ -20,7 +20,7 @@ struct ZenithPreviewsScreenStrings {
     // General and the menu bar.
     let look = ZenithScreenPreviewText(
         state: "Look",
-        caption: "Zenith’s own windows and its menu bar panel take the look you pick below. The rest of the Mac keeps its own.",
+        caption: "Zenith’s own windows and its menu bar panel take the look you pick on Appearance. The rest of the Mac keeps its own.",
         part: "Menu bar panel")
     let panel = ZenithScreenPreviewText(
         state: "Panel",
