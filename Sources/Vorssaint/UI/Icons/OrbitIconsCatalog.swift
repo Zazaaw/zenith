@@ -48,30 +48,22 @@ enum OrbitIconsD {
         icon("Scroll Speed", "Input", "gauge.with.dots.needle.67percent", input),
         icon("Mouse Acceleration", "Input", "cursorarrow.rays", input),
         icon("Mouse Navigation", "Input", "arrow.backward.circle.fill", input),
-        icon("Mouse Buttons", "Input", "computermouse.fill", input),
         icon("Middle Click", "Input", "hand.tap.fill", input),
         icon("Click Debounce", "Input", "cursorarrow.click.2", input),
         icon("Key Debounce", "Input", "keyboard.fill", input, size: 42),
 
         icon("Paste as Plain Text", "Productivity", "doc.plaintext.fill", productivity),
-        icon("Quick Launcher", "Productivity", "wand.and.rays", productivity),
-        icon("Quick Toggles", "Productivity", "switch.2", productivity),
-        icon("Quit Apps", "Productivity", "xmark.app.fill", productivity),
 
         icon("Cut and Paste", "Files", "scissors", files),
         icon("Finder Rename", "Files", "pencil.line", files),
         icon("Disk Image Installer", "Files", "externaldrive.fill.badge.plus", files, size: 44),
 
         icon("Audio Priority", "Sound", "list.number", sound, size: 46),
-        icon("Music Blocker", "Sound", "music.note", sound),
 
-        icon("Wallpaper", "Media", "photo.on.rectangle.angled", media, size: 44),
         icon("Up Next", "Media", "list.bullet.below.rectangle", media, size: 46),
         icon("Live Equalizer", "Media", "waveform", media),
 
         icon("Island Gestures", "Island", "hand.draw.fill", island),
-        icon("Downloads", "Island", "arrow.down.circle.fill", island),
-        icon("Screen Watch", "Island", "eye.fill", island),
 
         icon("Extra Brightness", "System", "sun.max.fill", system),
         icon("Kill Process", "System", "xmark.octagon.fill", system),
