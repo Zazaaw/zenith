@@ -106,36 +106,53 @@ struct SettingsAccountCard: View {
     var body: some View {
         let summary = store.summary
         Button(action: store.openUsersAndGroups) {
-            HStack(spacing: 10) {
-                SettingsAccountAvatar(photo: store.photo, initials: summary.initials, size: 34)
-                VStack(alignment: .leading, spacing: 1) {
+            HStack(spacing: 12) {
+                SettingsAccountAvatar(photo: store.photo, initials: summary.initials, size: 50)
+                    .overlay(Circle().strokeBorder(Color.primary.opacity(0.12), lineWidth: 1))
+                    .shadow(color: .black.opacity(0.18), radius: 3, y: 1)
+                VStack(alignment: .leading, spacing: 4) {
                     Text(summary.name)
-                        .font(.system(size: 13, weight: .semibold))
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                    if !summary.subtitle.isEmpty {
-                        Text(summary.subtitle)
-                            .font(.system(size: 11))
+                        .font(.system(size: 15, weight: .semibold))
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.9)
+                        .fixedSize(horizontal: false, vertical: true)
+                    let computer = summary.computer.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !computer.isEmpty {
+                        Label(computer, systemImage: "laptopcomputer")
+                            .labelStyle(SettingsAccountLineLabelStyle())
+                            .font(.system(size: 11.5))
                             .foregroundStyle(contrast == .increased ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
+                    if let kind = summary.kind {
+                        Text(kind.title)
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(kind == .admin ? Color.accentColor : .secondary)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill((kind == .admin ? Color.accentColor : Color.primary).opacity(0.14)))
+                    }
                 }
                 Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+                    .opacity(hovering ? 1 : 0.6)
             }
-            .padding(.horizontal, 7)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 12)
             .background {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(Color.primary.opacity(hovering ? 0.08 : 0.04))
             }
             .overlay {
                 if contrast == .increased {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .strokeBorder(Color.primary.opacity(0.35))
                 }
             }
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
@@ -145,6 +162,16 @@ struct SettingsAccountCard: View {
         .accessibilityHint("Opens Users & Groups in System Settings")
         .accessibilityAddTraits(.isButton)
         .onAppear { store.load() }
+    }
+}
+
+/// An icon and its text on one line, a little apart.
+private struct SettingsAccountLineLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 4) {
+            configuration.icon.imageScale(.small)
+            configuration.title
+        }
     }
 }
 
