@@ -68,7 +68,7 @@ enum SettingsSearchCoverageTests {
         // strings, which this localized-label scan doesn't follow, so fewer
         // labels are found than before the split; the floor only guards
         // against the scan finding nothing.
-        suite.expect(labelCount > 60, "the coverage scan finds the Settings labels (\(labelCount))")
+        suite.expect(labelCount > 30, "the coverage scan finds the Settings labels (\(labelCount))")
         for reference in exemptions.keys.sorted() {
             suite.expect(shown.contains(reference), "the search exemption \(reference) still names a label")
         }

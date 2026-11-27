@@ -761,12 +761,15 @@ enum UpdateFeatureTests {
                     isAvailable: { _ in true }).isEmpty,
                "a blank query does not replace the normal Settings sidebar with groups")
 
-        // Zenith fork: a page several utilities share.
+        // Zenith fork: Energy's utilities on their pages, Brightness and Sleep.
+        let brightnessPage = SettingsSearchItem(
+            id: .page(.brightness), destination: FeatureSettingsDestination(.brightness),
+            title: "Displays", icon: "sun.max.fill",
+            terms: [.init(["Brightness", "Change brightness automatically"], feature: .brightness)])
         let availabilityPage = SettingsSearchItem(
             id: .page(.sleep), destination: FeatureSettingsDestination(.sleep),
             title: "Sleep", icon: "moon.zzz.fill",
-            terms: [.init(["Brightness", "Change brightness automatically"], feature: .brightness),
-                    .init(["Keep Notes"], feature: .keepAwake)])
+            terms: [.init(["Keep Notes"], feature: .keepAwake)])
         let availabilityHub = SettingsSearchItem(
             id: .page(.features), destination: FeatureSettingsDestination(.features),
             title: "Features", icon: "square.grid.2x2",
@@ -775,7 +778,7 @@ enum UpdateFeatureTests {
         let availabilityFeatures = featureSearchItems.filter {
             $0.id == .feature(.brightness) || $0.id == .feature(.keepAwake)
         }
-        let availabilityItems = [availabilityHub, availabilityPage] + availabilityFeatures
+        let availabilityItems = [availabilityHub, brightnessPage, availabilityPage] + availabilityFeatures
         let onlyKeepAwakeAvailable: (AppFeature) -> Bool = { $0 == .keepAwake }
         let unavailableGroups = SettingsSearchSupport.groupedMatchingItems(
             query: "brightness", items: availabilityItems,

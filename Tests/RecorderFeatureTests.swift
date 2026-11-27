@@ -1512,7 +1512,7 @@ enum RecorderFeatureTests {
         suite.expect(!commandBarSettingsSource.contains("Label(text.openButton, systemImage:")
                 && !commandBarSettingsSource.contains("Label(text.resetPositionButton, systemImage:"),
                "neither command bar action button wears an icon")
-        suite.expect(commandBarSettingsSource.contains("Toggle(text.shortcutToggle,")
+        suite.expect(commandBarSettingsSource.contains("ZenithRow(text.shortcutToggle,")
                 && !commandBarSettingsSource.contains("l10n.s.quickToolShortcutToggle"),
                "the command bar shortcut toggle says what the shortcut opens")
         suite.expect(Set(GlobalShortcutRole.allCases.map(\.defaultShortcut)).count
