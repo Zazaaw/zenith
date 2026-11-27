@@ -2197,6 +2197,7 @@ def main():
           + "struct Workspace: View {\nlet compact = true\n@ObservedObject var fixture: Fixture\n"
           + "let onContentHeightChange: ((CGFloat) -> Void)?\n"
           + "var scrollsContent = true\n"
+          + "var showsHeader = true\n"
           + "var header: some View { Color.clear.frame(height: 22) }\n"
           + "var toolPicker: some View { Color.clear.frame(height: 24).background(PickerMarker(fixture: fixture)) }\n"
           + "var content: some View { Color.clear.frame(height: fixture.height) }\n"
