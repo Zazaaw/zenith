@@ -281,6 +281,7 @@ struct MetricsTests {
             ("island-room", { IslandRoundThreeTests.run(suite) }),
             ("island-motion", { IslandMotionTests.run(suite) }),
             ("island-motion-system", { IslandMotionSystemTests.run(suite) }), // Zenith fork: one motion source, agent frame rate
+            ("music-saver", { MusicSaverTests.run(suite) }), // Zenith fork: the music bars and their tap in the battery saver
             ("lock-island", { LockIslandTests.run(suite) }),
             ("island-floor", { IslandFloorTests.run(suite) }),
             ("island-fit", { IslandFitTests.run(suite) }), // Zenith fork

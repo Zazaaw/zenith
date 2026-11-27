@@ -26,13 +26,27 @@ final class NotchAudioLevelService: ObservableObject {
     private var readerID: UUID?
     private var silence = NotchAudioLevelSupport.SilenceMemory()
     private var stopWork: DispatchWorkItem?
+    /// Zenith fork: the battery saver releases the tap and reads again after it.
+    private var saverSubscription: AnyCancellable?
 
     private init() {}
 
     func syncWithPreferences() {
-        enabled = AppFeature.notchLiveEqualizer.isAvailable && NotchSupport.isEnabled()
-            && NotchAudioLevelSupport.isSupported && NotchAudioLevelSupport.isEnabled()
-            && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        let saving = MainActor.assumeIsolated { () -> Bool in
+            let appearance = ZenithAppearance.shared
+            if saverSubscription == nil {
+                saverSubscription = appearance.$isSavingBattery.removeDuplicates().dropFirst()
+                    .receive(on: DispatchQueue.main)
+                    .sink { [weak self] _ in self?.syncWithPreferences() }
+            }
+            return appearance.isSavingBattery
+        }
+        enabled = NotchAudioLevelSupport.reads(
+            chosen: AppFeature.notchLiveEqualizer.isAvailable && NotchSupport.isEnabled()
+                && NotchAudioLevelSupport.isEnabled(),
+            supported: NotchAudioLevelSupport.isSupported,
+            reduceMotion: NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,
+            savingBattery: saving)
         if enabled {
             if subscription == nil {
                 silence.rearm()
