@@ -22,8 +22,6 @@ struct CommandBarSettings: View {
     @AppStorage(DefaultsKey.commandBarFileIgnores) private var fileIgnoresRaw = ""
     @State private var editing: CommandBarLink?
     @State private var ignoreDraft = ""
-    @State private var showsFileOptions = false
-    @State private var showsLayoutOptions = false
     @State private var showsAppShortcuts = false
 
     private var text: CommandBarFeatureStrings { FeatureStrings.commandBar(l10n.language) }
@@ -40,337 +38,47 @@ struct CommandBarSettings: View {
         }
     }
 
+    private let page = ZenithStrings.systemApps(.enUS)
+
+    // Zenith fork: built with the Settings kit (docs/SETTINGS-KIT.md): the
+    // hero, the preview, the bar and its shortcut, what it searches, the
+    // folders a file search reads, then what the person saved in it.
     var body: some View {
-        Form {
-            // Zenith fork: the shared preview card, as a header, which the
-            // form draws without a box of its own.
-            Section {} header: {
-                ZenithCommandBarPreviewCard().zenithFormPreviewCard()
-            }
-            Section {
-                // One choice, open it or recenter it, so one row. Neither
-                // carries an icon: a ⌘ glyph in front of "Open the bar now"
-                // reads as the shortcut that opens it, which it is not.
-                HStack(spacing: 10) {
-                    Button(text.openButton) {
-                        CommandBarService.shared.show()
+        ScrollView {
+            ZenithPageColumn {
+                ZenithHero(title: text.pageTitle, subtitle: page.commandSubtitle, chips: chips,
+                           animation: .commandBar)
+                ZenithCommandBarPreviewCard()
+                barSection
+                ZenithSection {
+                    ZenithRow(text.appCenterTitle, info: text.appCenterCaption, navigate: { showsAppShortcuts = true })
+                }
+                sourcesSection
+                filesSection
+                linksSection
+                listSection(text.rowShortcutsTitle, empty: text.rowShortcutsEmpty, rows: boundRows) { entry in
+                    rowShortcutRow(entry)
+                }
+                listSection(text.namedTitle, empty: text.namedEmpty, rows: named) { entry in
+                    savedRow(entry, alias: entry.alias) { removeAlias(entry.key) }
+                }
+                listSection(text.pinnedTitle, empty: text.pinnedEmpty, rows: pinned) { entry in
+                    savedRow(entry) { removePin(entry.key) }
+                }
+                ZenithSection(text.hiddenTitle) {
+                    if hidden.isEmpty {
+                        ZenithRow(text.hiddenEmpty) { EmptyView() }
                     }
-                    Button(text.resetPositionButton) {
-                        CommandBarService.shared.resetPanelPosition()
+                    ForEach(hidden, id: \.key) { entry in
+                        savedRow(entry) { unhide(entry.key) }
                     }
-                    .disabled(!service.hasCustomPosition)
-                }
-                // One row for the whole explanation. As separate rows the form
-                // drew a divider between every sentence, cutting one paragraph
-                // about one feature into four cards that looked like settings.
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(text.positionCaption)
-                    Text(text.settingsCaption)
-                    Label(text.privacyNote, systemImage: "lock.laptopcomputer")
-                    HStack(spacing: 6) {
-                        Text(text.tryTheseLabel)
-                            .foregroundStyle(.tertiary)
-                        ForEach(examples, id: \.self) { example in
-                            Text(example)
-                                .font(.system(size: 10.5, design: .rounded))
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Capsule().fill(Color.primary.opacity(0.06)))
-                        }
-                    }
-                    .padding(.top, 2)
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                // No callback: the bar reads this on every open, and opening
-                // Settings has already hidden it, so the two can never be on
-                // screen with a stale value between them.
-                Toggle(text.compactModeToggle, isOn: $compactMode)
-                Text(text.compactModeCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                if CommandBarPreferences.isEnabled(.emoji, disabledRaw: disabledSources) {
-                    Picker(text.emojiSkinToneLabel, selection: $emojiSkinTone) {
-                        ForEach(CommandBarEmoji.SkinTone.allCases) { tone in
-                            Text(tone.swatch).tag(tone.rawValue)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    Text(text.emojiSkinToneCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                // Not the shared "Global shortcut" label the other feature
-                // pages use: this page already has an "open the bar" button at
-                // the top, so the toggle has to say which of the two it arms.
-                Toggle(text.shortcutToggle, isOn: $shortcutEnabled)
-                    .onChange(of: shortcutEnabled) { _, _ in
-                        CommandBarService.shared.syncWithPreferences()
-                    }
-                ShortcutPreferenceRow(role: .commandBar, isEnabled: shortcutEnabled) {
-                    CommandBarService.shared.syncWithPreferences()
-                }
-                if shortcutEnabled, service.shortcutRegistrationFailed {
-                    Text(l10n.s.shortcutUnavailable)
-                        .font(.caption)
-                        .foregroundStyle(ZenithStatus.warning)
-                }
-                if secureInput.holder != .off {
-                    SecureInputRow()
-                }
-                DisclosureHeaderRow(isExpanded: $showsLayoutOptions) {
-                    Text(FeatureStrings.recorder(l10n.language).moreOptions)
-                    Spacer()
-                }
-                if showsLayoutOptions {
-                    // Like compact mode this needs no callback: the bar reads
-                    // the toggle on every open, so there is no live state to
-                    // sync.
-                    Toggle(text.asciiLayoutToggle, isOn: $asciiLayoutEnabled)
-                    Text(text.asciiLayoutCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            } header: {
-                Text(text.pageTitle)
-            }
-
-            Section {
-                Button {
-                    showsAppShortcuts = true
-                } label: {
-                    Label(text.appCenterTitle, systemImage: "app.badge")
-                }
-                Text(text.appCenterCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section {
-                ForEach(CommandBarSource.allCases) { source in
-                    Toggle(isOn: binding(for: source)) {
-                        Label(title(for: source), systemImage: source.symbolName)
-                    }
-                    .disabled(source.isAlwaysOn)
-                }
-            } header: {
-                Text(text.sourcesTitle)
-            } footer: {
-                Text(text.sourcesCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section {
-                Text(text.filesCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                if fileScopes.isEmpty {
-                    Text(text.filesEmpty)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                ForEach(fileScopes, id: \.self) { scope in
-                    HStack(spacing: 8) {
-                        Image(systemName: "folder")
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.accentColor)
-                            .frame(width: 16)
-                        Text(scope)
-                            .font(.system(size: 12))
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                        Spacer()
-                        Button(text.removeButton) { removeFileScope(scope) }
-                            .buttonStyle(.bordered)
-                            .controlSize(.mini)
+                    ZenithRow(text.forgetAllButton, button: text.forgetAllButton) {
+                        CommandBarService.shared.forgetLearnedRanking()
                     }
                 }
-                Button {
-                    addFileScope()
-                } label: {
-                    Label(text.filesAddFolder, systemImage: "plus")
-                }
-                DisclosureHeaderRow(isExpanded: $showsFileOptions) {
-                    Text(FeatureStrings.recorder(l10n.language).moreOptions)
-                    Spacer()
-                }
-                if showsFileOptions {
-                    Group {
-                        Text(text.filesIgnoreCaption)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        ForEach(fileIgnores, id: \.self) { pattern in
-                            HStack(spacing: 8) {
-                                Image(systemName: "eye.slash")
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(.secondary)
-                                    .frame(width: 16)
-                                Text(pattern)
-                                    .font(.system(size: 12))
-                                    .lineLimit(1)
-                                Spacer()
-                                Button(text.removeButton) { removeFileIgnore(pattern) }
-                                    .buttonStyle(.bordered)
-                                    .controlSize(.mini)
-                            }
-                        }
-                        HStack(spacing: 8) {
-                            TextField(text.filesIgnorePlaceholder, text: $ignoreDraft)
-                                .textFieldStyle(.roundedBorder)
-                                .onSubmit { addFileIgnore() }
-                            Button(text.filesIgnoreAdd) { addFileIgnore() }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
-                                .disabled(ignoreDraft.trimmingCharacters(in: .whitespaces).isEmpty)
-                        }
-                    }
-                    .disclosureIndent()
-                }
-            } header: {
-                Text(text.filesTitle)
-            }
-
-            Section {
-                if links.isEmpty {
-                    Text(text.linksEmpty)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                ForEach(links) { link in
-                    HStack(spacing: 8) {
-                        Image(systemName: link.kind.symbolName)
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.accentColor)
-                            .frame(width: 16)
-                        Text(link.name)
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        Text(link.destination)
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                        Spacer()
-                        Button(editLabel) { editing = link }
-                            .buttonStyle(.bordered)
-                            .controlSize(.mini)
-                        Button(text.removeButton) { removeLink(link) }
-                            .buttonStyle(.bordered)
-                            .controlSize(.mini)
-                    }
-                }
-                Button {
-                    editing = CommandBarLink()
-                } label: {
-                    Label(text.linkAddButton, systemImage: "plus")
-                }
-            } header: {
-                Text(text.linksTitle)
-            }
-
-            Section {
-                if boundRows.isEmpty {
-                    Text(text.rowShortcutsEmpty)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                ForEach(boundRows, id: \.key) { entry in
-                    HStack {
-                        Text(entry.alias)
-                            .font(.system(size: 11, weight: .semibold, design: .rounded))
-                            .foregroundStyle(Color.accentColor)
-                        Text(entry.title)
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                        Spacer()
-                        // A combination another app already holds never fires,
-                        // and a row showing a dead key is worse than no key.
-                        if service.refusedRowShortcutKeys.contains(entry.key) {
-                            Text(l10n.s.shortcutUnavailable)
-                                .font(.caption)
-                                .foregroundStyle(ZenithStatus.warning)
-                        }
-                        Button(text.removeButton) { removeRowShortcut(entry.key) }
-                            .buttonStyle(.bordered)
-                            .controlSize(.mini)
-                    }
-                }
-            } header: {
-                Text(text.rowShortcutsTitle)
-            }
-
-            Section {
-                if named.isEmpty {
-                    Text(text.namedEmpty)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                ForEach(named, id: \.key) { entry in
-                    HStack {
-                        Text(entry.alias)
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundStyle(Color.accentColor)
-                        Text(entry.title)
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                        Spacer()
-                        Button(text.removeButton) { removeAlias(entry.key) }
-                            .buttonStyle(.bordered)
-                            .controlSize(.mini)
-                    }
-                }
-            } header: {
-                Text(text.namedTitle)
-            }
-
-            Section {
-                if pinned.isEmpty {
-                    Text(text.pinnedEmpty)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                ForEach(pinned, id: \.key) { entry in
-                    HStack {
-                        Text(entry.title)
-                            .font(.system(size: 12))
-                            .lineLimit(1)
-                        Spacer()
-                        Button(text.removeButton) { removePin(entry.key) }
-                            .buttonStyle(.bordered)
-                            .controlSize(.mini)
-                    }
-                }
-            } header: {
-                Text(text.pinnedTitle)
-            }
-
-            Section {
-                if hidden.isEmpty {
-                    Text(text.hiddenEmpty)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                ForEach(hidden, id: \.key) { entry in
-                    HStack {
-                        Text(entry.title)
-                            .font(.system(size: 12))
-                            .lineLimit(1)
-                        Spacer()
-                        Button(text.removeButton) { unhide(entry.key) }
-                            .buttonStyle(.bordered)
-                            .controlSize(.mini)
-                    }
-                }
-                Button(text.forgetAllButton) {
-                    CommandBarService.shared.forgetLearnedRanking()
-                }
-            } header: {
-                Text(text.hiddenTitle)
             }
         }
-        .formStyle(.grouped)
+        .toggleStyle(ZenithSwitchStyle())
         .observesSecureInput()
         .sheet(isPresented: $showsAppShortcuts) {
             CommandBarAppShortcutsView()
@@ -381,6 +89,201 @@ struct CommandBarSettings: View {
                 editing = nil
             } cancel: {
                 editing = nil
+            }
+        }
+    }
+
+    private var chips: [ZenithChip] {
+        let sources = CommandBarSource.allCases.filter {
+            CommandBarPreferences.isEnabled($0, disabledRaw: disabledSources)
+        }.count
+        var chips = [ZenithChip(page.commandSources(sources))]
+        if shortcutEnabled {
+            let role = GlobalShortcutRole.commandBar
+            let shortcut = GlobalShortcut(storageValue: UserDefaults.standard.string(forKey: role.storageKey) ?? "")
+                ?? role.defaultShortcut
+            chips.insert(ZenithChip(shortcut.displayString), at: 0)
+        }
+        if compactMode { chips.append(ZenithChip(text.compactModeToggle)) }
+        return chips
+    }
+
+    // MARK: - The bar
+
+    /// Opening the bar and putting it back, the shortcut that opens it, and
+    /// how it looks. Neither button carries an icon: a ⌘ glyph in front of
+    /// "Open the bar now" reads as the shortcut that opens it, which it is not.
+    private var barSection: some View {
+        ZenithSection(page.commandBar, footer: text.privacyNote) {
+            ZenithRow(text.pageTitle, info: text.positionCaption + " " + text.settingsCaption) {
+                HStack(spacing: 8) {
+                    Button(text.openButton) {
+                        CommandBarService.shared.show()
+                    }
+                    Button(text.resetPositionButton) {
+                        CommandBarService.shared.resetPanelPosition()
+                    }
+                    .disabled(!service.hasCustomPosition)
+                }
+            }
+            HStack(spacing: 6) {
+                Text(text.tryTheseLabel)
+                    .font(ZenithType.caption)
+                    .foregroundStyle(.secondary)
+                ForEach(examples, id: \.self) { example in
+                    Text(example)
+                        .font(.system(size: 10.5, design: .rounded))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(Color.primary.opacity(0.06)))
+                }
+            }
+            .padding(.vertical, 10)
+            // Not the shared "Global shortcut" label the other feature
+            // pages use: this page already has an "open the bar" button, so
+            // the switch has to say which of the two it arms.
+            ZenithRow(text.shortcutToggle, isOn: $shortcutEnabled,
+                      warning: shortcutEnabled && service.shortcutRegistrationFailed ? l10n.s.shortcutUnavailable : nil)
+                .onChange(of: shortcutEnabled) { _, _ in
+                    CommandBarService.shared.syncWithPreferences()
+                }
+            ShortcutPreferenceRow(role: .commandBar, isEnabled: shortcutEnabled) {
+                CommandBarService.shared.syncWithPreferences()
+            }
+            .padding(.vertical, 8)
+            if secureInput.holder != .off {
+                SecureInputRow().padding(.vertical, 8)
+            }
+            // No callback: the bar reads this on every open, and opening
+            // Settings has already hidden it, so the two can never be on
+            // screen with a stale value between them.
+            ZenithRow(text.compactModeToggle, isOn: $compactMode, info: text.compactModeCaption)
+            if CommandBarPreferences.isEnabled(.emoji, disabledRaw: disabledSources) {
+                ZenithRow(text.emojiSkinToneLabel, info: text.emojiSkinToneCaption) {
+                    Picker(text.emojiSkinToneLabel, selection: $emojiSkinTone) {
+                        ForEach(CommandBarEmoji.SkinTone.allCases) { tone in
+                            Text(tone.swatch).tag(tone.rawValue)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .fixedSize()
+                }
+            }
+            ZenithMoreOptions(id: "commandBar") {
+                // Like compact mode this needs no callback: the bar reads
+                // the switch on every open, so there is no live state to sync.
+                ZenithRow(text.asciiLayoutToggle, isOn: $asciiLayoutEnabled, info: text.asciiLayoutCaption)
+            }
+        }
+    }
+
+    // MARK: - What it searches
+
+    private var sourcesSection: some View {
+        ZenithSection(text.sourcesTitle, footer: text.sourcesCaption) {
+            ForEach(CommandBarSource.allCases) { source in
+                ZenithRow(title(for: source), isOn: binding(for: source))
+                    .disabled(source.isAlwaysOn)
+            }
+        }
+    }
+
+    private var filesSection: some View {
+        ZenithSection(text.filesTitle) {
+            ZenithRow(text.filesAddFolder, info: text.filesCaption,
+                      essential: fileScopes.isEmpty ? text.filesEmpty : nil) {
+                Button {
+                    addFileScope()
+                } label: {
+                    Label(text.filesAddFolder, systemImage: "plus")
+                }
+            }
+            ForEach(fileScopes, id: \.self) { scope in
+                ZenithRow(scope) {
+                    Button(text.removeButton) { removeFileScope(scope) }
+                }
+            }
+            ZenithMoreOptions(id: "commandBar.files") {
+                ZenithRow(text.filesIgnoreCaption) { EmptyView() }
+                ForEach(fileIgnores, id: \.self) { pattern in
+                    ZenithRow(pattern) {
+                        Button(text.removeButton) { removeFileIgnore(pattern) }
+                    }
+                }
+                HStack(spacing: 8) {
+                    TextField(text.filesIgnorePlaceholder, text: $ignoreDraft)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit { addFileIgnore() }
+                    Button(text.filesIgnoreAdd) { addFileIgnore() }
+                        .disabled(ignoreDraft.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+                .padding(.vertical, 8)
+            }
+        }
+    }
+
+    // MARK: - What the person saved
+
+    private var linksSection: some View {
+        ZenithSection(text.linksTitle) {
+            if links.isEmpty {
+                ZenithRow(text.linksEmpty) { EmptyView() }
+            }
+            ForEach(links) { link in
+                ZenithRow(link.name, info: link.destination) {
+                    HStack(spacing: 6) {
+                        Image(systemName: link.kind.symbolName)
+                            .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
+                        Button(editLabel) { editing = link }
+                        Button(text.removeButton) { removeLink(link) }
+                    }
+                }
+            }
+            ZenithRow(text.linkAddButton) {
+                Button {
+                    editing = CommandBarLink()
+                } label: {
+                    Label(text.linkAddButton, systemImage: "plus")
+                }
+            }
+        }
+    }
+
+    private func listSection<Row: View>(_ title: String, empty: String, rows: [NamedRow],
+                                        @ViewBuilder row: @escaping (NamedRow) -> Row) -> some View {
+        ZenithSection(title) {
+            if rows.isEmpty {
+                ZenithRow(empty) { EmptyView() }
+            }
+            ForEach(rows, id: \.key) { entry in row(entry) }
+        }
+    }
+
+    /// A combination another app already holds never fires, and a row
+    /// showing a dead key is worse than no key, so it says so.
+    private func rowShortcutRow(_ entry: NamedRow) -> some View {
+        ZenithRow(entry.title,
+                  warning: service.refusedRowShortcutKeys.contains(entry.key) ? l10n.s.shortcutUnavailable : nil) {
+            HStack(spacing: 8) {
+                Text(entry.alias)
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.accentColor)
+                Button(text.removeButton) { removeRowShortcut(entry.key) }
+            }
+        }
+    }
+
+    private func savedRow(_ entry: NamedRow, alias: String = "", remove: @escaping () -> Void) -> some View {
+        ZenithRow(entry.title) {
+            HStack(spacing: 8) {
+                if !alias.isEmpty {
+                    Text(alias)
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color.accentColor)
+                }
+                Button(text.removeButton, action: remove)
             }
         }
     }
