@@ -49,7 +49,7 @@ enum SettingsWindowTests {
         expect(!window.validateMenuItem(back) && !window.validateMenuItem(forward),
                "Settings history commands are disabled before any page visits")
         window.router.page = .about
-        window.router.page = .mouse
+        window.router.page = .scrolling
         expect(window.validateMenuItem(back) && !window.validateMenuItem(forward),
                "Mouse and Trackpad enables Back to the preceding page")
 
@@ -59,7 +59,7 @@ enum SettingsWindowTests {
         expect(window.router.page == .about,
                "a Back menu action navigates from Mouse and Trackpad")
         app.sendAction(forward.action!, to: window, from: forward)
-        expect(window.router.page == .mouse,
+        expect(window.router.page == .scrolling,
                "a Forward menu action restores Mouse and Trackpad")
 
         func pressKey(_ item: NSMenuItem, keyCode: UInt16) {
@@ -75,7 +75,7 @@ enum SettingsWindowTests {
         pressKey(back, keyCode: 33)
         expect(window.router.page == .about, "a driver-generated Back shortcut navigates Settings")
         pressKey(forward, keyCode: 30)
-        expect(window.router.page == .mouse, "a driver-generated Forward shortcut navigates Settings")
+        expect(window.router.page == .scrolling, "a driver-generated Forward shortcut navigates Settings")
 
         func mouseEvent(_ type: CGEventType, button: Int64) {
             let event = CGEvent(mouseEventSource: nil, mouseType: type, mouseCursorPosition: .zero,
@@ -90,18 +90,18 @@ enum SettingsWindowTests {
         expect(window.router.page == .about, "Back drag and release do not navigate a second time")
         mouseEvent(.otherMouseDown, button: 4)
         mouseEvent(.otherMouseUp, button: 4)
-        expect(window.router.page == .mouse, "a raw Forward side button restores the next page")
+        expect(window.router.page == .scrolling, "a raw Forward side button restores the next page")
 
         window.isMouseButtonCaptureActive = { true }
         expect(!window.validateMenuItem(back), "shortcut capture disables Settings history commands")
         window.goBack(nil)
         mouseEvent(.otherMouseDown, button: 3)
         mouseEvent(.otherMouseUp, button: 3)
-        expect(window.router.page == .mouse, "shortcut capture blocks both command and raw-button navigation")
+        expect(window.router.page == .scrolling, "shortcut capture blocks both command and raw-button navigation")
         window.isMouseButtonCaptureActive = { false }
         window.testIsKeyWindow = false
         window.goBack(nil)
-        expect(!window.validateMenuItem(back) && window.router.page == .mouse,
+        expect(!window.validateMenuItem(back) && window.router.page == .scrolling,
                "an unfocused Settings window cannot navigate through a command")
 
         // The side buttons learn where this keyboard carries Back and Forward

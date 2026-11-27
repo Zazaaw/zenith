@@ -8,7 +8,7 @@ import Foundation
 /// below and the unit tests can reason about pages without pulling UI in.
 enum SettingsPage: Hashable, CaseIterable {
     case general, features, energy, monitor
-    case mouse, switcher, dock, keyDebounce, superKey, finderTools, autoQuit, quitProtection, cleaner, uninstaller, urlCleaner, homebrew, appUpdates, media, clipboard, windowLayout, shelf, quickTools, textSnippets, screenshot, radialMenu, commandBar, killProcess, portManager, notch, notchMascot
+    case switcher, dock, keyDebounce, superKey, finderTools, autoQuit, quitProtection, cleaner, uninstaller, urlCleaner, homebrew, appUpdates, media, clipboard, windowLayout, shelf, textSnippets, screenshot, radialMenu, commandBar, killProcess, portManager, notch, notchMascot
     case shortcuts, advanced, about, releaseNotes, support
     case workspaces // Zenith fork: part of the app, no hub feature gates it
     case lockScreen // Zenith fork: the island's lock screen, a page of its own
@@ -20,6 +20,9 @@ enum SettingsPage: Hashable, CaseIterable {
     case meetings // Zenith fork: calls from the calendar, Join and the mic, beside the lock screen
     case mechakey // Zenith fork: mechanical keyboard sounds as you type, a page of its own
     case appearance // Zenith fork: how the island moves and what it is made of, a sidebar tile
+    case scrolling, pointer, mouseButtons // Zenith fork: the Mouse page, one page per job
+    case spaces // Zenith fork: Spaces in a fixed order, apart from the Dock
+    case quickLauncher, quickToggles, quitApps, cleaningMode, wallpaper, scratchpad // Zenith fork: Quick Tools, one page each
     // Zenith fork: the island's sections with options of their own, each a page in the Island group.
     case notchCalendar, notchNotifications, notchMusic, notchTimer, notchAgents, notchDownloads, notchWatch
     // Zenith fork: the sound tools, a page each (they were sections of General and Quick Tools).
@@ -105,16 +108,20 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
         case .micMute: return .micMute
         case .cameraPreview: return .cameraPreview
         case .keepAwake, .brightness, .extraBrightness, .bluetoothSleep: return .energy
-        case .scrollDirection, .scrollZoom, .focusFollowsMouse, .smoothScroll, .linearScroll, .scrollSpeed, .mouseAcceleration, .mouseNavigation, .mouseButtonShortcuts,
-             .middleClick, .mouseClickDebounce:
-            return .mouse
+        case .scrollDirection, .scrollZoom, .smoothScroll, .linearScroll, .scrollSpeed: return .scrolling
+        case .focusFollowsMouse, .mouseAcceleration: return .pointer
+        case .mouseNavigation, .mouseButtonShortcuts, .middleClick, .mouseClickDebounce: return .mouseButtons
         case .switcher: return .switcher
-        case .dock, .dockClick, .spacesOrder: return .dock
+        case .dock, .dockClick: return .dock
+        case .spacesOrder: return .spaces
         case .finderCutPaste, .finderRename, .diskImageInstaller: return .finderTools
         case .clipboardHistory, .pastePlain: return .clipboard
-        case .quickLauncher, .quickToggles, .quitApps, .wallpaper, .scratchpad,
-             .cleaningMode:
-            return .quickTools
+        case .quickLauncher: return .quickLauncher
+        case .quickToggles: return .quickToggles
+        case .quitApps: return .quitApps
+        case .cleaningMode: return .cleaningMode
+        case .wallpaper: return .wallpaper
+        case .scratchpad: return .scratchpad
         case .screenshot, .screenshotScrolling, .zenithScreenshotMore, .zenithScreenshotLoupe: return .screenshot
         case .screenRecorder, .zenithRecordingMore: return .screenRecording
         case .screenOCR: return .textCapture
@@ -412,7 +419,7 @@ extension AppFeature {
         case .switcher: return FeatureSettingsDestination(.switcher, sectionAnchor: .switcher)
         case .dockPreview: return FeatureSettingsDestination(.dock, sectionAnchor: .dock)
         case .dockClick: return FeatureSettingsDestination(.dock, sectionAnchor: .dockClick)
-        case .spacesOrder: return FeatureSettingsDestination(.dock, sectionAnchor: .spacesOrder)
+        case .spacesOrder: return FeatureSettingsDestination(.spaces, sectionAnchor: .spacesOrder)
         case .windowMaximizer:
             return FeatureSettingsDestination(.windowLayout, sectionAnchor: .windowMaximizer)
         case .windowLayout: return FeatureSettingsDestination(.windowLayout)
@@ -420,27 +427,27 @@ extension AppFeature {
         case .quitWindowProtection: return FeatureSettingsDestination(.quitProtection)
 
         case .scrollInverter, .scrollHorizontal:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .scrollDirection)
+            return FeatureSettingsDestination(.scrolling, sectionAnchor: .scrollDirection)
         case .scrollZoom:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .scrollZoom)
+            return FeatureSettingsDestination(.scrolling, sectionAnchor: .scrollZoom)
         case .focusFollowsMouse:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .focusFollowsMouse)
+            return FeatureSettingsDestination(.pointer, sectionAnchor: .focusFollowsMouse)
         case .smoothScroll:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .smoothScroll)
+            return FeatureSettingsDestination(.scrolling, sectionAnchor: .smoothScroll)
         case .linearScroll:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .linearScroll)
+            return FeatureSettingsDestination(.scrolling, sectionAnchor: .linearScroll)
         case .scrollSpeed:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .scrollSpeed)
+            return FeatureSettingsDestination(.scrolling, sectionAnchor: .scrollSpeed)
         case .mouseAcceleration:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .mouseAcceleration)
+            return FeatureSettingsDestination(.pointer, sectionAnchor: .mouseAcceleration)
         case .mouseNavigation:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .mouseNavigation)
+            return FeatureSettingsDestination(.mouseButtons, sectionAnchor: .mouseNavigation)
         case .mouseButtonShortcuts:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .mouseButtonShortcuts)
+            return FeatureSettingsDestination(.mouseButtons, sectionAnchor: .mouseButtonShortcuts)
         case .middleClick:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .middleClick)
+            return FeatureSettingsDestination(.mouseButtons, sectionAnchor: .middleClick)
         case .mouseClickDebounce:
-            return FeatureSettingsDestination(.mouse, sectionAnchor: .mouseClickDebounce)
+            return FeatureSettingsDestination(.mouseButtons, sectionAnchor: .mouseClickDebounce)
         case .keyboardDebounce: return FeatureSettingsDestination(.keyDebounce)
         case .textSnippets: return FeatureSettingsDestination(.textSnippets)
         case .superKey: return FeatureSettingsDestination(.superKey)
@@ -474,15 +481,15 @@ extension AppFeature {
             return FeatureSettingsDestination(.energy, sectionAnchor: .bluetoothSleep)
 
         case .quickLauncher:
-            return FeatureSettingsDestination(.quickTools, sectionAnchor: .quickLauncher)
+            return FeatureSettingsDestination(.quickLauncher, sectionAnchor: .quickLauncher)
         case .quickToggles:
-            return FeatureSettingsDestination(.quickTools, sectionAnchor: .quickToggles)
+            return FeatureSettingsDestination(.quickToggles, sectionAnchor: .quickToggles)
         case .quitApps:
-            return FeatureSettingsDestination(.quickTools, sectionAnchor: .quitApps)
+            return FeatureSettingsDestination(.quitApps, sectionAnchor: .quitApps)
         case .colorPicker: return FeatureSettingsDestination(.colorPicker) // Zenith fork
         case .screenOCR: return FeatureSettingsDestination(.textCapture) // Zenith fork
         case .cleaningMode:
-            return FeatureSettingsDestination(.quickTools, sectionAnchor: .cleaningMode)
+            return FeatureSettingsDestination(.cleaningMode, sectionAnchor: .cleaningMode)
         case .mediaTools: return FeatureSettingsDestination(.media)
         case .cleaner: return FeatureSettingsDestination(.cleaner)
         case .uninstaller: return FeatureSettingsDestination(.uninstaller)
@@ -493,7 +500,7 @@ extension AppFeature {
         case .screenshot: return FeatureSettingsDestination(.screenshot) // Zenith fork
         case .cameraPreview: return FeatureSettingsDestination(.cameraPreview) // Zenith fork
         case .wallpaper:
-            return FeatureSettingsDestination(.quickTools, sectionAnchor: .wallpaper)
+            return FeatureSettingsDestination(.wallpaper, sectionAnchor: .wallpaper)
         case .notch: return FeatureSettingsDestination(.notch)
         // Zenith fork: the island's sections with options open their own pages.
         case .notchCalendar: return FeatureSettingsDestination(.notchCalendar)
@@ -509,7 +516,7 @@ extension AppFeature {
         case .notchMascot: return FeatureSettingsDestination(.notchMascot)
         case .radialMenu: return FeatureSettingsDestination(.radialMenu)
         case .scratchpad:
-            return FeatureSettingsDestination(.quickTools, sectionAnchor: .scratchpad)
+            return FeatureSettingsDestination(.scratchpad, sectionAnchor: .scratchpad)
         case .commandBar: return FeatureSettingsDestination(.commandBar)
         case .screenRecorder: return FeatureSettingsDestination(.screenRecording) // Zenith fork
 
@@ -535,10 +542,12 @@ enum FeatureVisibilitySupport {
         switch page {
         case .energy: return [.keepAwake, .brightness, .extraBrightness, .bluetoothSleep]
         case .monitor: return monitorFeatures
-        case .mouse: return [.scrollInverter, .scrollHorizontal, .scrollZoom, .focusFollowsMouse, .smoothScroll, .linearScroll, .scrollSpeed, .mouseAcceleration, .mouseNavigation, .mouseButtonShortcuts,
-                             .middleClick, .mouseClickDebounce]
+        case .scrolling: return [.scrollInverter, .scrollHorizontal, .scrollZoom, .smoothScroll, .linearScroll, .scrollSpeed]
+        case .pointer: return [.mouseAcceleration, .focusFollowsMouse]
+        case .mouseButtons: return [.mouseNavigation, .mouseButtonShortcuts, .middleClick, .mouseClickDebounce]
         case .switcher: return [.switcher]
-        case .dock: return [.dockPreview, .dockClick, .spacesOrder]
+        case .dock: return [.dockPreview, .dockClick]
+        case .spaces: return [.spacesOrder]
         case .windowLayout: return [.windowLayout, .windowMaximizer]
         case .autoQuit: return [.autoQuit]
         case .quitProtection: return [.quitWindowProtection]
@@ -546,8 +555,12 @@ enum FeatureVisibilitySupport {
         case .finderTools: return [.finderCutPaste, .finderRename, .diskImageInstaller]
         case .shelf: return [.shelf]
         case .media: return [.mediaTools]
-        case .quickTools: return [.quickLauncher, .quickToggles, .quitApps,
-                                  .wallpaper, .scratchpad, .cleaningMode]
+        case .quickLauncher: return [.quickLauncher]
+        case .quickToggles: return [.quickToggles]
+        case .quitApps: return [.quitApps]
+        case .cleaningMode: return [.cleaningMode]
+        case .wallpaper: return [.wallpaper]
+        case .scratchpad: return [.scratchpad]
         case .urlCleaner: return [.urlCleaner]
         case .cleaner: return [.cleaner]
         case .homebrew: return [.homebrew]

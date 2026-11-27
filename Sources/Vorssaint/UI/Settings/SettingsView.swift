@@ -137,11 +137,15 @@ struct SettingsView: View {
     /// Zenith fork: the title Settings draws above a page, nil for the pages
     /// that open with their own `SettingsPageHeader` or hero.
     private var zenithPageTitle: String? {
-        let ownHeader: Set<SettingsPage> = [.features, .notch, .notchMascot, .energy, .monitor, .mouse,
+        let ownHeader: Set<SettingsPage> = [.features, .notch, .notchMascot, .energy, .monitor,
                                             .switcher, .dock, .homebrew, .releaseNotes, .about, .support,
                                             .portManager, .workspaces, .lockScreen, .remote,
                                             .faceUnlock, .batteries, .pocket,
                                             .meetings, .mechakey, .appearance, // Zenith fork: Meetings, Mechakey, Appearance
+                                            .scrolling, .pointer, .mouseButtons, .keyDebounce, .superKey, // Zenith fork: the Input pages
+                                            .spaces, .windowLayout, .autoQuit, .quitProtection, .radialMenu,
+                                            .quickLauncher, .quickToggles, .quitApps, .cleaningMode,
+                                            .wallpaper, .scratchpad,
                                             .volumeMixer, .soundOutput, .musicBlocker, .micMute, // Zenith fork: sound
                                             .screenshot, .screenRecording, .textCapture, .colorPicker, .cameraPreview]
         if ownHeader.contains(router.page) { return nil }
@@ -179,9 +183,12 @@ struct SettingsView: View {
         case .commandBar: CommandBarSettings()
         case .energy: EnergySettings(focus: router.destination.sectionAnchor)
         case .monitor: MonitorSettings()
-        case .mouse: MouseSettings()
+        case .scrolling: ScrollingSettingsPage() // Zenith fork: the Mouse page, split
+        case .pointer: PointerSettingsPage()
+        case .mouseButtons: MouseButtonsSettingsPage()
         case .switcher: SwitcherSettings()
         case .dock: DockSettings()
+        case .spaces: SpacesSettingsPage() // Zenith fork
         case .keyDebounce: KeyboardDebounceSettings()
         case .superKey: SuperKeySettings()
         case .finderTools: FinderToolsSettingsPage() // Zenith fork
@@ -196,7 +203,12 @@ struct SettingsView: View {
         case .appUpdates: AppUpdatesSettings()
         case .media: MediaSettings()
         case .clipboard: ClipboardSettings()
-        case .quickTools: QuickToolsSettings()
+        case .quickLauncher: QuickLauncherSettingsPage() // Zenith fork: Quick Tools, one page each
+        case .quickToggles: QuickTogglesSettingsPage()
+        case .quitApps: QuitAppsSettingsPage()
+        case .cleaningMode: CleaningModeSettingsPage()
+        case .wallpaper: WallpaperSettingsPage()
+        case .scratchpad: ScratchpadSettingsPage()
         case .screenshot: ScreenshotSettingsPage() // Zenith fork: the capture tools, a page each
         case .screenRecording: ScreenRecordingSettingsPage()
         case .textCapture: TextCaptureSettingsPage()

@@ -30,43 +30,42 @@ struct QuitProtectionSettings: View {
         FeatureStrings.quitProtection(l10n.language)
     }
 
+    private var pageText: ZenithInputWindowsStrings { ZenithStrings.inputWindows(l10n.language) }
+
+    // Zenith fork: a kit page: the hero (two shortcuts, so no single master
+    // switch), the preview, then one section per shortcut.
     var body: some View {
-        Form {
-            ZenithPreviewFormSection { ZenithQuitProtectionPreviewCard() } // Zenith fork: the preview card
-            Section {
-                Text(strings.intro)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Label(strings.accessibilityCaption, systemImage: "hand.raised.fill")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            shortcutSection(shortcut: .quit,
-                            enabled: $quitEnabled,
-                            mode: $quitMode,
-                            holdDuration: $quitHoldDuration,
-                            doubleInterval: $quitDoubleInterval,
-                            extraModifier: $quitExtraModifier,
-                            scope: $quitScope,
-                            showFeedback: $quitShowFeedback)
-            shortcutSection(shortcut: .close,
-                            enabled: $closeEnabled,
-                            mode: $closeMode,
-                            holdDuration: $closeHoldDuration,
-                            doubleInterval: $closeDoubleInterval,
-                            extraModifier: $closeExtraModifier,
-                            scope: $closeScope,
-                            showFeedback: $closeShowFeedback)
-
-            if (quitEnabled || closeEnabled) && !permissions.accessibility {
-                Section(strings.accessibilityCaption) {
-                    PermissionRow(kind: .accessibility)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                ZenithHero(title: strings.name, subtitle: pageText.quitProtectionSubtitle, chips: chips,
+                           animation: .quitProtection)
+                if (quitEnabled || closeEnabled) && !permissions.accessibility {
+                    InputWindowsPermissionSection(title: strings.accessibilityCaption)
                 }
+                ZenithQuitProtectionPreviewCard()
+                ZenithFootnote(strings.intro)
+                shortcutSection(shortcut: .quit,
+                                enabled: $quitEnabled,
+                                mode: $quitMode,
+                                holdDuration: $quitHoldDuration,
+                                doubleInterval: $quitDoubleInterval,
+                                extraModifier: $quitExtraModifier,
+                                scope: $quitScope,
+                                showFeedback: $quitShowFeedback)
+                shortcutSection(shortcut: .close,
+                                enabled: $closeEnabled,
+                                mode: $closeMode,
+                                holdDuration: $closeHoldDuration,
+                                doubleInterval: $closeDoubleInterval,
+                                extraModifier: $closeExtraModifier,
+                                scope: $closeScope,
+                                showFeedback: $closeShowFeedback)
             }
+            .frame(maxWidth: 760)
+            .frame(maxWidth: .infinity)
+            .padding(22)
         }
-        .formStyle(.grouped)
-        .zenithPreviewJumps() // Zenith fork
+        .zenithPreviewJumps()
         .sheet(item: $pickerShortcut) { shortcut in
             AppPickerView(onCancel: { pickerShortcut = nil }, onSelect: { url in
                 pickerShortcut = nil
@@ -80,7 +79,11 @@ struct QuitProtectionSettings: View {
         .onAppear { service.syncWithPreferences() }
     }
 
-    @ViewBuilder
+    private var chips: [ZenithChip] {
+        [ZenithChip(QuitProtectionShortcut.quit.symbol, dot: quitEnabled ? ZenithStatus.success : nil),
+         ZenithChip(QuitProtectionShortcut.close.symbol, dot: closeEnabled ? ZenithStatus.success : nil)]
+    }
+
     private func shortcutSection(shortcut: QuitProtectionShortcut,
                                  enabled: Binding<Bool>,
                                  mode: Binding<String>,
@@ -92,78 +95,54 @@ struct QuitProtectionSettings: View {
         let currentMode = QuitProtectionSupport.modeFor(mode.wrappedValue)
         let currentScope = QuitProtectionSupport.scopeFor(scope.wrappedValue)
         let currentModifier = QuitProtectionSupport.extraModifierFor(extraModifier.wrappedValue)
+        let sync = { service.syncWithPreferences() }
 
-        Section(shortcut.symbol) {
-            Toggle(strings.enabled, isOn: enabled)
-                .onChange(of: enabled.wrappedValue) { _, _ in service.syncWithPreferences() }
-            Text(strings.enabledCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Picker(strings.mode, selection: mode) {
+        return ZenithSection(shortcut.symbol) {
+            ZenithRow(strings.enabled, isOn: enabled, info: strings.enabledCaption)
+                .onChange(of: enabled.wrappedValue) { _, _ in sync() }
+            ZenithRow(strings.mode, selection: mode) {
                 Text(strings.hold).tag(QuitProtectionMode.hold.rawValue)
                 Text(strings.doublePress).tag(QuitProtectionMode.doublePress.rawValue)
                 Text(strings.extraModifier).tag(QuitProtectionMode.extraModifier.rawValue)
             }
-            .onChange(of: mode.wrappedValue) { _, _ in service.syncWithPreferences() }
-
+            .onChange(of: mode.wrappedValue) { _, _ in sync() }
             if currentMode == .hold {
-                Slider(value: holdDuration,
-                       in: QuitProtectionSupport.holdDurationRange,
-                       step: 50) {
-                    Text(strings.holdDuration)
-                } minimumValueLabel: {
-                    Text("250 ms").font(.caption2)
-                } maximumValueLabel: {
-                    Text("2 s").font(.caption2)
-                }
-                .onChange(of: holdDuration.wrappedValue) { _, _ in service.syncWithPreferences() }
-                Text("\(Int(holdDuration.wrappedValue.rounded())) ms")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                ZenithRow(strings.holdDuration, value: holdDuration, in: QuitProtectionSupport.holdDurationRange,
+                          step: 50, valueLabel: "\(Int(holdDuration.wrappedValue.rounded())) ms")
+                    .onChange(of: holdDuration.wrappedValue) { _, _ in sync() }
             }
-
             if currentMode == .doublePress {
-                Slider(value: doubleInterval,
-                       in: QuitProtectionSupport.doublePressIntervalRange,
-                       step: 50) {
-                    Text(strings.doublePressInterval)
-                } minimumValueLabel: {
-                    Text("200 ms").font(.caption2)
-                } maximumValueLabel: {
-                    Text("1.5 s").font(.caption2)
-                }
-                .onChange(of: doubleInterval.wrappedValue) { _, _ in service.syncWithPreferences() }
-                Text("\(Int(doubleInterval.wrappedValue.rounded())) ms")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                ZenithRow(strings.doublePressInterval, value: doubleInterval,
+                          in: QuitProtectionSupport.doublePressIntervalRange,
+                          step: 50, valueLabel: "\(Int(doubleInterval.wrappedValue.rounded())) ms")
+                    .onChange(of: doubleInterval.wrappedValue) { _, _ in sync() }
             }
-
             if currentMode == .extraModifier {
-                Picker(strings.modifier, selection: extraModifier) {
-                    Text("\(strings.shiftKey) (⇧)").tag(QuitProtectionExtraModifier.shift.rawValue)
-                    Text("\(strings.optionKey) (⌥)").tag(QuitProtectionExtraModifier.option.rawValue)
-                    Text("\(strings.controlKey) (⌃)").tag(QuitProtectionExtraModifier.control.rawValue)
+                ZenithRow(strings.modifier, info: "\(modifierSymbol(currentModifier))\(shortcut.symbol)") {
+                    Picker(strings.modifier, selection: extraModifier) {
+                        Text("\(strings.shiftKey) (⇧)").tag(QuitProtectionExtraModifier.shift.rawValue)
+                        Text("\(strings.optionKey) (⌥)").tag(QuitProtectionExtraModifier.option.rawValue)
+                        Text("\(strings.controlKey) (⌃)").tag(QuitProtectionExtraModifier.control.rawValue)
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                    .fixedSize()
                 }
-                .onChange(of: extraModifier.wrappedValue) { _, _ in service.syncWithPreferences() }
-                Text("\(modifierSymbol(currentModifier))\(shortcut.symbol)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                .onChange(of: extraModifier.wrappedValue) { _, _ in sync() }
             }
-
-            Picker(strings.appScope, selection: scope) {
+            ZenithRow(strings.appScope, selection: scope) {
                 Text(strings.allApps).tag(QuitProtectionScope.all.rawValue)
                 Text(strings.selectedOnly).tag(QuitProtectionScope.selectedOnly.rawValue)
                 Text(strings.allExceptSelected).tag(QuitProtectionScope.allExceptSelected.rawValue)
             }
-            .onChange(of: scope.wrappedValue) { _, _ in service.syncWithPreferences() }
-
+            .onChange(of: scope.wrappedValue) { _, _ in sync() }
             exceptionsSection(for: shortcut, scope: currentScope, enabled: enabled.wrappedValue)
-
-            Toggle(strings.feedback, isOn: showFeedback)
-                .onChange(of: showFeedback.wrappedValue) { _, _ in service.syncWithPreferences() }
+            ZenithMoreOptions(id: shortcut == .quit ? "quitProtection.quit" : "quitProtection.close") {
+                ZenithRow(strings.feedback, isOn: showFeedback)
+                    .onChange(of: showFeedback.wrappedValue) { _, _ in sync() }
+            }
         }
-        .zenithPreviewTarget(shortcut == .quit ? "quitProtection.quit" : "quitProtection.close") // Zenith fork
+        .zenithPreviewTarget(shortcut == .quit ? "quitProtection.quit" : "quitProtection.close")
     }
 
     @ViewBuilder
@@ -205,6 +184,7 @@ struct QuitProtectionSettings: View {
                 .disabled(!enabled)
             }
             .disabled(!enabled)
+            .padding(.vertical, 8)
         }
     }
 

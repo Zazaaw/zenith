@@ -777,10 +777,11 @@ enum SpacesOrderTests {
         suite.expect(feature.group == .windowsDock && feature.enabledKeys == [DefaultsKey.spacesOrderEnabled]
                      && feature.permissions.isEmpty && feature.energyProfile == .idle && !feature.isBeta,
                      "fixed Space order is an idle feature in the window and Dock group that needs no permission")
-        suite.expect(feature.settingsDestination == FeatureSettingsDestination(.dock, sectionAnchor: .spacesOrder)
-                     && SettingsSectionAnchor.spacesOrder.page == .dock
-                     && FeatureVisibilitySupport.features(for: .dock).contains(.spacesOrder),
-                     "fixed Space order has its own card on the Dock page")
+        suite.expect(feature.settingsDestination == FeatureSettingsDestination(.spaces, sectionAnchor: .spacesOrder)
+                     && SettingsSectionAnchor.spacesOrder.page == .spaces
+                     && FeatureVisibilitySupport.features(for: .spaces) == [.spacesOrder]
+                     && !FeatureVisibilitySupport.features(for: .dock).contains(.spacesOrder),
+                     "fixed Space order has its own Spaces page, apart from the Dock")
         suite.expect(FeaturePreset.allCases.allSatisfy {
                          !$0.features.contains(.spacesOrder)
                              && !$0.enableKeys.contains(DefaultsKey.spacesOrderEnabled)

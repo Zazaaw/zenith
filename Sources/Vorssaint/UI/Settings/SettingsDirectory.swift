@@ -78,13 +78,16 @@ struct SettingsDirectoryItem: Identifiable {
 enum SettingsDirectory {
     /// Shared pages whose tools cover the page without a separate overview row.
     private static let toolOnlyPages: Set<SettingsPage> = [
-        .energy, .mouse, .switcher, .dock, .quickTools,
+        .energy,
     ]
 
     /// Zenith fork: pages several features share as one page with one
-    /// sidebar row. Each feature's destination still scrolls to its section.
+    /// sidebar row (one row, one page, one feature's job). Each feature's
+    /// destination still scrolls to its section.
     static let singleRowPages: Set<SettingsPage> = [
         .clipboard, .finderTools,
+        .scrolling, .pointer, .mouseButtons, .switcher, .dock, .spaces, .windowLayout,
+        .quickLauncher, .quickToggles, .quitApps, .cleaningMode, .wallpaper, .scratchpad,
     ]
 
     /// The sidebar: the directory's rows (one per page, or one per tool on a
@@ -217,6 +220,7 @@ enum SettingsDirectory {
         let mascot = FeatureStrings.notchMascot(language)
         let activities = FeatureStrings.notchActivities(language)
         let lockScreen = FeatureStrings.notchLockScreen(language)
+        let pagesText = ZenithStrings.inputWindows(language) // Zenith fork
         let hover = state.on(DefaultsKey.notchOpenOnHover)
         let hideFullscreen = state.on(DefaultsKey.notchHideInFullscreen)
         let hoverDelay = hover || (hideFullscreen && state.on(DefaultsKey.notchHoverInFullscreen))
@@ -330,23 +334,34 @@ enum SettingsDirectory {
                                       icon: "battery.75percent", keywords: BatteriesSearch.keywords(language)),
             ]),
             (categories.windowsControls, [
-                SettingsDirectoryItem(page: .mouse, title: s.tabMouse, icon: "computermouse",
+                // Zenith fork: the Mouse page split into Scrolling, Pointer and Mouse Buttons.
+                SettingsDirectoryItem(page: .scrolling, title: pagesText.scrollingTitle, icon: "scroll",
+                                       keywords: [s.tabMouse, s.scrollTrackpadNote],
                                        featureKeywords: [
-                                        // The scrolling card shows while either of its features is on.
+                                        // The direction section shows while either of its features is on.
                                         (.scrollInverter, [s.invertMouseScroll, s.invertVerticalScroll,
                                                            s.invertHorizontalScroll, s.scrollSection]),
                                         (.scrollHorizontal, [s.scrollHorizontalName,
                                                             s.scrollHorizontalModifierLabel, s.scrollSection]),
                                         (.scrollZoom, [s.zoomSection, s.pinchZoom]),
-                                        (.middleClick, [s.middleClickTapPicker, s.middleClickEnable]),
+                                        (.smoothScroll, [s.smoothScrollName, s.smoothScrollStepLabel,
+                                                         s.smoothScrollResponseLabel, s.smoothScrollCoastLabel]),
+                                        (.linearScroll, [s.linearScrollName, s.linearScrollLinesLabel]),
+                                        (.scrollSpeed, [s.scrollSpeedName, s.scrollSpeedMultiplierLabel]),
+                                       ]),
+                SettingsDirectoryItem(page: .pointer, title: pagesText.pointerTitle, icon: "cursorarrow.motionlines",
+                                       keywords: [s.tabMouse],
+                                       featureKeywords: [
+                                        (.mouseAcceleration, [s.mouseAccelerationName]),
                                         (.focusFollowsMouse, [s.focusFollowsMouseName,
                                                               s.focusFollowsMouseDelay,
                                                               s.focusFollowsMouseRaise,
                                                               s.focusFollowsMouseWaitForStop]),
-                                        (.smoothScroll, [s.smoothScrollName]),
-                                        (.linearScroll, [s.linearScrollName, s.linearScrollLinesLabel]),
-                                        (.scrollSpeed, [s.scrollSpeedName, s.scrollSpeedMultiplierLabel]),
-                                        (.mouseAcceleration, [s.mouseAccelerationName]),
+                                       ]),
+                SettingsDirectoryItem(page: .mouseButtons, title: pagesText.mouseButtonsTitle,
+                                       icon: "computermouse",
+                                       keywords: [s.tabMouse],
+                                       featureKeywords: [
                                         (.mouseNavigation, [s.mouseNavigationEnable, s.mouseNavigationSection]),
                                         (.mouseButtonShortcuts,
                                          [FeatureStrings.mouseButtons(language).pageTitle,
@@ -355,6 +370,7 @@ enum SettingsDirectory {
                                           FeatureStrings.mouseExceptions(language).listTitle,
                                           FeatureStrings.mouseButtons(language).enableLabel,
                                           FeatureStrings.mouseButtons(language).spacesEnableLabel]),
+                                        (.middleClick, [s.middleClickTapPicker, s.middleClickEnable]),
                                         (.mouseClickDebounce,
                                          [FeatureStrings.mouseClickDebounce(language).title,
                                           FeatureStrings.mouseClickDebounce(language).windowLabel,
@@ -394,13 +410,15 @@ enum SettingsDirectory {
                                         (.dockClick, [FeatureStrings.hub(language).titleDockClick,
                                                       s.dockClickMinimize, s.dockClickHide,
                                                       s.dockClickCycleWindows]),
-                                        (.spacesOrder, [s.spacesOrderName]),
                                        ], terms: [
                                         .init([s.dockPreviewOpenDelay, s.dockPreviewBackgroundOpacity,
                                                s.dockPreviewQuitAppOnClose, s.dockPreviewKeepDockVisible,
                                                s.dockPreviewOrderByCreation, s.switcherCurrentSpaceOnly], feature: .dockPreview,
                                               when: state.on(DefaultsKey.dockPreviewEnabled)),
                                        ]),
+                // Zenith fork: Spaces in a fixed order, a page of its own beside the Dock.
+                SettingsDirectoryItem(page: .spaces, title: pagesText.spacesTitle, icon: "rectangle.split.3x1",
+                                      featureKeywords: [(.spacesOrder, [s.spacesOrderName, "Mission Control"])]),
                 SettingsDirectoryItem(page: .windowLayout,
                                       title: FeatureStrings.windowLayout(language).title,
                                       icon: "rectangle.3.group",
@@ -573,25 +591,27 @@ enum SettingsDirectory {
                 SettingsDirectoryItem(page: .workspaces, title: ZenithStrings.workspaces(language).title,
                                       icon: "square.grid.2x2",
                                       keywords: ZenithWorkspacesSearch.keywords(language)),
-                SettingsDirectoryItem(page: .quickTools, title: s.quickToolsTab, icon: "wand.and.rays",
-                                       featureKeywords: [
-                                        (.quickLauncher, [s.launcherName]),
-                                        (.quickToggles, [FeatureStrings.quickToggles(language).pageTitle,
-                                                         FeatureStrings.quickToggles(language)
-                                                            .darkModeToDark,
-                                                         FeatureStrings.quickToggles(language)
-                                                            .emptyTrashTitle,
-                                                         FeatureStrings.brightness(language)
-                                                            .keyboardLight]),
-                                        (.quitApps, [s.quitAppsName,
-                                                     FeatureStrings.quickToggles(language).quitAllTitle,
-                                                     FeatureStrings.quickToggles(language).quitOthersTitle,
-                                                     FeatureStrings.quickToggles(language).exceptionsTitle]),
-                                        (.wallpaper,
-                                         [FeatureStrings.wallpaper(language).pageTitle]),
-                                        (.scratchpad, [FeatureStrings.scratchpad(language).pageTitle]),
-                                        (.cleaningMode, [s.cleaningMenuItem, s.cleaningKeepScreenVisibleToggle]),
-                                       ]),
+                // Zenith fork: the quick tools, a page each (Quick Tools was split).
+                SettingsDirectoryItem(page: .quickLauncher, title: s.launcherName, icon: "square.grid.2x2",
+                                      featureKeywords: [(.quickLauncher, [s.launcherOpenNow])]),
+                SettingsDirectoryItem(page: .quickToggles, title: FeatureStrings.quickToggles(language).pageTitle,
+                                      icon: "switch.2",
+                                      featureKeywords: [(.quickToggles, [FeatureStrings.quickToggles(language).darkModeToDark,
+                                                                         FeatureStrings.quickToggles(language).emptyTrashTitle,
+                                                                         FeatureStrings.brightness(language).keyboardLight])]),
+                SettingsDirectoryItem(page: .quitApps, title: s.quitAppsName, icon: "xmark.app",
+                                      featureKeywords: [(.quitApps, [FeatureStrings.quickToggles(language).quitAllTitle,
+                                                                     FeatureStrings.quickToggles(language).quitOthersTitle,
+                                                                     FeatureStrings.quickToggles(language).exceptionsTitle])]),
+                SettingsDirectoryItem(page: .cleaningMode, title: s.cleaningMenuItem, icon: "bubbles.and.sparkles",
+                                      featureKeywords: [(.cleaningMode, [s.cleaningKeepScreenVisibleToggle])]),
+                SettingsDirectoryItem(page: .wallpaper, title: FeatureStrings.wallpaper(language).pageTitle,
+                                      icon: "photo",
+                                      featureKeywords: [(.wallpaper, [FeatureStrings.wallpaper(language).applyAllDisplays])]),
+                SettingsDirectoryItem(page: .scratchpad, title: FeatureStrings.scratchpad(language).pageTitle,
+                                      icon: "note.text",
+                                      featureKeywords: [(.scratchpad, [FeatureStrings.scratchpad(language).retentionTitle,
+                                                                       FeatureStrings.scratchpad(language).closeOnClickOutside])]),
                 // Zenith fork: each capture tool on a page of its own.
                 SettingsDirectoryItem(page: .screenshot,
                                        title: FeatureStrings.screenshot(language).pageTitle,

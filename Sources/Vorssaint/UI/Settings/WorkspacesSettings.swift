@@ -32,15 +32,8 @@ struct WorkspacesSettings: View {
         ScrollViewReader { proxy in // Zenith fork: the preview card scrolls to the list
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                SettingsPageHeader(title: text.title, subtitle: text.subtitle) {
-                    HStack(spacing: 8) {
-                        Button(text.capture) { select(service.captureCurrent()) }
-                            .help(text.captureHint)
-                        Button(text.addWorkspace) { select(service.addBlank()) }
-                            .buttonStyle(.borderedProminent)
-                    }
-                    .disabled(service.workspaces.count >= WorkspaceLibrary.maximum)
-                }
+                // Zenith fork: the kit's hero; Capture and Add lead the list.
+                ZenithHero(title: text.title, subtitle: text.subtitle, chips: chips, animation: .workspaces)
                 // Zenith fork: the shared preview card.
                 ZenithWorkspacesPreviewCard {
                     withAnimation(.easeInOut(duration: 0.3)) { proxy.scrollTo(Self.listID, anchor: .top) }
@@ -51,7 +44,7 @@ struct WorkspacesSettings: View {
                         .id(workspace.id)
                         .transition(.opacity)
                     if needsAccessibility(workspace), !permissions.accessibility {
-                        SettingsCard { PermissionRow(kind: .accessibility) }
+                        InputWindowsPermissionSection()
                     }
                 }
             }
@@ -67,6 +60,13 @@ struct WorkspacesSettings: View {
             Button(text.delete, role: .destructive) { deleteSelected() }
             Button(ZenithStrings.home(l10n.language).cancel, role: .cancel) {}
         }
+    }
+
+    private var chips: [ZenithChip] {
+        let pageText = ZenithStrings.inputWindows(l10n.language)
+        let on = service.workspaces.filter(\.isEnabled).count
+        return [ZenithChip(pageText.count(service.workspaces.count, "workspace", "workspaces")),
+                ZenithChip(pageText.onCount(on, of: service.workspaces.count))]
     }
 
     private var motion: Animation {
@@ -95,18 +95,29 @@ struct WorkspacesSettings: View {
     // MARK: List
 
     private var listCard: some View {
-        SettingsCard {
+        ZenithSection(text.title) {
+            ZenithRow(text.addWorkspace, info: text.captureHint) {
+                HStack(spacing: 8) {
+                    Button(text.capture) { select(service.captureCurrent()) }
+                        .help(text.captureHint)
+                    Button(text.addWorkspace) { select(service.addBlank()) }
+                        .buttonStyle(.borderedProminent)
+                }
+                .disabled(service.workspaces.count >= WorkspaceLibrary.maximum)
+            }
             if service.workspaces.isEmpty {
                 Text(text.empty)
                     .font(ZenithType.body)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 10)
             } else {
                 VStack(spacing: 2) {
                     ForEach(service.workspaces) { workspace in
                         row(workspace)
                     }
                 }
+                .padding(.vertical, 6)
             }
         }
     }

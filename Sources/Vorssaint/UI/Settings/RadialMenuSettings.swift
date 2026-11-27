@@ -61,134 +61,37 @@ struct RadialMenuSettings: View {
         return currentProfileItems.first { $0.id == openSubmenuID }
     }
 
+    private var pageText: ZenithInputWindowsStrings { ZenithStrings.inputWindows(l10n.language) }
+
+    // Zenith fork: a kit feature page: the hero with the master switch, how
+    // the wheel opens, the profiles, then the wheel of actions itself.
     var body: some View {
-        Form {
-            ZenithPreviewFormSection { ZenithRadialMenuPreviewCard() } // Zenith fork: the preview card
-            Section {
-                Toggle(text.enableLabel, isOn: $enabled)
-                Text(text.hubDescription)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                ZenithHero(title: text.pageTitle, subtitle: pageText.radialMenuSubtitle, chips: chips,
+                           isOn: $enabled, switchLabel: text.enableLabel, switchHint: text.hubDescription,
+                           animation: .radialMenu)
                 if service.registrationFailed {
-                    Text(l10n.s.shortcutInvalid)
-                        .font(.caption)
-                        .foregroundStyle(ZenithStatus.warning)
+                    ZenithCallout(.warning, l10n.s.shortcutInvalid)
                 }
-                Picker(text.activationModeLabel, selection: $activationModeRaw) {
-                    Text(text.activationModePressOrHold)
-                        .tag(RadialMenuActivationMode.pressOrHold.rawValue)
-                    Text(text.activationModePress)
-                        .tag(RadialMenuActivationMode.press.rawValue)
-                    Text(text.activationModeHold)
-                        .tag(RadialMenuActivationMode.hold.rawValue)
-                }
-                .disabled(!enabled)
-                Text(text.activationModeCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Picker(text.positionLabel, selection: $atPointer) {
-                    Text(text.positionPointer).tag(true)
-                    Text(text.positionCenter).tag(false)
-                }
-                .pickerStyle(.segmented)
-                Button(text.tryButton) {
-                    RadialMenuService.shared.presentPreview(for: selectedProfile)
-                }
-            } header: {
-                Text(text.pageTitle)
-            }
-
-            if RadialMenuSupport.needsAccessibility(profiles), !permissions.accessibility {
-                Section {
-                    PermissionRow(kind: .accessibility)
-                    Text(RadialMenuSupport.usesWindowLayout(currentProfileItems)
-                         ? FeatureStrings.windowLayout(l10n.language).missingPermission
-                         : text.permissionCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Section {
-                profileManagementRow
-                if enabled, !RadialMenuSupport.hasTrigger(selectedProfile) {
-                    Text(text.profileNoTrigger)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                profileConfigurationRows
-            } header: {
-                Text(text.profilesHeader)
-            }
-
-            Section {
-                RadialMenuVisualCanvas(
-                    items: level,
-                    profileColor: selectedProfile.color.color(for: colorScheme),
-                    text: text,
-                    openSubmenu: openSubmenu,
-                    onSelect: { item in editing = item },
-                    onReorder: { moved, target in swap(moved, with: target) },
-                    onRemove: { item in remove(id: item.id) },
-                    onOpenSubmenu: { item in openSubmenuID = item.id },
-                    onBack: { openSubmenuID = nil; dragging = nil },
-                    onAdd: { editing = RadialMenuItem(kind: .app) },
-                    onReset: canResetProfile ? { resetToPresetDefaults() } : nil
-                )
-                .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
-
-                Text(text.canvasHint)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                if level.count < RadialMenuSupport.maxItemsPerWheel {
-                    Button {
-                        editing = RadialMenuItem(kind: .app)
-                    } label: {
-                        Label(text.addButton, systemImage: "plus")
+                if RadialMenuSupport.needsAccessibility(profiles), !permissions.accessibility {
+                    ZenithSection(l10n.s.permissionRequired,
+                                  footer: RadialMenuSupport.usesWindowLayout(currentProfileItems)
+                                      ? FeatureStrings.windowLayout(l10n.language).missingPermission
+                                      : text.permissionCaption) {
+                        PermissionRow(kind: .accessibility).padding(.vertical, 8)
                     }
                 }
-
-                DisclosureGroup(showList ? text.hideListButton : text.showListButton, isExpanded: $showList) {
-                    if let openSubmenu {
-                        Button {
-                            openSubmenuID = nil
-                            dragging = nil
-                        } label: {
-                            Label("\(text.backButton)  \(openSubmenu.displayName(text))",
-                                  systemImage: "chevron.backward")
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(Color.accentColor)
-                    }
-                    if level.isEmpty {
-                        Text(text.emptyCaption)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    ForEach(level) { item in
-                        RadialItemRow(item: item,
-                                      text: text,
-                                      dragging: $dragging,
-                                      edit: {
-                                          editing = item
-                                      },
-                                      remove: { remove(id: item.id) },
-                                      openChildren: item.kind == .submenu ? { openSubmenuID = item.id } : nil,
-                                      moveHandler: { moved, target in move(moved, before: target) })
-                    }
-                }
-            } header: {
-                Text(text.actionsHeader)
-            } footer: {
-                Text(level.count >= RadialMenuSupport.maxItemsPerWheel ? text.limitCaption : text.hubDescription)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                ZenithRadialMenuPreviewCard()
+                opening
+                profilesSection
+                actionsSection
             }
-            .zenithPreviewTarget("radial.actions") // Zenith fork
+            .frame(maxWidth: 760)
+            .frame(maxWidth: .infinity)
+            .padding(22)
         }
-        .formStyle(.grouped)
-        .zenithPreviewJumps() // Zenith fork
+        .zenithPreviewJumps()
         .onAppear {
             if selectedProfileID == nil || !profiles.contains(where: { $0.id == selectedProfileID }) {
                 selectedProfileID = profiles.first?.id
@@ -214,6 +117,108 @@ struct RadialMenuSettings: View {
             RadialMenuService.shared.syncWithPreferences()
             requestAccessibilityIfNeeded(on)
         }
+    }
+
+    private var chips: [ZenithChip] {
+        let mode: String
+        switch RadialMenuActivationMode(rawValue: activationModeRaw) ?? .pressOrHold {
+        case .pressOrHold: mode = text.activationModePressOrHold
+        case .press: mode = text.activationModePress
+        case .hold: mode = text.activationModeHold
+        }
+        return [ZenithChip(pageText.count(profiles.count, "profile", "profiles")), ZenithChip(mode)]
+    }
+
+    private var opening: some View {
+        ZenithSection {
+            ZenithRow(text.activationModeLabel, selection: $activationModeRaw, info: text.activationModeCaption) {
+                Text(text.activationModePressOrHold).tag(RadialMenuActivationMode.pressOrHold.rawValue)
+                Text(text.activationModePress).tag(RadialMenuActivationMode.press.rawValue)
+                Text(text.activationModeHold).tag(RadialMenuActivationMode.hold.rawValue)
+            }
+            .disabled(!enabled)
+            ZenithRow(text.positionLabel) {
+                Picker(text.positionLabel, selection: $atPointer) {
+                    Text(text.positionPointer).tag(true)
+                    Text(text.positionCenter).tag(false)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
+            }
+            ZenithRow(pageText.tryIt, button: text.tryButton) {
+                RadialMenuService.shared.presentPreview(for: selectedProfile)
+            }
+        }
+    }
+
+    private var profilesSection: some View {
+        ZenithSection(text.profilesHeader) {
+            profileManagementRow.padding(.vertical, 8)
+            if enabled, !RadialMenuSupport.hasTrigger(selectedProfile) {
+                Text(text.profileNoTrigger)
+                    .font(ZenithType.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 8)
+            }
+            profileConfigurationRows
+        }
+    }
+
+    private var actionsSection: some View {
+        ZenithSection(text.actionsHeader,
+                      footer: level.count >= RadialMenuSupport.maxItemsPerWheel ? text.limitCaption : text.canvasHint) {
+            RadialMenuVisualCanvas(
+                items: level,
+                profileColor: selectedProfile.color.color(for: colorScheme),
+                text: text,
+                openSubmenu: openSubmenu,
+                onSelect: { item in editing = item },
+                onReorder: { moved, target in swap(moved, with: target) },
+                onRemove: { item in remove(id: item.id) },
+                onOpenSubmenu: { item in openSubmenuID = item.id },
+                onBack: { openSubmenuID = nil; dragging = nil },
+                onAdd: { editing = RadialMenuItem(kind: .app) },
+                onReset: canResetProfile ? { resetToPresetDefaults() } : nil
+            )
+            .padding(.vertical, 8)
+            .zenithFullBleed()
+            if level.count < RadialMenuSupport.maxItemsPerWheel {
+                ZenithRow(text.addButton, button: text.addButton) { editing = RadialMenuItem(kind: .app) }
+            }
+            DisclosureGroup(showList ? text.hideListButton : text.showListButton, isExpanded: $showList) {
+                VStack(alignment: .leading, spacing: 6) {
+                    if let openSubmenu {
+                        Button {
+                            openSubmenuID = nil
+                            dragging = nil
+                        } label: {
+                            Label("\(text.backButton)  \(openSubmenu.displayName(text))",
+                                  systemImage: "chevron.backward")
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Color.accentColor)
+                    }
+                    if level.isEmpty {
+                        Text(text.emptyCaption)
+                            .font(ZenithType.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    ForEach(level) { item in
+                        RadialItemRow(item: item,
+                                      text: text,
+                                      dragging: $dragging,
+                                      edit: { editing = item },
+                                      remove: { remove(id: item.id) },
+                                      openChildren: item.kind == .submenu ? { openSubmenuID = item.id } : nil,
+                                      moveHandler: { moved, target in move(moved, before: target) })
+                    }
+                }
+                .padding(.top, 6)
+            }
+            .padding(.vertical, 9)
+        }
+        .zenithPreviewTarget("radial.actions")
     }
 
     // MARK: - Profile Rows
@@ -288,19 +293,22 @@ struct RadialMenuSettings: View {
         let profile = selectedProfile
         let pIndex = selectedProfileIndex
 
-        TextField(text.profileNameLabel, text: Binding(
-            get: { profile.name },
-            set: { newName in
-                guard profiles.indices.contains(pIndex) else { return }
-                profiles[pIndex].name = newName
-                persist()
-            }
-        ), prompt: Text(text.presetGeneral))
+        ZenithRow(text.profileNameLabel) {
+            TextField(text.profileNameLabel, text: Binding(
+                get: { profile.name },
+                set: { newName in
+                    guard profiles.indices.contains(pIndex) else { return }
+                    profiles[pIndex].name = newName
+                    persist()
+                }
+            ), prompt: Text(text.presetGeneral))
+            .textFieldStyle(.roundedBorder)
+            .labelsHidden()
+            .frame(maxWidth: 240)
+        }
         .disabled(!enabled)
 
-        HStack {
-            Text(text.profileColorLabel)
-            Spacer()
+        ZenithRow(text.profileColorLabel) {
             RadialMenuColorPicker(
                 selection: Binding(
                     get: { profile.color },
@@ -333,6 +341,8 @@ struct RadialMenuSettings: View {
             }
         )
 
+        ZenithRow(text.profileMouseTriggerLabel, info: text.mouseTriggerRequirement,
+                  essential: mouseTriggerWarning(profile)) {
         Picker(text.profileMouseTriggerLabel, selection: Binding(
             get: { profile.mouseButton },
             set: { newTrigger in
@@ -352,24 +362,16 @@ struct RadialMenuSettings: View {
                     .tag(RadialMenuMouseTrigger.button(button).rawValue)
             }
         }
+        .labelsHidden()
+        .fixedSize()
+        }
         .disabled(!enabled)
 
-        Text(text.mouseTriggerRequirement)
-            .font(.caption)
-            .foregroundStyle(.secondary)
-
         if RadialMenuMouseTrigger.sanitized(profile.mouseButton) != .off {
-            if let button = RadialMenuMouseTrigger.sanitized(profile.mouseButton).buttonNumber,
-               button == MouseButtonShortcutSupport.backButtonNumber
-                || button == MouseButtonShortcutSupport.forwardButtonNumber {
-                Text(text.mouseTriggerWarning)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            buttonTestRow(for: profile.mouseButton)
+            buttonTestRow(for: profile.mouseButton).padding(.vertical, 8)
         }
 
-        Toggle(text.trackpadTapLabel, isOn: Binding(
+        ZenithRow(text.trackpadTapLabel, isOn: Binding(
             get: { profile.trackpadTap },
             set: { on in
                 guard profiles.indices.contains(pIndex) else { return }
@@ -378,17 +380,20 @@ struct RadialMenuSettings: View {
                 persist()
                 if on, !permissions.accessibility { permissions.requestAccessibility() }
             }
-        ))
-        .disabled(!enabled)
-
-        if profile.trackpadTap, MiddleClickSupport.radialMenuTapFingers(
+        ), warning: profile.trackpadTap && MiddleClickSupport.radialMenuTapFingers(
             radialMenuWantsTap: true,
             middleClickTapFingers: AppFeature.middleClick.isAvailable && middleClickEnabled
-                ? middleClickTapFingers : 0) == 0 {
-            Text(text.trackpadTapConflict)
-                .font(.caption)
-                .foregroundStyle(ZenithStatus.warning)
-        }
+                ? middleClickTapFingers : 0) == 0 ? text.trackpadTapConflict : nil)
+        .disabled(!enabled)
+    }
+
+    /// The back and forward buttons also go back and forward, which the row
+    /// says under its title while one of them opens the wheel.
+    private func mouseTriggerWarning(_ profile: RadialMenuProfile) -> String? {
+        guard let button = RadialMenuMouseTrigger.sanitized(profile.mouseButton).buttonNumber,
+              button == MouseButtonShortcutSupport.backButtonNumber
+                || button == MouseButtonShortcutSupport.forwardButtonNumber else { return nil }
+        return text.mouseTriggerWarning
     }
 
     // MARK: - Mutations (every change lands in defaults right away)

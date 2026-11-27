@@ -45,7 +45,7 @@ extension CatalogShots {
                 shots.append(shot)
             }
         }
-        return shots + kitIsland // Zenith fork: the Island group's pages (CatalogKitShotsIsland)
+        return shots + kitIsland + kitInputWindows // Zenith fork: the Island group (CatalogKitShotsIsland), Input, Windows and quick tools
     }
 }
 #endif
