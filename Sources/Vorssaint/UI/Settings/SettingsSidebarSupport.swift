@@ -30,7 +30,7 @@ enum SettingsSidebarSupport {
     /// Zenith fork: pages that hold several features yet keep a single row,
     /// as every page does now: one sidebar row, one page, one feature's job.
     /// Their features land on their sections without rows of their own.
-    static let onePageRows: Set<SettingsPage> = [.scrolling, .pointer, .mouseButtons]
+    static let onePageRows: Set<SettingsPage> = [.scrolling, .pointer, .mouseButtons, .dock, .spaces]
 
     static func items(page: SettingsPage, title: String, icon: String,
                       preferredFeatures: [AppFeature], includePage: Bool,

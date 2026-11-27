@@ -78,7 +78,7 @@ struct SettingsDirectoryItem: Identifiable {
 enum SettingsDirectory {
     /// Shared pages whose tools cover the page without a separate overview row.
     private static let toolOnlyPages: Set<SettingsPage> = [
-        .energy, .switcher, .dock, .clipboard, .cutPaste, .quickTools, .screenshot,
+        .energy, .switcher, .clipboard, .cutPaste, .quickTools, .screenshot,
     ]
 
     /// The sidebar: the directory's rows (one per page, or one per tool on a
@@ -421,13 +421,15 @@ enum SettingsDirectory {
                                         (.dockClick, [FeatureStrings.hub(language).titleDockClick,
                                                       s.dockClickMinimize, s.dockClickHide,
                                                       s.dockClickCycleWindows]),
-                                        (.spacesOrder, [s.spacesOrderName]),
                                        ], terms: [
                                         .init([s.dockPreviewOpenDelay, s.dockPreviewBackgroundOpacity,
                                                s.dockPreviewQuitAppOnClose, s.dockPreviewKeepDockVisible,
                                                s.dockPreviewOrderByCreation, s.switcherCurrentSpaceOnly], feature: .dockPreview,
                                               when: state.on(DefaultsKey.dockPreviewEnabled)),
                                        ]),
+                // Zenith fork: Spaces in a fixed order, a page of its own beside the Dock.
+                SettingsDirectoryItem(page: .spaces, title: pagesText.spacesTitle, icon: "rectangle.split.3x1",
+                                      featureKeywords: [(.spacesOrder, [s.spacesOrderName, "Mission Control"])]),
                 SettingsDirectoryItem(page: .windowLayout,
                                       title: FeatureStrings.windowLayout(language).title,
                                       icon: "rectangle.3.group",

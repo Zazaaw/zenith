@@ -56,7 +56,7 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
         case .notch, .notchMascot, .lockScreen: return .island
         case .clipboard, .cutPaste, .shelf, .media, .urlCleaner, .textSnippets: return .everyday
         case .screenshot: return .capture
-        case .switcher, .dock, .windowLayout, .autoQuit, .quitProtection, .workspaces, .radialMenu: return .windows
+        case .switcher, .dock, .spaces, .windowLayout, .autoQuit, .quitProtection, .workspaces, .radialMenu: return .windows
         case .scrolling, .pointer, .mouseButtons, .keyDebounce, .superKey: return .input
         case .energy, .monitor, .quickTools: return .system
         case .cleaner, .uninstaller, .homebrew, .appUpdates, .killProcess, .portManager: return .apps

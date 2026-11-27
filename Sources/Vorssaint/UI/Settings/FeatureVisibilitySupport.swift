@@ -21,6 +21,7 @@ enum SettingsPage: Hashable, CaseIterable {
     case mechakey // Zenith fork: mechanical keyboard sounds as you type, a page of its own
     case appearance // Zenith fork: how the island moves and what it is made of, a sidebar tile
     case scrolling, pointer, mouseButtons // Zenith fork: the Mouse page, one page per job
+    case spaces // Zenith fork: Spaces in a fixed order, apart from the Dock
 }
 
 /// Stable, non-localized identities for destinations inside shared Settings
@@ -98,7 +99,8 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
         case .focusFollowsMouse, .mouseAcceleration: return .pointer
         case .mouseNavigation, .mouseButtonShortcuts, .middleClick, .mouseClickDebounce: return .mouseButtons
         case .switcher: return .switcher
-        case .dock, .dockClick, .spacesOrder: return .dock
+        case .dock, .dockClick: return .dock
+        case .spacesOrder: return .spaces
         case .finderCutPaste, .finderRename: return .cutPaste
         case .clipboardHistory, .pastePlain: return .clipboard
         case .quickLauncher, .quickToggles, .quitApps, .micMute, .cameraPreview, .wallpaper, .scratchpad,
@@ -379,7 +381,7 @@ extension AppFeature {
         case .switcher: return FeatureSettingsDestination(.switcher, sectionAnchor: .switcher)
         case .dockPreview: return FeatureSettingsDestination(.dock, sectionAnchor: .dock)
         case .dockClick: return FeatureSettingsDestination(.dock, sectionAnchor: .dockClick)
-        case .spacesOrder: return FeatureSettingsDestination(.dock, sectionAnchor: .spacesOrder)
+        case .spacesOrder: return FeatureSettingsDestination(.spaces, sectionAnchor: .spacesOrder)
         case .windowMaximizer:
             return FeatureSettingsDestination(.windowLayout, sectionAnchor: .windowMaximizer)
         case .windowLayout: return FeatureSettingsDestination(.windowLayout)
@@ -514,7 +516,8 @@ enum FeatureVisibilitySupport {
         case .pointer: return [.mouseAcceleration, .focusFollowsMouse]
         case .mouseButtons: return [.mouseNavigation, .mouseButtonShortcuts, .middleClick, .mouseClickDebounce]
         case .switcher: return [.switcher]
-        case .dock: return [.dockPreview, .dockClick, .spacesOrder]
+        case .dock: return [.dockPreview, .dockClick]
+        case .spaces: return [.spacesOrder]
         case .windowLayout: return [.windowLayout, .windowMaximizer]
         case .autoQuit: return [.autoQuit]
         case .quitProtection: return [.quitWindowProtection]

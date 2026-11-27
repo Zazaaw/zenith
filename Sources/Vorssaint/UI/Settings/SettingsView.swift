@@ -142,7 +142,8 @@ struct SettingsView: View {
                                             .portManager, .workspaces, .lockScreen, .remote,
                                             .faceUnlock, .batteries, .pocket,
                                             .meetings, .mechakey, .appearance, // Zenith fork: Meetings, Mechakey, Appearance
-                                            .scrolling, .pointer, .mouseButtons, .keyDebounce, .superKey] // Zenith fork: the Input pages
+                                            .scrolling, .pointer, .mouseButtons, .keyDebounce, .superKey, // Zenith fork: the Input pages
+                                            .spaces]
         if ownHeader.contains(router.page) { return nil }
         if router.page == .translate { return nil } // Zenith fork: Translate opens with its own header
         if router.page == .general, !(detailShowsGeneralTool) { return nil }
@@ -181,6 +182,7 @@ struct SettingsView: View {
         case .mouseButtons: MouseButtonsSettingsPage()
         case .switcher: SwitcherSettings()
         case .dock: DockSettings()
+        case .spaces: SpacesSettingsPage() // Zenith fork
         case .keyDebounce: KeyboardDebounceSettings()
         case .superKey: SuperKeySettings()
         case .cutPaste: CutPasteSettings()

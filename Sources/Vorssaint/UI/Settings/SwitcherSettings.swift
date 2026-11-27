@@ -407,62 +407,44 @@ struct WindowPreviewsCard: View {
         self.excludedAppsKey = excludedAppsKey
     }
 
+    // Zenith fork: the sizes as pictures, then the look and the paused apps
+    // as kit rows.
     var body: some View {
-        SettingsCard(title: FeatureStrings.windowPreviewExclusions(l10n.language).sectionTitle) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(l10n.s.previewSizeLabel)
-                    .font(.subheadline.weight(.medium))
-                HStack(spacing: 10) {
-                    sizeChoice("small", title: l10n.s.previewSizeSmall, scale: 0.5)
-                    sizeChoice("normal", title: l10n.s.previewSizeNormal, scale: 0.66)
-                    sizeChoice("large", title: l10n.s.previewSizeLarge, scale: 0.83)
-                    sizeChoice("xlarge", title: l10n.s.previewSizeXLarge, scale: 1)
-                }
+        let sizes: [(String, String, CGFloat)] = [
+            ("small", l10n.s.previewSizeSmall, 0.5), ("normal", l10n.s.previewSizeNormal, 0.66),
+            ("large", l10n.s.previewSizeLarge, 0.83), ("xlarge", l10n.s.previewSizeXLarge, 1),
+        ]
+        VStack(alignment: .leading, spacing: 10) {
+            ZenithSectionTitle(FeatureStrings.windowPreviewExclusions(l10n.language).sectionTitle)
+            ZenithVisualPicker(l10n.s.previewSizeLabel, selection: Binding(get: { previewSize }, set: { value in
+                previewSize = value
+                AppSwitcher.shared.syncWithPreferences()
+            }), options: sizes.map { ZenithPickerOption($0.0, $0.1) }, tileHeight: 58) { value, _ in
+                WindowPreviewSizeArt(scale: sizes.first { $0.0 == value }?.2 ?? 0.66)
             }
-            SettingsRow(symbol: "rectangle.dashed", title: l10n.s.minimalWindowPreviews,
-                        caption: l10n.s.minimalWindowPreviewsCaption) {
-                Toggle(l10n.s.minimalWindowPreviews, isOn: $minimalPreviews).labelsHidden()
+            ZenithSection {
+                ZenithRow(l10n.s.minimalWindowPreviews, isOn: $minimalPreviews, info: l10n.s.minimalWindowPreviewsCaption)
+                WindowPreviewExclusionsList(key: excludedAppsKey).padding(.vertical, 8)
             }
-            WindowPreviewExclusionsList(key: excludedAppsKey)
         }
     }
+}
 
-    /// A preview thumbnail drawn at the size it stands for.
-    private func sizeChoice(_ value: String, title: String, scale: CGFloat) -> some View {
-        let selected = previewSize == value
-        return Button {
-            previewSize = value
-            AppSwitcher.shared.syncWithPreferences()
-        } label: {
-            VStack(spacing: 8) {
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .fill(selected ? Color.accentColor.opacity(0.35) : Color.secondary.opacity(0.3))
-                    .overlay(alignment: .top) {
-                        RoundedRectangle(cornerRadius: 2, style: .continuous)
-                            .fill(selected ? Color.accentColor : Color.secondary.opacity(0.6))
-                            .frame(height: 4)
-                            .padding(3)
-                    }
-                    .frame(width: 60 * scale, height: 42 * scale)
-                    .frame(height: 42)
-                Text(title)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(selected ? Color.accentColor : .primary)
-                    .lineLimit(1)
+/// A window preview drawn at the size it stands for, on a size tile.
+private struct WindowPreviewSizeArt: View {
+    let scale: CGFloat
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 4, style: .continuous)
+            .fill(Color.white.opacity(0.9))
+            .overlay(alignment: .top) {
+                UnevenRoundedRectangle(topLeadingRadius: 4, topTrailingRadius: 4, style: .continuous)
+                    .fill(Color.black.opacity(0.25))
+                    .frame(height: 6 * scale + 2)
             }
-            .frame(maxWidth: .infinity)
-            .padding(8)
-            .background(selected ? Color.accentColor.opacity(0.10) : Color.secondary.opacity(0.05),
-                        in: RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous)
-                    .strokeBorder(selected ? Color.accentColor.opacity(0.55) : .clear, lineWidth: 1)
-            }
-            .contentShape(RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .accessibilityAddTraits(selected ? .isSelected : [])
+            .frame(width: 60 * scale, height: 40 * scale)
+            .shadow(color: .black.opacity(0.3), radius: 3, y: 2)
+            .accessibilityHidden(true)
     }
 }
 
