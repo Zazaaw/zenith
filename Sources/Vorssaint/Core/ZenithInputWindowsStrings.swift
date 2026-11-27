@@ -46,7 +46,7 @@ struct ZenithInputWindowsStrings {
     let onlyWhenOn = "Shows while Dock Preview is on."
 
     // Quick tools.
-    let quickLauncherSubtitle = "A grid of Zenith's tools, opened from a shortcut."
+    let quickLauncherSubtitle = "A grid of Zenith’s tools, opened from a shortcut."
     let quickTogglesSubtitle = "Dark Mode, hidden files, the keyboard light and more, one click each in the panel."
     let quitAppsSubtitle = "Quit every app, or every app but the one in front, in one go."
     let cleaningModeSubtitle = "Locks the keyboard and the screen while you wipe them."

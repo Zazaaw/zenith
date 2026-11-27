@@ -759,17 +759,17 @@ enum UpdateFeatureTests {
             id: .page(.quickTools), destination: FeatureSettingsDestination(.quickTools),
             title: "Quick Tools", icon: "wand.and.rays",
             terms: [.init(["Camera Preview", "Open camera automatically"], feature: .cameraPreview),
-                    .init(["Scratchpad Notes"], feature: .scratchpad)])
+                    .init(["Mic Notes"], feature: .micMute)])
         let availabilityHub = SettingsSearchItem(
             id: .page(.features), destination: FeatureSettingsDestination(.features),
             title: "Features", icon: "square.grid.2x2",
             terms: [.init(["Camera Preview"], feature: .cameraPreview),
-                    .init(["scratchpad"], feature: .scratchpad)])
+                    .init(["micMute"], feature: .micMute)])
         let availabilityFeatures = featureSearchItems.filter {
-            $0.id == .feature(.cameraPreview) || $0.id == .feature(.scratchpad)
+            $0.id == .feature(.cameraPreview) || $0.id == .feature(.micMute)
         }
         let availabilityItems = [availabilityHub, availabilityPage] + availabilityFeatures
-        let onlyScratchpadAvailable: (AppFeature) -> Bool = { $0 == .scratchpad }
+        let onlyScratchpadAvailable: (AppFeature) -> Bool = { $0 == .micMute }
         let unavailableCameraGroups = SettingsSearchSupport.groupedMatchingItems(
             query: "camera", items: availabilityItems,
             isAvailable: onlyScratchpadAvailable)
@@ -799,13 +799,13 @@ enum UpdateFeatureTests {
                 && availableCameraSettingRoute?.targetFeature == nil,
                "a feature-owned setting keyword opens its exact anchored section")
         let availableScratchpadGroups = SettingsSearchSupport.groupedMatchingItems(
-            query: "scratchpad", items: availabilityItems,
+            query: "mic", items: availabilityItems,
             isAvailable: onlyScratchpadAvailable)
         suite.expect(availableScratchpadGroups.first?.id == .quickTools
                 && availableScratchpadGroups[0].suggestions.map(\.title)
-                    == ["scratchpad", "Scratchpad Notes"]
+                    == [featureSearchItems.first { $0.id == .feature(.micMute) }?.title ?? "", "Mic Notes"]
                 && availableScratchpadGroups[0].suggestions.first?.item.destination
-                    == FeatureSettingsDestination(.quickTools, sectionAnchor: .scratchpad),
+                    == FeatureSettingsDestination(.quickTools, sectionAnchor: .micMute),
                "an installed utility remains searchable on a shared Settings page")
         suite.expect(SettingsSearchSupport.groupedMatchingItems(
                     query: "Quick Tools", items: availabilityItems,
