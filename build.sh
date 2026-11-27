@@ -731,7 +731,6 @@ if (( TEST )); then
         Sources/Vorssaint/Services/Mechakey/MechakeySupport.swift
         Sources/Vorssaint/Core/ZenithMechakeyStrings.swift
         # Zenith fork: Appearance's model, its store, the motion preview and the power reading.
-        Sources/Vorssaint/Services/Appearance/ZenithAppearanceSupport.swift
         Sources/Vorssaint/Services/Appearance/ZenithAppearance.swift
         Sources/Vorssaint/Services/Appearance/ZenithAppearanceStore.swift
         Sources/Vorssaint/Services/Appearance/IslandMotionPreview.swift
