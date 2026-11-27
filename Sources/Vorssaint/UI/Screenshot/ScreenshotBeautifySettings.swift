@@ -3,7 +3,7 @@
 
 import SwiftUI
 
-/// Zenith fork: Beautify's card on the Screen capture page. The heading comes
+/// Zenith fork: Beautify's card on the Screenshot page. The heading comes
 /// from the section and the switch is Zenith's own, so nothing here reaches
 /// upstream's Settings search catalogs.
 struct ScreenshotBeautifySettingsSection: View {
@@ -12,20 +12,10 @@ struct ScreenshotBeautifySettingsSection: View {
 
     private var text: ZenithBeautifyStrings { ZenithStrings.beautify(l10n.language) }
 
+    // Zenith fork: a section of Settings → Screenshot, in the kit.
     var body: some View {
-        Section {
-            Text(text.settingsCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            ZenithSwitchRow(text.afterCapture, isOn: $afterCapture) { Text(text.afterCapture) }
-            Text(text.afterCaptureCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        } header: {
-            Text(text.title)
+        ZenithSection(text.title, anchor: .zenithBeautify, footer: text.settingsCaption) { // Settings search lands here
+            ZenithRow(text.afterCapture, isOn: $afterCapture, info: text.afterCaptureCaption)
         }
-        .settingsFormSectionAnchor(.zenithBeautify) // Settings search lands here
     }
 }

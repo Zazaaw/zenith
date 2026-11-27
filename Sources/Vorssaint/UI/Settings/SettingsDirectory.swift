@@ -78,7 +78,7 @@ struct SettingsDirectoryItem: Identifiable {
 enum SettingsDirectory {
     /// Shared pages whose tools cover the page without a separate overview row.
     private static let toolOnlyPages: Set<SettingsPage> = [
-        .energy, .mouse, .switcher, .dock, .clipboard, .cutPaste, .quickTools, .screenshot,
+        .energy, .mouse, .switcher, .dock, .clipboard, .cutPaste, .quickTools,
     ]
 
     /// The sidebar: the directory's rows (one per page, or one per tool on a
@@ -103,9 +103,6 @@ enum SettingsDirectory {
                         }
                         return feature.hubTitle(s, hub: hub, language: language)
                     }
-                if pageItem.page == .screenshot {
-                    rows = SettingsSidebarSupport.screenshotRows(rows, language: language)
-                }
                 if pageItem.page == .general {
                     rows.insert(SettingsSidebarItem(
                         id: .setting(.panelConfiguration),
@@ -197,6 +194,10 @@ enum SettingsDirectory {
                          state: SettingsSearchState)
         -> [(title: String, items: [SettingsDirectoryItem])] {
         let categories = FeatureStrings.settingsCategories(language)
+        let capture = SettingsSearchSupport.screenCaptureFeatureKeywords(s, language: language)
+        func captureKeywords(_ feature: AppFeature) -> [(feature: AppFeature, titles: [String])] {
+            capture.filter { $0.feature == feature }
+        }
         let quitProtection = FeatureStrings.quitProtection(language)
         let brightness = FeatureStrings.brightness(language)
         let bluetooth = FeatureStrings.bluetoothSleep(language)
@@ -273,10 +274,6 @@ enum SettingsDirectory {
                                        // The first title of each feature places its sidebar row,
                                        // so these follow the sidebar's order.
                                        featureKeywords: [
-                                        (.musicBlock, [s.musicBlockTitle, s.musicBlockSection]),
-                                        (.mixer, [s.mixerSection]),
-                                        (.soundOutputSwitcher, [s.soundOutputSwitcherTitle]),
-                                        (.audioPriority, [s.audioPrioritySection]),
                                         (.keepAwake, [s.globalHotkeySection, s.hotkeyToggle]),
                                        ]),
                 // Searching any feature name lands here even when the feature
@@ -548,7 +545,6 @@ enum SettingsDirectory {
                 SettingsDirectoryItem(page: .quickTools, title: s.quickToolsTab, icon: "wand.and.rays",
                                        featureKeywords: [
                                         (.quickLauncher, [s.launcherName]),
-                                        (.micMute, [s.micMuteName, s.micMuteFollowCallAppsToggle, s.micMuteMenuBarToggle]),
                                         (.quickToggles, [FeatureStrings.quickToggles(language).pageTitle,
                                                          FeatureStrings.quickToggles(language)
                                                             .darkModeToDark,
@@ -560,18 +556,45 @@ enum SettingsDirectory {
                                                      FeatureStrings.quickToggles(language).quitAllTitle,
                                                      FeatureStrings.quickToggles(language).quitOthersTitle,
                                                      FeatureStrings.quickToggles(language).exceptionsTitle]),
-                                        (.cameraPreview,
-                                         [FeatureStrings.cameraPreview(language).pageTitle]),
                                         (.wallpaper,
                                          [FeatureStrings.wallpaper(language).pageTitle]),
                                         (.scratchpad, [FeatureStrings.scratchpad(language).pageTitle]),
                                         (.cleaningMode, [s.cleaningMenuItem, s.cleaningKeepScreenVisibleToggle]),
                                        ]),
+                // Zenith fork: each capture tool on a page of its own.
                 SettingsDirectoryItem(page: .screenshot,
-                                       title: FeatureStrings.screenshot(language).screenCaptureTitle,
+                                       title: FeatureStrings.screenshot(language).pageTitle,
                                        icon: "camera.viewfinder",
-                                       featureKeywords: SettingsSearchSupport
-                                        .screenCaptureFeatureKeywords(s, language: language)),
+                                       featureKeywords: captureKeywords(.screenshot)),
+                SettingsDirectoryItem(page: .screenRecording,
+                                       title: FeatureStrings.recorder(language).pageTitle,
+                                       icon: "record.circle", featureKeywords: captureKeywords(.screenRecorder)),
+                SettingsDirectoryItem(page: .textCapture, title: s.ocrName, icon: "text.viewfinder",
+                                       featureKeywords: captureKeywords(.screenOCR)),
+                SettingsDirectoryItem(page: .colorPicker, title: s.colorPickerName, icon: "eyedropper",
+                                       featureKeywords: captureKeywords(.colorPicker)),
+                SettingsDirectoryItem(page: .cameraPreview, title: FeatureStrings.cameraPreview(language).pageTitle,
+                                       icon: "web.camera",
+                                       featureKeywords: [(.cameraPreview, [FeatureStrings.cameraPreview(language).pageTitle,
+                                                                           FeatureStrings.cameraPreview(language).openButton])]),
+                // Zenith fork: the sound tools, a page each (they were sections of General).
+                SettingsDirectoryItem(page: .volumeMixer, title: s.mixerSection, icon: "slider.vertical.3",
+                                       featureKeywords: [(.mixer, [s.mixerSection, s.mixerSystemOutputTitle,
+                                                                   s.mixerLowerOnHeadphonesDisconnect,
+                                                                   s.preciseVolumeRollerEnable, s.mixerVisibleApps])]),
+                SettingsDirectoryItem(page: .soundOutput, title: s.soundOutputSwitcherTitle, icon: "hifispeaker",
+                                       featureKeywords: [
+                                        (.soundOutputSwitcher, [s.soundOutputSwitcherTitle, s.soundOutputSwitcherEnable,
+                                                                s.soundOutputSwitcherDevices]),
+                                        (.audioPriority, [s.audioPrioritySection]),
+                                       ]),
+                SettingsDirectoryItem(page: .musicBlocker, title: s.musicBlockSection, icon: "music.note",
+                                       featureKeywords: [(.musicBlock, [s.musicBlockTitle, s.musicBlockSection,
+                                                                        s.musicBlockReplacementLabel,
+                                                                        s.musicBlockPlayReplacement])]),
+                SettingsDirectoryItem(page: .micMute, title: s.micMuteName, icon: "mic.slash",
+                                       featureKeywords: [(.micMute, [s.micMuteName, s.micMuteFollowCallAppsToggle,
+                                                                     s.micMuteMenuBarToggle])]),
                 SettingsDirectoryItem(page: .urlCleaner, title: s.urlCleanerName, icon: "link"),
                 SettingsDirectoryItem(page: .keyDebounce, title: s.keyDebounceName, icon: "keyboard"),
                 // Zenith fork: keyboard sounds as you type, a page of its own (no hub feature).

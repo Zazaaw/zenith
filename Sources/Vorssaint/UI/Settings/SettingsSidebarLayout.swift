@@ -43,7 +43,6 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
         case .setting(let anchor):
             switch anchor {
             case .panelConfiguration: return .system
-            case .screenshotScrolling: return .capture
             case .keyboardBrightnessShortcuts: return .zenith
             default: return of(page: anchor.page)
             }
@@ -55,7 +54,8 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
         case .general, .appearance, .commandBar, .features: return .tiles
         case .notch, .notchMascot, .lockScreen: return .island
         case .clipboard, .cutPaste, .shelf, .media, .urlCleaner, .textSnippets: return .everyday
-        case .screenshot: return .capture
+        case .screenshot, .screenRecording, .textCapture, .colorPicker, .cameraPreview: return .capture
+        case .volumeMixer, .soundOutput, .musicBlocker, .micMute: return .sound
         case .switcher, .dock, .windowLayout, .autoQuit, .quitProtection, .workspaces, .radialMenu: return .windows
         case .mouse, .keyDebounce, .superKey: return .input
         case .energy, .monitor, .quickTools: return .system
@@ -108,7 +108,9 @@ enum SettingsSidebarLayout {
     static let leading: [SettingsSidebarGroup: [SettingsSidebarItem.ID]] = [
         .island: [.page(.notch), .page(.lockScreen)],
         .everyday: [.page(.shelf), .feature(.clipboardHistory)],
-        .capture: [.feature(.screenshot), .setting(.screenshotScrolling), .feature(.screenRecorder)],
+        .capture: [.page(.screenshot), .page(.screenRecording), .page(.textCapture), .page(.colorPicker),
+                   .page(.cameraPreview)],
+        .sound: [.page(.volumeMixer), .page(.soundOutput), .page(.musicBlocker), .page(.micMute)],
         .system: [.page(.monitor), .feature(.fanControl)],
         .devices: [.page(.pocket), .page(.batteries), .page(.faceUnlock), .page(.remote)],
     ]

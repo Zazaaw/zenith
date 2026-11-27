@@ -141,7 +141,9 @@ struct SettingsView: View {
                                             .switcher, .dock, .homebrew, .releaseNotes, .about, .support,
                                             .portManager, .workspaces, .lockScreen, .remote,
                                             .faceUnlock, .batteries, .pocket,
-                                            .meetings, .mechakey, .appearance] // Zenith fork: Meetings, Mechakey, Appearance
+                                            .meetings, .mechakey, .appearance, // Zenith fork: Meetings, Mechakey, Appearance
+                                            .volumeMixer, .soundOutput, .musicBlocker, .micMute, // Zenith fork: sound
+                                            .screenshot, .screenRecording, .textCapture, .colorPicker, .cameraPreview]
         if ownHeader.contains(router.page) { return nil }
         if router.page == .translate { return nil } // Zenith fork: Translate opens with its own header
         if router.page == .general, !(detailShowsGeneralTool) { return nil }
@@ -151,7 +153,7 @@ struct SettingsView: View {
 
     private var detailShowsGeneralTool: Bool {
         guard let anchor = router.destination.sectionAnchor else { return false }
-        return [.panelConfiguration, .mixer, .soundOutputSwitcher, .audioPriority, .musicBlocking].contains(anchor)
+        return anchor == .panelConfiguration
             && sidebarItems.contains(where: { $0.destination == router.destination })
     }
 
@@ -160,8 +162,7 @@ struct SettingsView: View {
         switch router.page {
         case .general:
             if let anchor = router.destination.sectionAnchor,
-               [.panelConfiguration, .mixer, .soundOutputSwitcher,
-                .audioPriority, .musicBlocking].contains(anchor),
+               anchor == .panelConfiguration,
                sidebarItems.contains(where: { $0.destination == router.destination }) {
                 GeneralToolSettings(anchor: anchor)
             } else {
@@ -193,7 +194,11 @@ struct SettingsView: View {
         case .media: MediaSettings()
         case .clipboard: ClipboardSettings()
         case .quickTools: QuickToolsSettings()
-        case .screenshot: ScreenCaptureSettings()
+        case .screenshot: ScreenshotSettingsPage() // Zenith fork: the capture tools, a page each
+        case .screenRecording: ScreenRecordingSettingsPage()
+        case .textCapture: TextCaptureSettingsPage()
+        case .colorPicker: ColorPickerSettingsPage()
+        case .cameraPreview: CameraPreviewSettingsPage()
         case .windowLayout: WindowLayoutSettings()
         case .shelf: ShelfSettings()
         case .shortcuts: ShortcutsSettings()
@@ -211,6 +216,10 @@ struct SettingsView: View {
         case .translate: TranslateSettingsPage() // Zenith fork
         case .mechakey: MechakeySettingsPage() // Zenith fork
         case .appearance: AppearanceSettingsPage() // Zenith fork
+        case .volumeMixer: VolumeMixerSettingsPage() // Zenith fork: the sound tools, a page each
+        case .soundOutput: SoundOutputSettingsPage()
+        case .musicBlocker: MusicBlockerSettingsPage()
+        case .micMute: MicMuteSettingsPage()
         }
     }
 }

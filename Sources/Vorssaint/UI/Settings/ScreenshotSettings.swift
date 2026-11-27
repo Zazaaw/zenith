@@ -3,19 +3,27 @@
 
 import SwiftUI
 
-/// Screenshot-specific sections inside the shared screen-capture page.
-struct ScreenshotCaptureSettings: View {
-    var tool: ScreenCaptureTool = .screenshot
+/// Settings → Screenshot. Zenith fork: a page of its own in the kit
+/// (docs/SETTINGS-KIT.md), split from Screen capture, with the scrolling
+/// screenshot as a section of it: the hero, the picture (screenshot or
+/// scrolling), how a capture starts, scrolling capture, the shortcuts, what
+/// happens after a capture, where it is saved, the editor's tools, sharing,
+/// then the design overlay and Beautify. The loupe and the after-capture
+/// preview sit under More options.
+struct ScreenshotSettingsPage: View {
     @ObservedObject private var l10n = L10n.shared
+    @ObservedObject private var router = SettingsRouter.shared
     @ObservedObject private var permissions = Permissions.shared
     @ObservedObject private var service = ScreenshotService.shared
     @ObservedObject private var sharing = ScreenshotShareService.shared
+    @ObservedObject private var recent = RecentCaptureService.shared
     @AppStorage(DefaultsKey.screenshotFullScreenShortcutEnabled)
     private var fullScreenShortcutEnabled = false
     @AppStorage(DefaultsKey.screenshotLastCaptureShortcutEnabled)
     private var lastCaptureShortcutEnabled = false
     @AppStorage(DefaultsKey.screenshotClipboardShortcutEnabled)
     private var clipboardShortcutEnabled = false
+    @AppStorage(DefaultsKey.recentCapturesShortcutEnabled) private var recentShortcutEnabled = false
     @AppStorage(DefaultsKey.screenshotScrollingAutoScroll) private var autoScroll = false
     @AppStorage(DefaultsKey.screenshotFreeze) private var freeze = true
     @AppStorage(DefaultsKey.screenshotHideVorssaintWindows) private var hideVorssaintWindows = true
@@ -53,226 +61,176 @@ struct ScreenshotCaptureSettings: View {
     @AppStorage(DefaultsKey.screenshotUploadDuration) private var uploadDuration = ScreenshotShareDuration.oneHour.rawValue
     @State private var showingSharedLinks = false
     @State private var showingSharePrivacy = false
+    @State private var scene = 0
+
+    private let text = ZenithStrings.soundCapture(.enUS)
 
     private var strings: ScreenshotFeatureStrings {
         FeatureStrings.screenshot(l10n.language)
     }
 
     var body: some View {
-        Group {
-            Section {
-                Button {
-                    ScreenCaptureService.shared.capture(initial: tool)
-                } label: {
-                    Label(tool == .scrolling ? strings.scrollingCaptureButton : strings.captureButton,
-                          systemImage: tool.systemImageName)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
-                Text(tool == .scrolling ? strings.scrollingCaptureCaption : strings.panelCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                if tool == .scrolling {
-                    Toggle(strings.scrollingAutoScrollToggle, isOn: $autoScroll)
-                    Text(strings.scrollingAutoScrollCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    if autoScroll, !permissions.accessibility {
-                        PermissionRow(kind: .accessibility)
-                    }
-                }
-                Toggle(strings.fullScreenShortcutTitle, isOn: $fullScreenShortcutEnabled)
-                    .onChange(of: fullScreenShortcutEnabled) { _, _ in
-                        ScreenshotService.shared.syncWithPreferences()
-                    }
-                ShortcutPreferenceRow(role: .screenshotFullScreen,
-                                      isEnabled: fullScreenShortcutEnabled) {
-                    ScreenshotService.shared.syncWithPreferences()
-                }
-                if fullScreenShortcutEnabled, service.fullScreenShortcutRegistrationFailed {
-                    Text(l10n.s.shortcutUnavailable)
-                        .font(.caption)
-                        .foregroundStyle(ZenithStatus.warning)
-                }
-                Toggle(strings.editLastCapture, isOn: $lastCaptureShortcutEnabled)
-                    .onChange(of: lastCaptureShortcutEnabled) { _, _ in
-                        ScreenshotService.shared.syncWithPreferences()
-                    }
-                ShortcutPreferenceRow(role: .screenshotLastCapture,
-                                      isEnabled: lastCaptureShortcutEnabled) {
-                    ScreenshotService.shared.syncWithPreferences()
-                }
-                if lastCaptureShortcutEnabled,
-                   service.lastCaptureShortcutRegistrationFailed {
-                    Text(l10n.s.shortcutUnavailable)
-                        .font(.caption)
-                        .foregroundStyle(ZenithStatus.warning)
-                }
-                Toggle(strings.editClipboardImage, isOn: $clipboardShortcutEnabled)
-                    .onChange(of: clipboardShortcutEnabled) { _, _ in
-                        ScreenshotService.shared.syncWithPreferences()
-                    }
-                ShortcutPreferenceRow(role: .screenshotClipboard,
-                                      isEnabled: clipboardShortcutEnabled) {
-                    ScreenshotService.shared.syncWithPreferences()
-                }
-                if clipboardShortcutEnabled, service.clipboardShortcutRegistrationFailed {
-                    Text(l10n.s.shortcutUnavailable)
-                        .font(.caption)
-                        .foregroundStyle(ZenithStatus.warning)
-                }
-                if !permissions.screenRecording {
-                    PermissionRow(kind: .screenRecording)
-                }
-            } header: {
-                Text(tool.settingsTitle(l10n.s, language: l10n.language))
-            }
-            .settingsFormSectionAnchor(tool == .scrolling ? .screenshotScrolling : .screenshot)
-
-            Section {
-                if tool != .scrolling {
-                    Toggle(strings.freezeToggle, isOn: $freeze)
-                    Text(strings.freezeCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Toggle(strings.hideVorssaintWindowsToggle, isOn: $hideVorssaintWindows)
-                Picker(strings.delayLabel, selection: $delay) {
-                    ForEach(ScreenshotSupport.allowedDelays, id: \.self) { seconds in
-                        if seconds == 0 {
-                            Text(strings.delayOff).tag(0)
-                        } else {
-                            Text(String(format: strings.delaySecondsFormat, seconds)).tag(seconds)
-                        }
-                    }
-                }
-                .pickerStyle(.segmented)
-                if tool != .scrolling {
-                    Toggle(strings.pointerToggle, isOn: $includePointer)
-                }
-                Toggle(strings.lastRegionToggle, isOn: $showLastRegion)
-                Toggle(strings.highlightWindowsToggle, isOn: $highlightWindows)
-                Text(strings.highlightWindowsCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                DisclosureGroup {
-                    Toggle(strings.loupeStartsOnToggle, isOn: $loupeStartsOn)
-                    Toggle(strings.loupeRememberZoomToggle, isOn: $rememberLoupeZoom)
-                    if !rememberLoupeZoom {
-                        Picker(strings.loupeDefaultZoomLabel, selection: $loupeDefaultZoom) {
-                            ForEach(ScreenshotSupport.captureLoupeDefaultZooms, id: \.self) { zoom in
-                                Text(zoom.formatted(
-                                    .number.precision(.fractionLength(0...1))) + "×")
-                                    .tag(zoom)
-                            }
-                        }
-                    }
-                    Picker(strings.loupeWheelZoomLabel,
-                           selection: $steppedLoupeZoomByDefault) {
-                        Text(strings.loupeZoomFast).tag(false)
-                        Text(strings.loupeZoomStepped).tag(true)
-                    }
-                    .pickerStyle(.segmented)
-                    Text(strings.loupeZoomOptionCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    previewPositionRow
-                    previewFocusRow
-                    defaultActionRow
-                } label: {
-                    Text(FeatureStrings.recorder(l10n.language).moreOptions)
-                }
-            }
-
-            Section {
-                Toggle(strings.autoCopyToggle, isOn: autoCopyBinding)
-                Text(strings.autoCopyCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Toggle(strings.copyImageOnlyToggle, isOn: $copyImageOnly)
-                Text(strings.copyImageOnlyCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Toggle(strings.addToShelfToggle, isOn: addToShelfBinding)
-                    .disabled(!shelfIsOn)
-                Text(strings.addToShelfCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                folderRow
-                subfolderRow
-                fileNameRow
-                Toggle(strings.downscaleToggle, isOn: $downscale)
-                Text(strings.downscaleCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section {
-                ScreenshotToolOrderControls(orderRaw: $toolOrderRaw,
-                                            shortcutsEnabled: $toolShortcutsEnabled,
+        ZenithToolPage {
+            ZenithHero(title: strings.pageTitle, subtitle: text.screenshotSubtitle,
+                       chips: [CaptureToolShortcutRows.chip(.screenshot), ZenithChip(delayTitle(delay))],
+                       animation: .screenshot)
+                .zenithSectionAnchor(.screenshot, cornerRadius: ZenithKitSurface.heroRadius + 6, inset: 6)
+            CapturePermissionSection(kind: .screenRecording)
+            ZenithScenePreview(scenes: [.screenshot, .scrolling], selection: $scene)
+            capture
+            scrolling
+            shortcuts
+            afterCapture
+            saving
+            ZenithSection(strings.toolShortcutsTitle) {
+                ScreenshotToolOrderControls(orderRaw: $toolOrderRaw, shortcutsEnabled: $toolShortcutsEnabled,
                                             showsTitle: false)
-            } header: {
-                Text(strings.toolShortcutsTitle)
+                    .padding(.vertical, 10)
             }
-
-            Section {
-                Toggle(strings.shareEnabledToggle, isOn: $sharingEnabled)
-                    .onChange(of: sharingEnabled) { _, _ in service.syncWithPreferences() }
-                if sharingEnabled {
-                    Toggle(strings.uploadLastCapture, isOn: $uploadShortcutEnabled)
-                        .onChange(of: uploadShortcutEnabled) { _, _ in service.syncWithPreferences() }
-                    ShortcutPreferenceRow(role: .screenshotUpload,
-                                          isEnabled: uploadShortcutEnabled) {
-                        service.syncWithPreferences()
-                    }
-                    Picker(strings.uploadExpiry, selection: $uploadDuration) {
-                        ForEach(ScreenshotShareDuration.allCases) { duration in
-                            Text(duration.title(strings)).tag(duration.rawValue)
-                        }
-                    }
-                    if uploadShortcutEnabled {
-                        if service.uploadShortcutRegistrationFailed {
-                            Text(l10n.s.shortcutUnavailable)
-                                .font(.caption)
-                                .foregroundStyle(ZenithStatus.warning)
-                        }
-                    }
-                    Text(strings.shareCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Button {
-                    showingSharePrivacy = true
-                } label: {
-                    Label(strings.sharePrivacyButton, systemImage: "hand.raised")
-                }
-                if !sharing.records.isEmpty {
-                    Button {
-                        showingSharedLinks = true
-                    } label: {
-                        HStack {
-                            Label(strings.sharedLinksTitle, systemImage: "link")
-                            Spacer()
-                            Text("\(sharing.records.count)")
-                                .foregroundStyle(.secondary)
-                            Image(systemName: "chevron.right")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.tertiary)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-            } header: {
-                Text(strings.shareSectionTitle)
-            }
+            sharingSection
+            DesignOverlaySettingsSection() // Zenith fork: the design QA overlay.
+            ScreenshotBeautifySettingsSection() // Zenith fork: Beautify.
         }
-        .onAppear { sharing.refresh() }
+        .onAppear {
+            sharing.refresh()
+            followRoute()
+        }
+        .onChange(of: router.requestID) { _, _ in followRoute() }
         .sheet(isPresented: $showingSharedLinks) {
             ScreenshotSharedLinksView()
         }
         .sheet(isPresented: $showingSharePrivacy) {
             ScreenshotSharePrivacyView()
+        }
+    }
+
+    /// Landing on scrolling capture shows its picture.
+    private func followRoute() {
+        if router.destination.sectionAnchor == .screenshotScrolling { scene = 1 }
+    }
+
+    private func delayTitle(_ seconds: Int) -> String {
+        seconds == 0 ? strings.delayOff : String(format: strings.delaySecondsFormat, seconds)
+    }
+
+    // MARK: Capture
+
+    private var capture: some View {
+        ZenithSection(text.screenshotCapture) {
+            ZenithRow(strings.pageTitle, info: strings.panelCaption, button: strings.captureButton) {
+                ScreenCaptureService.shared.capture(initial: .screenshot)
+            }
+            ZenithRow(strings.freezeToggle, isOn: $freeze, info: strings.freezeCaption)
+            ZenithRow(strings.delayLabel, selection: $delay) {
+                ForEach(ScreenshotSupport.allowedDelays, id: \.self) { seconds in
+                    Text(delayTitle(seconds)).tag(seconds)
+                }
+            }
+            ZenithRow(strings.pointerToggle, isOn: $includePointer)
+            ZenithRow(strings.lastRegionToggle, isOn: $showLastRegion)
+            ZenithRow(strings.highlightWindowsToggle, isOn: $highlightWindows, info: strings.highlightWindowsCaption)
+            ZenithMoreOptions(id: "screenshot.capture", anchors: [.zenithScreenshotLoupe]) {
+                ZenithRow(strings.hideVorssaintWindowsToggle, isOn: $hideVorssaintWindows)
+                ZenithRow(strings.loupeStartsOnToggle, isOn: $loupeStartsOn)
+                    .zenithSectionAnchor(.zenithScreenshotLoupe, cornerRadius: 10, inset: 4)
+                ZenithRow(strings.loupeRememberZoomToggle, isOn: $rememberLoupeZoom)
+                if !rememberLoupeZoom {
+                    ZenithRow(strings.loupeDefaultZoomLabel, selection: $loupeDefaultZoom) {
+                        ForEach(ScreenshotSupport.captureLoupeDefaultZooms, id: \.self) { zoom in
+                            Text(zoom.formatted(.number.precision(.fractionLength(0...1))) + "×").tag(zoom)
+                        }
+                    }
+                }
+                ZenithRow(strings.loupeWheelZoomLabel, selection: $steppedLoupeZoomByDefault,
+                          info: strings.loupeZoomOptionCaption) {
+                    Text(strings.loupeZoomFast).tag(false)
+                    Text(strings.loupeZoomStepped).tag(true)
+                }
+            }
+        }
+    }
+
+    // MARK: Scrolling
+
+    private var scrolling: some View {
+        ZenithSection(text.screenshotScrolling, anchor: .screenshotScrolling) {
+            ZenithRow(strings.scrollingCaptureTitle, info: strings.scrollingCaptureCaption,
+                      button: strings.scrollingCaptureButton) {
+                ScreenCaptureService.shared.capture(initial: .scrolling)
+            }
+            ZenithRow(strings.scrollingAutoScrollToggle, isOn: $autoScroll, info: strings.scrollingAutoScrollCaption)
+            if autoScroll, !permissions.accessibility {
+                PermissionRow(kind: .accessibility).padding(.vertical, 10)
+            }
+            CaptureToolShortcutRows(tool: .scrolling)
+        }
+    }
+
+    // MARK: Shortcuts
+
+    private var shortcuts: some View {
+        let sync = { ScreenshotService.shared.syncWithPreferences() }
+        return ZenithSection(text.screenshotShortcuts) {
+            CaptureToolShortcutRows(tool: .screenshot)
+            ZenithShortcutSwitchRows(title: strings.fullScreenShortcutTitle, role: .screenshotFullScreen,
+                                     isOn: $fullScreenShortcutEnabled,
+                                     failed: service.fullScreenShortcutRegistrationFailed, sync: sync)
+            ZenithShortcutSwitchRows(title: strings.editLastCapture, role: .screenshotLastCapture,
+                                     isOn: $lastCaptureShortcutEnabled,
+                                     failed: service.lastCaptureShortcutRegistrationFailed, sync: sync)
+            ZenithShortcutSwitchRows(title: strings.editClipboardImage, role: .screenshotClipboard,
+                                     isOn: $clipboardShortcutEnabled,
+                                     failed: service.clipboardShortcutRegistrationFailed, sync: sync)
+            ZenithShortcutSwitchRows(title: GlobalShortcutRole.recentCaptures.title(l10n.s), role: .recentCaptures,
+                                     isOn: $recentShortcutEnabled, failed: recent.shortcutRegistrationFailed) {
+                recent.syncWithPreferences()
+            }
+        }
+    }
+
+    // MARK: After a capture
+
+    private var afterCapture: some View {
+        ZenithSection(text.screenshotAfter) {
+            ZenithRow(strings.autoCopyToggle, isOn: autoCopyBinding, info: strings.autoCopyCaption)
+            ZenithRow(strings.copyImageOnlyToggle, isOn: $copyImageOnly, info: strings.copyImageOnlyCaption)
+            ZenithRow(strings.addToShelfToggle, isOn: addToShelfBinding, info: strings.addToShelfCaption)
+                .disabled(!shelfIsOn)
+            ZenithMoreOptions(id: "screenshot.after", anchors: [.zenithScreenshotMore]) {
+                ZenithRow(strings.defaultActionLabel, selection: $defaultActionRaw,
+                          info: defaultActionRaw != ScreenshotDefaultAction.edit.rawValue ? strings.defaultActionCaption : nil) {
+                    ScreenshotDefaultActionOptions(strings: strings)
+                }
+                .zenithSectionAnchor(.zenithScreenshotMore, cornerRadius: 10, inset: 4)
+                if usesAutomaticConfirmationPreview {
+                    ZenithRow(strings.confirmationPreviewToggle, isOn: $previewEnabled,
+                              info: strings.confirmationPreviewCaption)
+                    if previewEnabled {
+                        ZenithRow(strings.confirmationPreviewDurationLabel, selection: $previewDuration) {
+                            ForEach(ScreenshotSupport.confirmationPreviewDurations, id: \.self) { seconds in
+                                if seconds == 0 {
+                                    Text(strings.confirmationPreviewUntilDismissed).tag(0)
+                                } else {
+                                    Text(String(format: strings.delaySecondsFormat, seconds)).tag(seconds)
+                                }
+                            }
+                        }
+                    }
+                }
+                ZenithRow(strings.previewPositionLabel, selection: $previewPositionRaw) {
+                    Text(strings.previewPositionAutomatic)
+                        .tag(ScreenshotSupport.QuickPreviewPosition.automatic.rawValue)
+                    Text(strings.previewPositionTopLeft)
+                        .tag(ScreenshotSupport.QuickPreviewPosition.topLeft.rawValue)
+                    Text(strings.previewPositionTopRight)
+                        .tag(ScreenshotSupport.QuickPreviewPosition.topRight.rawValue)
+                    Text(strings.previewPositionBottomLeft)
+                        .tag(ScreenshotSupport.QuickPreviewPosition.bottomLeft.rawValue)
+                    Text(strings.previewPositionBottomRight)
+                        .tag(ScreenshotSupport.QuickPreviewPosition.bottomRight.rawValue)
+                }
+                ZenithRow(strings.previewFocusToggle, isOn: $previewTakesFocus, info: strings.previewFocusCaption)
+            }
         }
     }
 
@@ -306,34 +264,6 @@ struct ScreenshotCaptureSettings: View {
         }
     }
 
-    private var defaultActionRow: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            ScreenshotDefaultActionPicker(strings: strings, selection: $defaultActionRaw)
-            if defaultActionRaw != ScreenshotDefaultAction.edit.rawValue {
-                Text(strings.defaultActionCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            if usesAutomaticConfirmationPreview {
-                Toggle(strings.confirmationPreviewToggle, isOn: $previewEnabled)
-                if previewEnabled {
-                    Picker(strings.confirmationPreviewDurationLabel, selection: $previewDuration) {
-                        ForEach(ScreenshotSupport.confirmationPreviewDurations, id: \.self) { seconds in
-                            if seconds == 0 {
-                                Text(strings.confirmationPreviewUntilDismissed).tag(0)
-                            } else {
-                                Text(String(format: strings.delaySecondsFormat, seconds)).tag(seconds)
-                            }
-                        }
-                    }
-                }
-                Text(strings.confirmationPreviewCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-
     private var usesAutomaticConfirmationPreview: Bool {
         guard let action = ScreenshotDefaultAction(rawValue: defaultActionRaw) else { return false }
         switch action {
@@ -342,117 +272,56 @@ struct ScreenshotCaptureSettings: View {
         }
     }
 
-    private var previewFocusRow: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Toggle(strings.previewFocusToggle, isOn: $previewTakesFocus)
-            Text(strings.previewFocusCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
+    // MARK: Saving
 
-    private var previewPositionRow: some View {
-        Picker(strings.previewPositionLabel, selection: $previewPositionRaw) {
-            Text(strings.previewPositionAutomatic)
-                .tag(ScreenshotSupport.QuickPreviewPosition.automatic.rawValue)
-            Text(strings.previewPositionTopLeft)
-                .tag(ScreenshotSupport.QuickPreviewPosition.topLeft.rawValue)
-            Text(strings.previewPositionTopRight)
-                .tag(ScreenshotSupport.QuickPreviewPosition.topRight.rawValue)
-            Text(strings.previewPositionBottomLeft)
-                .tag(ScreenshotSupport.QuickPreviewPosition.bottomLeft.rawValue)
-            Text(strings.previewPositionBottomRight)
-                .tag(ScreenshotSupport.QuickPreviewPosition.bottomRight.rawValue)
-        }
-    }
-
-    private var folderRow: some View {
-        HStack {
-            Text(strings.folderLabel)
-            Spacer()
-            Text(currentFolderName)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
-            if !saveFolder.isEmpty {
-                Button {
-                    saveFolder = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.tertiary)
+    private var saving: some View {
+        ZenithSection(text.screenshotSaving) {
+            ZenithFolderRow(title: strings.folderLabel, chooseTitle: strings.folderChoose, path: $saveFolder)
+            ZenithRow(strings.subfolderLabel, info: strings.subfolderCaption) {
+                HStack(spacing: 8) {
+                    if !saveSubfolder.isEmpty {
+                        Text(ScreenshotSupport.expandSaveSubfolder(saveSubfolder, date: Date()))
+                            .font(ZenithType.body)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                    TextField(strings.subfolderLabel, text: $saveSubfolder)
+                        .labelsHidden()
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 150)
                 }
-                .buttonStyle(.borderless)
-                .screenshotSafeHelp(l10n.s.shortcutReset)
             }
-            Button(strings.folderChoose) {
-                chooseFolder()
-            }
-        }
-    }
-
-    private var subfolderRow: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(strings.subfolderLabel)
-                    .lineLimit(1)
-                Spacer(minLength: 12)
-                if !saveSubfolder.isEmpty {
-                    Text(ScreenshotSupport.expandSaveSubfolder(saveSubfolder, date: Date()))
+            ZenithRow(strings.fileNamePatternLabel, info: strings.fileNamePatternCaption) {
+                HStack(spacing: 8) {
+                    Text(fileNamePreview)
+                        .font(ZenithType.body)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
-                }
-                TextField("", text: $saveSubfolder)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 150)
-            }
-            .fixedSize(horizontal: false, vertical: true)
-            Text(strings.subfolderCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private var fileNameRow: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(strings.fileNamePatternLabel)
-                    .lineLimit(1)
-                Spacer(minLength: 12)
-                Text(fileNamePreview)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                TextField("", text: $fileNamePattern)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 150)
-            }
-            .fixedSize(horizontal: false, vertical: true)
-            Text(strings.fileNamePatternCaption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            if ScreenshotSupport.fileNamePatternUsesNumber(fileNamePattern) {
-                HStack {
-                    Text(strings.fileNumberStartLabel)
-                        .lineLimit(1)
-                    TextField("", value: $numberStart, formatter: Self.numberFieldFormatter)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 70)
-                    Stepper("", value: $numberStart, in: 0...999_999)
+                    TextField(strings.fileNamePatternLabel, text: $fileNamePattern)
                         .labelsHidden()
-                    Button(strings.fileNumberResetButton) {
-                        nextNumber = numberStart
-                    }
-                    Spacer()
-                    Text(String(format: strings.fileNumberNextFormat, nextNumber))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-                .fixedSize(horizontal: false, vertical: true)
-                .onChange(of: numberStart) { _, newValue in
-                    nextNumber = newValue
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 150)
                 }
             }
+            if ScreenshotSupport.fileNamePatternUsesNumber(fileNamePattern) {
+                ZenithRow(strings.fileNumberStartLabel,
+                          info: String(format: strings.fileNumberNextFormat, nextNumber)) {
+                    HStack(spacing: 8) {
+                        TextField(strings.fileNumberStartLabel, value: $numberStart,
+                                  formatter: Self.numberFieldFormatter)
+                            .labelsHidden()
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 70)
+                        Stepper(strings.fileNumberStartLabel, value: $numberStart, in: 0...999_999)
+                            .labelsHidden()
+                        Button(strings.fileNumberResetButton) { nextNumber = numberStart }
+                    }
+                }
+                .onChange(of: numberStart) { _, newValue in nextNumber = newValue }
+            }
+            ZenithRow(strings.downscaleToggle, isOn: $downscale, info: strings.downscaleCaption)
         }
     }
 
@@ -473,27 +342,30 @@ struct ScreenshotCaptureSettings: View {
         return ScreenshotSupport.expandFileNamePattern(trimmed, date: Date(), number: nextNumber) + ".png"
     }
 
-    private var currentFolderName: String {
-        let manager = FileManager.default
-        if !saveFolder.isEmpty {
-            let expanded = (saveFolder as NSString).expandingTildeInPath
-            var isDirectory: ObjCBool = false
-            if manager.fileExists(atPath: expanded, isDirectory: &isDirectory), isDirectory.boolValue {
-                return manager.displayName(atPath: expanded)
-            }
-        }
-        let desktop = manager.urls(for: .desktopDirectory, in: .userDomainMask).first
-        return desktop.map { manager.displayName(atPath: $0.path) } ?? "Desktop"
-    }
+    // MARK: Sharing
 
-    private func chooseFolder() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.canCreateDirectories = true
-        panel.allowsMultipleSelection = false
-        if panel.runModal() == .OK, let url = panel.url {
-            saveFolder = url.path
+    private var sharingSection: some View {
+        ZenithSection(strings.shareSectionTitle) {
+            ZenithRow(strings.shareEnabledToggle, isOn: $sharingEnabled,
+                      info: sharingEnabled ? strings.shareCaption : nil)
+                .onChange(of: sharingEnabled) { _, _ in service.syncWithPreferences() }
+            if sharingEnabled {
+                ZenithShortcutSwitchRows(title: strings.uploadLastCapture, role: .screenshotUpload,
+                                         isOn: $uploadShortcutEnabled,
+                                         failed: service.uploadShortcutRegistrationFailed) {
+                    service.syncWithPreferences()
+                }
+                ZenithRow(strings.uploadExpiry, selection: $uploadDuration) {
+                    ForEach(ScreenshotShareDuration.allCases) { duration in
+                        Text(duration.title(strings)).tag(duration.rawValue)
+                    }
+                }
+            }
+            ZenithRow(strings.sharePrivacyButton, navigate: { showingSharePrivacy = true })
+            if !sharing.records.isEmpty {
+                ZenithRow(strings.sharedLinksTitle, value: "\(sharing.records.count)",
+                          navigate: { showingSharedLinks = true })
+            }
         }
     }
 }
@@ -672,11 +544,20 @@ struct ScreenshotDefaultActionPicker: View {
 
     var body: some View {
         Picker(strings.defaultActionLabel, selection: $selection) {
-            Text(strings.defaultActionNone).tag(ScreenshotDefaultAction.none.rawValue)
-            Text(strings.saveButton).tag(ScreenshotDefaultAction.save.rawValue)
-            Text(strings.defaultActionSaveAndCopy).tag(ScreenshotDefaultAction.saveAndCopy.rawValue)
-            Text(strings.copyButton).tag(ScreenshotDefaultAction.copy.rawValue)
-            Text(strings.editButton).tag(ScreenshotDefaultAction.edit.rawValue)
+            ScreenshotDefaultActionOptions(strings: strings)
         }
+    }
+}
+
+/// The after-capture actions, tagged with their stored values.
+struct ScreenshotDefaultActionOptions: View {
+    let strings: ScreenshotFeatureStrings
+
+    var body: some View {
+        Text(strings.defaultActionNone).tag(ScreenshotDefaultAction.none.rawValue)
+        Text(strings.saveButton).tag(ScreenshotDefaultAction.save.rawValue)
+        Text(strings.defaultActionSaveAndCopy).tag(ScreenshotDefaultAction.saveAndCopy.rawValue)
+        Text(strings.copyButton).tag(ScreenshotDefaultAction.copy.rawValue)
+        Text(strings.editButton).tag(ScreenshotDefaultAction.edit.rawValue)
     }
 }
