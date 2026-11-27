@@ -53,6 +53,19 @@ enum OrbitCatalogTests {
         }
         let iconNames = OrbitIcons.all.map(\.name)
         suite.expect(Set(iconNames).count == iconNames.count, "every icon name is unique")
+        // The pages Settings is split into each draw an icon of their own name.
+        let settingsPages = [
+            "Scrolling", "Pointer", "Mouse Buttons", "Sleep", "Brightness", "Spaces", "Finder Tools", "Sound Output",
+            "Music Blocker", "Volume Mixer", "Mic Mute", "Quick Launcher", "Quick Toggles", "Quit Apps", "Cleaning Mode",
+            "Camera Preview", "Wallpaper", "Scratchpad", "Screenshot", "Screen Recording", "Text Capture", "Color Picker",
+            "Dock", "Window Layout", "Clipboard", "System Monitor", "Fan Control", "Dynamic Island", "Calendar",
+            "Notifications", "Music", "Timer", "Agents", "Downloads", "Watch", "Lock Screen", "Remove Background",
+            "Emoji Picker", "Calculator",
+        ]
+        let unresolved = settingsPages.filter { OrbitIcons.named($0)?.name != $0 }
+        suite.expect(unresolved.isEmpty, "every Settings page has an Orbit icon under its name (missing: \(unresolved))")
+        suite.expect(OrbitIcons.named("Mechakey") != nil && OrbitIcons.named("Mechey") == nil,
+                     "the keyboard sounds icon goes by Mechakey")
 
         for shelf in OrbitCategory.shelves {
             suite.expect(items.contains { $0.category == shelf }, "the \(shelf.rawValue) shelf is not empty")
