@@ -298,7 +298,7 @@ struct ZenithPreviewLoop<Content: View>: View {
 }
 
 /// Reports whether the hosting window is on screen and not occluded.
-private struct ZenithWindowVisibilityReader: NSViewRepresentable {
+struct ZenithWindowVisibilityReader: NSViewRepresentable {
     @Binding var visible: Bool
 
     func makeNSView(context: Context) -> ReaderView { ReaderView(report: { visible = $0 }) }
