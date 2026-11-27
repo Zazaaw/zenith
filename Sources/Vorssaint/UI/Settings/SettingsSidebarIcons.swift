@@ -41,7 +41,7 @@ enum SettingsSidebarIcons {
         case .switcher: return "Window Switcher"
         case .dock: return "Dock"
         case .spaces: return "Spaces"
-        case .windowLayout: return "Window Snap"
+        case .windowLayout: return "Window Layout"
         case .autoQuit: return "Auto Quit"
         case .workspaces: return "Workspaces"
         case .radialMenu: return "Radial Menu"
