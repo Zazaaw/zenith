@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Vorssaint
+// Copyright (C) 2026 Satu Visual
 
 import SwiftUI
 
@@ -15,29 +16,34 @@ struct HomebrewSettings: View {
     @State private var pendingAction: HomebrewPendingAction?
     @State private var expandedPackageIDs: Set<String> = []
 
+    private let page = ZenithStrings.systemApps(.enUS)
+
+    // Zenith fork: built with the Settings kit: the hero, the preview, then
+    // the package browser in a grouped card of its own height.
     var body: some View {
-        VStack(spacing: 0) {
-            pageHeader
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-            HomebrewPreviewCard() // Zenith fork
-                .zenithToolsPreviewWidth()
-                .padding(.horizontal, 16)
-                .padding(.bottom, 12)
-            Divider()
-            Group {
-                if homebrew.brewPath == nil {
-                    VStack(spacing: 0) {
-                        missingState
-                        operationLog
+        ScrollView {
+            ZenithPageColumn {
+                ZenithHero(title: l10n.s.homebrewName, subtitle: page.homebrewSubtitle, chips: chips,
+                           animation: .homebrew)
+                HomebrewPreviewCard() // Zenith fork
+                VStack(alignment: .leading, spacing: 8) {
+                    ZenithSectionTitle(page.homebrewWorkspace)
+                    Group {
+                        if homebrew.brewPath == nil {
+                            VStack(spacing: 0) {
+                                missingState
+                                operationLog
+                            }
+                        } else {
+                            content
+                        }
                     }
-                } else {
-                    content
+                    .frame(maxWidth: .infinity, alignment: .top)
+                    .frame(height: 600)
+                    .zenithGroupBackground()
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .onAppear {
             if homebrew.installed.isEmpty {
                 homebrew.refreshInstalled()
@@ -64,9 +70,13 @@ struct HomebrewSettings: View {
         }
     }
 
-    private var pageHeader: some View {
-        SettingsPageHeader(title: l10n.s.homebrewName,
-                           subtitle: FeatureStrings.hub(l10n.language).descHomebrew)
+    private var chips: [ZenithChip] {
+        guard homebrew.brewPath != nil else { return [ZenithChip(page.homebrewMissing)] }
+        var chips = [ZenithChip(page.homebrewInstalled(homebrew.installed.count))]
+        if homebrew.outdatedCount > 0 {
+            chips.append(ZenithChip(page.homebrewUpdates(homebrew.outdatedCount), dot: ZenithStatus.warning))
+        }
+        return chips
     }
 
     private var content: some View {
