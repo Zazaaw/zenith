@@ -33,14 +33,16 @@ struct AppearanceSettingsPage: View {
         return false
     }
 
+    // Zenith fork: a system page of the kit (docs/SETTINGS-KIT.md): the
+    // header, then each choice as pictures with its rows in a section.
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                SettingsPageHeader(title: text.title, subtitle: text.subtitle)
-                themeCard.zenithSectionAnchor(.zenithAppearanceTheme)
-                motionCard.zenithSectionAnchor(.zenithAppearanceMotion)
-                glassCard.zenithSectionAnchor(.zenithAppearanceGlass)
-                batteryCard.zenithSectionAnchor(.zenithAppearanceBattery)
+            VStack(alignment: .leading, spacing: 18) {
+                ZenithSystemHeader(title: text.title, subtitle: text.subtitle)
+                themeSection.zenithSectionAnchor(.zenithAppearanceTheme)
+                motionSection.zenithSectionAnchor(.zenithAppearanceMotion)
+                glassSection.zenithSectionAnchor(.zenithAppearanceGlass)
+                batterySection.zenithSectionAnchor(.zenithAppearanceBattery)
             }
             .frame(maxWidth: 760)
             .frame(maxWidth: .infinity)
@@ -52,25 +54,23 @@ struct AppearanceSettingsPage: View {
 
     // MARK: Theme
 
-    private var themeCard: some View {
-        SettingsCard(title: text.theme) {
-            HStack(spacing: 10) {
-                ForEach(AppAppearance.allCases) { option in
-                    AppearanceChoiceTile(title: option.title(themeStrings), selected: theme.appearance == option) {
-                        theme.appearance = option
-                    } picture: {
-                        AppearanceThemePicture(option: option)
-                    }
-                }
+    private var themeSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ZenithSectionTitle(text.theme)
+            ZenithVisualPicker(text.theme, selection: $theme.appearance,
+                               options: AppAppearance.allCases.map { ZenithPickerOption($0, $0.title(themeStrings)) },
+                               minimumTileWidth: 120, tileHeight: 70) { option, _ in
+                AppearanceThemePicture(option: option)
+                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .padding(8)
             }
-            caption(general.appearanceCaption)
+            ZenithFootnote(general.appearanceCaption)
             if Self.liquidGlassAvailable {
-                Divider()
-                ZenithSwitchRow("\(themeStrings.liquidGlass), \(general.liquidGlassOtherWindows)",
-                                isOn: $theme.liquidGlassEnabled) {
-                    SettingsRow(symbol: "sparkles", title: themeStrings.liquidGlass,
-                                caption: "\(general.liquidGlassOtherWindows). \(general.liquidGlassCaption)") { EmptyView() }
+                ZenithSection {
+                    ZenithRow(themeStrings.liquidGlass, isOn: $theme.liquidGlassEnabled,
+                              info: "\(general.liquidGlassOtherWindows). \(general.liquidGlassCaption)")
                 }
+                .padding(.top, 8)
             }
         }
     }
@@ -83,10 +83,11 @@ struct AppearanceSettingsPage: View {
         Self.previewsPlay && onScreen && settingsWindow.isVisible && !reduceMotion && !appearance.isSavingBattery
     }
 
-    private var motionCard: some View {
+    private var motionSection: some View {
         let motion = appearance.motion
         let previews = previews(motion)
-        return SettingsCard(title: text.motion) {
+        return VStack(alignment: .leading, spacing: 10) {
+            ZenithSectionTitle(text.motion)
             Group {
                 if previewsPlay {
                     TimelineView(.animation(minimumInterval: 1.0 / 60)) { context in
@@ -96,31 +97,37 @@ struct AppearanceSettingsPage: View {
                     presetTiles(motion, previews: previews, time: nil)
                 }
             }
-            caption(text.presetCaption(motion.preset))
-            Divider()
-            sliderRow(symbol: "arrow.up.and.down.circle", title: text.bounce, caption: text.bounceCaption,
-                      value: motion.values.bounce, range: IslandMotionValues.bounceRange, step: 0.05,
-                      label: text.percent(motion.values.bounce)) { value in
-                ZenithAppearanceStore.editCustom(from: appearance.motion) { $0.bounce = value }
+            ZenithFootnote(text.presetCaption(motion.preset))
+            ZenithSection(footer: reduceMotion ? text.reduceMotionOn : text.reduceMotionNote) {
+                sliderRow(title: text.speed, caption: text.speedCaption,
+                          value: motion.speed, range: IslandMotionSettings.speedRange, step: 0.05,
+                          label: text.times(motion.speed), ends: ("tortoise", "hare")) { value in
+                    ZenithAppearanceStore.setSpeed(value)
+                }
+                ZenithMoreOptions(id: "appearance.motion") {
+                    sliderRow(title: text.bounce, caption: text.bounceCaption,
+                              value: motion.values.bounce, range: IslandMotionValues.bounceRange, step: 0.05,
+                              label: text.percent(motion.values.bounce)) { value in
+                        ZenithAppearanceStore.editCustom(from: appearance.motion) { $0.bounce = value }
+                    }
+                    sliderRow(title: text.blur, caption: text.blurCaption,
+                              value: motion.values.blur, range: IslandMotionValues.blurRange, step: 0.5,
+                              label: text.points(motion.values.blur)) { value in
+                        ZenithAppearanceStore.editCustom(from: appearance.motion) { $0.blur = value }
+                    }
+                    sliderRow(title: text.contentPace, caption: text.contentPaceCaption,
+                              value: motion.values.contentPace, range: IslandMotionValues.paceRange, step: 0.05,
+                              label: text.times(motion.values.contentPace)) { value in
+                        ZenithAppearanceStore.editCustom(from: appearance.motion) { $0.contentPace = value }
+                    }
+                    Text(text.customNote)
+                        .font(ZenithType.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.vertical, 9)
+                }
             }
-            sliderRow(symbol: "aqi.medium", title: text.blur, caption: text.blurCaption,
-                      value: motion.values.blur, range: IslandMotionValues.blurRange, step: 0.5,
-                      label: text.points(motion.values.blur)) { value in
-                ZenithAppearanceStore.editCustom(from: appearance.motion) { $0.blur = value }
-            }
-            sliderRow(symbol: "rectangle.stack", title: text.contentPace, caption: text.contentPaceCaption,
-                      value: motion.values.contentPace, range: IslandMotionValues.paceRange, step: 0.05,
-                      label: text.times(motion.values.contentPace)) { value in
-                ZenithAppearanceStore.editCustom(from: appearance.motion) { $0.contentPace = value }
-            }
-            Divider()
-            sliderRow(symbol: "speedometer", title: text.speed, caption: text.speedCaption,
-                      value: motion.speed, range: IslandMotionSettings.speedRange, step: 0.05,
-                      label: text.times(motion.speed), ends: ("tortoise", "hare")) { value in
-                ZenithAppearanceStore.setSpeed(value)
-            }
-            note(symbol: "info.circle", text.customNote)
-            note(symbol: "figure.walk.motion", reduceMotion ? text.reduceMotionOn : text.reduceMotionNote)
+            .padding(.top, 8)
         }
     }
 
@@ -138,71 +145,71 @@ struct AppearanceSettingsPage: View {
     private func presetTiles(_ motion: IslandMotionSettings,
                              previews: [(preset: IslandMotionPreset, preview: IslandMotionPreview)],
                              time: Double?) -> some View {
-        HStack(spacing: 6) {
-            ForEach(previews, id: \.preset) { item in
-                AppearanceChoiceTile(title: text.preset(item.preset), symbol: symbol(item.preset),
-                                     selected: motion.preset == item.preset, pictureHeight: 58) {
-                    ZenithAppearanceStore.selectPreset(item.preset)
-                } picture: {
-                    AppearanceMotionPicture(frame: time.map { item.preview.frame(at: $0) } ?? .open)
-                }
-                .help(text.presetCaption(item.preset))
-            }
-        }
-    }
-
-    private func symbol(_ preset: IslandMotionPreset) -> String {
-        switch preset {
-        case .zenith: return "dot.radiowaves.right"
-        case .snappy: return "bolt.fill"
-        case .calm: return "leaf"
-        case .playful: return "sparkles"
-        case .custom: return "slider.horizontal.3"
+        ZenithVisualPicker(text.motion,
+                           selection: Binding(get: { motion.preset }, set: { ZenithAppearanceStore.selectPreset($0) }),
+                           options: IslandMotionPreset.allCases.map {
+                               ZenithPickerOption($0, text.preset($0), detail: text.presetCaption($0))
+                           },
+                           minimumTileWidth: 104, tileHeight: 62) { preset, _ in
+            let preview = previews.first { $0.preset == preset }?.preview
+            AppearanceMotionPicture(frame: time.flatMap { preview?.frame(at: $0) } ?? .open)
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .padding(6)
         }
     }
 
     // MARK: Glass
 
-    private var glassCard: some View {
+    private var glassSection: some View {
         let glass = appearance.glass
-        return SettingsCard(title: text.glass) {
-            HStack(spacing: 10) {
-                ForEach(IslandGlassStyle.allCases) { style in
-                    let available = style != .liquid || Self.liquidGlassAvailable
-                    AppearanceChoiceTile(title: text.glassStyle(style), selected: glass.style == style,
-                                         enabled: available, pictureHeight: 70) {
-                        ZenithAppearanceStore.setGlassStyle(style)
-                    } picture: {
-                        AppearanceGlassPicture(style: style, gradientHeight: glass.gradientHeight, tint: glass.tint)
-                    }
+        return VStack(alignment: .leading, spacing: 10) {
+            ZenithSectionTitle(text.glass)
+            // Liquid Glass stays in view where it is missing, and says what it needs.
+            ZenithVisualPicker(text.glass,
+                               selection: Binding(get: { glass.style }, set: { style in
+                                   guard style != .liquid || Self.liquidGlassAvailable else { return }
+                                   ZenithAppearanceStore.setGlassStyle(style)
+                               }),
+                               options: IslandGlassStyle.allCases.map { style in
+                                   ZenithPickerOption(style, text.glassStyle(style),
+                                                      detail: style == .liquid && !Self.liquidGlassAvailable
+                                                          ? text.liquidNeedsMacOS26 : nil)
+                               },
+                               minimumTileWidth: 140, tileHeight: 76) { style, _ in
+                AppearanceGlassPicture(style: style, gradientHeight: glass.gradientHeight, tint: glass.tint)
+                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .padding(6)
+                    .opacity(style != .liquid || Self.liquidGlassAvailable ? 1 : 0.45)
+            }
+            ZenithFootnote(text.glassCaption)
+            if !Self.liquidGlassAvailable { ZenithFootnote(text.liquidNeedsMacOS26) }
+            if reduceTransparency {
+                ZenithCallout(.info, text.reduceTransparencyOn)
+            }
+            ZenithSection {
+                sliderRow(title: text.gradientHeight, caption: text.gradientHeightCaption,
+                          value: glass.gradientHeight, range: 0...1, step: 0.05, label: text.percent(glass.gradientHeight)) {
+                    ZenithAppearanceStore.setGradientHeight($0)
                 }
+                .disabled(glass.style != .gradient)
+                .opacity(glass.style == .gradient ? 1 : 0.45)
+                sliderRow(title: text.tint, caption: text.tintCaption,
+                          value: glass.tint, range: 0...1, step: 0.05, label: text.percent(glass.tint)) {
+                    ZenithAppearanceStore.setTint($0)
+                }
+                .disabled(glass.style == .black)
+                .opacity(glass.style == .black ? 0.45 : 1)
             }
-            caption(text.glassCaption)
-            if !Self.liquidGlassAvailable { caption(text.liquidNeedsMacOS26) }
-            if reduceTransparency { note(symbol: "circle.lefthalf.filled", text.reduceTransparencyOn) }
-            Divider()
-            sliderRow(symbol: "square.tophalf.filled", title: text.gradientHeight, caption: text.gradientHeightCaption,
-                      value: glass.gradientHeight, range: 0...1, step: 0.05, label: text.percent(glass.gradientHeight)) {
-                ZenithAppearanceStore.setGradientHeight($0)
-            }
-            .disabled(glass.style != .gradient)
-            .opacity(glass.style == .gradient ? 1 : 0.45)
-            sliderRow(symbol: "circle.dotted.and.circle", title: text.tint, caption: text.tintCaption,
-                      value: glass.tint, range: 0...1, step: 0.05, label: text.percent(glass.tint)) {
-                ZenithAppearanceStore.setTint($0)
-            }
-            .disabled(glass.style == .black)
-            .opacity(glass.style == .black ? 0.45 : 1)
+            .padding(.top, 8)
         }
     }
 
     // MARK: Battery
 
-    private var batteryCard: some View {
-        SettingsCard(title: text.battery) {
-            SettingsRow(symbol: "battery.75percent", title: text.saveBattery,
-                        badge: appearance.isSavingBattery ? text.savingNow : nil,
-                        caption: text.saveBatteryCaption) {
+    private var batterySection: some View {
+        ZenithSection(text.battery) {
+            ZenithRow(text.saveBattery, info: text.saveBatteryCaption,
+                      badge: appearance.isSavingBattery ? text.savingNow : nil) {
                 Picker(text.saveBattery, selection: Binding(get: { appearance.batterySaver },
                                                             set: { ZenithAppearanceStore.setBatterySaver($0) })) {
                     ForEach(IslandBatterySaver.allCases) { saver in
@@ -220,36 +227,10 @@ struct AppearanceSettingsPage: View {
 
     /// A row with a slider and its value. The slider rounds to `step`; the
     /// tortoise and hare, when given, stand at its ends.
-    private func sliderRow(symbol: String, title: String, caption: String, value: Double,
+    private func sliderRow(title: String, caption: String, value: Double,
                            range: ClosedRange<Double>, step: Double, label: String,
                            ends: (String, String)? = nil, set: @escaping (Double) -> Void) -> some View {
-        SettingsRow(symbol: symbol, title: title, caption: caption) {
-            HStack(spacing: 8) {
-                if let ends { Image(systemName: ends.0).foregroundStyle(.secondary) }
-                Slider(value: Binding(get: { value }, set: { set(($0 / step).rounded() * step) }), in: range)
-                    .frame(width: 170)
-                    .accessibilityLabel(title)
-                    .accessibilityValue(label)
-                if let ends { Image(systemName: ends.1).foregroundStyle(.secondary) }
-                Text(label)
-                    .font(ZenithType.mono(11.5))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 46, alignment: .trailing)
-            }
-        }
-    }
-
-    private func caption(_ string: String) -> some View {
-        Text(string)
-            .font(ZenithType.caption)
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private func note(symbol: String, _ string: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Image(systemName: symbol).font(.system(size: 11)).foregroundStyle(.secondary)
-            caption(string)
-        }
+        ZenithRow(title, value: Binding(get: { value }, set: { set(($0 / step).rounded() * step) }), in: range,
+                  info: caption, valueLabel: label, minimumSymbol: ends?.0, maximumSymbol: ends?.1)
     }
 }
