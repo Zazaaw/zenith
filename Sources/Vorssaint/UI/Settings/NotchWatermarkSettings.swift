@@ -4,7 +4,8 @@
 import AppKit
 import SwiftUI
 
-/// Zenith fork: the photo actions' watermark in Shelf settings, beside the
+/// Zenith fork: the photo actions' watermark in Shelf settings (a Settings
+/// kit section, its look under More options), beside the
 /// photo actions' own switch: the preset every new drop starts from, the logo
 /// (the Satu Visual star or a chosen PNG, SVG or PDF), the text and its
 /// weight, the colour and the shadow. It edits the same watermark the island
@@ -16,72 +17,74 @@ struct NotchWatermarkSettingsSection: View {
 
     var body: some View {
         let text = ZenithStrings.watermark(l10n.language)
-        Section(text.title) {
-            Picker(text.defaultPreset, selection: $defaultPreset) {
+        ZenithSection(text.title, anchor: .zenithWatermark, footer: text.caption) { // Settings search lands here
+            ZenithRow(text.defaultPreset, selection: $defaultPreset) {
                 Text(text.none).tag("")
                 ForEach(photos.watermarkPresets) { preset in
                     Text(preset.name).tag(preset.id)
                 }
             }
-
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 10) {
+            ZenithRow(text.logo, warning: missingLogo ? text.logoMissing : nil) {
+                HStack(spacing: 8) {
                     NotchWatermarkLogoThumbnail(file: photos.watermark.logoFile)
-                        .frame(width: 26, height: 26)
-                    Text(photos.watermark.logoFile == nil ? text.star : text.logo)
-                    Spacer(minLength: 12)
+                        .frame(width: 22, height: 22)
                     if photos.watermark.logoFile != nil {
                         Button(text.star) { photos.useWatermarkStar() }
+                    } else {
+                        Text(text.star).foregroundStyle(.secondary)
                     }
                     Button(text.chooseLogo) { photos.chooseWatermarkLogo() }
                 }
-                if let file = photos.watermark.logoFile, !NotchWatermarkLogoStore.exists(file) {
-                    Text(text.logoMissing)
-                        .font(.caption)
-                        .foregroundStyle(ZenithStatus.warning)
-                }
             }
-
-            TextField(text.text, text: Binding(
-                get: { photos.watermark.text },
-                set: { photos.watermark.text = NotchWatermarkSupport.textInput($0) }),
-                      prompt: Text(NotchWatermarkStyle.defaultText))
-
-            Picker(text.content, selection: $photos.watermark.content) {
+            ZenithRow(text.text) {
+                TextField(text.text, text: Binding(
+                    get: { photos.watermark.text },
+                    set: { photos.watermark.text = NotchWatermarkSupport.textInput($0) }),
+                          prompt: Text(NotchWatermarkStyle.defaultText))
+                    .textFieldStyle(.roundedBorder)
+                    .labelsHidden()
+                    .frame(width: 220)
+            }
+            ZenithRow(text.content, selection: $photos.watermark.content) {
                 Text(text.logo).tag(NotchWatermarkContent.logo)
                 Text(text.text).tag(NotchWatermarkContent.text)
                 Text(text.logoAndText).tag(NotchWatermarkContent.both)
             }
-            Picker(text.weight, selection: $photos.watermark.weight) {
-                Text(text.regular).tag(NotchWatermarkWeight.regular)
-                Text(text.medium).tag(NotchWatermarkWeight.medium)
-                Text(text.semibold).tag(NotchWatermarkWeight.semibold)
-                Text(text.bold).tag(NotchWatermarkWeight.bold)
-            }
-            HStack(spacing: 10) {
-                Picker(text.color, selection: $photos.watermark.color) {
-                    Text(text.autoColor).tag(NotchWatermarkColor.auto)
-                    Text(text.white).tag(NotchWatermarkColor.white)
-                    Text(text.black).tag(NotchWatermarkColor.black)
-                    Text(text.customColor).tag(NotchWatermarkColor.custom)
-                    if photos.watermark.logoFile != nil {
-                        Text(text.originalColors).tag(NotchWatermarkColor.original)
+            ZenithMoreOptions(id: "shelf.watermark") {
+                ZenithRow(text.weight, selection: $photos.watermark.weight) {
+                    Text(text.regular).tag(NotchWatermarkWeight.regular)
+                    Text(text.medium).tag(NotchWatermarkWeight.medium)
+                    Text(text.semibold).tag(NotchWatermarkWeight.semibold)
+                    Text(text.bold).tag(NotchWatermarkWeight.bold)
+                }
+                ZenithRow(text.color) {
+                    HStack(spacing: 8) {
+                        if photos.watermark.color == .custom {
+                            ColorPicker(text.customColor, selection: customColor, supportsOpacity: false)
+                                .labelsHidden()
+                        }
+                        ZenithRowMenu(title: text.color, selection: $photos.watermark.color, options: colorOptions(text))
                     }
                 }
-                if photos.watermark.color == .custom {
-                    ColorPicker(text.customColor, selection: customColor, supportsOpacity: false)
-                        .labelsHidden()
-                }
+                ZenithRow(text.shadow, isOn: $photos.watermark.shadow)
             }
-            ZenithSwitchRow(text.shadow, isOn: $photos.watermark.shadow) {
-                Text(text.shadow)
-            }
-            Text(text.caption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
         }
-        .settingsFormSectionAnchor(.zenithWatermark) // Settings search lands here
+    }
+
+    private var missingLogo: Bool {
+        guard let file = photos.watermark.logoFile else { return false }
+        return !NotchWatermarkLogoStore.exists(file)
+    }
+
+    @ViewBuilder
+    private func colorOptions(_ text: ZenithWatermarkStrings) -> some View {
+        Text(text.autoColor).tag(NotchWatermarkColor.auto)
+        Text(text.white).tag(NotchWatermarkColor.white)
+        Text(text.black).tag(NotchWatermarkColor.black)
+        Text(text.customColor).tag(NotchWatermarkColor.custom)
+        if photos.watermark.logoFile != nil {
+            Text(text.originalColors).tag(NotchWatermarkColor.original)
+        }
     }
 
     /// The custom colour as `#RRGGBB`, read and written through sRGB.

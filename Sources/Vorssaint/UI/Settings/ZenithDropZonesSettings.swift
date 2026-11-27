@@ -5,7 +5,8 @@ import SwiftUI
 
 extension NotchDropTarget: PanelOrderItem {}
 
-/// Zenith fork: the Drop zones card in Settings › Shelf. It holds every place
+/// Zenith fork: the Drop zones section in Settings › Shelf, in the Settings
+/// kit's section and rows. It holds every place
 /// a drag on the island can land (ZenithDropZones): a live preview of the
 /// zones as an image drag gets them, then one row per zone with its glyph,
 /// its name, when it shows, and its switch, dragged or moved with the arrows
@@ -35,30 +36,23 @@ struct ZenithDropZonesSettingsSection: View {
     var body: some View {
         let zones = zones
         let order = zones.order
-        Section(text.title) {
-            VStack(alignment: .leading, spacing: 12) {
+        ZenithSection(text.title, anchor: .zenithDropZones, footer: text.rule) { // Settings search lands here
+            VStack(alignment: .leading, spacing: 10) {
                 preview(zones)
                 Text(text.caption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                VStack(spacing: 2) {
-                    ForEach(order, id: \.self) { target in
-                        PanelReorderableItem(item: target,
-                                             order: Binding(get: { order }, set: { save(zones.reordering($0)) }),
-                                             dragging: $dragging) {
-                            row(target, zones: zones, index: order.firstIndex(of: target) ?? 0, count: order.count)
-                        }
-                    }
-                }
-                Text(text.rule)
-                    .font(.caption)
+                    .font(ZenithType.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, 12)
+            ForEach(order, id: \.self) { target in
+                PanelReorderableItem(item: target,
+                                     order: Binding(get: { order }, set: { save(zones.reordering($0)) }),
+                                     dragging: $dragging) {
+                    row(target, zones: zones, index: order.firstIndex(of: target) ?? 0, count: order.count)
+                }
+            }
         }
-        .settingsFormSectionAnchor(.zenithDropZones) // Settings search lands here
     }
 
     // MARK: Preview
@@ -164,10 +158,11 @@ struct ZenithDropZonesSettingsSection: View {
                 .disabled(locked)
                 .help(locked ? text.rule : title)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
         .padding(.horizontal, 6)
         .background(dragging == target ? ZenithSurface.tileFill : .clear,
                     in: RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous))
+        .padding(.horizontal, -6)
         .contentShape(Rectangle())
         .accessibilityElement(children: .contain)
         .accessibilityActions {
