@@ -96,7 +96,7 @@ struct EmojiPickerSettingsPage: View {
         ZenithSection(text.pickingSection, anchor: .zenithEmojiPickerPicking) {
             ZenithRow(text.recentCount, value: $recentCount, in: EmojiPickerDefaults.recentCountRange, step: 4,
                       info: text.recentCountCaption)
-            ZenithRow(text.clearRecents, info: text.clearRecentsCaption, button: cleared ? "Cleared" : text.clearRecents) {
+            ZenithRow(text.clearRecents, info: text.clearRecentsCaption, button: cleared ? text.cleared : text.clear) {
                 service.clearUsage()
                 cleared = true
             }

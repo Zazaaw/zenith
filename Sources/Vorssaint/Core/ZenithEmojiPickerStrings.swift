@@ -29,6 +29,8 @@ struct ZenithEmojiPickerStrings {
     let recentCount = "Recent and frequently used"
     let recentCountCaption = "How many emoji each row at the top of the picker holds. Zero hides them."
     let clearRecents = "Clear Recent"
+    let clear = "Clear"
+    let cleared = "Cleared"
     let clearRecentsCaption = "Forgets which emoji you picked. Kept on this Mac only."
     let accessibilityNeeded = "Zenith needs Accessibility to paste the emoji into the app in front."
     let openAccessibility = "Open Accessibility Settings"

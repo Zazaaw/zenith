@@ -96,6 +96,7 @@ struct RemoveBackgroundSettingsPage: View {
 /// pills choose.
 struct RemoveBackgroundStageArt: View {
     let state: Int
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(spacing: 22) {
@@ -103,7 +104,7 @@ struct RemoveBackgroundStageArt: View {
                 .opacity(state == 0 ? 1 : 0.55)
             Image(systemName: "arrow.right")
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.primary.opacity(0.55))
             card(cutout: true, cropped: state == 2)
                 .opacity(state == 0 ? 0.55 : 1)
         }
@@ -115,7 +116,7 @@ struct RemoveBackgroundStageArt: View {
         let width: CGFloat = cropped ? 92 : 150, height: CGFloat = cropped ? 120 : 130
         return ZStack {
             if cutout {
-                ZenithHeroChecker(square: 9, dark: true)
+                ZenithHeroChecker(square: 9, dark: colorScheme == .dark)
             } else {
                 LinearGradient(colors: [Color(red: 1, green: 0.62, blue: 0.4), Color(red: 0.55, green: 0.35, blue: 0.75)],
                                startPoint: .top, endPoint: .bottom)

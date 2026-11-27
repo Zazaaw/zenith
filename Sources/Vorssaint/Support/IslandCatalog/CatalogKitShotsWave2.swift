@@ -18,5 +18,10 @@ extension CatalogShots {
             ("calculator", .calculator, [CalculatorDefaults.enabled: true], 1100),
         ]
     }
+
+    /// The Calculator's island page.
+    static var pagesWave2: [CatalogShot] {
+        [page(.calculator, preferences: [CalculatorDefaults.enabled: true])]
+    }
 }
 #endif

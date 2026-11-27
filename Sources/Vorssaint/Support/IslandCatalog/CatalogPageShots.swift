@@ -111,7 +111,7 @@ extension CatalogShots {
             page(.batteries, id: "page-batteries-empty") { S.batteries([]) },
             page(.controls, id: "page-home-batteries",
                  preferences: [DefaultsKey.zenithHomeLayout: "batteries,timer"]) { S.batteries(); S.timer() },
-        ]
+        ] + pagesWave2 // Zenith fork: Orbit wave 2 (CatalogKitShotsWave2)
     }
 
     // MARK: Home and its tab bar, the gallery, peeking

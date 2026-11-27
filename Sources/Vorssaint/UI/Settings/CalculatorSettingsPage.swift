@@ -47,7 +47,7 @@ struct CalculatorSettingsPage: View {
     private var chips: [ZenithChip] {
         var chips: [ZenithChip] = []
         if showInIsland { chips.append(ZenithChip("⌥⌘=")) }
-        chips.append(ZenithChip(text.places(decimalPlaces) + (decimalPlaces == CalculatorFormat.automatic ? "" : " decimals")))
+        chips.append(ZenithChip(text.places(decimalPlaces) + " decimals"))
         return chips
     }
 
@@ -78,7 +78,7 @@ struct CalculatorStageArt: View {
     let commandBar: Bool
     let places: Int
 
-    private static let expression = "sqrt(2) × 12 + 10%"
+    private static let expression = "1200 × 12 + 10%"
 
     private var answer: String {
         let value = CalculatorEngine.value(Self.expression) ?? 0
