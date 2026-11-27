@@ -49,6 +49,7 @@ enum SettingsBackupSupport {
         keys.formUnion(unregisteredPreferenceKeys)
         keys.formUnion(TranslateDefaults.backupKeys) // Zenith fork: Translate keeps its keys in its own file
         keys.formUnion(MechakeyDefaults.all) // Zenith fork: Mechakey keeps its keys beside its code
+        keys.formUnion(ZenithAppearanceDefaults.all) // Zenith fork: Settings → Appearance
         keys.subtract(machineStateKeys)
         return keys
     }

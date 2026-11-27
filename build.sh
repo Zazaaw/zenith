@@ -728,6 +728,12 @@ if (( TEST )); then
         Sources/Vorssaint/Core/ZenithBatteriesIslandStrings.swift
         Sources/Vorssaint/Services/Mechakey/MechakeySupport.swift
         Sources/Vorssaint/Core/ZenithMechakeyStrings.swift
+        # Zenith fork: Appearance's model, its store, the motion preview and the power reading.
+        Sources/Vorssaint/Services/Appearance/ZenithAppearanceSupport.swift
+        Sources/Vorssaint/Services/Appearance/ZenithAppearance.swift
+        Sources/Vorssaint/Services/Appearance/ZenithAppearanceStore.swift
+        Sources/Vorssaint/Services/Appearance/IslandMotionPreview.swift
+        Sources/Vorssaint/Services/Appearance/ZenithPowerMonitor.swift
         Sources/Vorssaint/Core/ZenithPocketStrings.swift
         Sources/Vorssaint/Core/ZenithPocketWatchtowerStrings.swift
         Sources/Vorssaint/UI/Settings/PocketSettingsSupport.swift

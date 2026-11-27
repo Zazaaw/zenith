@@ -31,8 +31,11 @@ final class ZenithAppearance: ObservableObject {
             .sink { [weak self] _ in self?.reload() }
     }
 
-    /// Re-reads the preferences; publishes only what changed.
+    /// Re-reads the preferences; publishes only what changed. An old glass
+    /// switch with no style saved yet (an upgrade, an older backup) becomes
+    /// the style first.
     func reload() {
+        ZenithAppearanceStore.migrateLegacyGlass(in: defaults)
         let motion = IslandMotionSettings.load(from: defaults)
         if motion != self.motion { self.motion = motion }
         let glass = IslandGlassSettings.load(from: defaults)
