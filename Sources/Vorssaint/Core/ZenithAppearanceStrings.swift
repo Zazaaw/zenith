@@ -80,12 +80,13 @@ struct ZenithAppearanceStrings {
         }
     }
 
-    // Values beside the sliders.
+    // Values beside the sliders, in English like the page.
+    private static let english = Locale(identifier: "en_US_POSIX")
     func percent(_ value: Double) -> String { "\(Int((value * 100).rounded()))%" }
-    func points(_ value: Double) -> String { value.rounded() == value ? "\(Int(value)) pt" : String(format: "%.1f pt", value) }
+    func points(_ value: Double) -> String { value.rounded() == value ? "\(Int(value)) pt" : String(format: "%.1f pt", locale: Self.english, value) }
     /// 1.0×, 1.2×, 1.25×: at least one decimal, at most two.
     func times(_ value: Double) -> String {
-        var digits = String(format: "%.2f", value)
+        var digits = String(format: "%.2f", locale: Self.english, value)
         if digits.hasSuffix("0") { digits.removeLast() }
         return digits + "×"
     }
