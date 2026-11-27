@@ -5,7 +5,7 @@ import AppKit
 import SwiftUI
 
 /// Zenith fork: Settings → iPhone & Watch, Zenith Pocket's page, beside iPhone
-/// Remote. The switch, the relay (the person's own Supabase project), pairing
+/// Remote, built with the Settings kit. The switch in the hero, the relay (the person's own Supabase project), pairing
 /// by QR code as the phase asks, the paired phone and Watch, and what is
 /// shared. The page only reads `PocketStore.shared` and writes
 /// `PocketDefaults`; the service does the rest through the store's actions.
@@ -24,6 +24,7 @@ struct PocketSettingsPage: View {
     @State private var previewState = PocketPreviewState.unpaired
 
     private let text = ZenithStrings.pocket(.enUS)
+    private let page = ZenithStrings.everyday(.enUS)
 
     private var stage: PocketPairingStage {
         PocketPairingStage.of(store.phase, enabled: enabled, hasRelay: store.relay != nil)
@@ -31,8 +32,10 @@ struct PocketSettingsPage: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                SettingsPageHeader(title: text.title, subtitle: text.subtitle)
+            ZenithPageColumn {
+                ZenithHero(title: text.title, subtitle: text.subtitle, chips: chips, isOn: $enabled,
+                           switchLabel: text.enable, switchHint: text.enableCaption, animation: .pocket)
+                    .zenithSectionAnchor(.zenithPocket, cornerRadius: ZenithKitSurface.heroRadius + 6, inset: 6)
                 PocketPreviewCard(state: $previewState,
                                   sharing: PocketPreviewSharing(wallpaper: shareWallpaper, agents: shareAgents,
                                                                 nowPlaying: shareNowPlaying)) {
@@ -40,8 +43,6 @@ struct PocketSettingsPage: View {
                 } openSharing: {
                     open(.zenithPocketSharing)
                 }
-                Rectangle().fill(ZenithSurface.hairline).frame(height: 1)
-                enableSection
                 relaySection
                 pairingSection
                 sharingSection
@@ -49,9 +50,6 @@ struct PocketSettingsPage: View {
                     .opacity(enabled ? 1 : 0.5)
                 PocketWatchtowerSection().disabled(!enabled).opacity(enabled ? 1 : 0.5)
             }
-            .frame(maxWidth: 760)
-            .frame(maxWidth: .infinity)
-            .padding(22)
         }
         .onAppear {
             draft = PocketRelayDraft(store.relay)
@@ -67,47 +65,36 @@ struct PocketSettingsPage: View {
         }
     }
 
-    private func open(_ anchor: SettingsSectionAnchor) {
-        SettingsRouter.shared.request(FeatureSettingsDestination(.pocket, sectionAnchor: anchor))
+    private var chips: [ZenithChip] {
+        if case .paired = stage {
+            return [ZenithChip(PocketSettingsText.link(store.link, text), dot: linkColor),
+                    ZenithChip(PocketSettingsText.phoneName(store.devices, text))]
+        }
+        return [ZenithChip(page.pocketNotPaired)]
     }
 
-    // MARK: Turn on
-
-    private var enableSection: some View {
-        PocketSection {
-            PocketRow {
-                ZenithSwitchRow(text.enable, isOn: $enabled) {
-                    rowTitle(text.enable, caption: text.enableCaption)
-                }
-            }
-        }
-        .zenithSectionAnchor(.zenithPocket)
+    private func open(_ anchor: SettingsSectionAnchor) {
+        SettingsRouter.shared.request(FeatureSettingsDestination(.pocket, sectionAnchor: anchor))
     }
 
     // MARK: Relay
 
     private var relaySection: some View {
-        PocketSection(symbol: "server.rack", title: text.relay, footnote: text.relayCaption) {
-            PocketRow {
-                field(text.projectURL, problem: showsProblems ? draft.urlProblem : nil) {
-                    TextField(text.projectURL, text: $draft.url, prompt: Text(text.projectURLPrompt))
-                        .textFieldStyle(.roundedBorder)
-                        .font(ZenithType.mono(12))
-                        .onSubmit(save)
-                }
+        ZenithSection(text.relay, anchor: .zenithPocketRelay, footer: text.relayCaption) {
+            field(text.projectURL, problem: showsProblems ? draft.urlProblem : nil) {
+                TextField(text.projectURL, text: $draft.url, prompt: Text(text.projectURLPrompt))
+                    .textFieldStyle(.roundedBorder)
+                    .font(ZenithType.mono(12))
+                    .onSubmit(save)
             }
-            PocketDivider()
-            PocketRow {
-                field(text.anonKey, problem: showsProblems ? draft.keyProblem : nil) {
-                    TextField(text.anonKey, text: $draft.key, prompt: Text(text.anonKeyPrompt), axis: .vertical)
-                        .lineLimit(1...3)
-                        .textFieldStyle(.roundedBorder)
-                        .font(ZenithType.mono(11))
-                        .onSubmit(save)
-                }
+            field(text.anonKey, problem: showsProblems ? draft.keyProblem : nil) {
+                TextField(text.anonKey, text: $draft.key, prompt: Text(text.anonKeyPrompt), axis: .vertical)
+                    .lineLimit(1...3)
+                    .textFieldStyle(.roundedBorder)
+                    .font(ZenithType.mono(11))
+                    .onSubmit(save)
             }
-            PocketDivider()
-            PocketRow {
+            HStack(spacing: 8) {
                 relayStatus
                 Spacer(minLength: 12)
                 if store.relay != nil {
@@ -117,18 +104,11 @@ struct PocketSettingsPage: View {
                     .buttonStyle(.borderedProminent)
                     .disabled(draft.isEmpty || isSaved)
             }
+            .padding(.vertical, 8)
             if let problem = store.problem, !problem.isEmpty {
-                PocketDivider()
-                PocketRow {
-                    Label(problem, systemImage: "exclamationmark.triangle.fill")
-                        .font(ZenithType.caption)
-                        .foregroundStyle(ZenithStatus.error)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer(minLength: 0)
-                }
+                ZenithRowStatus(text: problem, symbol: "exclamationmark.triangle.fill", color: ZenithStatus.error)
             }
         }
-        .zenithSectionAnchor(.zenithPocketRelay)
     }
 
     /// Whether the fields hold the saved relay, read past spaces and slashes.
@@ -169,44 +149,33 @@ struct PocketSettingsPage: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+        .padding(.vertical, 10)
     }
 
     // MARK: Pairing
 
     private var pairingSection: some View {
-        let trailing: String? = {
-            if case .paired = stage { return PocketSettingsText.link(store.link, text) }
-            return nil
-        }()
-        return PocketSection(symbol: "qrcode", title: text.pairing, trailing: trailing) {
+        ZenithSection(text.pairing, anchor: .zenithPocketPairing) {
             switch stage {
             case .needs(let missing): needsRow(missing)
             case .starting:
-                PocketRow {
+                HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
                     caption(text.starting)
-                    Spacer()
                 }
+                .padding(.vertical, 8)
             case .unpaired:
-                PocketRow {
-                    rowTitle(text.pairPhone, caption: text.pairCaption)
-                    Spacer(minLength: 12)
-                    Button(text.pairPhone) { store.startPairing() }
-                        .buttonStyle(.borderedProminent)
-                }
+                ZenithRow(text.pairPhone, info: text.pairCaption, button: text.pairPhone) { store.startPairing() }
             case .pairing(let url): pairingRow(url)
             case .paired(let lastSeen): paired(lastSeen)
             }
         }
-        .zenithSectionAnchor(.zenithPocketPairing)
     }
 
     private func needsRow(_ missing: [PocketMissing]) -> some View {
-        PocketRow {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
             Image(systemName: "info.circle")
-                .font(.system(size: 15))
                 .foregroundStyle(.secondary)
-                .frame(width: 22)
             VStack(alignment: .leading, spacing: 3) {
                 Text(text.missingTitle).font(ZenithType.rowTitle)
                 ForEach(missing, id: \.self) { item in
@@ -215,31 +184,30 @@ struct PocketSettingsPage: View {
             }
             Spacer(minLength: 0)
         }
+        .padding(.vertical, 10)
     }
 
     private func pairingRow(_ url: URL) -> some View {
-        PocketRow {
-            HStack(alignment: .top, spacing: 20) {
-                PocketQRCode(url: url, label: text.codeLabel)
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(text.scanTitle).font(ZenithType.emphasis)
-                    VStack(alignment: .leading, spacing: 8) {
-                        step(1, text.stepOpen)
-                        step(2, text.stepPair)
-                        step(3, text.stepPoint)
-                    }
-                    HStack(spacing: 8) {
-                        ProgressView().controlSize(.small)
-                        caption(text.scanWaiting)
-                    }
-                    caption(text.scanPrivate)
-                    Spacer(minLength: 0)
-                    Button(text.cancel) { store.cancelPairing() }
+        HStack(alignment: .top, spacing: 20) {
+            PocketQRCode(url: url, label: text.codeLabel)
+            VStack(alignment: .leading, spacing: 12) {
+                Text(text.scanTitle).font(ZenithType.emphasis)
+                VStack(alignment: .leading, spacing: 0) {
+                    ZenithStepRow(number: 1, text: text.stepOpen)
+                    ZenithStepRow(number: 2, text: text.stepPair)
+                    ZenithStepRow(number: 3, text: text.stepPoint)
                 }
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    caption(text.scanWaiting)
+                }
+                caption(text.scanPrivate)
                 Spacer(minLength: 0)
+                Button(text.cancel) { store.cancelPairing() }
             }
-            .padding(.vertical, 6)
+            Spacer(minLength: 0)
         }
+        .padding(.vertical, 14)
     }
 
     /// The link and the last message, the phone and its Watch, then Unpair,
@@ -247,7 +215,7 @@ struct PocketSettingsPage: View {
     private func paired(_ lastSeen: Date?) -> some View {
         TimelineView(.periodic(from: .now, by: 30)) { context in
             VStack(alignment: .leading, spacing: 0) {
-                PocketRow {
+                HStack(spacing: 12) {
                     Circle().fill(linkColor).frame(width: 8, height: 8).frame(width: 22)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(PocketSettingsText.link(store.link, text)).font(ZenithType.rowTitle)
@@ -257,15 +225,16 @@ struct PocketSettingsPage: View {
                     }
                     Spacer(minLength: 0)
                 }
+                .padding(.vertical, 10)
                 if store.devices.isEmpty {
-                    PocketDivider()
-                    PocketRow { caption(text.noDevices); Spacer(minLength: 0) }
+                    ZenithRowSeparator().padding(.leading, -ZenithKitSurface.rowInset)
+                    caption(text.noDevices).padding(.vertical, 10)
                 }
                 ForEach(store.devices, id: \.self) { device in
-                    PocketDivider()
+                    ZenithRowSeparator().padding(.leading, -ZenithKitSurface.rowInset)
                     deviceRow(device, now: context.date)
                 }
-                PocketDivider()
+                ZenithRowSeparator().padding(.leading, -ZenithKitSurface.rowInset)
                 unpairRow
             }
         }
@@ -280,7 +249,7 @@ struct PocketSettingsPage: View {
     }
 
     private func deviceRow(_ device: PocketDeviceReport.Device, now: Date) -> some View {
-        PocketRow {
+        HStack(spacing: 12) {
             Image(systemName: device.kind == .watch ? "applewatch" : "iphone")
                 .font(.system(size: 16))
                 .foregroundStyle(.secondary)
@@ -302,11 +271,12 @@ struct PocketSettingsPage: View {
                     .monospacedDigit()
             }
         }
+        .padding(.vertical, 10)
     }
 
     @ViewBuilder private var unpairRow: some View {
         if confirmingUnpair {
-            PocketRow {
+            HStack(spacing: 8) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(text.unpair(PocketSettingsText.phoneName(store.devices, text))).font(ZenithType.rowTitle)
                     caption(text.unpairCaption)
@@ -320,75 +290,37 @@ struct PocketSettingsPage: View {
                 .buttonStyle(.borderedProminent)
                 .tint(ZenithStatus.error)
             }
+            .padding(.vertical, 10)
         } else {
-            PocketRow {
+            HStack {
                 Spacer()
                 Button(text.unpair) { confirmingUnpair = true }
             }
+            .padding(.vertical, 8)
         }
     }
 
     // MARK: Sharing
 
     private var sharingSection: some View {
-        PocketSection(symbol: "square.and.arrow.up", title: text.sharing) {
-            PocketRow {
-                ZenithSwitchRow(text.shareWallpaper, isOn: $shareWallpaper) {
-                    rowTitle(text.shareWallpaper, caption: text.shareWallpaperCaption)
-                }
+        ZenithSection(text.sharing, anchor: .zenithPocketSharing) {
+            ZenithRow(text.shareWallpaper, isOn: $shareWallpaper, info: text.shareWallpaperCaption)
+            ZenithRow(text.shareAgents, isOn: $shareAgents, info: text.shareAgentsCaption)
+            ZenithRow(text.shareNowPlaying, isOn: $shareNowPlaying, info: text.shareNowPlayingCaption)
+            ZenithMoreOptions(id: "pocket") {
+                ZenithRow(text.allowAnswers, isOn: $allowAnswers, info: text.allowAnswersCaption)
+                PocketMacSettingsRows()
             }
-            PocketDivider()
-            PocketRow {
-                ZenithSwitchRow(text.shareAgents, isOn: $shareAgents) {
-                    rowTitle(text.shareAgents, caption: text.shareAgentsCaption)
-                }
-            }
-            PocketDivider()
-            PocketRow {
-                ZenithSwitchRow(text.shareNowPlaying, isOn: $shareNowPlaying) {
-                    rowTitle(text.shareNowPlaying, caption: text.shareNowPlayingCaption)
-                }
-            }
-            PocketDivider()
-            PocketRow {
-                ZenithSwitchRow(text.allowAnswers, isOn: $allowAnswers) {
-                    rowTitle(text.allowAnswers, caption: text.allowAnswersCaption)
-                }
-            }
-            PocketMacSettingsRows()
         }
-        .zenithSectionAnchor(.zenithPocketSharing)
     }
 
     // MARK: Pieces
-
-    private func rowTitle(_ title: String, caption: String? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title).font(ZenithType.rowTitle)
-            if let caption { self.caption(caption) }
-        }
-    }
 
     private func caption(_ string: String) -> some View {
         Text(string)
             .font(ZenithType.caption)
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private func step(_ number: Int, _ string: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Text("\(number)")
-                .font(ZenithType.mono(10, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .frame(width: 18, height: 18)
-                .background(Circle().fill(ZenithSurface.tileFill))
-                .overlay(Circle().strokeBorder(ZenithSurface.tileStroke))
-                .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 4 }
-            Text(string)
-                .font(ZenithType.footnote)
-                .fixedSize(horizontal: false, vertical: true)
-        }
     }
 }
 
@@ -427,75 +359,5 @@ private struct PocketQRCode: View {
             return
         }
         code = (url, image, PocketQR.modulesAcross(matrix))
-    }
-}
-
-// MARK: - Chrome
-
-/// A section: its glyph and bold title above a hairline card, an optional
-/// mono label at the title's trailing edge, and an optional line under it.
-/// The same chrome as the Batteries page.
-private struct PocketSection<Content: View>: View {
-    var symbol: String? = nil
-    var title: String? = nil
-    var trailing: String? = nil
-    var footnote: String? = nil
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if let symbol, let title {
-                HStack(alignment: .firstTextBaseline, spacing: 10) {
-                    Image(systemName: symbol)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 22)
-                    Text(title)
-                        .font(ZenithType.sectionTitle)
-                        .tracking(ZenithType.sectionTitleTracking)
-                        .accessibilityAddTraits(.isHeader)
-                    Spacer(minLength: 12)
-                    if let trailing {
-                        Text(trailing.uppercased())
-                            .font(ZenithType.mono(9.5, weight: .semibold))
-                            .tracking(1)
-                            .foregroundStyle(.secondary)
-                            .padding(.trailing, 16)
-                    }
-                }
-                .padding(.leading, 2)
-            }
-            let shape = RoundedRectangle(cornerRadius: ZenithRadius.panel, style: .continuous)
-            VStack(alignment: .leading, spacing: 0) { content }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 4)
-                .background(ZenithSurface.cardFill, in: shape)
-                .overlay(shape.strokeBorder(ZenithSurface.hairline))
-            if let footnote {
-                Text(footnote)
-                    .font(ZenithType.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, 4)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-private struct PocketRow<Content: View>: View {
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        HStack(spacing: 12) { content }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-    }
-}
-
-private struct PocketDivider: View {
-    var body: some View {
-        Rectangle().fill(ZenithSurface.hairline).frame(height: 1).padding(.horizontal, 16)
     }
 }
