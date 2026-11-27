@@ -7,7 +7,7 @@ import SwiftUI
 /// The generated strips, reveal method and search pipeline come from production.
 /// Synthetic entries and same-sized empty tiles isolate native scrolling. Windows
 /// stay unordered; no screenshots, key events, capture or real app actions occur.
-enum SwitcherScrollContract {
+enum SwitcherScrollContract: ImmediateAnimations { // Zenith fork: reveals land at once
     typealias SwitcherItem = Item
 
     struct Item: Identifiable {

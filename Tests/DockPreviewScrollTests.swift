@@ -6,7 +6,7 @@ import SwiftUI
 
 /// The production panel is hosted offscreen with empty, same-sized cards.
 /// Button doubles expose its real actions without sending input to the desktop.
-enum DockPreviewScrollTests {
+enum DockPreviewScrollTests: ImmediateAnimations { // Zenith fork: reveals land at once
     struct SwitcherItem: Identifiable {
         let id: CGWindowID
         var windowID: CGWindowID? { id }
@@ -65,6 +65,12 @@ enum DockPreviewScrollTests {
     }
     struct NativeWindowDragHandle: View {
         var body: some View { Color.clear }
+    }
+    /// Zenith fork: the panel reads the main screen's visible frame. A fixed nominal screen
+    /// keeps the layout the same whichever displays are attached or focused.
+    enum NSScreen {
+        struct Screen { let visibleFrame: CGRect }
+        static let main: Screen? = Screen(visibleFrame: CGRect(x: 0, y: 0, width: 1440, height: 900))
     }
     final class L10n: ObservableObject {
         static let shared = L10n()
@@ -164,8 +170,9 @@ enum DockPreviewScrollTests {
                 let start = DockPreviewSupport.panelPadding
                     + CGFloat(expectedIndex) * (extent + DockPreviewSupport.cardSpacing)
                 action()
-                // The animation can start late on a busy CI runner. Wait for
-                // the actual reveal instead of assuming 250 ms is enough.
+                // Zenith fork: the reveal lands on SwiftUI's next update, which can come
+                // late on a busy CI runner. Wait for it instead of assuming
+                // 250 ms is enough.
                 settle(timeout: 2) {
                     let clip = scroll.contentView.bounds
                     return model.selectedWindowID == model.windows[expectedIndex].windowID
