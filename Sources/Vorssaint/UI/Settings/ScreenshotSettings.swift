@@ -72,7 +72,8 @@ struct ScreenshotSettingsPage: View {
     var body: some View {
         ZenithToolPage {
             ZenithHero(title: strings.pageTitle, subtitle: text.screenshotSubtitle,
-                       chips: [CaptureToolShortcutRows.chip(.screenshot), ZenithChip(delayTitle(delay))],
+                       chips: [CaptureToolShortcutRows.chip(.screenshot)]
+                        + (delay > 0 ? [ZenithChip("\(text.screenshotDelayChip) \(delayTitle(delay))")] : []),
                        animation: .screenshot)
                 .zenithSectionAnchor(.screenshot, cornerRadius: ZenithKitSurface.heroRadius + 6, inset: 6)
             CapturePermissionSection(kind: .screenRecording)
@@ -82,10 +83,13 @@ struct ScreenshotSettingsPage: View {
             shortcuts
             afterCapture
             saving
+            // The editor's tools and their keys: a long list, folded.
             ZenithSection(strings.toolShortcutsTitle) {
-                ScreenshotToolOrderControls(orderRaw: $toolOrderRaw, shortcutsEnabled: $toolShortcutsEnabled,
-                                            showsTitle: false)
-                    .padding(.vertical, 10)
+                ZenithMoreOptions(id: "screenshot.tools") {
+                    ScreenshotToolOrderControls(orderRaw: $toolOrderRaw, shortcutsEnabled: $toolShortcutsEnabled,
+                                                showsTitle: false)
+                        .padding(.vertical, 10)
+                }
             }
             sharingSection
             DesignOverlaySettingsSection() // Zenith fork: the design QA overlay.
@@ -117,7 +121,7 @@ struct ScreenshotSettingsPage: View {
 
     private var capture: some View {
         ZenithSection(text.screenshotCapture) {
-            ZenithRow(strings.pageTitle, info: strings.panelCaption, button: strings.captureButton) {
+            ZenithRow(text.tryNow, info: strings.panelCaption, button: strings.captureButton) {
                 ScreenCaptureService.shared.capture(initial: .screenshot)
             }
             ZenithRow(strings.freezeToggle, isOn: $freeze, info: strings.freezeCaption)
@@ -154,7 +158,7 @@ struct ScreenshotSettingsPage: View {
 
     private var scrolling: some View {
         ZenithSection(text.screenshotScrolling, anchor: .screenshotScrolling) {
-            ZenithRow(strings.scrollingCaptureTitle, info: strings.scrollingCaptureCaption,
+            ZenithRow(text.tryNow, info: strings.scrollingCaptureCaption,
                       button: strings.scrollingCaptureButton) {
                 ScreenCaptureService.shared.capture(initial: .scrolling)
             }

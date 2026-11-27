@@ -199,7 +199,7 @@ struct MusicBlockerSettingsPage: View {
     var body: some View {
         let s = l10n.s
         ZenithToolPage {
-            ZenithHero(title: s.musicBlockSection, subtitle: text.musicSubtitle,
+            ZenithHero(title: FeatureStrings.hub(l10n.language).titleMusicBlock, subtitle: text.musicSubtitle,
                        chips: replacementPath.isEmpty ? [] : [ZenithChip("\(text.musicReplacement): \(replacementName)")],
                        isOn: $enabled, switchLabel: s.musicBlockTitle, switchHint: s.musicBlockCaption,
                        animation: .musicBlocker)
@@ -295,7 +295,7 @@ struct MicMuteSettingsPage: View {
                 QuickToolsPreviewPicture(group: .apps, shown: .micMute, available: [.micMute], open: { _ in })
             }
             ZenithSection(text.micNow) {
-                ZenithRow(micMute.isMuted ? text.micMuted : text.micLive, info: s.micMuteCaption,
+                ZenithRow("\(text.micRow): \(micMute.isMuted ? text.micMuted : text.micLive)", info: s.micMuteCaption,
                           button: micMute.isMuted ? s.micUnmuteName : s.micMuteName) {
                     MicMuteService.shared.toggle()
                 }

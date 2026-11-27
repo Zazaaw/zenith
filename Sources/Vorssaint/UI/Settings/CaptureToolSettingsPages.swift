@@ -86,7 +86,7 @@ struct TextCaptureSettingsPage: View {
             CapturePermissionSection(kind: .screenRecording)
             ZenithScenePreview(scenes: [.screenText])
             ZenithSection(text.textCapture) {
-                ZenithRow(s.ocrName, info: s.ocrCaption, button: s.ocrName) { ScreenTextService.shared.capture() }
+                ZenithRow(text.tryNow, info: s.ocrCaption, button: s.ocrName) { ScreenTextService.shared.capture() }
                 ZenithRow(s.ocrRemoveLineBreaksToggle, isOn: $removesLineBreaks, info: s.ocrRemoveLineBreaksCaption)
                 ZenithRow(s.ocrQRToggle, isOn: $detectsQRCodes, info: s.ocrQRCaption)
             }
@@ -126,7 +126,7 @@ struct ColorPickerSettingsPage: View {
                 }
             }
             ZenithSection(text.colorPick) {
-                ZenithRow(s.colorPickerName, info: s.colorPickerCaption, button: s.colorPickerPickNow) {
+                ZenithRow(text.tryNow, info: s.colorPickerCaption, button: s.colorPickerPickNow) {
                     ColorSamplerService.shared.pick()
                 }
                 if current == .hex {
@@ -196,7 +196,7 @@ struct CameraPreviewSettingsPage: View {
                                          open: { _ in })
             }
             ZenithSection(text.cameraPreview) {
-                ZenithRow(strings.pageTitle, info: strings.panelCaption, button: strings.openButton) {
+                ZenithRow(text.tryNow, info: strings.panelCaption, button: strings.openButton) {
                     CameraPreviewService.shared.show()
                 }
             }

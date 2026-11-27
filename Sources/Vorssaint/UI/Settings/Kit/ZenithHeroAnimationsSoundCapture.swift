@@ -15,14 +15,14 @@ struct ZenithVolumeMixerHeroArt: ZenithHeroAnimation {
     func art(_ context: ZenithHeroArtContext) -> some View {
         let t = context.t
         ZStack {
-            context.icon.offset(x: -22)
+            context.icon.offset(x: -30)
             HStack(spacing: 9) {
                 ForEach(0..<3, id: \.self) { k in
                     let level = 0.3 + 0.55 * ZenithKitEase.pulse(t + Double(k) * 1.3, period: 4)
                     fader(level, tint: context.tint, dark: context.dark)
                 }
             }
-            .offset(x: 58)
+            .offset(x: 62)
         }
     }
 
@@ -227,7 +227,7 @@ struct ZenithTextCaptureHeroArt: ZenithHeroAnimation {
                 ForEach(Self.widths.indices, id: \.self) { k in
                     let read = scan > (Double(k) + 0.5) / Double(Self.widths.count)
                     Capsule()
-                        .fill(read ? context.tint.light.color : Color.white.opacity(0.35))
+                        .fill(read ? context.tint.light.color : (context.dark ? Color.white.opacity(0.35) : Color.black.opacity(0.18)))
                         .frame(width: Self.widths[k], height: 6)
                 }
             }

@@ -188,7 +188,7 @@ private struct TranslateSettingsContent: View {
                 pairRow(from: second, to: current.primary)
                 pairRow(from: current.primary, to: second)
             }
-            ZenithRow(text.manageDownloads, info: text.manageCaption, button: text.manageDownloads,
+            ZenithRow(text.manageTitle, info: text.manageCaption, button: text.manageDownloads,
                       action: openLanguageSettings)
             ZenithMoreOptions(id: "translate.downloads") {
                 ZenithRow(text.checkPair) {

@@ -36,6 +36,7 @@ struct ZenithSoundCaptureStrings {
     let micLive = "Live"
     let micMuted = "Muted"
     let micNow = "Right now"
+    let micRow = "Microphone"
     let micBehaviour = "Behaviour"
     let micShortcut = "Shortcut"
     let micStage = "While the microphone is muted, the island says so, whatever app you are in."
@@ -50,6 +51,7 @@ struct ZenithSoundCaptureStrings {
     let screenshotLoupe = "Loupe"
     let screenshotStageScreenshot = "Screenshot"
     let screenshotStageScrolling = "Scrolling"
+    let screenshotDelayChip = "Delay"
 
     // Screen Recording.
     let recordingSubtitle = "Record the screen with sound and zoom, then trim it, share it or save it as a GIF."
@@ -75,6 +77,7 @@ struct ZenithSoundCaptureStrings {
 
     // Shared.
     let shortcutSet = "Shortcut set"
+    let tryNow = "Try it now"
     let noShortcut = "No shortcut"
     let shortcutSection = "Shortcut"
     let sharing = "Sharing"
