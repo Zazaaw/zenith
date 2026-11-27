@@ -85,8 +85,8 @@ struct NotchAgentsBlurSwap: ViewModifier {
 }
 
 enum NotchAgentsMotion {
-    static let swap = Animation.smooth(duration: 0.32)
-    static let rows = Animation.spring(response: 0.38, dampingFraction: 0.86)
+    static let swap = IslandMotion.smooth(0.32)
+    static let rows = IslandMotion.spring(response: 0.38, damping: 0.86)
     static let stagger: Double = 0.04
 }
 
@@ -136,8 +136,8 @@ struct NotchAgentsLivePage: View {
         }
         .padding(.top, 2)
         .frame(width: size.width, height: size.height, alignment: .top)
-        .animation(reduceMotion ? .easeInOut(duration: 0.2) : NotchAgentsMotion.swap, value: state.tab)
-        .animation(reduceMotion ? .easeInOut(duration: 0.2) : NotchAgentsMotion.swap, value: headingKey)
+        .animation(reduceMotion ? IslandMotion.easeInOut(0.2) : NotchAgentsMotion.swap, value: state.tab)
+        .animation(reduceMotion ? IslandMotion.easeInOut(0.2) : NotchAgentsMotion.swap, value: headingKey)
         .environment(\.locale, l10n.language.formattingLocale())
         .onAppear {
             usage.pageDidAppear(preview: preview)
@@ -336,7 +336,7 @@ private struct NotchAgentsPillStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.96 : 1)
-            .animation(configuration.isPressed ? .easeOut(duration: 0.1) : .spring(response: 0.3, dampingFraction: 0.7),
+            .animation(configuration.isPressed ? IslandMotion.easeOut(0.1) : IslandMotion.spring(response: 0.3, damping: 0.7),
                        value: configuration.isPressed)
     }
 }
@@ -381,7 +381,7 @@ private struct NotchAgentsProgressView: View {
                             removal: .notchAgentsSwap(reduceMotion: false)))
                 }
             }
-            .animation(reduceMotion ? .easeInOut(duration: 0.2) : NotchAgentsMotion.rows, value: steps.map(\.id))
+            .animation(reduceMotion ? IslandMotion.easeInOut(0.2) : NotchAgentsMotion.rows, value: steps.map(\.id))
         }
     }
 }
@@ -439,7 +439,7 @@ private struct NotchAgentsStepRow: View {
                 .truncationMode(.middle)
         }
         .frame(height: NotchAgentsPageLayout.rowHeight)
-        .animation(.smooth(duration: 0.25), value: step.phase)
+        .animation(IslandMotion.smooth(0.25), value: step.phase)
         .modifier(NotchAgentsRowEntry(amount: shown || reduceMotion ? 0 : 1))
         .onAppear {
             guard !shown else { return }
@@ -501,7 +501,7 @@ private struct NotchAgentsFileCard: View {
                 .padding(14)
             }
         }
-        .animation(reduceMotion ? .easeInOut(duration: 0.2) : NotchAgentsMotion.swap, value: focus?.key)
+        .animation(reduceMotion ? IslandMotion.easeInOut(0.2) : NotchAgentsMotion.swap, value: focus?.key)
     }
 
     private func details(_ focus: Focus) -> some View {
@@ -541,9 +541,9 @@ private struct NotchAgentsFileCard: View {
             NotchAgentsStepBar(stepID: focus.stepID, phase: focus.phase,
                                tint: focus.phase == .failed ? ZenithStatus.error : waiting ? ZenithStatus.warning : tint)
         }
-        .animation(.smooth(duration: 0.3), value: focus.added)
-        .animation(.smooth(duration: 0.3), value: focus.removed)
-        .animation(.smooth(duration: 0.25), value: focus.status)
+        .animation(IslandMotion.smooth(0.3), value: focus.added)
+        .animation(IslandMotion.smooth(0.3), value: focus.removed)
+        .animation(IslandMotion.smooth(0.25), value: focus.status)
         .padding(.horizontal, 14)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
@@ -602,7 +602,7 @@ private struct NotchAgentsStepBar: View {
         .onChange(of: phase) { _, phase in
             guard phase != .running else { return }
             generation += 1
-            withAnimation(reduceMotion ? .easeOut(duration: 0.2) : .spring(response: 0.35, dampingFraction: 0.9)) {
+            withAnimation(reduceMotion ? IslandMotion.easeOut(0.2) : IslandMotion.spring(response: 0.35, damping: 0.9)) {
                 progress = phase == .done ? 1 : max(progress, 0.15)
             }
         }
@@ -776,7 +776,7 @@ private struct NotchAgentsRing: View {
                     .trim(from: 0, to: value)
                     .stroke(tint, style: StrokeStyle(lineWidth: 5, lineCap: .round))
                     .rotationEffect(.degrees(-90))
-                    .animation(.smooth(duration: 0.6), value: value)
+                    .animation(IslandMotion.smooth(0.6), value: value)
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
                     .fill(Color.white.opacity(0.08))
                     .frame(width: 30, height: 30)
@@ -800,13 +800,13 @@ private struct NotchAgentsRing: View {
                 .foregroundStyle(ZenithIsland.secondary)
                 .lineLimit(1)
                 .contentTransition(.numericText())
-                .animation(.smooth(duration: 0.4), value: share)
+                .animation(IslandMotion.smooth(0.4), value: share)
         }
         .opacity(shown || reduceMotion ? 1 : 0)
         .scaleEffect(shown || reduceMotion ? 1 : 0.92)
         .blur(radius: shown || reduceMotion ? 0 : 4)
         .onAppear {
-            withAnimation(.spring(response: 0.42, dampingFraction: 0.82).delay(Double(order) * NotchAgentsMotion.stagger)) {
+            withAnimation(IslandMotion.spring(response: 0.42, damping: 0.82).delay(Double(order) * NotchAgentsMotion.stagger)) {
                 shown = true
             }
         }

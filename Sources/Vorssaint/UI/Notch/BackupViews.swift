@@ -31,13 +31,13 @@ private struct CardBackupLiveReading: View {
                     .font(ZenithType.mono(11, weight: .semibold))
                     .foregroundStyle(ZenithIsland.primary)
                     .contentTransition(.numericText(value: Double(progress.percent)))
-                    .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: progress.percent)
+                    .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: progress.percent)
                 Text(reading(progress, text: text, locale: locale))
                     .font(ZenithType.mono(10.5))
                     .foregroundStyle(ZenithIsland.meta)
                     .lineLimit(1)
                     .contentTransition(.numericText())
-                    .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: progress.filesLeft)
+                    .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: progress.filesLeft)
             }
             if showsBar { CardImportBar(fraction: progress.fraction, height: 3) }
         }

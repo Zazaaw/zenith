@@ -177,7 +177,7 @@ struct ZenithAppIconButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.94 : 1)
-            .animation(ZenithMotion.respecting(.spring(response: 0.24, dampingFraction: 0.7)), value: configuration.isPressed)
+            .animation(ZenithMotion.respecting(IslandMotion.spring(response: 0.24, damping: 0.7)), value: configuration.isPressed)
     }
 }
 

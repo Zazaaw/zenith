@@ -290,7 +290,7 @@ struct ZenithLockScreenIsland: View {
                     .font(.system(size: FaceUnlockIslandLayout.minimalLockSize, weight: .semibold))
                     .foregroundStyle(.white)
                     .contentTransition(.symbolEffect(.replace.downUp))
-                    .animation(reduceMotion ? nil : .smooth(duration: 0.4), value: media)
+                    .animation(reduceMotion ? nil : IslandMotion.smooth(0.4), value: media)
                     .frame(width: wing, height: goal.height)
                 Spacer(minLength: 0)
                 FaceUnlockMediaView(media: media, plays: plays, still: stillMedia)
@@ -392,7 +392,7 @@ struct ZenithLockScreenIsland: View {
             .foregroundStyle(tint)
             // Atoll's padlock motion, the shackle replaced down then up.
             .contentTransition(.symbolEffect(.replace.downUp))
-            .animation(reduceMotion ? nil : .snappy(duration: 0.28), value: model.padlockOpen)
+            .animation(reduceMotion ? nil : IslandMotion.snappy(0.28), value: model.padlockOpen)
             .frame(width: ZenithLockIsland.padlockSize + 6, height: size.height)
     }
 

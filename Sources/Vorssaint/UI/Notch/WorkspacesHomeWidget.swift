@@ -37,7 +37,7 @@ struct WorkspacesHomeWidget: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .animation(reduceMotion ? .easeOut(duration: ZenithMotion.fast) : ZenithMotion.spring(), value: workspaces.runningID)
+        .animation(reduceMotion ? IslandMotion.easeOut(ZenithMotion.fast) : IslandMotion.pop(), value: workspaces.runningID)
     }
 
     private func tile(_ workspace: Workspace, text: ZenithWorkspacesStrings) -> some View {

@@ -347,7 +347,7 @@ private struct ZenithBentoButton<Label: View>: View {
             .contentShape(Rectangle())
             .opacity(enabled ? 1 : 0.4)
             .onHover { hovering = $0 }
-            .animation(ZenithMotion.respecting(.easeOut(duration: ZenithMotion.fast)), value: hovering)
+            .animation(ZenithMotion.respecting(IslandMotion.easeOut(ZenithMotion.fast)), value: hovering)
     }
 }
 
@@ -501,7 +501,7 @@ struct ZenithSegmented<Value: Hashable>: View {
                 ZenithSegment(title: option.title, selected: option.value == selection,
                               namespace: segment, fontSize: fontSize, mono: mono, fills: fills) {
                     guard option.value != selection else { return }
-                    withAnimation(ZenithMotion.respecting(ZenithMotion.toggle())) { selection = option.value }
+                    withAnimation(ZenithMotion.respecting(IslandMotion.toggle())) { selection = option.value }
                 }
             }
         }
@@ -550,7 +550,7 @@ private struct ZenithSegment: View {
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
-        .animation(ZenithMotion.respecting(.easeOut(duration: ZenithMotion.fast)), value: hovering)
+        .animation(ZenithMotion.respecting(IslandMotion.easeOut(ZenithMotion.fast)), value: hovering)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
@@ -666,7 +666,7 @@ struct ZenithCommandRow: View {
         }
         .contentShape(shape)
         .onHover { hovering = $0 }
-        .animation(ZenithMotion.respecting(.easeOut(duration: ZenithMotion.fast)), value: hovering)
+        .animation(ZenithMotion.respecting(IslandMotion.easeOut(ZenithMotion.fast)), value: hovering)
     }
 }
 
@@ -742,7 +742,7 @@ struct ZenithSystemCell: View {
             ZenithFigure(text: value ?? "…", size: detail == nil ? 24 : 19)
                 .minimumScaleFactor(0.6)
                 .contentTransition(.numericText())
-                .animation(reduceMotion ? nil : .smooth(duration: 0.25), value: value)
+                .animation(reduceMotion ? nil : IslandMotion.smooth(0.25), value: value)
             Spacer(minLength: 2)
             if let detail {
                 Text(detail).font(ZenithType.mono(10)).foregroundStyle(ZenithIsland.meta).lineLimit(1)
@@ -790,7 +790,7 @@ struct ZenithIslandTabBlock: ViewModifier {
                     .allowsHitTesting(false)
             }
             .onHover { hovering = $0 }
-            .animation(ZenithMotion.respecting(.easeOut(duration: ZenithMotion.fast)), value: hovering)
+            .animation(ZenithMotion.respecting(IslandMotion.easeOut(ZenithMotion.fast)), value: hovering)
     }
 }
 
@@ -824,7 +824,7 @@ struct ZenithIslandPrimaryAction: ViewModifier {
             .background(Capsule().fill(Color.white.opacity(hovering ? 1 : 0.9)))
             .opacity(enabled ? 1 : 0.4)
             .onHover { hovering = $0 }
-            .animation(ZenithMotion.respecting(.easeOut(duration: ZenithMotion.fast)), value: hovering)
+            .animation(ZenithMotion.respecting(IslandMotion.easeOut(ZenithMotion.fast)), value: hovering)
     }
 }
 
@@ -844,7 +844,7 @@ struct ZenithIslandRoundControl: ViewModifier {
                     .allowsHitTesting(false)
             }
             .onHover { hovering = $0 }
-            .animation(ZenithMotion.respecting(.easeOut(duration: ZenithMotion.fast)), value: hovering)
+            .animation(ZenithMotion.respecting(IslandMotion.easeOut(ZenithMotion.fast)), value: hovering)
     }
 }
 

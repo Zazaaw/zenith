@@ -112,14 +112,14 @@ struct NotchCapsuleNoticeView: View {
             NotchCapsuleSymbol(name: notice.symbol, tint: tint)
             NotchMeter(value: level, height: CapsuleLayout.meterHeight, tint: tint)
                 .frame(width: CapsuleLayout.meterWidth)
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: level)
+                .animation(reduceMotion ? nil : IslandMotion.easeOut(0.14), value: level)
             Text(notice.detail)
                 .font(Font(CapsuleLayout.levelFont as CTFont))
                 .lineLimit(1)
                 .contentTransition(.numericText())
                 .frame(width: CapsuleLayout.levelReadingWidth(notice.detail), alignment: .trailing)
         }
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: notice.detail)
+        .animation(reduceMotion ? nil : IslandMotion.easeOut(0.14), value: notice.detail)
         .transaction { $0.disablesAnimations = false }
     }
 
@@ -190,7 +190,7 @@ struct NotchCapsuleRestingView: View {
     var body: some View {
         resting
             .opacity(contentStepsAside ? 0 : 1)
-            .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: contentStepsAside)
+            .animation(reduceMotion ? nil : IslandMotion.easeInOut(0.2), value: contentStepsAside)
             .overlay {
                 if service.mascotShows(on: geometry) {
                     NotchMascotTrackView(look: NotchMascotSupport.look(),
@@ -308,7 +308,7 @@ struct NotchCapsuleMusicStrip: View {
                             .transition(.opacity)
                     }
                 }
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: showsControl)
+                .animation(reduceMotion ? nil : IslandMotion.easeOut(0.15), value: showsControl)
                 .padding(.trailing, CapsuleLayout.endPadding)
                 .frame(maxHeight: .infinity)
                 .contentShape(Rectangle())

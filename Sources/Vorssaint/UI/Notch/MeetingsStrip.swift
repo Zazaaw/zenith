@@ -96,7 +96,7 @@ private struct MeetingsCallControls: View {
                 .frame(width: MeetingsStripLayout.dotSize, height: MeetingsStripLayout.dotSize)
                 .opacity(meetings.cameraInUse ? 1 : 0)
                 .scaleEffect(meetings.cameraInUse || reduceMotion ? 1 : 0.2)
-                .animation(reduceMotion ? .easeInOut(duration: ZenithMotion.fast) : .spring(response: 0.32, dampingFraction: 0.8),
+                .animation(reduceMotion ? IslandMotion.easeInOut(ZenithMotion.fast) : IslandMotion.spring(response: 0.32, damping: 0.8),
                            value: meetings.cameraInUse)
                 .accessibilityHidden(!meetings.cameraInUse)
                 .accessibilityLabel(text.cameraOn)

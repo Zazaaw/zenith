@@ -105,7 +105,7 @@ enum BatteriesPalette {
 enum BatteriesMotion {
     /// A level changing, rings and rows arriving or leaving.
     static func change(reduceMotion: Bool) -> Animation {
-        reduceMotion ? .easeInOut(duration: ZenithMotion.fast) : ZenithMorph.animation
+        reduceMotion ? IslandMotion.easeInOut(ZenithMotion.fast) : ZenithMorph.animation
     }
 
     /// A ring or a row rises out of a blur as it arrives and blurs out a

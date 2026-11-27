@@ -187,7 +187,7 @@ private struct SkyStripGlyph: View {
             .onChange(of: phase) { old, new in
                 if old.hasPrefix("up"), !new.hasPrefix("up"), !reduceMotion { bumps += 1 }
             }
-            .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.35, bounce: 0.2), value: symbol)
+            .animation(reduceMotion ? IslandMotion.easeInOut(0.2) : IslandMotion.spring(duration: 0.35, bounce: 0.2), value: symbol)
             .accessibilityHidden(true)
     }
 }
@@ -252,7 +252,7 @@ struct SkyActivityStrip: View {
                                 .lineLimit(1)
                                 .foregroundStyle(.white.opacity(0.92))
                                 .contentTransition(.numericText(countsDown: true))
-                                .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: left)
+                                .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: left)
                                 .frame(width: readingWidth, alignment: .leading)
                         }
                     }
@@ -267,7 +267,7 @@ struct SkyActivityStrip: View {
                                 .monospacedDigit()
                                 .lineLimit(1).truncationMode(.tail)
                                 .contentTransition(.numericText(countsDown: true))
-                                .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: right)
+                                .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: right)
                                 .zenithMorph(on: phase)
                         }
                     }
@@ -326,13 +326,13 @@ struct SkyCapsuleStrip: View {
                         .monospacedDigit()
                         .lineLimit(1)
                         .contentTransition(.numericText(countsDown: true))
-                        .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: left)
+                        .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: left)
                         .frame(width: readingWidth, alignment: .leading)
                     Text(right)
                         .font(Font(layout.detailFont as CTFont))
                         .lineLimit(1).truncationMode(.tail)
                         .contentTransition(.numericText(countsDown: true))
-                        .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: right)
+                        .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: right)
                         .zenithMorph(on: phase)
                         .padding(.leading, layout.groupSpacing - layout.spacing)
                 }

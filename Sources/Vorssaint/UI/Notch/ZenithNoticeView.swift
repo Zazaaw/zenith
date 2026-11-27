@@ -47,7 +47,7 @@ struct ZenithNoticeRoot: View {
                 .accessibilityLabel(notice.accessibilityText)
                 .accessibilityAddTraits(notice.action == .none ? [] : .isButton)
                 .accessibilityAction { center.activate() }
-                .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: center.revision)
+                .animation(reduceMotion ? nil : IslandMotion.easeInOut(0.22), value: center.revision)
             }
         }
         .frame(width: center.panelSize.width, height: center.panelSize.height, alignment: .topLeading)
@@ -223,8 +223,8 @@ private extension View {
         let duration = shown ? ZenithNoticeTiming.contentDuration : ZenithNoticeTiming.contentOut * 0.7
         return blur(radius: shown || reduceMotion ? 0 : ZenithNoticeTiming.blurRadius)
             .opacity(shown ? 1 : 0)
-            .animation(reduceMotion ? .easeOut(duration: ZenithNoticeTiming.fade)
-                       : .easeOut(duration: duration).delay(Double(order) * step), value: shown)
+            .animation(reduceMotion ? IslandMotion.easeOut(ZenithNoticeTiming.fade)
+                       : IslandMotion.easeOut(duration).delay(Double(order) * step), value: shown)
     }
 }
 
@@ -255,7 +255,7 @@ private struct ZenithNoticeThumbnail: View {
                     .transition(.opacity)
             }
         }
-        .animation(.easeOut(duration: 0.2), value: image != nil)
+        .animation(IslandMotion.easeOut(0.2), value: image != nil)
     }
 }
 
@@ -274,8 +274,8 @@ private struct ZenithNoticeRing: View {
                 .trim(from: 0, to: shown || reduceMotion ? fraction : 0)
                 .stroke(color, style: StrokeStyle(lineWidth: 3, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.6).delay(shown ? 0.16 : 0), value: shown)
-                .animation(reduceMotion ? nil : .easeInOut(duration: 0.4), value: percent)
+                .animation(reduceMotion ? nil : IslandMotion.easeOut(0.6).delay(shown ? 0.16 : 0), value: shown)
+                .animation(reduceMotion ? nil : IslandMotion.easeInOut(0.4), value: percent)
             Text("\(ZenithNoticeFormat.clamped(percent))")
                 .font(.system(size: percent >= 100 ? 9.5 : 11, weight: .bold, design: .rounded))
                 .monospacedDigit()
@@ -310,7 +310,7 @@ private struct ZenithNoticeLowPowerPill: View {
         .padding(.horizontal, ZenithNoticeMeasure.pillPadding)
         .frame(height: ZenithNoticeLayout.pillHeight)
         .background(Capsule().fill(on ? color : color.opacity(0.18)))
-        .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8), value: on)
+        .animation(reduceMotion ? nil : IslandMotion.spring(response: 0.3, damping: 0.8), value: on)
     }
 }
 
@@ -384,12 +384,12 @@ private struct ZenithNoticeCheckmark: View {
                 .trim(from: 0, to: drawn ? 1 : 0)
                 .stroke(ZenithStatus.success, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.4).delay(shown ? 0.12 : 0), value: shown)
+                .animation(reduceMotion ? nil : IslandMotion.easeOut(0.4).delay(shown ? 0.12 : 0), value: shown)
             ZenithNoticeCheckShape()
                 .trim(from: 0, to: drawn ? 1 : 0)
                 .stroke(ZenithStatus.success, style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
                 .padding(8)
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.3).delay(shown ? 0.36 : 0), value: shown)
+                .animation(reduceMotion ? nil : IslandMotion.easeOut(0.3).delay(shown ? 0.36 : 0), value: shown)
         }
         .padding(2)
         .frame(width: ZenithNoticeLayout.ring, height: ZenithNoticeLayout.ring)

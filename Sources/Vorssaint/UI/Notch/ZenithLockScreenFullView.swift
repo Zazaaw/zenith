@@ -161,7 +161,7 @@ struct ZenithLockScreenFullLayer: View {
         .frame(width: size.width, height: size.height)
         .clipped()
         .environment(\.colorScheme, scheme.inkIsDark ? .light : .dark)
-        .animation(reduceMotion ? nil : .smooth(duration: 0.6), value: scheme)
+        .animation(reduceMotion ? nil : IslandMotion.smooth(0.6), value: scheme)
     }
 
     /// Without the record the song's text sits level with where it would be.
@@ -187,7 +187,7 @@ struct ZenithLockScreenFullLayer: View {
             }
         }
         .frame(width: size.width, height: size.height)
-        .animation(reduceMotion ? .easeInOut(duration: 0.3) : .easeInOut(duration: 0.6), value: backdrop?.id)
+        .animation(reduceMotion ? IslandMotion.easeInOut(0.3) : IslandMotion.easeInOut(0.6), value: backdrop?.id)
         .accessibilityHidden(true)
     }
 
@@ -399,9 +399,9 @@ struct ZenithLockScreenFullLayer: View {
                 ZStack {
                     stack.id(active ?? -1).transition(.opacity)
                 }
-                .animation(.easeInOut(duration: 0.25), value: active)
+                .animation(IslandMotion.easeInOut(0.25), value: active)
             } else {
-                stack.animation(.spring(response: 0.42, dampingFraction: 0.9), value: active)
+                stack.animation(IslandMotion.spring(response: 0.42, damping: 0.9), value: active)
             }
         }
     }
@@ -586,7 +586,7 @@ struct ZenithLockScreenTopRow: View {
                             .transition(.opacity)
                     }
                 }
-                .animation(reduceMotion ? nil : .smooth(duration: 0.35), value: items)
+                .animation(reduceMotion ? nil : IslandMotion.smooth(0.35), value: items)
             }
             .allowsHitTesting(false)
             closeButton(ink: ink)

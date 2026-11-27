@@ -30,7 +30,7 @@ struct NotchView: View {
                 let leaves = service.compactActivity == nil && service.mascotAtRest
                     && service.departingMusic == nil && service.lingeringMusic == nil
                 guard arrives || leaves else { return }
-                transaction.animation = .easeInOut(duration: NotchMascotMotion.restCrossfade)
+                transaction.animation = IslandMotion.easeInOut(NotchMascotMotion.restCrossfade)
             }
             .frame(width: service.surfaceSize.width, height: service.surfaceSize.height, alignment: .top)
             .foregroundStyle(.white)
@@ -416,7 +416,7 @@ struct NotchView: View {
             }
         }
         // The levels ease aside for the reading and back.
-        .animation(reduceMotion ? nil : .smooth(duration: 0.25), value: makesRoom)
+        .animation(reduceMotion ? nil : IslandMotion.smooth(0.25), value: makesRoom)
         .overlay(alignment: side == .leading ? .leading : .trailing) {
             if let feedback {
                 NotchExpandedLevelView(notice: feedback, showsDetail: readingWidth >= NotchLayout.levelReadingDetailWidth)
@@ -760,7 +760,7 @@ struct NotchRestingStrip: View {
                     }
                     .frame(width: geometry.restingWingWidth)
                     .opacity(wingStepsAside(.left) ? 0 : 1)
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: wingStepsAside(.left))
+                    .animation(reduceMotion ? nil : IslandMotion.easeInOut(0.2), value: wingStepsAside(.left))
                     Color.clear.frame(width: geometry.cameraWidth)
                     ZStack(alignment: .leading) {
                         Color.clear
@@ -785,7 +785,7 @@ struct NotchRestingStrip: View {
                     }
                     .frame(width: geometry.restingWingWidth)
                     .opacity(wingStepsAside(.right) ? 0 : 1)
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: wingStepsAside(.right))
+                    .animation(reduceMotion ? nil : IslandMotion.easeInOut(0.2), value: wingStepsAside(.right))
                 } else { Color.clear }
             }
             if service.mascotShows(on: geometry) {

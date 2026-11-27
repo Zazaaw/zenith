@@ -66,7 +66,7 @@ struct NotchSectionsView: View {
             .frame(height: NotchLayout.railHeight(rows: visible, rowHeight: NotchLayout.sectionTileHeight,
                                                   spacing: NotchLayout.sectionSpacing), alignment: .top)
             .clipped()
-            .animation(reduceMotion ? nil : .spring(duration: 0.3, bounce: 0), value: first)
+            .animation(reduceMotion ? nil : IslandMotion.spring(duration: 0.3, bounce: 0), value: first)
             .accessibilityScrollAction { edge in
                 if edge == .bottom { service.scrollSections(by: 1) }
                 else if edge == .top { service.scrollSections(by: -1) }
@@ -94,7 +94,7 @@ struct NotchSectionsView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: current)
+            .animation(reduceMotion ? nil : IslandMotion.easeOut(0.15), value: current)
             .accessibilityHidden(true)
         } else {
             Color.clear
@@ -181,7 +181,7 @@ struct NotchSectionSearch: View {
         .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         .clipped()
         .onHover { hovering in
-            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.15)) { hovered = hovering }
+            withAnimation(reduceMotion ? nil : IslandMotion.easeOut(0.15)) { hovered = hovering }
         }
         .onTapGesture { searching = true }
         .onAppear { searching = true }

@@ -52,7 +52,7 @@ struct NotchNoticeView: View {
         // A new reading that needs another width, as a level passing 99%,
         // moves its mark and meter with the island's steady ease, not ahead of it.
         // Keyed on the notice's own widths, so a display change does not ease it.
-        .animation(reduceMotion ? nil : .spring(duration: NotchMotion.steadyWidth.duration, bounce: 0),
+        .animation(reduceMotion ? nil : .spring(duration: IslandMotion.current.shape(NotchMotion.steadyWidth).duration, bounce: 0),
                    value: notice.preferredWings)
         .transaction { $0.disablesAnimations = false }
         // Another kind of notice is drawn anew at its place, as the island
@@ -112,7 +112,7 @@ struct NotchNoticeView: View {
             // A level's mark keeps its place while a shorter reading leaves
             // room it holds for the widest.
             .frame(maxWidth: .infinity, alignment: notice.readsFromEnds || notice.level != nil ? .leading : .trailing)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: notice.detail)
+            .animation(reduceMotion ? nil : IslandMotion.easeOut(0.14), value: notice.detail)
             .transaction { $0.disablesAnimations = false }
         }
     }
@@ -128,7 +128,7 @@ struct NotchNoticeView: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
         } else if let level = notice.level {
             NotchMeter(value: level, height: 5, tint: tint)
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: level)
+                .animation(reduceMotion ? nil : IslandMotion.easeOut(0.14), value: level)
                 .transaction { $0.disablesAnimations = false }
         } else {
             Text(notice.detail)

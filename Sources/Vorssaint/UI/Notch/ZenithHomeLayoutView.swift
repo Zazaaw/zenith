@@ -138,7 +138,7 @@ final class ZenithHomeEditor: ObservableObject {
         landingWork[widget]?.cancel()
         let work = DispatchWorkItem { [weak self] in
             guard let self else { return }
-            withAnimation(.easeOut(duration: 0.22)) { _ = self.landing.remove(widget) }
+            withAnimation(IslandMotion.easeOut(0.22)) { _ = self.landing.remove(widget) }
             self.landingWork[widget] = nil
         }
         landingWork[widget] = work
@@ -177,7 +177,7 @@ final class ZenithHomeEditor: ObservableObject {
         shortcutLandingWork[item]?.cancel()
         let work = DispatchWorkItem { [weak self] in
             guard let self else { return }
-            withAnimation(.easeOut(duration: 0.22)) { _ = self.landingShortcuts.remove(item) }
+            withAnimation(IslandMotion.easeOut(0.22)) { _ = self.landingShortcuts.remove(item) }
             self.shortcutLandingWork[item] = nil
         }
         shortcutLandingWork[item] = work
@@ -456,7 +456,7 @@ struct ZenithHomeWiggle: ViewModifier {
             .onAppear { if active { start() } }
             .onChange(of: active) { _, now in
                 if now { start() } else {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { tilted = false }
+                    withAnimation(IslandMotion.spring(response: 0.3, damping: 0.8)) { tilted = false }
                 }
             }
     }

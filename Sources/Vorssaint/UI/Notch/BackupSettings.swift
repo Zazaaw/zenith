@@ -40,7 +40,7 @@ struct CardBackupSettingsView: View {
                         .transition(.opacity)
                 }
             }
-            .animation(ZenithMotion.respecting(.easeOut(duration: 0.2)), value: problem)
+            .animation(ZenithMotion.respecting(IslandMotion.easeOut(0.2)), value: problem)
             ZenithSwitchRow(text.automatic, isOn: $automatic) {
                 label(text.automatic, caption: text.automaticCaption)
             }
@@ -89,7 +89,7 @@ struct CardBackupSettingsView: View {
                     .font(ZenithType.caption).foregroundStyle(.secondary)
                     .contentTransition(.opacity)
             }
-            .animation(ZenithMotion.respecting(.easeOut(duration: 0.2)), value: mounted)
+            .animation(ZenithMotion.respecting(IslandMotion.easeOut(0.2)), value: mounted)
             Button(text.remove) { backups.removeDestination(destination.id) }
         }
         .accessibilityElement(children: .combine)

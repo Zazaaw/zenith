@@ -213,7 +213,7 @@ private struct ZenithIslandHoverTracking: ViewModifier {
         content
             .environment(\.zenithIslandHovered, hovering)
             .onHover { hovering = $0 }
-            .animation(ZenithMotion.respecting(.easeOut(duration: ZenithMotion.fast)), value: hovering)
+            .animation(ZenithMotion.respecting(IslandMotion.easeOut(ZenithMotion.fast)), value: hovering)
     }
 }
 
@@ -258,7 +258,7 @@ struct ZenithBandBackLabel: View {
         .frame(height: 28)
         .contentShape(Rectangle())
         .onHover { hovering = $0 }
-        .animation(ZenithMotion.respecting(.easeOut(duration: ZenithMotion.fast)), value: hovering)
+        .animation(ZenithMotion.respecting(IslandMotion.easeOut(ZenithMotion.fast)), value: hovering)
     }
 }
 
@@ -337,7 +337,7 @@ private struct ZenithIslandSectionTile: ViewModifier {
             .overlay { shape.strokeBorder(stroke, lineWidth: highlighted ? 1 : 0.75).allowsHitTesting(false) }
             .environment(\.zenithIslandHovered, hovering || highlighted)
             .onHover { hovering = $0 }
-            .animation(ZenithMotion.respecting(.easeOut(duration: ZenithMotion.fast)), value: hovering)
+            .animation(ZenithMotion.respecting(IslandMotion.easeOut(ZenithMotion.fast)), value: hovering)
     }
 
     private var fill: Color {
@@ -379,7 +379,7 @@ private struct ZenithIslandActionWell: ViewModifier {
                     .allowsHitTesting(false)
             }
             .onHover { hovering = $0 }
-            .animation(ZenithMotion.respecting(.easeOut(duration: ZenithMotion.fast)), value: hovering)
+            .animation(ZenithMotion.respecting(IslandMotion.easeOut(ZenithMotion.fast)), value: hovering)
     }
 }
 
@@ -443,7 +443,7 @@ private struct ZenithIslandChip<Label: View>: View {
             .contentShape(Capsule())
             .opacity(enabled ? 1 : 0.4)
             .onHover { hovering = $0 }
-            .animation(ZenithMotion.respecting(.easeOut(duration: ZenithMotion.fast)), value: hovering)
+            .animation(ZenithMotion.respecting(IslandMotion.easeOut(ZenithMotion.fast)), value: hovering)
     }
 
     private var fill: Color {
@@ -508,7 +508,7 @@ private struct ZenithIslandOutlineButton<Label: View>: View {
             .contentShape(Capsule())
             .opacity(enabled ? 1 : 0.4)
             .onHover { hovering = $0 }
-            .animation(ZenithMotion.respecting(.easeOut(duration: ZenithMotion.fast)), value: hovering)
+            .animation(ZenithMotion.respecting(IslandMotion.easeOut(ZenithMotion.fast)), value: hovering)
     }
 }
 

@@ -168,7 +168,7 @@ struct CardImportMark: View {
             }
         }
         .frame(width: size, height: size)
-        .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.35, bounce: 0.2), value: phase)
+        .animation(reduceMotion ? IslandMotion.easeInOut(0.2) : IslandMotion.spring(duration: 0.35, bounce: 0.2), value: phase)
         .accessibilityHidden(true)
     }
 }
@@ -187,7 +187,7 @@ struct CardImportCheck: View {
             .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round))
             .onAppear {
                 guard !reduceMotion else { return }
-                withAnimation(.easeOut(duration: 0.32).delay(delay)) { drawn = true }
+                withAnimation(IslandMotion.easeOut(0.32).delay(delay)) { drawn = true }
             }
     }
 }
@@ -216,7 +216,7 @@ struct CardImportBar: View {
             Capsule(style: .continuous).fill(Color.white.opacity(0.14))
             Capsule(style: .continuous).fill(tint)
                 .scaleEffect(x: max(0.0001, value), y: 1, anchor: .leading)
-                .animation(reduceMotion ? nil : .smooth(duration: 0.35), value: value)
+                .animation(reduceMotion ? nil : IslandMotion.smooth(0.35), value: value)
         }
         .frame(height: height)
         .clipShape(Capsule(style: .continuous))
@@ -236,7 +236,7 @@ struct CardImportPercent: View {
             .monospacedDigit()
             .lineLimit(1)
             .contentTransition(.numericText(value: Double(percent)))
-            .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: percent)
+            .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: percent)
             .frame(width: CardImportStripLayout.width(CardImportStripLayout.percentText(100), font: font),
                    alignment: .leading)
             .accessibilityHidden(true)
@@ -292,7 +292,7 @@ struct CardImportActivityStrip: View {
                                 .monospacedDigit()
                                 .lineLimit(1).truncationMode(.tail)
                                 .contentTransition(.numericText())
-                                .animation(ZenithMotion.respecting(.smooth(duration: 0.3)), value: progress.filesLeft)
+                                .animation(ZenithMotion.respecting(IslandMotion.smooth(0.3)), value: progress.filesLeft)
                             if copying { CardImportBar(fraction: progress.fraction).frame(maxWidth: .infinity) }
                         }
                     }
@@ -351,7 +351,7 @@ struct CardImportCapsuleStrip: View {
                     .monospacedDigit()
                     .lineLimit(1).truncationMode(.tail)
                     .contentTransition(.numericText())
-                    .animation(ZenithMotion.respecting(.smooth(duration: 0.3)), value: progress.filesLeft)
+                    .animation(ZenithMotion.respecting(IslandMotion.smooth(0.3)), value: progress.filesLeft)
                     .padding(.leading, layout.groupSpacing - layout.spacing)
             }
             .padding(.leading, side + layout.endPadding)

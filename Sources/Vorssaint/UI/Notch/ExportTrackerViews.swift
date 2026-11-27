@@ -149,7 +149,7 @@ struct ExportStateMark: View {
                 SpringKeyframe(1, duration: 0.21, spring: .smooth)
             }
         }
-        .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.35, bounce: 0.2), value: finished)
+        .animation(reduceMotion ? IslandMotion.easeInOut(0.2) : IslandMotion.spring(duration: 0.35, bounce: 0.2), value: finished)
         .onChange(of: finished) { old, new in
             if !old, new, !reduceMotion { bumps += 1 }
         }
@@ -204,7 +204,7 @@ private struct ExportBreathing: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .animation(breathing ? .easeInOut(duration: 1.1).repeatForever(autoreverses: true) : .easeOut(duration: 0.2)) {
+            .animation(breathing ? .easeInOut(duration: 1.1).repeatForever(autoreverses: true) : IslandMotion.easeOut(0.2)) {
                 $0.scaleEffect(breathing ? 0.88 : 1).opacity(breathing ? 0.7 : 1)
             }
             .onAppear { breathing = !reduceMotion }
@@ -231,7 +231,7 @@ struct ExportSizeText: View {
             .monospacedDigit()
             .lineLimit(1)
             .contentTransition(.numericText(countsDown: false))
-            .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: reading)
+            .animation(reduceMotion ? nil : IslandMotion.smooth(0.3), value: reading)
             .frame(width: ExportTrackerLayout.sizeWidth(font: font, language: language), alignment: .leading)
             .accessibilityHidden(true)
     }

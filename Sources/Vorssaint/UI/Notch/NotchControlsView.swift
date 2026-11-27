@@ -196,7 +196,7 @@ struct NotchAudioControls: View {
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(mixer.systemOutputMuted == true ? ZenithStatus.error : Color.white)
                 .contentTransition(.symbolEffect(.replace))
-                .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: mixer.systemOutputMuted)
+                .animation(reduceMotion ? nil : IslandMotion.smooth(0.24), value: mixer.systemOutputMuted)
                 .frame(width: 18, height: 18)
                 .contentShape(Rectangle())
         }
@@ -380,7 +380,7 @@ private struct NotchKeyboardLightControls: View {
             Image(systemName: service.keyboardLightEnabled == false ? "light.min" : "light.max")
                 .font(.system(size: 12, weight: .medium))
                 .contentTransition(.symbolEffect(.replace))
-                .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: service.keyboardLightEnabled)
+                .animation(reduceMotion ? nil : IslandMotion.smooth(0.24), value: service.keyboardLightEnabled)
                 .frame(width: 18, height: 18)
                 .contentShape(Rectangle())
         }
@@ -456,7 +456,7 @@ struct NotchActionTile: View {
             .padding(.horizontal, 4)
             .frame(maxWidth: .infinity)
             .frame(height: NotchLayout.shortcutHeight)
-            .animation(reduceMotion ? nil : .smooth(duration: 0.26), value: active)
+            .animation(reduceMotion ? nil : IslandMotion.smooth(0.26), value: active)
             .contentShape(RoundedRectangle(cornerRadius: 14))
         }
         .buttonStyle(ZenithBentoButtonStyle(cornerRadius: ZenithRadius.card)) // Zenith fork: a wash, no lift
@@ -479,14 +479,14 @@ struct NotchActionTile: View {
                     if active { ZenithStatusDot(color: tint, live: true, size: 6).offset(x: 5, y: -5) }
                 }
                 .frame(width: 40, height: 40)
-                .animation(reduceMotion ? nil : .smooth(duration: 0.26), value: symbol)
+                .animation(reduceMotion ? nil : IslandMotion.smooth(0.26), value: symbol)
         } else {
             Image(systemName: symbol).font(.system(size: 18, weight: .regular))
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: 40, height: 40)
                 // A plain glyph; an active one in the accent or its status colour, with a glowing dot.
                 .modifier(ZenithIslandShortcutGlyph(active: active, tint: tint))
-                .animation(reduceMotion ? nil : .smooth(duration: 0.26), value: symbol)
+                .animation(reduceMotion ? nil : IslandMotion.smooth(0.26), value: symbol)
         }
     }
 
