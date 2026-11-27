@@ -74,16 +74,17 @@ enum RecorderFeatureTests {
                "the recorder keeps its optional capture permissions contextual")
         suite.expect(AppFeature.screenRecorder.energyProfile == .idle,
                "the recorder costs nothing between recordings")
-        suite.expect(FeatureVisibilitySupport.features(for: .screenshot)
-                == [.screenshot, .screenRecorder, .screenOCR, .colorPicker]
-                && pageVisible(.screenshot, available: [.screenRecorder])
-                && pageVisible(.screenshot, available: [.screenOCR])
-                && pageVisible(.screenshot, available: [.colorPicker])
-                && !pageVisible(.screenshot, available: []),
-               "every installed screen tool keeps the one Screen capture page")
-        suite.expect([AppFeature.screenshot, .screenRecorder, .screenOCR, .colorPicker]
-                .allSatisfy { $0.settingsDestination.page == .screenshot },
-               "every screen tool opens its mode inside the centralized Settings page")
+        // Zenith fork: each screen tool has a Settings page of its own.
+        let toolPages: [(AppFeature, SettingsPage)] = [
+            (.screenshot, .screenshot), (.screenRecorder, .screenRecording),
+            (.screenOCR, .textCapture), (.colorPicker, .colorPicker),
+        ]
+        suite.expect(toolPages.allSatisfy { feature, page in
+            FeatureVisibilitySupport.features(for: page) == [feature]
+                && pageVisible(page, available: [feature]) && !pageVisible(page, available: [])
+        }, "each installed screen tool keeps its own page")
+        suite.expect(toolPages.allSatisfy { $0.0.settingsDestination == FeatureSettingsDestination($0.1) },
+               "every screen tool opens its own Settings page")
         suite.expect(SettingsBackupSupport.exportKeys().contains(DefaultsKey.recorderShortcutEnabled)
                 && SettingsBackupSupport.exportKeys().contains(DefaultsKey.recorderShortcut)
                 && SettingsBackupSupport.exportKeys().contains(DefaultsKey.screenOCRShortcutEnabled)
