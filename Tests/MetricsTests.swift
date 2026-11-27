@@ -314,6 +314,7 @@ struct MetricsTests {
             ("translate", { TranslateTests.run(suite) }), // Zenith fork: Translate's language choice, text and clipboard
             ("meetings", { MeetingsTests.run(suite) }), // Zenith fork: call links, the next meeting, notice timing
             ("orbit-catalog", { OrbitCatalogTests.run(suite) }), // Zenith fork: the Features page's catalog, routing and search
+            ("appearance", { AppearanceSettingsTests.run(suite) }), // Zenith fork: Settings → Appearance, its glass and battery saver
         ]
         var selected = Set<String>()
         var listOnly = false
