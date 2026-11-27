@@ -142,7 +142,7 @@ struct SettingsView: View {
                                             .portManager, .workspaces, .lockScreen, .remote,
                                             .faceUnlock, .batteries, .pocket,
                                             .meetings, .mechakey, .appearance, // Zenith fork: Meetings, Mechakey, Appearance
-                                            .scrolling, .pointer, .mouseButtons] // Zenith fork: the Mouse page, split
+                                            .scrolling, .pointer, .mouseButtons, .keyDebounce, .superKey] // Zenith fork: the Input pages
         if ownHeader.contains(router.page) { return nil }
         if router.page == .translate { return nil } // Zenith fork: Translate opens with its own header
         if router.page == .general, !(detailShowsGeneralTool) { return nil }

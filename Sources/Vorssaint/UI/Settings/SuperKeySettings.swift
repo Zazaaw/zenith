@@ -29,125 +29,80 @@ struct SuperKeySettings: View {
         ModifierChoice(modifier: .command, symbol: "⌘", name: "Command"),
     ]
 
+    private var pageText: ZenithInputWindowsStrings { ZenithStrings.inputWindows(l10n.language) }
+
+    // Zenith fork: a kit feature page: the hero with the master switch, the
+    // key to hold as pictures, the modifiers it stands for, then what a press
+    // alone does.
     var body: some View {
-        Form {
-            ZenithPreviewFormSection { ZenithSuperKeyPreviewCard() } // Zenith fork: the preview card
-            Section(text.pageTitle) {
-                Toggle(text.enableToggle, isOn: $enabled)
-                    .onChange(of: enabled) { _, value in
-                        SuperKeyService.shared.syncWithPreferences()
-                        guard value, !permissions.accessibility else { return }
-                        permissions.requestAccessibility()
-                        permissions.openAccessibilitySettings()
-                    }
-                Picker(text.sourceKey, selection: sourceBinding) {
-                    ForEach(SuperKeySource.allCases) { source in
-                        Text(text.sourceLabel(source)).tag(source)
-                    }
-                }
-                Text(text.enableCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Label(text.modifierKeysNote, systemImage: "info.circle")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                diagram
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                ZenithHero(title: text.pageTitle, subtitle: pageText.superKeySubtitle, chips: chips,
+                           isOn: enabledBinding, switchLabel: text.enableToggle, switchHint: text.enableCaption,
+                           animation: .superKey)
                 if enabled, let failure = superKey.mappingFailure {
-                    Label(text.mappingFailure(failure),
-                          systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption)
-                        .foregroundStyle(ZenithStatus.warning)
+                    ZenithCallout(.warning, text.mappingFailure(failure))
                 } else if enabled, superKey.isPausedForApplication {
-                    Label(FeatureStrings.mouseExceptions(l10n.language).pausedSuperKey,
-                          systemImage: "pause.circle")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else if enabled, superKey.isRunning {
-                    Label(text.activeNow, systemImage: "checkmark.circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(ZenithStatus.success)
+                    ZenithCallout(.info, FeatureStrings.mouseExceptions(l10n.language).pausedSuperKey)
                 }
-            }
-            .zenithPreviewTarget("superKey.main") // Zenith fork
-
-            Section(text.soloSection) {
-                Picker(text.soloSection, selection: soloBinding) {
-                    Text(text.soloNothing).tag(SuperKeySoloAction.none)
-                    Text(text.soloCapsLock).tag(SuperKeySoloAction.capsLock)
-                    Text(text.soloInputSource).tag(SuperKeySoloAction.inputSource)
-                    Text(text.soloEscape).tag(SuperKeySoloAction.escape)
+                if enabled, !permissions.accessibility {
+                    InputWindowsPermissionSection()
                 }
-                .labelsHidden()
-                .pickerStyle(.radioGroup)
-                Text(text.soloCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .disabled(!enabled)
-            .zenithPreviewTarget("superKey.solo") // Zenith fork
-
-            if enabled {
-                MouseExceptionsList(scope: .superKey)
-            }
-
-            if enabled, !permissions.accessibility {
-                Section(l10n.s.permissionRequired) {
-                    PermissionRow(kind: .accessibility)
+                ZenithSuperKeyPreviewCard()
+                VStack(alignment: .leading, spacing: 10) {
+                    ZenithSectionTitle(text.sourceKey)
+                    ZenithVisualPicker(text.sourceKey, selection: sourceBinding,
+                                       options: SuperKeySource.allCases.map { ZenithPickerOption($0, text.sourceLabel($0)) },
+                                       minimumTileWidth: 96, tileHeight: 56) { source, selected in
+                        SuperKeySourceArt(source: source, selected: selected)
+                    }
+                    ZenithSection {
+                        ZenithRow(pageText.modifiersRow, info: text.modifierKeysNote) {
+                            HStack(spacing: 5) {
+                                ForEach(modifierChoices) { modifierKeyCap($0) }
+                            }
+                        }
+                        if enabled {
+                            MouseExceptionsList(scope: .superKey).padding(.vertical, 8)
+                        }
+                    }
                 }
+                .zenithPreviewTarget("superKey.main")
+                ZenithSection(pageText.soloSection) {
+                    ZenithRow(text.soloSection, selection: soloBinding, info: text.soloCaption) {
+                        Text(text.soloNothing).tag(SuperKeySoloAction.none)
+                        Text(text.soloCapsLock).tag(SuperKeySoloAction.capsLock)
+                        Text(text.soloInputSource).tag(SuperKeySoloAction.inputSource)
+                        Text(text.soloEscape).tag(SuperKeySoloAction.escape)
+                    }
+                }
+                .disabled(!enabled)
+                .zenithPreviewTarget("superKey.solo")
             }
+            .frame(maxWidth: 760)
+            .frame(maxWidth: .infinity)
+            .padding(22)
         }
-        .formStyle(.grouped)
-        .zenithPreviewJumps() // Zenith fork
+        .zenithPreviewJumps()
     }
 
-    /// The whole feature in one line: the key you hold, and the keys it stands
-    /// for. Dimmed while the feature is off, so the page reads the same
-    /// either way without pretending to be active.
-    private var diagram: some View {
-        HStack(spacing: 10) {
-            VStack(spacing: 3) {
-                keyCap(text.sourceLabel(source),
-                       symbol: source == .capsLock ? "capslock" : nil,
-                       wide: true)
-                Text(text.holdHint)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
-            }
-            Image(systemName: "arrow.right")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.tertiary)
-                .padding(.bottom, 14)
-            HStack(spacing: 5) {
-                ForEach(modifierChoices) { choice in
-                    modifierKeyCap(choice)
-                }
-            }
-            .padding(.bottom, 14)
+    private var chips: [ZenithChip] {
+        let glyphs = modifierChoices.filter { selectedModifiers.contains($0.modifier) }.map(\.symbol).joined()
+        var chips = [ZenithChip(text.sourceLabel(source)), ZenithChip(glyphs)]
+        if enabled, superKey.isRunning, superKey.mappingFailure == nil, !superKey.isPausedForApplication {
+            chips.append(ZenithChip(text.activeNow, dot: ZenithStatus.success))
         }
-        .opacity(enabled ? 1 : 0.5)
-        .animation(.easeInOut(duration: 0.18), value: enabled)
-        .frame(maxWidth: .infinity, alignment: .center)
-        .padding(.vertical, 4)
+        return chips
     }
 
-    private func keyCap(_ title: String, symbol: String?, wide: Bool) -> some View {
-        HStack(spacing: 4) {
-            if let symbol {
-                Image(systemName: symbol)
-                    .font(.system(size: 11, weight: .semibold))
-            }
-            Text(title)
-                .font(.system(size: 12, weight: .medium))
-        }
-        .frame(minWidth: wide ? 84 : 30, minHeight: 30)
-        .background(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(Color.primary.opacity(0.06))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.12))
-        )
+    private var enabledBinding: Binding<Bool> {
+        Binding(get: { enabled }, set: { value in
+            enabled = value
+            SuperKeyService.shared.syncWithPreferences()
+            guard value, !permissions.accessibility else { return }
+            permissions.requestAccessibility()
+            permissions.openAccessibilitySettings()
+        })
     }
 
     private func modifierKeyCap(_ choice: ModifierChoice) -> some View {
@@ -219,5 +174,22 @@ struct SuperKeySettings: View {
             soloActionRaw = action.rawValue
             SuperKeyService.shared.syncWithPreferences()
         }
+    }
+}
+
+/// Zenith fork: a source key's tile: the key as a keycap with its symbol.
+private struct SuperKeySourceArt: View {
+    let source: SuperKeySource
+    let selected: Bool
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 7, style: .continuous)
+            .fill(LinearGradient(colors: [Color(white: 0.98), Color(white: 0.84)], startPoint: .top, endPoint: .bottom))
+            .frame(width: source == .capsLock ? 58 : 40, height: 30)
+            .overlay(Image(systemName: source.systemImage)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.black.opacity(0.65)))
+            .shadow(color: .black.opacity(0.3), radius: selected ? 4 : 2, y: 2)
+            .accessibilityHidden(true)
     }
 }
