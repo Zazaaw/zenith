@@ -7,6 +7,8 @@ import SwiftUI
 /// Per-calendar checkboxes, grouped by account like Calendar.app. Unchecked
 /// calendars stay out of the Calendar section and the event countdown.
 struct NotchCalendarSelection: View {
+    /// Zenith fork: false where a section title already names the list.
+    var showsHeading = true
     @ObservedObject private var l10n = L10n.shared
     @State private var choices: [NotchCalendarChoice] = []
     @State private var excluded = NotchCalendarSupport.excludedCalendars()
@@ -15,8 +17,10 @@ struct NotchCalendarSelection: View {
         let groups = NotchCalendarSupport.grouped(choices)
         VStack(alignment: .leading, spacing: 6) {
             if !groups.isEmpty {
-                Divider()
-                Text(FeatureStrings.notchCalendar(l10n.language).calendars).font(.subheadline.weight(.medium))
+                if showsHeading {
+                    Divider()
+                    Text(FeatureStrings.notchCalendar(l10n.language).calendars).font(.subheadline.weight(.medium))
+                }
                 ForEach(groups, id: \.first?.sourceID) { group in
                     if let source = group.first?.source, !source.isEmpty {
                         Text(source).font(.caption).foregroundStyle(.secondary).padding(.top, 4)

@@ -10,22 +10,22 @@ struct NotchDownloadsSettingsControls: View {
     @AppStorage(DefaultsKey.notchDownloadsEnabled) private var enabled = true
     private var text: NotchFilesStrings { FeatureStrings.notchFiles(l10n.language) }
 
+    // Zenith fork: Settings → Downloads, a section of compact rows (docs/SETTINGS-KIT.md).
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Toggle(text.downloadsTitle, isOn: $enabled)
+        let pages = ZenithStrings.islandPages(l10n.language)
+        ZenithSection(pages.folder) {
+            ZenithRow(text.downloadsTitle, isOn: $enabled, info: text.downloadsHint)
                 .disabled(!AppFeature.notchDownloads.isAvailable)
-            Text(text.downloadsHint).font(.caption).foregroundStyle(.secondary)
-            if downloads.folderUnavailable {
-                Text(text.folderUnavailable).font(.caption).foregroundStyle(ZenithStatus.warning)
-            } else if let name = downloads.folderName {
-                Label(name, systemImage: "folder").font(.caption).lineLimit(1).truncationMode(.middle)
-            }
-            HStack {
-                Button(text.chooseFolder, action: downloads.chooseFolder)
-                if downloads.folderName != nil || downloads.folderUnavailable {
-                    Button(text.clearFolder, action: downloads.forgetFolder)
+            ZenithRow(downloads.folderName ?? text.chooseFolder,
+                      warning: downloads.folderUnavailable ? text.folderUnavailable : nil) {
+                HStack(spacing: 8) {
+                    if downloads.folderName != nil || downloads.folderUnavailable {
+                        Button(text.clearFolder, action: downloads.forgetFolder)
+                    }
+                    Button(text.chooseFolder, action: downloads.chooseFolder)
                 }
-            }.controlSize(.small)
+                .controlSize(.small)
+            }
         }
         .onChange(of: enabled) { NotchService.shared.syncWithPreferences() }
     }

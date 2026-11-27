@@ -20,6 +20,8 @@ enum SettingsPage: Hashable, CaseIterable {
     case meetings // Zenith fork: calls from the calendar, Join and the mic, beside the lock screen
     case mechakey // Zenith fork: mechanical keyboard sounds as you type, a page of its own
     case appearance // Zenith fork: how the island moves and what it is made of, a sidebar tile
+    // Zenith fork: the island's sections with options of their own, each a page in the Island group.
+    case notchCalendar, notchNotifications, notchMusic, notchTimer, notchAgents, notchDownloads, notchWatch
 }
 
 /// Stable, non-localized identities for destinations inside shared Settings
@@ -111,9 +113,11 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
         // Zenith fork
         case .zenithWakaTime, .zenithVercel, .zenithGitHub, .zenithCardImport, .zenithDevServers, .zenithGit, .zenithSky,
              .zenithRecap, .zenithPrompter,
-             .zenithClaudeHooks, .zenithCardBackup, .zenithPrayerTimes, .zenithGoldenHour, .zenithCameraAutoStart,
-             .zenithReply, .zenithCommandActivity, .zenithExportTracker, .zenithNotices, .zenithTabBar:
+             .zenithCardBackup, .zenithPrayerTimes, .zenithGoldenHour, .zenithCameraAutoStart,
+             .zenithCommandActivity, .zenithExportTracker, .zenithNotices, .zenithTabBar:
             return .notch
+        case .zenithReply: return .notchNotifications // Zenith fork: the island's sections, pages of their own
+        case .zenithClaudeHooks: return .notchAgents
         case .zenithLockScreen, .zenithLockScreenTerminal, .zenithLockScreenLyrics, .zenithLockScreenMusic: return .lockScreen
         case .zenithRemote: return .remote
         case .zenithPocket, .zenithPocketRelay, .zenithPocketPairing, .zenithPocketSharing, .zenithPocketWatchtower: return .pocket
@@ -164,11 +168,35 @@ enum NotchSettingsLocation: Hashable {
     }
 }
 
+extension NotchModule {
+    /// Zenith fork: the page of its own a section's options live on, or nil
+    /// for the sections whose options stay on the island page's Content tab.
+    var settingsPage: SettingsPage? {
+        switch self {
+        case .calendar: return .notchCalendar
+        case .notifications: return .notchNotifications
+        case .music: return .notchMusic
+        case .timer: return .notchTimer
+        case .agents: return .notchAgents
+        case .downloads: return .notchDownloads
+        case .watch: return .notchWatch
+        default: return nil
+        }
+    }
+}
+
+extension SettingsPage {
+    /// Zenith fork: one of the island's sections on a page of its own.
+    var isNotchModulePage: Bool {
+        NotchModule.allCases.contains { $0.settingsPage == self }
+    }
+}
+
 /// A feature's nearest configuration surface. The optional anchor distinguishes
 /// a feature section on a shared page; nil means the page itself is the target.
 struct FeatureSettingsDestination: Hashable {
     let page: SettingsPage
-    let sectionAnchor: SettingsSectionAnchor?
+    private(set) var sectionAnchor: SettingsSectionAnchor?
     let notchLocation: NotchSettingsLocation?
 
     init(_ page: SettingsPage, sectionAnchor: SettingsSectionAnchor? = nil) {
@@ -177,17 +205,23 @@ struct FeatureSettingsDestination: Hashable {
         self.notchLocation = nil
     }
 
+    /// Zenith fork: a section with a page of its own (Calendar, Music, Agents…)
+    /// lands on that page rather than on the island's Content tab.
     init(notch location: NotchSettingsLocation) {
-        page = .notch
+        if case .module(let module) = location, let page = module.settingsPage {
+            self.page = page
+            notchLocation = nil
+        } else {
+            page = .notch
+            notchLocation = location
+        }
         sectionAnchor = nil
-        notchLocation = location
     }
 
     /// Zenith fork: a section inside one of the island's tabs or module options.
     init(notch location: NotchSettingsLocation, sectionAnchor: SettingsSectionAnchor) {
-        page = .notch
+        self.init(notch: location)
         self.sectionAnchor = sectionAnchor
-        notchLocation = location
     }
 
     var hasValidSectionAnchor: Bool {
@@ -258,9 +292,6 @@ final class SettingsRouter: ObservableObject {
     /// One-shot hint for the Cleaner page's tool switcher, so a panel surface
     /// can land directly on a specific tool. Consumed and cleared on arrival.
     @Published var cleanerTool: String?
-    /// One-shot hint for the Dynamic Island page to show the companion's tab,
-    /// where its settings live. Consumed and cleared on arrival.
-    @Published var notchCompanion = false
 
     private var history = [HistoryEntry(destination: FeatureSettingsDestination(.general),
                                         sidebarFeature: nil)]
@@ -273,15 +304,6 @@ final class SettingsRouter: ObservableObject {
     /// history entry, for a fallback when the visited tool went away.
     func request(_ destination: FeatureSettingsDestination, targetFeature: AppFeature? = nil,
                  sidebarFeature: AppFeature? = nil, replacingVisit: Bool = false) {
-        // The companion's settings are a tab of the Dynamic Island page.
-        if destination.page == .notchMascot {
-            request(FeatureSettingsDestination(.notch), targetFeature: targetFeature,
-                    sidebarFeature: sidebarFeature, replacingVisit: replacingVisit)
-            notchCompanion = true
-            return
-        }
-        // Any other request, history included, drops a hint nobody took.
-        notchCompanion = false
         let requestID = UUID()
         let samePage = page == destination.page
         page = destination.page
@@ -469,16 +491,17 @@ extension AppFeature {
         case .wallpaper:
             return FeatureSettingsDestination(.quickTools, sectionAnchor: .wallpaper)
         case .notch: return FeatureSettingsDestination(.notch)
-        case .notchCalendar: return FeatureSettingsDestination(notch: .module(.calendar))
-        case .notchNotifications: return FeatureSettingsDestination(notch: .module(.notifications))
+        // Zenith fork: the island's sections with options open their own pages.
+        case .notchCalendar: return FeatureSettingsDestination(.notchCalendar)
+        case .notchNotifications: return FeatureSettingsDestination(.notchNotifications)
         case .notchGestures: return FeatureSettingsDestination(notch: .behavior)
-        case .notchTimer: return FeatureSettingsDestination(notch: .module(.timer))
+        case .notchTimer: return FeatureSettingsDestination(.notchTimer)
         case .notchAccessories: return FeatureSettingsDestination(notch: .activity)
         case .notchLyrics, .notchQueue, .notchLiveEqualizer:
-            return FeatureSettingsDestination(notch: .module(.music))
-        case .notchDownloads: return FeatureSettingsDestination(notch: .module(.downloads))
-        case .notchAgents: return FeatureSettingsDestination(notch: .module(.agents))
-        case .notchWatch: return FeatureSettingsDestination(notch: .module(.watch))
+            return FeatureSettingsDestination(.notchMusic)
+        case .notchDownloads: return FeatureSettingsDestination(.notchDownloads)
+        case .notchAgents: return FeatureSettingsDestination(.notchAgents)
+        case .notchWatch: return FeatureSettingsDestination(.notchWatch)
         case .notchMascot: return FeatureSettingsDestination(.notchMascot)
         case .radialMenu: return FeatureSettingsDestination(.radialMenu)
         case .scratchpad:
@@ -533,7 +556,16 @@ enum FeatureVisibilitySupport {
         case .superKey: return [.superKey]
         case .textSnippets: return [.textSnippets]
         case .screenshot: return [.screenshot, .screenRecorder, .screenOCR, .colorPicker]
-        case .notch: return [.notch, .notchCalendar, .notchNotifications, .notchGestures, .notchTimer, .notchAccessories, .notchLyrics, .notchQueue, .notchLiveEqualizer, .notchDownloads, .notchAgents, .notchWatch, .notchMascot]
+        case .notch: return [.notch, .notchGestures, .notchAccessories]
+        // Zenith fork: the island's sections, each kept by its own feature;
+        // Music by the island, whose page it is part of.
+        case .notchCalendar: return [.notchCalendar]
+        case .notchNotifications: return [.notchNotifications]
+        case .notchMusic: return [.notch]
+        case .notchTimer: return [.notchTimer]
+        case .notchAgents: return [.notchAgents]
+        case .notchDownloads: return [.notchDownloads]
+        case .notchWatch: return [.notchWatch]
         case .notchMascot: return [.notchMascot]
         case .lockScreen: return [.notch] // Zenith fork: the island draws the lock screen
         case .radialMenu: return [.radialMenu]

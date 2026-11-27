@@ -144,6 +144,7 @@ struct SettingsView: View {
                                             .meetings, .mechakey, .appearance] // Zenith fork: Meetings, Mechakey, Appearance
         if ownHeader.contains(router.page) { return nil }
         if router.page == .translate { return nil } // Zenith fork: Translate opens with its own header
+        if router.page.isNotchModulePage { return nil } // Zenith fork: the island's sections open with their hero
         if router.page == .general, !(detailShowsGeneralTool) { return nil }
         let selected = selectedSidebarItem
         return sidebarItems.first(where: { $0.id == selected })?.title
@@ -211,6 +212,14 @@ struct SettingsView: View {
         case .translate: TranslateSettingsPage() // Zenith fork
         case .mechakey: MechakeySettingsPage() // Zenith fork
         case .appearance: AppearanceSettingsPage() // Zenith fork
+        // Zenith fork: the island's sections, pages of their own.
+        case .notchCalendar: NotchCalendarSettingsPage()
+        case .notchNotifications: NotchNotificationsSettingsPage()
+        case .notchMusic: NotchMusicSettingsPage()
+        case .notchTimer: NotchTimerSettingsPage()
+        case .notchAgents: NotchAgentsSettingsPage()
+        case .notchDownloads: NotchDownloadsSettingsPage()
+        case .notchWatch: NotchWatchSettingsPage()
         }
     }
 }

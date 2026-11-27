@@ -267,13 +267,12 @@ func zenithPreviewSegment(_ phase: Double, _ start: Double, _ end: Double) -> Do
 struct ZenithNotchPreviewCard: View {
     @Binding var tab: NotchSettingsTab
     let module: NotchModule
-    let showsCompanion: Bool
     @ObservedObject private var l10n = L10n.shared
 
     private var text: ZenithPreviewsIslandStrings { .shared }
 
     private var tabs: [NotchSettingsTab] {
-        [.layout, .content, .activity, .behavior] + (showsCompanion ? [.companion] : [])
+        NotchSettingsTab.allCases
     }
 
     var body: some View {
@@ -293,7 +292,6 @@ struct ZenithNotchPreviewCard: View {
         case .content: return text.notchContent
         case .activity: return text.notchActivity
         case .behavior: return text.notchBehavior
-        case .companion: return text.notchCompanion
         }
     }
 
@@ -303,7 +301,6 @@ struct ZenithNotchPreviewCard: View {
         case .content: return text.notchContentCaption
         case .activity: return text.notchActivityCaption
         case .behavior: return text.notchBehaviorCaption
-        case .companion: return text.notchCompanionCaption
         }
     }
 
@@ -313,7 +310,6 @@ struct ZenithNotchPreviewCard: View {
         case .content: return module.title(l10n.language)
         case .activity: return text.notices
         case .behavior: return text.opening
-        case .companion: return text.companion
         }
     }
 
@@ -323,7 +319,6 @@ struct ZenithNotchPreviewCard: View {
         case .content: open(module)
         case .activity: activity
         case .behavior: ZenithNotchOpeningPicture { tab = .behavior }
-        case .companion: ZenithMascotPicture(highlighted: true) { tab = .companion }
         }
     }
 

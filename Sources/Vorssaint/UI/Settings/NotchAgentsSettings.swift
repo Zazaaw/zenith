@@ -4,7 +4,7 @@
 import AppKit
 import SwiftUI
 
-/// The AI page's options, under its row in the Dynamic Island settings.
+/// Settings → Agents: the AI section's options (NotchAgentsSettingsPage).
 struct NotchAgentsSettingsControls: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var usage = AgentUsageService.shared
@@ -41,119 +41,116 @@ struct NotchAgentsSettingsControls: View {
         return (stored + NotchAgentCard.allCases).filter { seen.insert($0).inserted }
     }
 
+    // Zenith fork: Settings → Agents, in the kit's sections (docs/SETTINGS-KIT.md):
+    // the agents and their accounts, the cards, the live turn, Claude Code's
+    // hooks, the alerts and budget, and Claude's plan limits.
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(text.settingsDescription)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            providerRow(.claude, isOn: $claude)
-            providerRow(.codex, isOn: $codex)
-            providerRow(.opencode, isOn: $opencode)
-            providerRow(.copilot, isOn: $copilot)
-            providerRow(.cursor, isOn: $cursor)
-            if claude { ClaudeAccountSettings() }
-            if codex { CodexAccountsSettings() }
-
-            Divider()
-            Text(text.cardsTitle).font(.subheadline.weight(.medium))
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 8)], spacing: 8) {
-                ForEach(orderedCards) { card in
-                    PanelReorderableItem(item: card,
-                                         order: Binding(get: { orderedCards },
-                                                        set: { cardOrder = $0.map(\.rawValue).joined(separator: ",") }),
-                                         dragging: $dragging) {
-                        NotchEditorItem(symbol: card.symbol, title: text.card(card), included: cardBinding(card)) {
-                            cardBinding(card).wrappedValue.toggle()
+        let pages = ZenithStrings.islandPages(l10n.language)
+        VStack(alignment: .leading, spacing: 18) {
+            ZenithSection(pages.agents, footer: text.settingsDescription) {
+                providerRow(.claude, isOn: $claude)
+                providerRow(.codex, isOn: $codex)
+                providerRow(.opencode, isOn: $opencode)
+                providerRow(.copilot, isOn: $copilot)
+                providerRow(.cursor, isOn: $cursor)
+            }
+            if claude || codex {
+                ZenithSection(pages.accounts) {
+                    if claude { ClaudeAccountSettings().padding(.vertical, 9) }
+                    if codex { CodexAccountsSettings().padding(.vertical, 9) }
+                }
+            }
+            ZenithSection(text.cardsTitle, footer: text.cardsHint) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 8)], spacing: 8) {
+                    ForEach(orderedCards) { card in
+                        PanelReorderableItem(item: card,
+                                             order: Binding(get: { orderedCards },
+                                                            set: { cardOrder = $0.map(\.rawValue).joined(separator: ",") }),
+                                             dragging: $dragging) {
+                            NotchEditorItem(symbol: card.symbol, title: text.card(card), included: cardBinding(card)) {
+                                cardBinding(card).wrappedValue.toggle()
+                            }
+                            .accessibilityAction(named: FeatureStrings.clipboard(l10n.language).moveUp) { moveCard(card, by: -1) }
+                            .accessibilityAction(named: FeatureStrings.clipboard(l10n.language).moveDown) { moveCard(card, by: 1) }
                         }
-                        .accessibilityAction(named: FeatureStrings.clipboard(l10n.language).moveUp) { moveCard(card, by: -1) }
-                        .accessibilityAction(named: FeatureStrings.clipboard(l10n.language).moveDown) { moveCard(card, by: 1) }
+                    }
+                }
+                .padding(.vertical, 10)
+                // The card that makes Codex ask the default account, said where it is chosen.
+                if codex, cardBinding(.resets).wrappedValue {
+                    Text(text.resetsHelp).font(ZenithType.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.vertical, 8)
+                }
+                SettingsChoiceRow(symbol: NotchAgentCard.limits.symbol, title: text.limitsAs, selection: $limitDisplay) {
+                    Text(text.remaining).tag(NotchAgentLimitDisplay.remaining.rawValue)
+                    Text(text.used).tag(NotchAgentLimitDisplay.used.rawValue)
+                }
+                // The resting island shows this allowance whatever the live
+                // reading, and the live reading uses it when it shows a limit.
+                ZenithRow(text.limitFocus, selection: $limitFocus) {
+                    ForEach(NotchAgentLimitFocus.allCases) { focus in
+                        Text(text.limitFocus(focus)).tag(focus.rawValue)
                     }
                 }
             }
-            Text(text.cardsHint).font(.caption).foregroundStyle(.secondary)
-            // The card that makes Codex ask the default account, said where it is chosen.
-            if codex, cardBinding(.resets).wrappedValue {
-                Text(text.resetsHelp).font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            SettingsChoiceRow(symbol: NotchAgentCard.limits.symbol, title: text.limitsAs, selection: $limitDisplay) {
-                Text(text.remaining).tag(NotchAgentLimitDisplay.remaining.rawValue)
-                Text(text.used).tag(NotchAgentLimitDisplay.used.rawValue)
-            }
-            // The resting island shows this allowance whatever the live
-            // reading, and the live reading uses it when it shows a limit.
-            SettingsMenuRow(symbol: "rectangle.topthird.inset.filled", title: text.limitFocus, selection: $limitFocus) {
-                ForEach(NotchAgentLimitFocus.allCases) { focus in
-                    Text(text.limitFocus(focus)).tag(focus.rawValue)
-                }
-            }
-
-            Divider()
-            Text(text.liveTitle).font(.subheadline.weight(.medium))
-            switchRow("waveform.path.ecg", text.liveActivity, isOn: $liveActivity)
-            if liveActivity {
-                SettingsMenuRow(symbol: "camera.metering.center.weighted", title: text.readout, selection: $readout) {
-                    ForEach(NotchAgentReadout.allCases) { option in
-                        Text(text.readout(option)).tag(option.rawValue)
+            ZenithSection(text.liveTitle) {
+                ZenithRow(text.liveActivity, isOn: $liveActivity)
+                if liveActivity {
+                    ZenithRow(text.readout, selection: $readout) {
+                        ForEach(NotchAgentReadout.allCases) { option in
+                            Text(text.readout(option)).tag(option.rawValue)
+                        }
                     }
+                    NotchAgentStripSample(readout: NotchAgentReadout(rawValue: readout) ?? .elapsed,
+                                          display: NotchAgentLimitDisplay(rawValue: limitDisplay) ?? .remaining,
+                                          focus: NotchAgentLimitFocus(rawValue: limitFocus) ?? .mostUsed,
+                                          provider: claude ? .claude : codex ? .codex : opencode ? .opencode
+                                            : copilot ? .copilot : .cursor)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
                 }
-                .padding(.leading, settingsRowTextInset)
-                NotchAgentStripSample(readout: NotchAgentReadout(rawValue: readout) ?? .elapsed,
-                                      display: NotchAgentLimitDisplay(rawValue: limitDisplay) ?? .remaining,
-                                      focus: NotchAgentLimitFocus(rawValue: limitFocus) ?? .mostUsed,
-                                      provider: claude ? .claude : codex ? .codex : opencode ? .opencode
-                                        : copilot ? .copilot : .cursor)
-                    .padding(.leading, settingsRowTextInset)
             }
             // Zenith fork: Claude Code's hooks, for live steps and "needs you".
             if claude {
-                Divider()
-                NotchAgentsClaudeHooksSettings()
+                ZenithSection(ZenithStrings.claudeHooks(l10n.language).section) {
+                    NotchAgentsClaudeHooksSettings().padding(.vertical, 9)
+                }
             }
-
-            Divider()
-            Text(text.alerts).font(.subheadline.weight(.medium))
-            switchRow("checkmark.circle", text.finishAlert, isOn: $finishAlert)
-            if finishAlert {
-                SettingsMenuRow(symbol: "timer", title: text.finishAfter, selection: $finishMinimum) {
-                    ForEach(NotchAgentSupport.finishMinimums, id: \.self) { seconds in
-                        Text(seconds == 0 ? text.anyLength : AgentFormat.duration(seconds, locale: locale, style: .short))
-                            .tag(seconds)
+            ZenithSection(text.alerts, footer: text.valueNote) {
+                ZenithRow(text.finishAlert, isOn: $finishAlert)
+                if finishAlert {
+                    ZenithRow(text.finishAfter, selection: $finishMinimum) {
+                        ForEach(NotchAgentSupport.finishMinimums, id: \.self) { seconds in
+                            Text(seconds == 0 ? text.anyLength : AgentFormat.duration(seconds, locale: locale, style: .short))
+                                .tag(seconds)
+                        }
                     }
                 }
-                .padding(.leading, settingsRowTextInset)
-            }
-            switchRow("exclamationmark.triangle", text.limitAlert, isOn: $limitAlert)
-            if limitAlert {
-                SettingsMenuRow(symbol: "gauge.with.dots.needle.67percent", title: text.limitAt, selection: $limitThreshold) {
-                    ForEach(NotchAgentSupport.limitThresholds, id: \.self) { value in
-                        Text(text.usedShare(AgentFormat.percent(value / 100))).tag(value)
+                ZenithRow(text.limitAlert, isOn: $limitAlert)
+                if limitAlert {
+                    ZenithRow(text.limitAt, selection: $limitThreshold) {
+                        ForEach(NotchAgentSupport.limitThresholds, id: \.self) { value in
+                            Text(text.usedShare(AgentFormat.percent(value / 100))).tag(value)
+                        }
                     }
                 }
-                .padding(.leading, settingsRowTextInset)
-            }
-            SettingsMenuRow(symbol: "dollarsign.circle", title: text.budget, selection: $dailyBudget) {
-                ForEach(NotchAgentSupport.budgets, id: \.self) { value in
-                    Text(value == 0 ? text.off : AgentFormat.cost(value)).tag(value)
+                ZenithRow(text.budget, selection: $dailyBudget) {
+                    ForEach(NotchAgentSupport.budgets, id: \.self) { value in
+                        Text(value == 0 ? text.off : AgentFormat.cost(value)).tag(value)
+                    }
+                }
+                ZenithMoreOptions(id: "notchAgents") {
+                    ZenithRow(text.priceUpdates, isOn: $priceUpdates, info: priceCaption)
                 }
             }
-            Text(text.valueNote).font(.caption).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            SettingsRow(symbol: "arrow.triangle.2.circlepath", title: text.priceUpdates, caption: priceCaption) {
-                Toggle(text.priceUpdates, isOn: $priceUpdates).labelsHidden().toggleStyle(ZenithSwitchStyle())
-            }
-
             if claude {
-                Divider()
-                Text(text.claudeLimitsTitle).font(.subheadline.weight(.medium))
-                TimelineView(.periodic(from: .now, by: 30)) { context in
-                    claudeLimitsStatus(now: context.date)
-                }
-                if usage.claudeAccountChecking { ProgressView().controlSize(.small) }
-                if claudeProfile.isEmpty {
-                    Text(text.claudeLimitsPrivacy).font(.caption).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                ZenithSection(text.claudeLimitsTitle, footer: claudeProfile.isEmpty ? text.claudeLimitsPrivacy : nil) {
+                    TimelineView(.periodic(from: .now, by: 30)) { context in
+                        claudeLimitsStatus(now: context.date)
+                    }
+                    .padding(.vertical, 9)
+                    if usage.claudeAccountChecking { ProgressView().controlSize(.small) }
                 }
             }
         }
@@ -276,12 +273,6 @@ struct NotchAgentsSettingsControls: View {
     private func findRoots() {
         let found = AgentLogRoot.all(claudeProfile: ClaudeAccountProfile(directory: claudeProfile)).filter(\.exists).map(\.provider)
         roots = Dictionary(uniqueKeysWithValues: AgentProvider.allCases.map { ($0, found.contains($0)) })
-    }
-
-    private func switchRow(_ symbol: String, _ title: String, isOn: Binding<Bool>) -> some View {
-        SettingsRow(symbol: symbol, title: title) {
-            Toggle(title, isOn: isOn).labelsHidden().toggleStyle(ZenithSwitchStyle())
-        }
     }
 
     private func cardBinding(_ card: NotchAgentCard) -> Binding<Bool> {

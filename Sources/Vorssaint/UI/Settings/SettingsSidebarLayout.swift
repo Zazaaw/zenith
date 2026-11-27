@@ -53,7 +53,9 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
     static func of(page: SettingsPage) -> SettingsSidebarGroup {
         switch page {
         case .general, .appearance, .commandBar, .features: return .tiles
-        case .notch, .notchMascot, .lockScreen: return .island
+        case .notch, .notchMascot, .lockScreen,
+             .notchCalendar, .notchNotifications, .notchMusic, .notchTimer, .notchAgents, .notchDownloads,
+             .notchWatch: return .island
         case .clipboard, .cutPaste, .shelf, .media, .urlCleaner, .textSnippets: return .everyday
         case .screenshot: return .capture
         case .switcher, .dock, .windowLayout, .autoQuit, .quitProtection, .workspaces, .radialMenu: return .windows
@@ -106,7 +108,9 @@ enum SettingsSidebarLayout {
 
     /// Rows that open their group, ahead of the directory's order.
     static let leading: [SettingsSidebarGroup: [SettingsSidebarItem.ID]] = [
-        .island: [.page(.notch), .page(.lockScreen)],
+        .island: [.page(.notch), .page(.lockScreen), .page(.notchCalendar), .page(.notchNotifications),
+                  .page(.notchMusic), .page(.notchTimer), .page(.notchAgents), .page(.notchDownloads),
+                  .page(.notchWatch), .page(.notchMascot)],
         .everyday: [.page(.shelf), .feature(.clipboardHistory)],
         .capture: [.feature(.screenshot), .setting(.screenshotScrolling), .feature(.screenRecorder)],
         .system: [.page(.monitor), .feature(.fanControl)],
