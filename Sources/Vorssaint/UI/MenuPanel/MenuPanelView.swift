@@ -1771,7 +1771,7 @@ struct QuickControlsSection: View {
                            permissionAction: accessibilityPermissionAction(buttonsEngaged),
                            accessoryTitle: buttonsEngaged ? buttonStrings.manageButton : nil,
                            accessoryAction: {
-                               SettingsRouter.shared.page = .mouse
+                               SettingsRouter.shared.page = .mouseButtons
                                appDelegate()?.openSettingsWindow()
                            })
                 .onChange(of: mouseButtonShortcutsEnabled) { _, enabled in

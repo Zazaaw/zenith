@@ -2190,7 +2190,7 @@ enum PointerInputFeatureTests {
         }
 
         let mouseSettingsViewLines = ((try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Settings/MouseSettings.swift",
+            contentsOfFile: "Sources/Vorssaint/UI/Settings/InputMousePages.swift",
             encoding: .utf8)) ?? "").components(separatedBy: "\n")
         let menuPanelLines = ((try? String(
             contentsOfFile: "Sources/Vorssaint/UI/MenuPanel/MenuPanelView.swift",

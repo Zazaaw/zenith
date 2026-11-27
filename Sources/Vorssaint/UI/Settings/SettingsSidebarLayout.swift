@@ -55,11 +55,12 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
              .notchCalendar, .notchNotifications, .notchMusic, .notchTimer, .notchAgents, .notchDownloads,
              .notchWatch: return .island
         case .clipboard, .finderTools, .shelf, .media, .urlCleaner, .textSnippets: return .everyday
+        case .quickLauncher, .quickToggles, .quitApps, .cleaningMode, .wallpaper, .scratchpad: return .everyday
         case .screenshot, .screenRecording, .textCapture, .colorPicker, .cameraPreview: return .capture
         case .volumeMixer, .soundOutput, .musicBlocker, .micMute: return .sound
-        case .switcher, .dock, .windowLayout, .autoQuit, .quitProtection, .workspaces, .radialMenu: return .windows
-        case .mouse, .keyDebounce, .superKey: return .input
-        case .monitor, .quickTools: return .system
+        case .switcher, .dock, .spaces, .windowLayout, .autoQuit, .quitProtection, .workspaces, .radialMenu: return .windows
+        case .scrolling, .pointer, .mouseButtons, .keyDebounce, .superKey: return .input
+        case .monitor: return .system
         case .sleep, .brightness, .fanControl, .menuBar: return .system // Zenith fork
         case .cleaner, .uninstaller, .homebrew, .appUpdates, .killProcess, .portManager: return .apps
         case .remote, .pocket, .faceUnlock, .batteries: return .devices
@@ -78,17 +79,18 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
              .mouseClickDebounce, .keyboardDebounce, .superKey:
             return .input
         case .clipboardHistory, .pastePlain, .finderCutPaste, .finderRename, .shelf, .urlCleaner,
-             .diskImageInstaller, .textSnippets, .mediaTools, .scratchpad, .quickLauncher:
+             .diskImageInstaller, .textSnippets, .mediaTools, .scratchpad, .quickLauncher,
+             .quickToggles, .quitApps, .wallpaper, .cleaningMode:
             return .everyday
         case .mixer, .soundOutputSwitcher, .audioPriority, .micMute, .musicBlock:
             return .sound
-        case .keepAwake, .brightness, .extraBrightness, .bluetoothSleep, .quickToggles, .wallpaper, .cleaningMode,
+        case .keepAwake, .brightness, .extraBrightness, .bluetoothSleep,
              .monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower,
              .connectedDevices, .fanControl:
             return .system
         case .screenshot, .screenRecorder, .screenOCR, .colorPicker, .cameraPreview:
             return .capture
-        case .cleaner, .uninstaller, .homebrew, .appUpdates, .killProcess, .portManager, .quitApps:
+        case .cleaner, .uninstaller, .homebrew, .appUpdates, .killProcess, .portManager:
             return .apps
         case .commandBar:
             return .tiles

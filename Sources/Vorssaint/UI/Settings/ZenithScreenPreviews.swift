@@ -160,7 +160,7 @@ enum ZenithScreenScene: String, CaseIterable {
 
 /// The pages with a screen preview, and the pictures each can show.
 enum ZenithScreenPreviewGroup: String {
-    case general, sound, features, monitor, switcher, dock, windowLayout, screenCapture, media, appUpdates
+    case general, sound, features, monitor, switcher, dock, spaces, windowLayout, screenCapture, media, appUpdates
     case sleep, brightness, fans, menuBar // Zenith fork: the System group's split pages
 
     /// Keys the folded state: one per page.
@@ -178,7 +178,8 @@ enum ZenithScreenPreviewGroup: String {
         case .menuBar: all = [.panel, .hider]
         case .monitor: all = [.monitorMenuBar, .monitorPanel]
         case .switcher: all = [.switcherWindows, .switcherIcons, .switcherSimple]
-        case .dock: all = [.dockPreview, .dockClick, .spacesOrder]
+        case .dock: all = [.dockPreview, .dockClick]
+        case .spaces: all = [.spacesOrder]
         case .windowLayout: all = [.snap, .maximize]
         case .screenCapture: return ScreenCaptureTool.available().compactMap(ZenithScreenScene.init(captureTool:))
         case .media: all = [.mediaVideo, .mediaGIF, .mediaImage, .mediaText]

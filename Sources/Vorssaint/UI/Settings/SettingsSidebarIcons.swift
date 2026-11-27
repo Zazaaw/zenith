@@ -39,8 +39,15 @@ enum SettingsSidebarIcons {
         case .textSnippets: return "Text Snippets"
         case .screenshot: return "Screenshot"
         case .switcher: return "Window Switcher"
-        case .dock: return "Dock Preview"
-        case .windowLayout: return "Window Snap"
+        case .dock: return "Dock"
+        case .spaces: return "Spaces"
+        case .quickLauncher: return "Quick Launcher"
+        case .quickToggles: return "Quick Toggles"
+        case .quitApps: return "Quit Apps"
+        case .cleaningMode: return "Cleaning Mode"
+        case .wallpaper: return "Wallpaper"
+        case .scratchpad: return "Scratchpad"
+        case .windowLayout: return "Window Layout"
         case .autoQuit: return "Auto Quit"
         case .workspaces: return "Workspaces"
         case .radialMenu: return "Radial Menu"
@@ -78,7 +85,11 @@ enum SettingsSidebarIcons {
         case .textCapture: return "Text Capture"
         case .colorPicker: return "Color Picker"
         case .cameraPreview: return "Camera Preview"
-        case .mouse, .keyDebounce, .quitProtection, .quickTools, .killProcess,
+        // Zenith fork: the Mouse page, split.
+        case .scrolling: return "Scrolling"
+        case .pointer: return "Pointer"
+        case .mouseButtons: return "Mouse Buttons"
+        case .keyDebounce, .quitProtection, .killProcess,
              .shortcuts, .advanced, .about, .releaseNotes, .support:
             return nil
         }
@@ -126,12 +137,21 @@ enum SettingsSidebarIcons {
         case .notchMascot: return "Mascot"
         case .monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk: return "System Monitor"
         case .fanControl: return "Fan Control"
-        case .dockClick, .windowMaximizer, .spacesOrder, .quitWindowProtection,
-             .scrollInverter, .scrollHorizontal, .scrollZoom, .focusFollowsMouse, .linearScroll, .scrollSpeed,
-             .mouseAcceleration, .mouseNavigation, .mouseButtonShortcuts, .middleClick, .mouseClickDebounce,
+        // Zenith fork: the features of the Input and Windows pages draw their page's icon.
+        case .dockClick: return "Dock"
+        case .spacesOrder: return "Spaces"
+        case .windowMaximizer: return "Window Layout"
+        case .scrollInverter, .scrollHorizontal, .scrollZoom, .linearScroll, .scrollSpeed: return "Scrolling"
+        case .focusFollowsMouse, .mouseAcceleration: return "Pointer"
+        case .mouseNavigation, .mouseButtonShortcuts, .middleClick, .mouseClickDebounce: return "Mouse Buttons"
+        case .quickLauncher: return "Quick Launcher"
+        case .quickToggles: return "Quick Toggles"
+        case .quitApps: return "Quit Apps"
+        case .wallpaper: return "Wallpaper"
+        case .quitWindowProtection,
              .keyboardDebounce, .pastePlain, .finderCutPaste, .finderRename, .diskImageInstaller,
              .audioPriority, .extraBrightness, .bluetoothSleep,
-             .quickLauncher, .quickToggles, .quitApps, .wallpaper, .killProcess,
+             .killProcess,
              .notchGestures, .notchAccessories, .notchQueue, .notchLiveEqualizer, .notchDownloads, .notchWatch,
              .monitorPower, .connectedDevices:
             return nil
@@ -142,10 +162,8 @@ enum SettingsSidebarIcons {
     /// the one its sidebar row shows; nil for the pages `orbitName` covers.
     static func fallbackSymbol(page: SettingsPage) -> String? {
         switch page {
-        case .mouse: return "computermouse"
         case .keyDebounce: return "keyboard"
         case .quitProtection: return "shield.lefthalf.filled"
-        case .quickTools: return "wand.and.rays"
         case .killProcess: return "xmark.octagon"
         case .shortcuts: return "command"
         case .advanced: return "wrench.and.screwdriver"

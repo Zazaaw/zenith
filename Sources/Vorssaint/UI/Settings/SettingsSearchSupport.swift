@@ -365,6 +365,9 @@ enum SettingsSearchSupport {
         guard !builder.suggestions.contains(where: {
             fold($0.title) == fold(suggestion.title)
         }) else { return }
+        // Zenith fork: a feature named as its own page (Scratchpad on the
+        // Scratchpad page) is the page row already shown above it.
+        guard fold(suggestion.title) != fold(builder.pageItem.title) else { return }
         builder.suggestions.append(suggestion)
     }
 

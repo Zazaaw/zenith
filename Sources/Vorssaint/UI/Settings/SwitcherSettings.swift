@@ -4,7 +4,7 @@
 import SwiftUI
 
 /// The Switcher page: the app switcher chosen from three drawn layouts, its
-/// shortcuts and options as rows and chips, then its window previews.
+/// shortcuts and options as rows, then its window previews.
 struct SwitcherSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var features = FeatureRuntime.shared
@@ -52,45 +52,58 @@ struct SwitcherSettings: View {
         )
     }
 
+    private var text: ZenithInputWindowsStrings { ZenithStrings.inputWindows(l10n.language) }
+
+    // Zenith fork: a kit feature page: the hero with the switcher's switch,
+    // the layout in use on the stage, the layouts as pictures, its shortcuts,
+    // its everyday options (the rest under More options), the per-app rules
+    // and the window previews.
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                SettingsPageHeader(title: l10n.s.tabSwitcher, subtitle: pages.switcherDescription)
-                if AppFeature.switcher.isAvailable { // Zenith fork: the preview card, on the layout in use
-                    ZenithScreenPreviewCard(group: .switcher, current: layout == .simple ? .switcherSimple
-                                            : layout == .icons ? .switcherIcons : .switcherWindows)
-                }
-                if AppFeature.switcher.isAvailable {
-                    switcherCard
-                        .settingsSectionAnchor(.switcher, cornerRadius: ZenithRadius.panel)
-                    switcherOptionsCard
-                        .disabled(!switcherEnabled)
-                }
-                if AppFeature.switcher.isAvailable {
-                    WindowPreviewsCard(sizeKey: DefaultsKey.switcherPreviewSize,
-                                       excludedAppsKey: DefaultsKey.switcherPreviewExcludedApps)
-                }
+            VStack(alignment: .leading, spacing: 18) {
+                ZenithHero(title: l10n.s.tabSwitcher, subtitle: pages.switcherDescription, chips: chips,
+                           isOn: enabledBinding, switchLabel: l10n.s.switcherEnable,
+                           switchHint: l10n.s.switcherEnableCaption, animation: .switcher)
+                    .zenithSectionAnchor(.switcher, cornerRadius: ZenithKitSurface.heroRadius + 6, inset: 6)
                 if switcherEngaged {
                     if !permissions.accessibility {
-                        SettingsCard(title: l10n.s.permissionRequired) {
-                            PermissionRow(kind: .accessibility)
-                        }
+                        InputWindowsPermissionSection()
                     }
-                    if !permissions.screenRecording,
-                       SwitcherSupport.capturesPreviews(simpleMode: switcherSimpleMode) {
-                        SettingsCard {
-                            PermissionRow(kind: .screenRecording)
-                        }
+                    if !permissions.screenRecording, SwitcherSupport.capturesPreviews(simpleMode: switcherSimpleMode) {
+                        InputWindowsPermissionSection(kind: .screenRecording)
                     }
                 }
+                ZenithScreenPreviewCard(group: .switcher, current: layout == .simple ? .switcherSimple
+                                        : layout == .icons ? .switcherIcons : .switcherWindows)
+                layoutPicker
+                shortcuts.disabled(!switcherEnabled)
+                options.disabled(!switcherEnabled)
+                // Per-app rules can be prepared while the switcher is off, as
+                // before the redesign.
+                ZenithSection {
+                    SwitcherAppRulesList().padding(.vertical, 8)
+                }
+                WindowPreviewsCard(sizeKey: DefaultsKey.switcherPreviewSize,
+                                   excludedAppsKey: DefaultsKey.switcherPreviewExcludedApps)
             }
             .frame(maxWidth: 760)
             .frame(maxWidth: .infinity)
             .padding(22)
         }
-        .toggleStyle(ZenithSwitchStyle())
         .observesSecureInput(isActive: switcherReplacesSystemShortcuts)
         .onReceive(AppSwitcher.shared.$coversSecureInput) { switcherCoversSecureInput = $0 }
+    }
+
+    private var chips: [ZenithChip] {
+        let shortcut = (GlobalShortcut(storageValue: switcherShortcutStorage) ?? .switcherDefault).displayString
+        return [ZenithChip(layoutTitle(layout)), ZenithChip(shortcut)]
+    }
+
+    private var enabledBinding: Binding<Bool> {
+        Binding(get: { switcherEnabled }, set: { value in
+            switcherEnabled = value
+            AppSwitcher.shared.syncWithPreferences()
+        })
     }
 
     // MARK: - App switcher
@@ -98,6 +111,22 @@ struct SwitcherSettings: View {
     private var layout: SwitcherLayout {
         if switcherSimpleMode { return .simple }
         return switcherIconRowMode ? .icons : .windows
+    }
+
+    private func layoutTitle(_ layout: SwitcherLayout) -> String {
+        switch layout {
+        case .windows: return pages.switcherLayoutWindows
+        case .icons: return pages.switcherLayoutIcons
+        case .simple: return pages.switcherLayoutSimple
+        }
+    }
+
+    private func layoutCaption(_ layout: SwitcherLayout) -> String {
+        switch layout {
+        case .windows: return pages.switcherLayoutWindowsCaption
+        case .icons: return l10n.s.switcherIconRowModeCaption
+        case .simple: return l10n.s.switcherSimpleModeCaption
+        }
     }
 
     private func choose(_ layout: SwitcherLayout) {
@@ -114,246 +143,111 @@ struct SwitcherSettings: View {
         AppSwitcher.shared.syncWithPreferences()
     }
 
-    private var switcherCard: some View {
-        SettingsCard(title: l10n.s.switcherSection) {
-            SettingsRow(symbol: "rectangle.on.rectangle", title: l10n.s.switcherEnable,
-                        caption: l10n.s.switcherEnableCaption) {
-                Toggle(l10n.s.switcherEnable, isOn: $switcherEnabled)
-                    .labelsHidden()
-                    .onChange(of: switcherEnabled) { _, _ in
-                        AppSwitcher.shared.syncWithPreferences()
-                    }
+    private var layoutPicker: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ZenithSectionTitle(text.layoutSection)
+            ZenithVisualPicker(text.layoutSection, selection: Binding(get: { layout }, set: { choose($0) }),
+                               options: [SwitcherLayout.windows, .icons, .simple].map {
+                                   ZenithPickerOption($0, layoutTitle($0), detail: layoutCaption($0))
+                               }, minimumTileWidth: 150, tileHeight: 74) { layout, _ in
+                SwitcherLayoutSketch(layout: layout)
             }
-            Group {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(FeatureStrings.notchEditor(l10n.language).layout)
-                        .font(.subheadline.weight(.medium))
-                    HStack(spacing: 10) {
-                        SwitcherLayoutChoice(layout: .windows, title: pages.switcherLayoutWindows,
-                                             caption: pages.switcherLayoutWindowsCaption, selected: layout == .windows) {
-                            choose(.windows)
-                        }
-                        SwitcherLayoutChoice(layout: .icons, title: pages.switcherLayoutIcons,
-                                             caption: l10n.s.switcherIconRowModeCaption, selected: layout == .icons) {
-                            choose(.icons)
-                        }
-                        SwitcherLayoutChoice(layout: .simple, title: pages.switcherLayoutSimple,
-                                             caption: l10n.s.switcherSimpleModeCaption, selected: layout == .simple) {
-                            choose(.simple)
-                        }
-                    }
-                }
-                Divider()
-                ShortcutPreferenceRow(role: .switcher,
-                                      isEnabled: switcherEnabled,
-                                      label: l10n.s.switcherShortcutHintApps,
-                                      symbolName: "app.dashed") {
+        }
+        .disabled(!switcherEnabled)
+    }
+
+    private var shortcuts: some View {
+        ZenithSection(text.shortcutsSection,
+                      footer: String(format: l10n.s.switcherUsageHintFormat,
+                                     (GlobalShortcut(storageValue: switcherShortcutStorage) ?? .switcherDefault).displayString)) {
+            ShortcutPreferenceRow(role: .switcher, isEnabled: switcherEnabled,
+                                  label: l10n.s.switcherShortcutHintApps) {
+                AppSwitcher.shared.syncWithPreferences()
+            }
+            .padding(.vertical, 9)
+            ShortcutPreferenceRow(role: .switcherWindow, isEnabled: switcherEnabled,
+                                  label: l10n.s.switcherShortcutHintWindows) {
+                AppSwitcher.shared.syncWithPreferences()
+            }
+            .padding(.vertical, 9)
+            .help(l10n.s.switcherWindowShortcutCaption)
+            ZenithRow(FeatureStrings.switcherShortcuts(l10n.language).allWindows, isOn: $allWindowsShortcutEnabled,
+                      info: FeatureStrings.switcherShortcuts(l10n.language).allWindowsCaption)
+                .onChange(of: allWindowsShortcutEnabled) { _, _ in AppSwitcher.shared.syncWithPreferences() }
+            if allWindowsShortcutEnabled {
+                ShortcutPreferenceRow(role: .switcherAllWindows, isEnabled: switcherEnabled) {
                     AppSwitcher.shared.syncWithPreferences()
                 }
-                ShortcutPreferenceRow(role: .switcherWindow,
-                                      isEnabled: switcherEnabled,
-                                      label: l10n.s.switcherShortcutHintWindows,
-                                      symbolName: "macwindow.on.rectangle") {
-                    AppSwitcher.shared.syncWithPreferences()
-                }
-                Text(l10n.s.switcherWindowShortcutCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                SettingsRow(symbol: "macwindow.on.rectangle",
-                            title: FeatureStrings.switcherShortcuts(l10n.language).allWindows,
-                            caption: FeatureStrings.switcherShortcuts(l10n.language).allWindowsCaption) {
-                    Toggle(FeatureStrings.switcherShortcuts(l10n.language).allWindows,
-                           isOn: $allWindowsShortcutEnabled)
-                        .labelsHidden()
-                        .onChange(of: allWindowsShortcutEnabled) { _, _ in
-                            AppSwitcher.shared.syncWithPreferences()
-                        }
-                }
-                if allWindowsShortcutEnabled {
-                    ShortcutPreferenceRow(role: .switcherAllWindows,
-                                          isEnabled: switcherEnabled) {
-                        AppSwitcher.shared.syncWithPreferences()
-                    }
-                }
-                SettingsRow(symbol: "command", title: l10n.s.switcherTakeOverSystemShortcuts,
-                            caption: l10n.s.switcherTakeOverSystemShortcutsCaption) {
-                    Toggle(l10n.s.switcherTakeOverSystemShortcuts, isOn: $switcherTakeOverSystemShortcuts)
-                        .labelsHidden()
-                        .onChange(of: switcherTakeOverSystemShortcuts) { _, _ in
-                            AppSwitcher.shared.syncWithPreferences()
-                        }
-                }
-                // Secure input hides every key from the switcher's tap. When
-                // its Carbon stand-ins cannot register, ⌘Tab goes back to macOS
-                // until it ends, and without a word here the macOS switcher
-                // looks like the replacement stopped working.
-                if switcherReplacesSystemShortcuts, secureInput.holder != .off, !switcherCoversSecureInput {
-                    SecureInputRow(blocking: .switcher)
-                        .padding(.leading, settingsRowTextInset)
-                }
-                Text(String(format: l10n.s.switcherUsageHintFormat,
-                            (GlobalShortcut(storageValue: switcherShortcutStorage) ?? .switcherDefault).displayString))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                .padding(.vertical, 9)
             }
-            .disabled(!switcherEnabled)
+            ZenithRow(l10n.s.switcherTakeOverSystemShortcuts, isOn: $switcherTakeOverSystemShortcuts,
+                      info: l10n.s.switcherTakeOverSystemShortcutsCaption)
+                .onChange(of: switcherTakeOverSystemShortcuts) { _, _ in AppSwitcher.shared.syncWithPreferences() }
+            // Secure input hides every key from the switcher's tap. When
+            // its Carbon stand-ins cannot register, ⌘Tab goes back to macOS
+            // until it ends, and without a word here the macOS switcher
+            // looks like the replacement stopped working.
+            if switcherReplacesSystemShortcuts, secureInput.holder != .off, !switcherCoversSecureInput {
+                SecureInputRow(blocking: .switcher).padding(.vertical, 8)
+            }
         }
     }
 
-    private var switcherOptionsCard: some View {
-        SettingsCard(title: l10n.s.keepAwakeOptions) {
-            SettingsRow(symbol: "timer", title: l10n.s.switcherAppearanceDelay,
-                        caption: l10n.s.switcherAppearanceDelayCaption) {
-                HStack(spacing: 8) {
-                    Slider(value: switcherAppearanceDelayBinding,
-                           in: Double(SwitcherSupport.appearanceDelayMillisecondsRange.lowerBound)
-                               ... Double(SwitcherSupport.appearanceDelayMillisecondsRange.upperBound),
-                           step: 25)
-                        .frame(width: 140)
-                    Text("\(sanitizedSwitcherAppearanceDelay) ms")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                        .frame(width: 56, alignment: .trailing)
-                }
+    private var options: some View {
+        ZenithSection(l10n.s.keepAwakeOptions) {
+            ZenithRow(l10n.s.switcherAppearanceDelay, value: switcherAppearanceDelayBinding,
+                      in: Double(SwitcherSupport.appearanceDelayMillisecondsRange.lowerBound)
+                          ... Double(SwitcherSupport.appearanceDelayMillisecondsRange.upperBound),
+                      step: 25, info: l10n.s.switcherAppearanceDelayCaption,
+                      valueLabel: "\(sanitizedSwitcherAppearanceDelay) ms")
+            ZenithRow(l10n.s.switcherInstantSelection, isOn: $switcherInstantSelection,
+                      info: l10n.s.switcherInstantSelectionCaption)
+            ZenithRow(l10n.s.switcherMinimizedPlacementLabel, selection: $switcherMinimizedPlacement) {
+                Text(l10n.s.switcherMinimizedPlacementNormal).tag(WindowSwitchMinimizedPlacement.normal.rawValue)
+                Text(l10n.s.switcherMinimizedPlacementEnd).tag(WindowSwitchMinimizedPlacement.end.rawValue)
+                Text(l10n.s.switcherMinimizedPlacementHidden).tag(WindowSwitchMinimizedPlacement.hidden.rawValue)
             }
-            SettingsRow(symbol: "square.grid.3x2", title: l10n.s.switcherMaxColumns,
-                        caption: l10n.s.switcherMaxColumnsCaption) {
-                HStack(spacing: 8) {
-                    Slider(value: switcherMaxColumnsBinding,
-                           in: Double(SwitcherSupport.maxColumnsRange.lowerBound - 1)
-                               ... Double(SwitcherSupport.maxColumnsRange.upperBound),
-                           step: 1)
-                        .frame(width: 140)
-                        .accessibilityValue(switcherMaxColumnsLabel)
-                    Text(switcherMaxColumnsLabel)
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                        .frame(width: 56, alignment: .trailing)
-                }
-            }
-            SettingsRow(symbol: "cursorarrow.rays", title: l10n.s.switcherInstantSelection,
-                        caption: l10n.s.switcherInstantSelectionCaption) {
-                Toggle(l10n.s.switcherInstantSelection, isOn: $switcherInstantSelection).labelsHidden()
-            }
-            SettingsRow(symbol: "cursorarrow.slash", title: l10n.s.switcherIgnoreHoverSelection,
-                        caption: l10n.s.switcherIgnoreHoverSelectionCaption) {
-                Toggle(l10n.s.switcherIgnoreHoverSelection, isOn: $switcherIgnoreHoverSelection).labelsHidden()
-            }
-            SettingsRow(symbol: "magnifyingglass", title: l10n.s.switcherSearchPin,
-                        caption: l10n.s.switcherSearchPinCaption) {
-                Toggle(l10n.s.switcherSearchPin, isOn: $switcherSearchPinEnabled).labelsHidden()
-            }
-            if switcherSimpleMode || switcherIconRowMode {
-                SettingsRow(symbol: "keyboard", title: l10n.s.switcherShowShortcutHints,
-                            caption: l10n.s.switcherShowShortcutHintsCaption) {
-                    Toggle(l10n.s.switcherShowShortcutHints, isOn: $switcherShowShortcutHints).labelsHidden()
-                }
-            }
-            SettingsRow(symbol: "square.stack", title: l10n.s.switcherMergeTabs,
-                        caption: l10n.s.switcherMergeTabsCaption) {
-                Toggle(l10n.s.switcherMergeTabs, isOn: $switcherMergeTabs).labelsHidden()
-            }
-            SettingsRow(symbol: "arrow.down.right.and.arrow.up.left", title: l10n.s.switcherShowFullscreenWindows) {
-                Toggle(l10n.s.switcherShowFullscreenWindows, isOn: $switcherShowFullscreenWindows)
-                    .labelsHidden()
-                    .onChange(of: switcherShowFullscreenWindows) { _, _ in
-                        AppSwitcher.shared.syncWithPreferences()
-                    }
-            }
-            Divider()
-            chipRow(symbol: "arrow.down.to.line", title: l10n.s.switcherMinimizedPlacementLabel, caption: nil,
-                    selection: $switcherMinimizedPlacement,
-                    choices: [(WindowSwitchMinimizedPlacement.normal.rawValue, l10n.s.switcherMinimizedPlacementNormal),
-                              (WindowSwitchMinimizedPlacement.end.rawValue, l10n.s.switcherMinimizedPlacementEnd),
-                              (WindowSwitchMinimizedPlacement.hidden.rawValue, l10n.s.switcherMinimizedPlacementHidden)])
-                .onChange(of: switcherMinimizedPlacement) { _, _ in
-                    AppSwitcher.shared.syncWithPreferences()
-                }
+            .onChange(of: switcherMinimizedPlacement) { _, _ in AppSwitcher.shared.syncWithPreferences() }
             if switcherMinimizedPlacement != WindowSwitchMinimizedPlacement.normal.rawValue {
-                SettingsRow(symbol: "eye.slash", title: l10n.s.switcherTreatHiddenAppsLikeMinimized) {
-                    Toggle(l10n.s.switcherTreatHiddenAppsLikeMinimized,
-                           isOn: $switcherTreatHiddenAppsLikeMinimized)
-                        .labelsHidden()
-                        .onChange(of: switcherTreatHiddenAppsLikeMinimized) { _, _ in
-                            AppSwitcher.shared.syncWithPreferences()
-                        }
+                ZenithRow(l10n.s.switcherTreatHiddenAppsLikeMinimized, isOn: $switcherTreatHiddenAppsLikeMinimized)
+                    .onChange(of: switcherTreatHiddenAppsLikeMinimized) { _, _ in AppSwitcher.shared.syncWithPreferences() }
+            }
+            ZenithRow(l10n.s.switcherCurrentDisplayOnly, isOn: $switcherCurrentDisplayOnly,
+                      info: l10n.s.switcherCurrentDisplayOnlyCaption)
+            ZenithRow(l10n.s.switcherCurrentSpaceOnly, isOn: $switcherCurrentSpaceOnly,
+                      info: l10n.s.switcherCurrentSpaceOnlyCaption)
+            ZenithMoreOptions(id: "switcher") {
+                ZenithRow(l10n.s.switcherWindowlessApps, selection: switcherWindowlessAppsSelection,
+                          info: l10n.s.switcherWindowlessAppsCaption,
+                          essential: switcherTakeOverSystemShortcuts
+                              ? String(format: l10n.s.switcherWindowlessAppsLockedFormat, l10n.s.switcherTakeOverSystemShortcuts)
+                              : nil) {
+                    Text(l10n.s.switcherWindowlessAppsOff).tag(SwitcherWindowlessApps.off.rawValue)
+                    Text(l10n.s.switcherWindowlessAppsFinder).tag(SwitcherWindowlessApps.finder.rawValue)
+                    Text(l10n.s.switcherWindowlessAppsAll).tag(SwitcherWindowlessApps.all.rawValue)
                 }
-            }
-            chipRow(symbol: "display.2", title: l10n.s.switcherScreenPlacementLabel,
-                    caption: l10n.s.switcherScreenPlacementCaption,
-                    selection: $switcherScreenPlacement,
-                    choices: [(SwitcherScreenPlacement.pointer.rawValue, l10n.s.switcherScreenPlacementPointer),
-                              (SwitcherScreenPlacement.menuBar.rawValue, l10n.s.switcherScreenPlacementMenuBar),
-                              (SwitcherScreenPlacement.activeWindow.rawValue, l10n.s.switcherScreenPlacementActiveWindow)])
-            SettingsRow(symbol: "display", title: l10n.s.switcherCurrentDisplayOnly,
-                        caption: l10n.s.switcherCurrentDisplayOnlyCaption) {
-                Toggle(l10n.s.switcherCurrentDisplayOnly, isOn: $switcherCurrentDisplayOnly).labelsHidden()
-            }
-            SettingsRow(symbol: "rectangle.3.group", title: l10n.s.switcherCurrentSpaceOnly,
-                        caption: l10n.s.switcherCurrentSpaceOnlyCaption) {
-                Toggle(l10n.s.switcherCurrentSpaceOnly, isOn: $switcherCurrentSpaceOnly).labelsHidden()
-            }
-            Divider()
-            chipRow(symbol: "app.dashed", title: l10n.s.switcherWindowlessApps,
-                    caption: l10n.s.switcherWindowlessAppsCaption,
-                    selection: switcherWindowlessAppsSelection,
-                    choices: [(SwitcherWindowlessApps.off.rawValue, l10n.s.switcherWindowlessAppsOff),
-                              (SwitcherWindowlessApps.finder.rawValue, l10n.s.switcherWindowlessAppsFinder),
-                              (SwitcherWindowlessApps.all.rawValue, l10n.s.switcherWindowlessAppsAll)])
                 .disabled(switcherTakeOverSystemShortcuts)
-            // Replacing ⌘Tab keeps every running app in the switcher, as the
-            // system one does, so the choices above hold on All apps. Say why
-            // rather than leave them looking broken.
-            if switcherTakeOverSystemShortcuts {
-                Text(String(format: l10n.s.switcherWindowlessAppsLockedFormat,
-                            l10n.s.switcherTakeOverSystemShortcuts))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.leading, settingsRowTextInset)
-            }
-            // Per-app rules can be prepared while the switcher is off, as
-            // before the redesign; the card's disabled state stops here.
-            SwitcherAppRulesList()
-                .environment(\.isEnabled, true)
-        }
-    }
-
-    /// An icon, a title and one chip per choice, so the options read at a
-    /// glance instead of hiding in a menu.
-    private func chipRow(symbol: String, title: String, caption: String?, selection: Binding<String>,
-                         choices: [(String, String)]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            SettingsRow(symbol: symbol, title: title, caption: caption) { EmptyView() }
-            // The three screen choices outgrow the card at the default window
-            // width in most languages; wrapping keeps every label whole.
-            FlowLayoutLite(spacing: 8) {
-                ForEach(choices, id: \.0) { value, label in
-                    let selected = selection.wrappedValue == value
-                    Button {
-                        selection.wrappedValue = value
-                    } label: {
-                        Text(label)
-                            .font(.system(size: 11, weight: .medium))
-                            .lineLimit(1)
-                            .foregroundStyle(selected ? Color.accentColor : .primary)
-                            .padding(.horizontal, 10)
-                            .frame(height: 28)
-                            .background(selected ? Color.accentColor.opacity(0.12) : Color.secondary.opacity(0.06),
-                                        in: RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous)
-                                    .strokeBorder(selected ? Color.accentColor.opacity(0.7) : .clear, lineWidth: 1)
-                            }
-                            .contentShape(RoundedRectangle(cornerRadius: ZenithRadius.large, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(selected ? .isSelected : [])
+                ZenithRow(l10n.s.switcherScreenPlacementLabel, selection: $switcherScreenPlacement,
+                          info: l10n.s.switcherScreenPlacementCaption) {
+                    Text(l10n.s.switcherScreenPlacementPointer).tag(SwitcherScreenPlacement.pointer.rawValue)
+                    Text(l10n.s.switcherScreenPlacementMenuBar).tag(SwitcherScreenPlacement.menuBar.rawValue)
+                    Text(l10n.s.switcherScreenPlacementActiveWindow).tag(SwitcherScreenPlacement.activeWindow.rawValue)
                 }
+                ZenithRow(l10n.s.switcherMaxColumns, value: switcherMaxColumnsBinding,
+                          in: Double(SwitcherSupport.maxColumnsRange.lowerBound - 1)
+                              ... Double(SwitcherSupport.maxColumnsRange.upperBound),
+                          step: 1, info: l10n.s.switcherMaxColumnsCaption, valueLabel: switcherMaxColumnsLabel)
+                ZenithRow(l10n.s.switcherIgnoreHoverSelection, isOn: $switcherIgnoreHoverSelection,
+                          info: l10n.s.switcherIgnoreHoverSelectionCaption)
+                ZenithRow(l10n.s.switcherSearchPin, isOn: $switcherSearchPinEnabled, info: l10n.s.switcherSearchPinCaption)
+                if switcherSimpleMode || switcherIconRowMode {
+                    ZenithRow(l10n.s.switcherShowShortcutHints, isOn: $switcherShowShortcutHints,
+                              info: l10n.s.switcherShowShortcutHintsCaption)
+                }
+                ZenithRow(l10n.s.switcherMergeTabs, isOn: $switcherMergeTabs, info: l10n.s.switcherMergeTabsCaption)
+                ZenithRow(l10n.s.switcherShowFullscreenWindows, isOn: $switcherShowFullscreenWindows)
+                    .onChange(of: switcherShowFullscreenWindows) { _, _ in AppSwitcher.shared.syncWithPreferences() }
             }
-            .padding(.leading, settingsRowTextInset)
         }
     }
 
@@ -407,104 +301,58 @@ struct WindowPreviewsCard: View {
         self.excludedAppsKey = excludedAppsKey
     }
 
+    // Zenith fork: the sizes as pictures, then the look and the paused apps
+    // as kit rows.
     var body: some View {
-        SettingsCard(title: FeatureStrings.windowPreviewExclusions(l10n.language).sectionTitle) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(l10n.s.previewSizeLabel)
-                    .font(.subheadline.weight(.medium))
-                HStack(spacing: 10) {
-                    sizeChoice("small", title: l10n.s.previewSizeSmall, scale: 0.5)
-                    sizeChoice("normal", title: l10n.s.previewSizeNormal, scale: 0.66)
-                    sizeChoice("large", title: l10n.s.previewSizeLarge, scale: 0.83)
-                    sizeChoice("xlarge", title: l10n.s.previewSizeXLarge, scale: 1)
-                }
+        let sizes: [(String, String, CGFloat)] = [
+            ("small", l10n.s.previewSizeSmall, 0.5), ("normal", l10n.s.previewSizeNormal, 0.66),
+            ("large", l10n.s.previewSizeLarge, 0.83), ("xlarge", l10n.s.previewSizeXLarge, 1),
+        ]
+        VStack(alignment: .leading, spacing: 10) {
+            ZenithSectionTitle(FeatureStrings.windowPreviewExclusions(l10n.language).sectionTitle)
+            ZenithVisualPicker(l10n.s.previewSizeLabel, selection: Binding(get: { previewSize }, set: { value in
+                previewSize = value
+                AppSwitcher.shared.syncWithPreferences()
+            }), options: sizes.map { ZenithPickerOption($0.0, $0.1) }, tileHeight: 58) { value, _ in
+                WindowPreviewSizeArt(scale: sizes.first { $0.0 == value }?.2 ?? 0.66)
             }
-            SettingsRow(symbol: "rectangle.dashed", title: l10n.s.minimalWindowPreviews,
-                        caption: l10n.s.minimalWindowPreviewsCaption) {
-                Toggle(l10n.s.minimalWindowPreviews, isOn: $minimalPreviews).labelsHidden()
+            ZenithSection {
+                ZenithRow(l10n.s.minimalWindowPreviews, isOn: $minimalPreviews, info: l10n.s.minimalWindowPreviewsCaption)
+                WindowPreviewExclusionsList(key: excludedAppsKey).padding(.vertical, 8)
             }
-            WindowPreviewExclusionsList(key: excludedAppsKey)
         }
     }
+}
 
-    /// A preview thumbnail drawn at the size it stands for.
-    private func sizeChoice(_ value: String, title: String, scale: CGFloat) -> some View {
-        let selected = previewSize == value
-        return Button {
-            previewSize = value
-            AppSwitcher.shared.syncWithPreferences()
-        } label: {
-            VStack(spacing: 8) {
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .fill(selected ? Color.accentColor.opacity(0.35) : Color.secondary.opacity(0.3))
-                    .overlay(alignment: .top) {
-                        RoundedRectangle(cornerRadius: 2, style: .continuous)
-                            .fill(selected ? Color.accentColor : Color.secondary.opacity(0.6))
-                            .frame(height: 4)
-                            .padding(3)
-                    }
-                    .frame(width: 60 * scale, height: 42 * scale)
-                    .frame(height: 42)
-                Text(title)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(selected ? Color.accentColor : .primary)
-                    .lineLimit(1)
+/// A window preview drawn at the size it stands for, on a size tile.
+private struct WindowPreviewSizeArt: View {
+    let scale: CGFloat
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 4, style: .continuous)
+            .fill(Color.white.opacity(0.9))
+            .overlay(alignment: .top) {
+                UnevenRoundedRectangle(topLeadingRadius: 4, topTrailingRadius: 4, style: .continuous)
+                    .fill(Color.black.opacity(0.25))
+                    .frame(height: 6 * scale + 2)
             }
-            .frame(maxWidth: .infinity)
-            .padding(8)
-            .background(selected ? Color.accentColor.opacity(0.10) : Color.secondary.opacity(0.05),
-                        in: RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous)
-                    .strokeBorder(selected ? Color.accentColor.opacity(0.55) : .clear, lineWidth: 1)
-            }
-            .contentShape(RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .accessibilityAddTraits(selected ? .isSelected : [])
+            .frame(width: 60 * scale, height: 40 * scale)
+            .shadow(color: .black.opacity(0.3), radius: 3, y: 2)
+            .accessibilityHidden(true)
     }
 }
 
 /// One of the three switcher layouts, drawn as the switcher would look:
 /// window previews, one large icon per app under its previews, or a plain
-/// list of icons and titles.
-private struct SwitcherLayoutChoice: View {
+/// list of icons and titles. Zenith fork: the art of a layout tile.
+private struct SwitcherLayoutSketch: View {
     let layout: SwitcherLayout
-    let title: String
-    let caption: String
-    let selected: Bool
-    let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 8) {
-                sketch
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 64)
-                    .background(Color.black.opacity(0.82), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                Text(title)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(selected ? Color.accentColor : .primary)
-                Text(caption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+        sketch
             .padding(10)
-            .background(selected ? Color.accentColor.opacity(0.10) : Color.secondary.opacity(0.05),
-                        in: RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous)
-                    .strokeBorder(selected ? Color.accentColor.opacity(0.55) : .clear, lineWidth: 1)
-            }
-            .contentShape(RoundedRectangle(cornerRadius: ZenithRadius.card, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("\(title). \(caption)")
-        .accessibilityAddTraits(selected ? .isSelected : [])
+            .background(Color.black.opacity(0.82), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .accessibilityHidden(true)
     }
 
     @ViewBuilder
