@@ -353,7 +353,10 @@ struct QuickToolsPreviewCard: View {
 
     private func open(_ feature: QuickToolsPreviewFeature) {
         pickedGroup = nil
-        router.request(FeatureSettingsDestination(.quickTools, sectionAnchor: feature.anchor))
+        // Zenith fork: Mic Mute and Camera Preview have pages of their own.
+        router.request(feature.anchor.page == .quickTools
+                       ? FeatureSettingsDestination(.quickTools, sectionAnchor: feature.anchor)
+                       : feature.feature.settingsDestination)
     }
 }
 

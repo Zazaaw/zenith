@@ -330,8 +330,12 @@ enum ReleaseDigestTests {
 
         suite.expect(WhatsNewSupport.rowID(for: .notchMascot, in: items) == .settings(.page(.notch)),
                      "the companion belongs to the island's row")
-        suite.expect(WhatsNewSupport.rowID(for: .soundOutputSwitcher, in: items) == .general,
-                     "a tool Settings keeps on its General page joins the General row")
+        // Zenith fork: the sound tools have pages of their own, and join that page's row.
+        suite.expect(WhatsNewSupport.rowID(for: .soundOutputSwitcher,
+                                           in: items + [item(.page(.soundOutput), "Sound output")])
+                        == .settings(.page(.soundOutput))
+                        && WhatsNewSupport.rowID(for: .soundOutputSwitcher, in: items) == .feature(.soundOutputSwitcher),
+                     "a tool with a page of its own joins that page's row")
         suite.expect(WhatsNewSupport.representedFeature(of: .page(.notch)) == .notch
                         && WhatsNewSupport.representedFeature(of: .page(.monitor)) == nil
                         && WhatsNewSupport.representedFeature(of: .feature(.mixer)) == .mixer,

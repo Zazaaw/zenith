@@ -48,12 +48,18 @@ enum SettingsSidebarTests {
                         && group(.everyday).prefix(6) == [.page(.shelf), .page(.clipboard), .page(.finderTools), .page(.media),
                                                 .page(.urlCleaner), .page(.textSnippets)]
                         && group(.devices) == [.page(.pocket), .page(.batteries), .page(.faceUnlock), .page(.remote)]
-                        && group(.capture).first == .feature(.screenshot)
+                        && group(.capture).first == .page(.screenshot)
                         && group(.system).prefix(5) == [.page(.monitor), .page(.fanControl), .page(.sleep),
                                                          .page(.brightness), .page(.menuBar)],
                      "the groups open with the rows the design leads with")
+        // Zenith fork: one row per sound and capture tool, each its own page.
+        suite.expect(group(.sound) == [.page(.volumeMixer), .page(.soundOutput), .page(.musicBlocker), .page(.micMute)]
+                        && group(.capture) == [.page(.screenshot), .page(.screenRecording), .page(.textCapture),
+                                               .page(.colorPicker), .page(.cameraPreview)],
+                     "Sound and Capture list one page per tool")
         let systemApps = all.filter { [.system, .apps].contains($0.group) }.flatMap(\.items)
-        suite.expect(systemApps.allSatisfy { if case .page = $0.id { return true } else { return false } }
+        suite.expect(systemApps.filter { $0.destination.page != .quickTools }.allSatisfy {
+                            if case .page = $0.id { return true } else { return false } }
                         && Set(systemApps.map(\.id)).isSuperset(of: [.page(.cleaner), .page(.uninstaller), .page(.homebrew),
                                                                 .page(.appUpdates), .page(.killProcess), .page(.portManager)]),
                      "every System and Apps row is a page of its own")
@@ -107,9 +113,9 @@ enum SettingsSidebarTests {
             for: AppFeature.diskImageInstaller.settingsDestination, in: items) == .page(.finderTools),
                      "a feature's section on a one-row page selects that page's row")
         suite.expect(ids.contains(.page(.menuBar)) && !ids.contains(.setting(.panelConfiguration))
-                        && ids.contains(.setting(.screenshotScrolling))
+                        && !ids.contains(.setting(.screenshotScrolling))
                         && ids.contains(.setting(.keyboardBrightnessShortcuts)),
-                     "the menu bar is a page of its own; scrolling capture and keyboard light shortcuts keep their rows")
+                     "the menu bar is a page of its own, scrolling capture is Screenshot's, and keyboard light shortcuts keep their row")
         suite.expect(SettingsSidebarSupport.selection(for: AppFeature.keepAwake.settingsDestination, in: items) == .page(.sleep)
                         && SettingsSidebarSupport.selection(
                             for: AppFeature.extraBrightness.settingsDestination, in: items) == .page(.brightness)

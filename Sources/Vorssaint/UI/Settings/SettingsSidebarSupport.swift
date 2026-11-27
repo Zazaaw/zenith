@@ -52,21 +52,6 @@ enum SettingsSidebarSupport {
         return rows
     }
 
-    /// Scrolling capture shares screenshot ownership but has its own destination.
-    static func screenshotRows(_ rows: [SettingsSidebarItem], language: AppLanguage)
-        -> [SettingsSidebarItem] {
-        guard let index = rows.firstIndex(where: { $0.id == .feature(.screenshot) }) else {
-            return rows
-        }
-        var result = rows
-        result.insert(SettingsSidebarItem(
-            id: .setting(.screenshotScrolling),
-            destination: ScreenCaptureTool.scrolling.settingsDestination,
-            title: FeatureStrings.screenshot(language).scrollingCaptureTitle,
-            icon: ScreenCaptureTool.scrolling.systemImageName), at: index + 1)
-        return result
-    }
-
     static func selection(for destination: FeatureSettingsDestination,
                           in items: [SettingsSidebarItem],
                           preferredID: SettingsSidebarItem.ID? = nil)

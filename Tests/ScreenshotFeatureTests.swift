@@ -1105,14 +1105,22 @@ enum ScreenshotFeatureTests {
         suite.expect(ScreenCaptureTool.available(isAvailable: captureFeatures.contains)
                 == [.screenshot, .recording, .text, .color, .scrolling],
                "the capture chooser keeps a stable order for every installed mode")
-        let captureSettingsSource = (try? String(
-            contentsOfFile: "Sources/Vorssaint/UI/Settings/ScreenCaptureSettings.swift",
-            encoding: .utf8)) ?? ""
-        suite.expect(captureSettingsSource.contains("selectedTool")
-                && captureSettingsSource.contains("ScreenCaptureToolPicker(tools: availableTools")
-                && captureSettingsSource.contains("ToolShortcutRows(tool: currentTool")
-                && captureSettingsSource.contains("RecentCapturesShortcutRows()"),
-               "the capture page keeps tool and shared-history shortcuts in the top section")
+        // Zenith fork: each capture tool has a page of its own, with its own
+        // shortcut; capture history's shortcut sits on Screenshot and Screen Recording.
+        func settingsSource(_ name: String) -> String {
+            (try? String(contentsOfFile: "Sources/Vorssaint/UI/Settings/\(name).swift", encoding: .utf8)) ?? ""
+        }
+        let screenshotPage = settingsSource("ScreenshotSettings")
+        let recordingPage = settingsSource("ScreenRecorderSettings")
+        let toolPages = settingsSource("CaptureToolSettingsPages")
+        suite.expect(screenshotPage.contains("CaptureToolShortcutRows(tool: .screenshot)")
+                && screenshotPage.contains("CaptureToolShortcutRows(tool: .scrolling)")
+                && recordingPage.contains("CaptureToolShortcutRows(tool: .recording)")
+                && toolPages.contains("CaptureToolShortcutRows(tool: .text)")
+                && toolPages.contains("CaptureToolShortcutRows(tool: .color)")
+                && screenshotPage.contains("role: .recentCaptures")
+                && recordingPage.contains("role: .recentCaptures"),
+               "each capture page keeps its tool's shortcut, and the history shortcut beside screenshots and recordings")
         let recentCaptureServiceSource = (try? String(
             contentsOfFile: "Sources/Vorssaint/Services/QuickTools/RecentCaptureService.swift",
             encoding: .utf8)) ?? ""

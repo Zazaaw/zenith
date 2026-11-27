@@ -24,6 +24,10 @@ enum SettingsPage: Hashable, CaseIterable {
     case notchCalendar, notchNotifications, notchMusic, notchTimer, notchAgents, notchDownloads, notchWatch
     // Zenith fork: the System group's pages split out of Energy, Monitor and General.
     case sleep, brightness, fanControl, menuBar
+    // Zenith fork: the sound tools, a page each (they were sections of General and Quick Tools).
+    case volumeMixer, soundOutput, musicBlocker, micMute
+    // Zenith fork: the capture tools, a page each (Screen capture and Quick Tools were split).
+    case screenRecording, textCapture, colorPicker, cameraPreview
 }
 
 /// Stable, non-localized identities for destinations inside shared Settings
@@ -91,12 +95,16 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
     case zenithMeetings, zenithMeetingsCalls, zenithMeetingsProviders // Zenith fork
     case zenithMechakey, zenithMechakeyRepeat // Zenith fork: the repeat switch sits under More options
     case zenithAppearanceTheme, zenithAppearanceMotion, zenithAppearanceGlass, zenithAppearanceBattery
+    // Zenith fork: rows under More options on the sound and capture pages, which search opens.
+    case zenithMixerVisibleApps, zenithScreenshotMore, zenithScreenshotLoupe, zenithRecordingMore
 
     var page: SettingsPage {
         switch self {
-        case .mixer, .audioPriority, .musicBlocking,
-             .soundOutputSwitcher:
-            return .general
+        case .mixer, .zenithMixerVisibleApps: return .volumeMixer
+        case .audioPriority, .soundOutputSwitcher: return .soundOutput
+        case .musicBlocking: return .musicBlocker
+        case .micMute: return .micMute
+        case .cameraPreview: return .cameraPreview
         case .panelConfiguration, .zenithMenuBarHider: return .menuBar // Zenith fork
         case .keepAwake, .bluetoothSleep: return .sleep // Zenith fork
         case .brightness, .extraBrightness: return .brightness // Zenith fork
@@ -107,11 +115,13 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
         case .dock, .dockClick, .spacesOrder: return .dock
         case .finderCutPaste, .finderRename, .diskImageInstaller: return .finderTools
         case .clipboardHistory, .pastePlain: return .clipboard
-        case .quickLauncher, .quickToggles, .quitApps, .micMute, .cameraPreview, .wallpaper, .scratchpad,
+        case .quickLauncher, .quickToggles, .quitApps, .wallpaper, .scratchpad,
              .cleaningMode:
             return .quickTools
-        case .screenshot, .screenshotScrolling, .screenRecorder, .colorPicker, .screenOCR:
-            return .screenshot
+        case .screenshot, .screenshotScrolling, .zenithScreenshotMore, .zenithScreenshotLoupe: return .screenshot
+        case .screenRecorder, .zenithRecordingMore: return .screenRecording
+        case .screenOCR: return .textCapture
+        case .colorPicker: return .colorPicker
         case .keyboardBrightnessShortcuts: return .shortcuts
         case .fanControl: return .fanControl // Zenith fork
         case .monitorAlerts: return .monitor
@@ -336,7 +346,7 @@ final class SettingsRouter: ObservableObject {
     }
 
     private static func anchorSelectsTool(on page: SettingsPage) -> Bool {
-        page == .general || page == .screenshot
+        page == .general
     }
 
     func goBack(isPageVisible: (SettingsPage) -> Bool = { _ in true }) {
@@ -451,16 +461,11 @@ extension AppFeature {
         case .diskImageInstaller:
             return FeatureSettingsDestination(.finderTools, sectionAnchor: .diskImageInstaller)
 
-        case .mixer:
-            return FeatureSettingsDestination(.general, sectionAnchor: .mixer)
-        case .soundOutputSwitcher:
-            return FeatureSettingsDestination(.general, sectionAnchor: .soundOutputSwitcher)
-        case .audioPriority:
-            return FeatureSettingsDestination(.general, sectionAnchor: .audioPriority)
-        case .micMute:
-            return FeatureSettingsDestination(.quickTools, sectionAnchor: .micMute)
-        case .musicBlock:
-            return FeatureSettingsDestination(.general, sectionAnchor: .musicBlocking)
+        // Zenith fork: the sound tools open their own pages.
+        case .mixer: return FeatureSettingsDestination(.volumeMixer)
+        case .soundOutputSwitcher, .audioPriority: return FeatureSettingsDestination(.soundOutput)
+        case .micMute: return FeatureSettingsDestination(.micMute)
+        case .musicBlock: return FeatureSettingsDestination(.musicBlocker)
 
         // Zenith fork: Energy split into Sleep and Brightness.
         case .keepAwake:
@@ -478,10 +483,8 @@ extension AppFeature {
             return FeatureSettingsDestination(.quickTools, sectionAnchor: .quickToggles)
         case .quitApps:
             return FeatureSettingsDestination(.quickTools, sectionAnchor: .quitApps)
-        case .colorPicker:
-            return FeatureSettingsDestination(.screenshot, sectionAnchor: .colorPicker)
-        case .screenOCR:
-            return FeatureSettingsDestination(.screenshot, sectionAnchor: .screenOCR)
+        case .colorPicker: return FeatureSettingsDestination(.colorPicker) // Zenith fork
+        case .screenOCR: return FeatureSettingsDestination(.textCapture) // Zenith fork
         case .cleaningMode:
             return FeatureSettingsDestination(.quickTools, sectionAnchor: .cleaningMode)
         case .mediaTools: return FeatureSettingsDestination(.media)
@@ -491,10 +494,8 @@ extension AppFeature {
         case .portManager: return FeatureSettingsDestination(.portManager)
         case .homebrew: return FeatureSettingsDestination(.homebrew)
         case .appUpdates: return FeatureSettingsDestination(.appUpdates)
-        case .screenshot:
-            return FeatureSettingsDestination(.screenshot, sectionAnchor: .screenshot)
-        case .cameraPreview:
-            return FeatureSettingsDestination(.quickTools, sectionAnchor: .cameraPreview)
+        case .screenshot: return FeatureSettingsDestination(.screenshot) // Zenith fork
+        case .cameraPreview: return FeatureSettingsDestination(.cameraPreview) // Zenith fork
         case .wallpaper:
             return FeatureSettingsDestination(.quickTools, sectionAnchor: .wallpaper)
         case .notch: return FeatureSettingsDestination(.notch)
@@ -514,8 +515,7 @@ extension AppFeature {
         case .scratchpad:
             return FeatureSettingsDestination(.quickTools, sectionAnchor: .scratchpad)
         case .commandBar: return FeatureSettingsDestination(.commandBar)
-        case .screenRecorder:
-            return FeatureSettingsDestination(.screenshot, sectionAnchor: .screenRecorder)
+        case .screenRecorder: return FeatureSettingsDestination(.screenRecording) // Zenith fork
 
         case .monitorCPU, .monitorGPU, .monitorMemory, .monitorNetwork, .monitorDisk, .monitorPower, .connectedDevices:
             return FeatureSettingsDestination(.monitor)
@@ -552,8 +552,8 @@ enum FeatureVisibilitySupport {
         case .finderTools: return [.finderCutPaste, .finderRename, .diskImageInstaller]
         case .shelf: return [.shelf]
         case .media: return [.mediaTools]
-        case .quickTools: return [.quickLauncher, .quickToggles, .quitApps, .micMute,
-                                  .cameraPreview, .wallpaper, .scratchpad, .cleaningMode]
+        case .quickTools: return [.quickLauncher, .quickToggles, .quitApps,
+                                  .wallpaper, .scratchpad, .cleaningMode]
         case .urlCleaner: return [.urlCleaner]
         case .cleaner: return [.cleaner]
         case .homebrew: return [.homebrew]
@@ -564,7 +564,16 @@ enum FeatureVisibilitySupport {
         case .keyDebounce: return [.keyboardDebounce]
         case .superKey: return [.superKey]
         case .textSnippets: return [.textSnippets]
-        case .screenshot: return [.screenshot, .screenRecorder, .screenOCR, .colorPicker]
+        case .screenshot: return [.screenshot]
+        // Zenith fork: the sound and capture tools' own pages.
+        case .volumeMixer: return [.mixer]
+        case .soundOutput: return [.soundOutputSwitcher, .audioPriority]
+        case .musicBlocker: return [.musicBlock]
+        case .micMute: return [.micMute]
+        case .screenRecording: return [.screenRecorder]
+        case .textCapture: return [.screenOCR]
+        case .colorPicker: return [.colorPicker]
+        case .cameraPreview: return [.cameraPreview]
         case .notch: return [.notch, .notchGestures, .notchAccessories]
         // Zenith fork: the island's sections, each kept by its own feature;
         // Music by the island, whose section it is, or any of its extras.

@@ -29,6 +29,8 @@ struct MixerSection: View {
     @State private var draggingAppID: String?
     @State private var dropTarget: MixerAppDropTarget?
     var collapsible = true
+    /// Zenith fork: the devices and the apps alone, for Settings → Volume
+    /// Mixer, which shows the options as rows of its own.
     var settingsMode = false
 
     private var glassEnabled: Bool {
@@ -38,9 +40,8 @@ struct MixerSection: View {
     var body: some View {
         Group {
             if settingsMode {
-                SettingsCard(title: l10n.s.mixerSection) {
-                    mixerControls
-                }
+                // Zenith fork: Settings → Volume Mixer draws the card and the options.
+                mixerControls
             } else {
                 PanelSection(.mixer, title: l10n.s.mixerSection, collapsible: collapsible) {
                     mixerControls.panelCard(interactive: false)
@@ -74,8 +75,10 @@ struct MixerSection: View {
                 mixerRows
             }
 
-            Divider()
-            optionsDisclosure
+            if !settingsMode {
+                Divider()
+                optionsDisclosure
+            }
         }
     }
 
@@ -659,39 +662,10 @@ struct MixerOptionsControls: View {
         }
     }
 
-    /// One entry per app the list knows about: visible rows checked, hidden
-    /// apps unchecked, everything in one alphabetical run so the menu reads
-    /// like the list itself.
-    private struct MixerListChoice: Identifiable {
-        let id: String
-        let name: String
-        let isListed: Bool
-        /// A row with nothing stable to remember it by cannot be hidden; it
-        /// still shows here so the menu mirrors the list.
-        let canToggle: Bool
-    }
+    private var listChoices: [MixerListChoice] { MixerListChoice.all(mixer) }
 
-    private var listChoices: [MixerListChoice] {
-        // The hidden list updates the moment a box is unchecked, while the
-        // visible rows only change when the next HAL refresh lands. Keyed by
-        // persistence id with the hidden entry winning, a just-hidden app
-        // shows up once (unchecked) instead of twice during that gap.
-        var seen = Set<String>()
-        var choices = mixer.hiddenApps.map { hidden -> MixerListChoice in
-            seen.insert(hidden.id)
-            return MixerListChoice(id: hidden.id, name: hidden.name, isListed: false, canToggle: true)
-        }
-        for app in mixer.apps {
-            let id = app.persistenceID ?? app.id
-            guard seen.insert(id).inserted else { continue }
-            choices.append(MixerListChoice(id: id, name: app.name,
-                                           isListed: true, canToggle: app.persistenceID != nil))
-        }
-        choices.sort {
-            MixerRoutingSupport.displayOrderedBefore(name: $0.name, id: $0.id,
-                                                     otherName: $1.name, otherID: $1.id)
-        }
-        return choices
+    private func listedBinding(for choice: MixerListChoice) -> Binding<Bool> {
+        choice.listedBinding(mixer)
     }
 
     /// Which apps the list shows (issue #300): the row reads how many are
@@ -742,18 +716,6 @@ struct MixerOptionsControls: View {
         }
     }
 
-    private func listedBinding(for choice: MixerListChoice) -> Binding<Bool> {
-        Binding(
-            get: { choice.isListed },
-            set: { listed in
-                if listed {
-                    mixer.showInList(id: choice.id)
-                } else if let app = mixer.apps.first(where: { ($0.persistenceID ?? $0.id) == choice.id }) {
-                    mixer.hideFromList(app)
-                }
-            }
-        )
-    }
 
     private var inactiveAppsVisibilityToggle: some View {
         let label = FeatureStrings.mixer(l10n.language).hideInactiveApps
@@ -771,6 +733,55 @@ struct MixerOptionsControls: View {
 }
 
 /// The same output-switcher preferences in the menu panel and Settings.
+/// One entry per app the mixer's list knows about: visible rows checked,
+/// hidden apps unchecked, everything in one alphabetical run so the menu
+/// reads like the list itself. Zenith fork: shared by the panel's options
+/// and Settings → Volume Mixer.
+struct MixerListChoice: Identifiable {
+    let id: String
+    let name: String
+    let isListed: Bool
+    /// A row with nothing stable to remember it by cannot be hidden; it
+    /// still shows here so the menu mirrors the list.
+    let canToggle: Bool
+
+    static func all(_ mixer: AppVolumeMixer) -> [MixerListChoice] {
+        // The hidden list updates the moment a box is unchecked, while the
+        // visible rows only change when the next HAL refresh lands. Keyed by
+        // persistence id with the hidden entry winning, a just-hidden app
+        // shows up once (unchecked) instead of twice during that gap.
+        var seen = Set<String>()
+        var choices = mixer.hiddenApps.map { hidden -> MixerListChoice in
+            seen.insert(hidden.id)
+            return MixerListChoice(id: hidden.id, name: hidden.name, isListed: false, canToggle: true)
+        }
+        for app in mixer.apps {
+            let id = app.persistenceID ?? app.id
+            guard seen.insert(id).inserted else { continue }
+            choices.append(MixerListChoice(id: id, name: app.name,
+                                           isListed: true, canToggle: app.persistenceID != nil))
+        }
+        choices.sort {
+            MixerRoutingSupport.displayOrderedBefore(name: $0.name, id: $0.id,
+                                                     otherName: $1.name, otherID: $1.id)
+        }
+        return choices
+    }
+
+    func listedBinding(_ mixer: AppVolumeMixer) -> Binding<Bool> {
+        Binding(
+            get: { isListed },
+            set: { listed in
+                if listed {
+                    mixer.showInList(id: id)
+                } else if let app = mixer.apps.first(where: { ($0.persistenceID ?? $0.id) == id }) {
+                    mixer.hideFromList(app)
+                }
+            }
+        )
+    }
+}
+
 struct SoundOutputSwitcherControls: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var mixer = AppVolumeMixer.shared
@@ -785,10 +796,8 @@ struct SoundOutputSwitcherControls: View {
                 .toggleStyle(.checkbox)
                 .font(.system(size: 11.5, weight: .medium))
                 .onChange(of: enabled) { _, isEnabled in
-                    if isEnabled, selectedUIDs.isEmpty,
-                       let current = mixer.currentOutputDeviceUID,
-                       universalOutputDevices.contains(where: { $0.uid == current }) {
-                        setSelectedUIDs([current])
+                    if let seeded = Self.seed(enabled: isEnabled, selected: selectedUIDs, mixer: mixer) {
+                        setSelectedUIDs(seeded)
                     }
                     outputSwitcher.syncWithPreferences()
                 }
@@ -842,7 +851,34 @@ struct SoundOutputSwitcherControls: View {
     }
 
     private var universalOutputDevices: [MixerOutputDevice] {
+        Self.devices(mixer)
+    }
+
+    /// The devices the switcher can move the output to.
+    static func devices(_ mixer: AppVolumeMixer) -> [MixerOutputDevice] {
         mixer.outputDevices.filter(\.canBeDefaultOutput)
+    }
+
+    /// Turning the switcher on with nothing picked starts it on the current device.
+    static func seed(enabled: Bool, selected: [String], mixer: AppVolumeMixer) -> [String]? {
+        guard enabled, selected.isEmpty, let current = mixer.currentOutputDeviceUID,
+              devices(mixer).contains(where: { $0.uid == current }) else { return nil }
+        return [current]
+    }
+
+    /// The picked devices after `uid` is checked or unchecked: the visible
+    /// ones in the list's order, then the ones not connected right now.
+    static func selection(_ current: [String], uid: String, selected: Bool, mixer: AppVolumeMixer) -> [String] {
+        var next = current
+        if selected {
+            if !next.contains(uid) { next.append(uid) }
+        } else {
+            next.removeAll { $0 == uid }
+        }
+        let visibleOrder = devices(mixer).map(\.uid)
+        let visible = visibleOrder.filter { next.contains($0) }
+        let unavailable = next.filter { !visibleOrder.contains($0) }
+        return visible + unavailable
     }
 
     private func outputDeviceTitle(_ device: MixerOutputDevice) -> String {
@@ -861,16 +897,7 @@ struct SoundOutputSwitcherControls: View {
         Binding(
             get: { selectedUIDs.contains(uid) },
             set: { selected in
-                var next = selectedUIDs
-                if selected {
-                    if !next.contains(uid) { next.append(uid) }
-                } else {
-                    next.removeAll { $0 == uid }
-                }
-                let visibleOrder = universalOutputDevices.map(\.uid)
-                let visible = visibleOrder.filter { next.contains($0) }
-                let unavailable = next.filter { !visibleOrder.contains($0) }
-                setSelectedUIDs(visible + unavailable)
+                setSelectedUIDs(Self.selection(selectedUIDs, uid: uid, selected: selected, mixer: mixer))
             }
         )
     }

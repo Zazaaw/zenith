@@ -94,13 +94,8 @@ struct SettingsView: View {
             ?? items.first?.id
     }
 
-    /// Zenith fork: the Orbit icon the open page's header draws: the page's
-    /// own, or the tool's when General shows one of its tools on its own.
+    /// Zenith fork: the Orbit icon the open page's header draws.
     private var pageIcon: SettingsPageIcon {
-        if router.page == .general, detailShowsGeneralTool, let selected = selectedSidebarItem,
-           let item = sidebarItems.first(where: { $0.id == selected }) {
-            return SettingsPageIcon(id: item.id, symbol: item.icon)
-        }
         return SettingsPageIcon(id: .page(router.page),
                                 symbol: SettingsSidebarIcons.fallbackSymbol(page: router.page) ?? "gearshape")
     }
@@ -135,7 +130,9 @@ struct SettingsView: View {
                                             .switcher, .dock, .homebrew, .releaseNotes, .about, .support,
                                             .portManager, .workspaces, .lockScreen, .remote,
                                             .faceUnlock, .batteries, .pocket,
-                                            .meetings, .mechakey, .appearance] // Zenith fork: Meetings, Mechakey, Appearance
+                                            .meetings, .mechakey, .appearance, // Zenith fork: Meetings, Mechakey, Appearance
+                                            .volumeMixer, .soundOutput, .musicBlocker, .micMute, // Zenith fork: sound
+                                            .screenshot, .screenRecording, .textCapture, .colorPicker, .cameraPreview]
         if ownHeader.contains(router.page) { return nil }
         if router.page == .translate { return nil } // Zenith fork: Translate opens with its own header
         // Zenith fork: the Everyday pages open with their own hero.
@@ -144,29 +141,15 @@ struct SettingsView: View {
         // Zenith fork: the System and Apps pages open with their own hero.
         if [.sleep, .brightness, .fanControl, .menuBar, .commandBar, .cleaner, .uninstaller, .homebrew, .appUpdates,
             .killProcess, .portManager].contains(router.page) { return nil }
-        if router.page == .general, !(detailShowsGeneralTool) { return nil }
+        if router.page == .general { return nil }
         let selected = selectedSidebarItem
         return sidebarItems.first(where: { $0.id == selected })?.title
-    }
-
-    private var detailShowsGeneralTool: Bool {
-        guard let anchor = router.destination.sectionAnchor else { return false }
-        return [.mixer, .soundOutputSwitcher, .audioPriority, .musicBlocking].contains(anchor)
-            && sidebarItems.contains(where: { $0.destination == router.destination })
     }
 
     @ViewBuilder
     private var detail: some View {
         switch router.page {
-        case .general:
-            if let anchor = router.destination.sectionAnchor,
-               [.mixer, .soundOutputSwitcher,
-                .audioPriority, .musicBlocking].contains(anchor),
-               sidebarItems.contains(where: { $0.destination == router.destination }) {
-                GeneralToolSettings(anchor: anchor)
-            } else {
-                GeneralSettings()
-            }
+        case .general: GeneralSettings() // Zenith fork: its tools have pages of their own
         case .features: FeatureHubSettings()
         case .textSnippets: TextSnippetsSettings()
         case .notch: NotchSettings()
@@ -197,7 +180,11 @@ struct SettingsView: View {
         case .media: MediaSettings()
         case .clipboard: ClipboardSettings()
         case .quickTools: QuickToolsSettings()
-        case .screenshot: ScreenCaptureSettings()
+        case .screenshot: ScreenshotSettingsPage() // Zenith fork: the capture tools, a page each
+        case .screenRecording: ScreenRecordingSettingsPage()
+        case .textCapture: TextCaptureSettingsPage()
+        case .colorPicker: ColorPickerSettingsPage()
+        case .cameraPreview: CameraPreviewSettingsPage()
         case .windowLayout: WindowLayoutSettings()
         case .shelf: ShelfSettings()
         case .shortcuts: ShortcutsSettings()
@@ -223,6 +210,10 @@ struct SettingsView: View {
         case .notchAgents: NotchAgentsSettingsPage()
         case .notchDownloads: NotchDownloadsSettingsPage()
         case .notchWatch: NotchWatchSettingsPage()
+        case .volumeMixer: VolumeMixerSettingsPage() // Zenith fork: the sound tools, a page each
+        case .soundOutput: SoundOutputSettingsPage()
+        case .musicBlocker: MusicBlockerSettingsPage()
+        case .micMute: MicMuteSettingsPage()
         }
     }
 }
