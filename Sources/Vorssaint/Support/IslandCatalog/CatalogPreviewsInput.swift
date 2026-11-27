@@ -12,7 +12,7 @@ import SwiftUI
 extension CatalogShots {
     static var previewsInput: [CatalogShot] {
         let pages: [(String, SettingsPage)] = [
-            ("mouse", .mouse), ("key-debounce", .keyDebounce), ("super-key", .superKey), ("cut-paste", .finderTools),
+            ("scrolling", .scrolling), ("pointer", .pointer), ("mouse-buttons", .mouseButtons), ("key-debounce", .keyDebounce), ("super-key", .superKey), ("cut-paste", .finderTools),
             ("auto-quit", .autoQuit), ("quit-protection", .quitProtection), ("url-cleaner", .urlCleaner),
             ("clipboard", .clipboard), ("text-snippets", .textSnippets), ("radial-menu", .radialMenu),
             ("shortcuts", .shortcuts),

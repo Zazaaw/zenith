@@ -13,7 +13,7 @@ import SwiftUI
 extension CatalogShots {
     static var readmePreviewsTools: [CatalogShot] {
         [
-            quickTools("readme-preview-tools-quick-panel", landing: nil),
+            quickTools("readme-preview-tools-quick-panel", landing: .quickLauncher),
             quickTools("readme-preview-tools-quick-windows", landing: .scratchpad),
             quickTools("readme-preview-tools-quick-apps", landing: .micMute),
             quickTools("readme-preview-tools-quick-cleaning", landing: .cleaningMode),
@@ -34,10 +34,12 @@ extension CatalogShots {
         ]
     }
 
-    /// Quick Tools opened on `landing`'s section, or on the page itself.
-    private static func quickTools(_ id: String, landing: SettingsSectionAnchor?) -> CatalogShot {
-        settings(id, page: .quickTools) {
-            SettingsRouter.shared.request(FeatureSettingsDestination(.quickTools, sectionAnchor: landing))
+    /// A quick tool's page, opened on `landing`.
+    /// Zenith fork: each quick tool has a page of its own now.
+    private static func quickTools(_ id: String, landing: SettingsSectionAnchor) -> CatalogShot {
+        let page = landing.page
+        return settings(id, page: page) {
+            SettingsRouter.shared.request(FeatureSettingsDestination(page, sectionAnchor: landing))
         }
     }
 }

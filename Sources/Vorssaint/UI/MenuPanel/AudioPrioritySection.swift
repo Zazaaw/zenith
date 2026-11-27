@@ -15,10 +15,13 @@ struct AudioPriorityDisclosure: View {
     @ObservedObject private var mixer = AppVolumeMixer.shared
     @ObservedObject private var inputManager = AudioInputDeviceManager.shared
     private let showsHeader: Bool
+    /// Zenith fork: Settings → Sound Output puts the caption under its section.
+    private let showsCaption: Bool
     @State private var expanded: Bool
 
-    init(initiallyExpanded: Bool = false, showsHeader: Bool = true) {
+    init(initiallyExpanded: Bool = false, showsHeader: Bool = true, showsCaption: Bool = true) {
         self.showsHeader = showsHeader
+        self.showsCaption = showsCaption
         _expanded = State(initialValue: initiallyExpanded)
     }
 
@@ -49,10 +52,12 @@ struct AudioPriorityDisclosure: View {
 
             if expanded {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text(l10n.s.audioPriorityCaption)
-                        .font(.system(size: 9.5))
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    if showsCaption {
+                        Text(l10n.s.audioPriorityCaption)
+                            .font(.system(size: 9.5))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     outputPrioritySubsection
                     Divider()
                     inputPrioritySubsection

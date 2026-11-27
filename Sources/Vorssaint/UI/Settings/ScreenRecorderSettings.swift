@@ -3,14 +3,16 @@
 
 import SwiftUI
 
-/// Settings for the screen recorder: how a recording starts, what it captures
-/// and where the file lands. Everything a person rarely touches sits behind
-/// one disclosure, so the page reads at a glance.
-struct ScreenRecordingCaptureSettings: View {
+/// Settings → Screen Recording. Zenith fork: a page of its own in the kit
+/// (docs/SETTINGS-KIT.md), split from Screen capture: the hero, the picture,
+/// then how a recording starts and what it captures, where the file lands
+/// (quality and frame rates under More options), the shortcuts and sharing.
+struct ScreenRecordingSettingsPage: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var permissions = Permissions.shared
     @ObservedObject private var service = ScreenRecorderService.shared
     @ObservedObject private var sharing = RecordingShareService.shared
+    @ObservedObject private var recent = RecentCaptureService.shared
     @AppStorage(DefaultsKey.recorderCountdown) private var countdown = 3
     @AppStorage(DefaultsKey.recorderQuality) private var qualityRaw =
         RecorderSupport.Quality.balanced.rawValue
@@ -22,9 +24,11 @@ struct ScreenRecordingCaptureSettings: View {
     @AppStorage(DefaultsKey.recorderAutomaticZoom) private var automaticZoom = true
     @AppStorage(DefaultsKey.recorderGIFFrameRate) private var gifFrameRate = 12
     @AppStorage(DefaultsKey.recorderSharingEnabled) private var sharingEnabled = true
-    @State private var showsMoreOptions = false
+    @AppStorage(DefaultsKey.recentCapturesShortcutEnabled) private var recentShortcutEnabled = false
     @State private var showingSharedLinks = false
     @State private var showingSharePrivacy = false
+
+    private let text = ZenithStrings.soundCapture(.enUS)
 
     private var strings: RecorderFeatureStrings {
         FeatureStrings.recorder(l10n.language)
@@ -39,145 +43,29 @@ struct ScreenRecordingCaptureSettings: View {
     }
 
     var body: some View {
-        Group {
-            Section {
-                Button {
-                    ScreenRecorderService.shared.toggle()
-                } label: {
-                    Label(service.isRecording ? strings.stopButton : strings.startButton,
-                          systemImage: service.isRecording ? "stop.circle" : "record.circle")
-                }
-                Text(service.isRecording
-                     ? RecorderSupport.elapsedLabel(seconds: service.elapsedSeconds)
-                     : strings.panelCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-                if !permissions.screenRecording {
-                    PermissionRow(kind: .screenRecording)
-                }
-                if !permissions.accessibility {
-                    PermissionRow(kind: .accessibility)
-                }
-            } header: {
-                Text(strings.pageTitle)
-            }
-            .settingsFormSectionAnchor(.screenRecorder)
-
-            Section {
-                Picker(strings.countdownLabel, selection: $countdown) {
-                    ForEach(ScreenshotSupport.allowedDelays, id: \.self) { seconds in
-                        if seconds == 0 {
-                            Text(strings.countdownOff).tag(0)
-                        } else {
-                            Text(String(format: strings.countdownSecondsFormat, seconds)).tag(seconds)
-                        }
-                    }
-                }
-                .pickerStyle(.segmented)
-                VStack(alignment: .leading, spacing: 4) {
-                    Toggle(strings.systemAudioToggle, isOn: $systemAudio)
-                    Text(strings.systemAudioCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                VStack(alignment: .leading, spacing: 4) {
-                    Toggle(strings.microphoneToggle, isOn: $microphone)
-                        .onChange(of: microphone) { _, enabled in
-                            if enabled, permissions.microphone == .undetermined {
-                                permissions.requestMicrophone()
-                            }
-                        }
-                    Text(strings.microphoneCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    if microphone, permissions.microphone != .granted {
-                        PermissionRow(kind: .microphone)
-                    }
-                }
-                VStack(alignment: .leading, spacing: 4) {
-                    Toggle(strings.openEditorToggle, isOn: $opensEditor)
-                    Text(strings.openEditorCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                VStack(alignment: .leading, spacing: 4) {
-                    Toggle(strings.automaticZoomToggle, isOn: $automaticZoom)
-                    Text(strings.automaticZoomCaption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+        let s = l10n.s
+        ZenithToolPage {
+            ZenithHero(title: strings.pageTitle, subtitle: text.recordingSubtitle,
+                       chips: [service.isRecording ? ZenithChip(RecorderSupport.elapsedLabel(seconds: service.elapsedSeconds),
+                                                                dot: ZenithStatus.error)
+                                                   : ZenithChip(qualityTitle),
+                               ZenithChip(String(format: strings.frameRateFormat, frameRate)),
+                               CaptureToolShortcutRows.chip(.recording)],
+                       animation: .screenRecording)
+                .zenithSectionAnchor(.screenRecorder, cornerRadius: ZenithKitSurface.heroRadius + 6, inset: 6)
+            CapturePermissionSection(kind: .screenRecording)
+            CapturePermissionSection(kind: .accessibility)
+            ZenithScenePreview(scenes: [.recording])
+            recording
+            saving
+            ZenithSection(text.shortcutSection) {
+                CaptureToolShortcutRows(tool: .recording)
+                ZenithShortcutSwitchRows(title: GlobalShortcutRole.recentCaptures.title(s), role: .recentCaptures,
+                                         isOn: $recentShortcutEnabled, failed: recent.shortcutRegistrationFailed) {
+                    recent.syncWithPreferences()
                 }
             }
-
-            Section {
-                folderRow
-                DisclosureHeaderRow(isExpanded: $showsMoreOptions) {
-                    Text(strings.moreOptions)
-                    Spacer()
-                }
-                if showsMoreOptions {
-                    Group {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Picker(strings.qualityLabel, selection: $qualityRaw) {
-                                Text(strings.qualitySmall)
-                                    .tag(RecorderSupport.Quality.small.rawValue)
-                                Text(strings.qualityBalanced)
-                                    .tag(RecorderSupport.Quality.balanced.rawValue)
-                                Text(strings.qualityHigh)
-                                    .tag(RecorderSupport.Quality.high.rawValue)
-                            }
-                            Text(strings.qualityCaption)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Picker(strings.frameRateLabel, selection: $frameRate) {
-                            ForEach(RecorderSupport.frameRates, id: \.self) { rate in
-                                Text(String(format: strings.frameRateFormat, rate)).tag(rate)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        Picker(strings.gifFrameRateLabel, selection: $gifFrameRate) {
-                            ForEach(RecorderSupport.gifFrameRates, id: \.self) { rate in
-                                Text(String(format: strings.frameRateFormat, rate)).tag(rate)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                    }
-                    .disclosureIndent()
-                }
-            }
-
-            Section {
-                Toggle(screenshotStrings.shareEnabledToggle, isOn: $sharingEnabled)
-                if sharingEnabled {
-                    Text(shareStrings.caption)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Button {
-                    showingSharePrivacy = true
-                } label: {
-                    Label(screenshotStrings.sharePrivacyButton, systemImage: "hand.raised")
-                }
-                if !sharing.records.isEmpty {
-                    Button {
-                        showingSharedLinks = true
-                    } label: {
-                        HStack {
-                            Label(screenshotStrings.sharedLinksTitle, systemImage: "link")
-                            Spacer()
-                            Text("\(sharing.records.count)")
-                                .foregroundStyle(.secondary)
-                            Image(systemName: "chevron.right")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.tertiary)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-            } header: {
-                Text(screenshotStrings.shareSectionTitle)
-            }
+            sharingSection
         }
         .onAppear { sharing.refresh() }
         .sheet(isPresented: $showingSharedLinks) {
@@ -188,51 +76,79 @@ struct ScreenRecordingCaptureSettings: View {
         }
     }
 
-    private var folderRow: some View {
-        HStack {
-            Text(strings.folderLabel)
-            Spacer()
-            Text(currentFolderName)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
-            if !saveFolder.isEmpty {
-                Button {
-                    saveFolder = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.tertiary)
+    private var qualityTitle: String {
+        switch RecorderSupport.Quality(rawValue: qualityRaw) ?? .balanced {
+        case .small: return strings.qualitySmall
+        case .balanced: return strings.qualityBalanced
+        case .high: return strings.qualityHigh
+        }
+    }
+
+    private var recording: some View {
+        ZenithSection(text.recordingRecord) {
+            ZenithRow(service.isRecording ? text.recordingLive : text.recordingIdle,
+                      info: strings.panelCaption,
+                      essential: service.isRecording ? RecorderSupport.elapsedLabel(seconds: service.elapsedSeconds) : nil,
+                      button: service.isRecording ? strings.stopButton : strings.startButton) {
+                ScreenRecorderService.shared.toggle()
+            }
+            ZenithRow(strings.countdownLabel, selection: $countdown) {
+                ForEach(ScreenshotSupport.allowedDelays, id: \.self) { seconds in
+                    if seconds == 0 {
+                        Text(strings.countdownOff).tag(0)
+                    } else {
+                        Text(String(format: strings.countdownSecondsFormat, seconds)).tag(seconds)
+                    }
                 }
-                .buttonStyle(.borderless)
-                .screenshotSafeHelp(l10n.s.shortcutReset)
             }
-            Button(strings.folderChoose) {
-                chooseFolder()
+            ZenithRow(strings.systemAudioToggle, isOn: $systemAudio, info: strings.systemAudioCaption)
+            ZenithRow(strings.microphoneToggle, isOn: $microphone, info: strings.microphoneCaption)
+                .onChange(of: microphone) { _, enabled in
+                    if enabled, permissions.microphone == .undetermined {
+                        permissions.requestMicrophone()
+                    }
+                }
+            if microphone, permissions.microphone != .granted {
+                PermissionRow(kind: .microphone).padding(.vertical, 10)
+            }
+            ZenithRow(strings.openEditorToggle, isOn: $opensEditor, info: strings.openEditorCaption)
+            ZenithRow(strings.automaticZoomToggle, isOn: $automaticZoom, info: strings.automaticZoomCaption)
+        }
+    }
+
+    private var saving: some View {
+        ZenithSection(text.recordingSaving) {
+            ZenithFolderRow(title: strings.folderLabel, chooseTitle: strings.folderChoose, path: $saveFolder)
+            ZenithMoreOptions(id: "screenRecording", anchors: [.zenithRecordingMore]) {
+                ZenithRow(strings.qualityLabel, selection: $qualityRaw, info: strings.qualityCaption) {
+                    Text(strings.qualitySmall).tag(RecorderSupport.Quality.small.rawValue)
+                    Text(strings.qualityBalanced).tag(RecorderSupport.Quality.balanced.rawValue)
+                    Text(strings.qualityHigh).tag(RecorderSupport.Quality.high.rawValue)
+                }
+                .zenithSectionAnchor(.zenithRecordingMore, cornerRadius: 10, inset: 4)
+                ZenithRow(strings.frameRateLabel, selection: $frameRate) {
+                    ForEach(RecorderSupport.frameRates, id: \.self) { rate in
+                        Text(String(format: strings.frameRateFormat, rate)).tag(rate)
+                    }
+                }
+                ZenithRow(strings.gifFrameRateLabel, selection: $gifFrameRate) {
+                    ForEach(RecorderSupport.gifFrameRates, id: \.self) { rate in
+                        Text(String(format: strings.frameRateFormat, rate)).tag(rate)
+                    }
+                }
             }
         }
     }
 
-    private var currentFolderName: String {
-        let manager = FileManager.default
-        if !saveFolder.isEmpty {
-            let expanded = (saveFolder as NSString).expandingTildeInPath
-            var isDirectory: ObjCBool = false
-            if manager.fileExists(atPath: expanded, isDirectory: &isDirectory), isDirectory.boolValue {
-                return manager.displayName(atPath: expanded)
+    private var sharingSection: some View {
+        ZenithSection(screenshotStrings.shareSectionTitle) {
+            ZenithRow(screenshotStrings.shareEnabledToggle, isOn: $sharingEnabled,
+                      info: sharingEnabled ? shareStrings.caption : nil)
+            ZenithRow(screenshotStrings.sharePrivacyButton, navigate: { showingSharePrivacy = true })
+            if !sharing.records.isEmpty {
+                ZenithRow(screenshotStrings.sharedLinksTitle, value: "\(sharing.records.count)",
+                          navigate: { showingSharedLinks = true })
             }
-        }
-        let desktop = manager.urls(for: .desktopDirectory, in: .userDomainMask).first
-        return desktop.map { manager.displayName(atPath: $0.path) } ?? "Desktop"
-    }
-
-    private func chooseFolder() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.canCreateDirectories = true
-        panel.allowsMultipleSelection = false
-        if panel.runModal() == .OK, let url = panel.url {
-            saveFolder = url.path
         }
     }
 }

@@ -21,6 +21,20 @@ extension CatalogShots {
             ("general", .general, [:], 1080),
             ("translate", .translate, [TranslateDefaults.enabled: true], 1300),
             ("shortcuts", .shortcuts, [:], 1000),
+            // Zenith fork: the sound and capture pages, and Meetings.
+            ("meetings", .meetings, [DefaultsKey.zenithMeetingsEnabled: true], 1200),
+            ("volume-mixer", .volumeMixer, [AppFeature.mixer.availabilityKey: true], 1300),
+            ("sound-output", .soundOutput, [AppFeature.soundOutputSwitcher.availabilityKey: true,
+                                            AppFeature.audioPriority.availabilityKey: true,
+                                            DefaultsKey.soundOutputSwitcherEnabled: true], 1300),
+            ("music-blocker", .musicBlocker, [AppFeature.musicBlock.availabilityKey: true,
+                                              DefaultsKey.musicBlockEnabled: true], 1100),
+            ("mic-mute", .micMute, [AppFeature.micMute.availabilityKey: true], 1200),
+            ("screenshot", .screenshot, [AppFeature.screenshot.availabilityKey: true], 3100),
+            ("screen-recording", .screenRecording, [AppFeature.screenRecorder.availabilityKey: true], 1700),
+            ("text-capture", .textCapture, [AppFeature.screenOCR.availabilityKey: true], 1100),
+            ("color-picker", .colorPicker, [AppFeature.colorPicker.availabilityKey: true], 1200),
+            ("camera-preview", .cameraPreview, [AppFeature.cameraPreview.availabilityKey: true], 1050),
         ] + kitEverydayPages
             + kitWave2Pages // Zenith fork: Orbit wave 2 (CatalogKitShotsWave2)
         var shots: [CatalogShot] = []
@@ -32,7 +46,7 @@ extension CatalogShots {
                 shots.append(shot)
             }
         }
-        return shots + kitIsland // Zenith fork: the Island group's pages (CatalogKitShotsIsland)
+        return shots + kitIsland + kitInputWindows // Zenith fork: the Island group (CatalogKitShotsIsland), Input, Windows and quick tools
     }
 }
 #endif

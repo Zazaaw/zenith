@@ -38,6 +38,16 @@ enum ZenithSettingsSearch {
         .page(.calculator): CalculatorSearch.aliases,
         .page(.finderTools): ["finder", "cut paste", "cut and paste", "potong tempel", "pindah file", "rename",
                               "ganti nama", "F2", "dmg", "disk image", "install app", "pasang aplikasi"],
+        // The sound and capture tools' own pages.
+        .page(.volumeMixer): SoundCaptureSearch.volumeMixer,
+        .page(.soundOutput): SoundCaptureSearch.soundOutput,
+        .page(.musicBlocker): SoundCaptureSearch.musicBlocker,
+        .page(.micMute): SoundCaptureSearch.micMute,
+        .page(.screenshot): SoundCaptureSearch.screenshot,
+        .page(.screenRecording): SoundCaptureSearch.screenRecording,
+        .page(.textCapture): SoundCaptureSearch.textCapture,
+        .page(.colorPicker): SoundCaptureSearch.colorPicker,
+        .page(.cameraPreview): SoundCaptureSearch.cameraPreview,
         .page(.about): ["tentang", "tentang aplikasi", "versi", "version", "Satu Visual", "Zenith"],
     ]
 
@@ -88,6 +98,9 @@ enum ZenithSettingsSearch {
         let beautify = ZenithStrings.beautify(language)
         let qr = ZenithStrings.qr(language)
         let hider = ZenithStrings.menuBarHider(language)
+        let strings = Strings.localized(language)
+        let shot = FeatureStrings.screenshot(language)
+        let recorder = FeatureStrings.recorder(language)
 
         var items: [SettingsSearchItem] = [
             // Dynamic Island › Content: the fork's modules and their options.
@@ -301,6 +314,21 @@ enum ZenithSettingsSearch {
             page(.zenithBeautify, title: beautify.title, icon: "wand.and.stars",
                  keywords: [beautify.afterCapture],
                  aliases: ["percantik", "bingkai", "frame", "mockup", "Instagram"], feature: .screenshot),
+            // Rows under More options on the sound and capture pages: search opens the fold.
+            page(.zenithMixerVisibleApps, title: strings.mixerVisibleApps, icon: "eye.slash",
+                 keywords: [strings.mixerAllShown, strings.mixerHiddenCountLabel],
+                 aliases: ["hide app", "sembunyikan aplikasi", "daftar aplikasi"], feature: .mixer),
+            page(.zenithScreenshotLoupe, title: shot.loupeStartsOnToggle, icon: "magnifyingglass",
+                 keywords: [shot.loupeRememberZoomToggle, shot.loupeDefaultZoomLabel, shot.loupeWheelZoomLabel,
+                            shot.hideVorssaintWindowsToggle],
+                 aliases: ["loupe", "kaca pembesar", "zoom"], feature: .screenshot),
+            page(.zenithScreenshotMore, title: shot.defaultActionLabel, icon: "photo.badge.checkmark",
+                 keywords: [shot.confirmationPreviewToggle, shot.confirmationPreviewDurationLabel,
+                            shot.previewPositionLabel, shot.previewFocusToggle],
+                 aliases: ["after capture", "setelah tangkap", "preview"], feature: .screenshot),
+            page(.zenithRecordingMore, title: recorder.qualityLabel, icon: "dial.medium",
+                 keywords: [recorder.frameRateLabel, recorder.gifFrameRateLabel],
+                 aliases: ["fps", "kualitas rekaman", "frame rate"], feature: .screenRecorder),
             // Clipboard.
             page(.zenithQR, title: qr.title, icon: "qrcode",
                  keywords: [qr.correction, qr.logo, qr.fromClipboard, qr.scan, qr.newCode],

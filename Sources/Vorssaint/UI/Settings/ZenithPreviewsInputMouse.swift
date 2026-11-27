@@ -3,9 +3,10 @@
 
 import SwiftUI
 
-// Zenith fork: the Mouse & Trackpad page's preview card. The page holds a
-// dozen features; the picker groups them into scrolling, the pointer and the
-// buttons, and the feature the sidebar or a search opened picks the picture.
+// Zenith fork: the preview card of the Scrolling, Pointer and Mouse Buttons
+// pages (the Mouse page, split). Each page shows its group; the picker steps
+// through the group's features, and the feature a search or the hub opened
+// picks the picture.
 // Each picture loops what the feature does, with this Mac's own choices (the
 // modifier keys, lines per notch, the debounce window) and sample content.
 
@@ -32,9 +33,19 @@ enum ZenithMousePreviewGroup: Int, CaseIterable {
     static func of(_ feature: AppFeature) -> ZenithMousePreviewGroup? {
         allCases.first { $0.features.contains(feature) }
     }
+
+    /// The page that shows the group.
+    var page: SettingsPage {
+        switch self {
+        case .scroll: return .scrolling
+        case .pointer: return .pointer
+        case .buttons: return .mouseButtons
+        }
+    }
 }
 
 struct ZenithMousePreviewCard: View {
+    let group: ZenithMousePreviewGroup
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var router = SettingsRouter.shared
     @AppStorage(DefaultsKey.scrollHorizontalModifier) private var horizontalModifier = ScrollHorizontalModifier.shift
@@ -43,41 +54,41 @@ struct ZenithMousePreviewCard: View {
     @AppStorage(DefaultsKey.scrollSpeedMultiplier) private var speedMultiplier = ScrollWheelSupport.defaultSpeedMultiplier
     @AppStorage(DefaultsKey.linearScrollLines) private var linesPerNotch = ScrollWheelSupport.defaultLinesPerNotch
     @AppStorage(DefaultsKey.mouseClickDebounceWindowMs) private var debounceWindow = Defaults.defaultMouseClickDebounceWindowMs
-    /// The group picked in the card; nil follows the routed feature.
+    /// The feature picked in the card; nil follows the routed feature.
     @State private var picked: AppFeature?
 
     private var text: ZenithPreviewsInputStrings { .shared }
 
-    private var groups: [ZenithMousePreviewGroup] {
-        ZenithMousePreviewGroup.allCases.filter { !$0.features.filter(\.isAvailable).isEmpty }
+    /// The group's features still in Orbit, one state each.
+    private var shownFeatures: [AppFeature] {
+        group.features.filter(\.isAvailable)
     }
 
-    /// The feature the sidebar or a search opened on this page.
+    /// The feature a search or the hub opened on this page.
     private var routed: AppFeature? {
-        guard router.page == .mouse else { return nil }
-        if let feature = router.sidebarFeature, ZenithMousePreviewGroup.of(feature) != nil { return feature }
+        guard router.page == group.page else { return nil }
+        if let feature = router.sidebarFeature, shownFeatures.contains(feature) { return feature }
         guard let anchor = router.destination.sectionAnchor else { return nil }
-        return ZenithMousePreviewGroup.allCases.flatMap(\.features).first {
-            $0.isAvailable && $0.settingsDestination.sectionAnchor == anchor
-        }
+        return shownFeatures.first { $0.settingsDestination.sectionAnchor == anchor }
     }
 
     private var feature: AppFeature {
-        picked ?? routed ?? groups.first?.features.first(where: \.isAvailable) ?? .scrollInverter
+        picked.flatMap { shownFeatures.contains($0) ? $0 : nil } ?? routed ?? shownFeatures.first ?? group.features[0]
     }
 
     var body: some View {
-        let groups = self.groups
+        let features = shownFeatures
         let feature = self.feature
-        ZenithSettingsPreviewCard(id: "mouse", caption: caption(feature),
-                                  states: groups.map { $0.title(text) },
+        let hub = FeatureStrings.hub(l10n.language)
+        ZenithSettingsPreviewCard(id: "mouse.\(group.rawValue)", caption: caption(feature),
+                                  states: features.map { $0.hubTitle(l10n.s, hub: hub) },
                                   selection: Binding(get: {
-                                      groups.firstIndex { $0 == ZenithMousePreviewGroup.of(feature) } ?? 0
+                                      features.firstIndex(of: feature) ?? 0
                                   }, set: { index in
-                                      guard groups.indices.contains(index) else { return }
-                                      picked = groups[index].features.first(where: \.isAvailable)
+                                      guard features.indices.contains(index) else { return }
+                                      picked = features[index]
                                   }),
-                                  highlight: feature.hubTitle(l10n.s, hub: FeatureStrings.hub(l10n.language))) {
+                                  highlight: feature.hubTitle(l10n.s, hub: hub)) {
             ZPIStage(period: period(feature), still: still(feature)) { phase in
                 picture(feature, phase: phase)
             }

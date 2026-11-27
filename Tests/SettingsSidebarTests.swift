@@ -49,9 +49,14 @@ enum SettingsSidebarTests {
                         && group(.everyday).prefix(6) == [.page(.shelf), .page(.clipboard), .page(.finderTools), .page(.media),
                                                 .page(.urlCleaner), .page(.textSnippets)]
                         && group(.devices) == [.page(.pocket), .page(.batteries), .page(.faceUnlock), .page(.remote)]
-                        && group(.capture).first == .feature(.screenshot)
+                        && group(.capture).first == .page(.screenshot)
                         && group(.system).first == .page(.monitor),
                      "the groups open with the rows the design leads with")
+        // Zenith fork: one row per sound and capture tool, each its own page.
+        suite.expect(group(.sound) == [.page(.volumeMixer), .page(.soundOutput), .page(.musicBlocker), .page(.micMute)]
+                        && group(.capture) == [.page(.screenshot), .page(.screenRecording), .page(.textCapture),
+                                               .page(.colorPicker), .page(.cameraPreview)],
+                     "Sound and Capture list one page per tool")
         suite.expect(group(.zenith).contains(.page(.about)) && group(.zenith).contains(.page(.shortcuts)),
                      "the app's own pages close the sidebar")
         suite.expect(SettingsPage.allCases.filter { SettingsSidebarGroup.of(page: $0) == .tiles }
@@ -79,6 +84,9 @@ enum SettingsSidebarTests {
         let missing = SettingsPage.allCases.filter { $0 != .notchMascot && !pages.contains($0) }
         suite.expect(missing.isEmpty, "every Settings page is reachable from the sidebar (missing: \(missing))")
         let ids = Set(items.map(\.id))
+        // Zenith fork: one row per page. A page of several features keeps a
+        // single row and its features land on their sections from it; only
+        // the shared pages still list their tools.
         let tools = AppFeature.allCases.filter { feature in
             let destination = feature.settingsDestination
             return destination.sectionAnchor != nil && destination.page != .notchMascot
@@ -88,15 +96,19 @@ enum SettingsSidebarTests {
         suite.expect(missingTools.isEmpty, "every tool on a shared page keeps its row (missing: \(missingTools))")
         suite.expect(SettingsDirectory.singleRowPages.allSatisfy { page in
             items.filter { $0.destination.page == page }.map(\.id) == [.page(page)]
-        }, "Clipboard and Finder Tools are one row each, their features' sections inside")
+        }, "every page several features share is one row, their features' sections inside")
         suite.expect(SettingsSidebarSupport.selection(
             for: FeatureSettingsDestination(.clipboard, sectionAnchor: .pastePlain), in: items) == .page(.clipboard)
                         && SettingsSidebarSupport.selection(
             for: AppFeature.diskImageInstaller.settingsDestination, in: items) == .page(.finderTools),
                      "a feature's section on a one-row page selects that page's row")
-        suite.expect(ids.contains(.setting(.panelConfiguration)) && ids.contains(.setting(.screenshotScrolling))
+        suite.expect(AppFeature.allCases.filter { SettingsDirectory.singleRowPages.contains($0.settingsDestination.page) }
+                        .allSatisfy { SettingsSidebarSupport.selection(for: $0.settingsDestination, in: items)
+                            == .page($0.settingsDestination.page) },
+                     "every feature on a one-row page selects its page's row")
+        suite.expect(ids.contains(.setting(.panelConfiguration)) && !ids.contains(.setting(.screenshotScrolling))
                         && ids.contains(.setting(.keyboardBrightnessShortcuts)),
-                     "the menu bar editor, scrolling capture and keyboard light shortcuts keep their rows")
+                     "the menu bar editor and keyboard light shortcuts keep their rows; scrolling capture is Screenshot's")
         for item in items {
             suite.expect(SettingsSidebarSupport.selection(for: item.destination, in: items,
                                                           preferredID: item.id) == item.id,

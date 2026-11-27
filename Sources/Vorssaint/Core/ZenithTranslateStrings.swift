@@ -44,6 +44,7 @@ struct ZenithTranslateStrings {
     let download = "Download…"
     let downloading = "Downloading…"
     let manageDownloads = "Manage in System Settings"
+    let manageTitle = "Translation languages"
     let manageCaption = "Language & Region → Translation Languages lists and removes what’s downloaded."
     let checkPair = "Check a pair"
     let from = "From"

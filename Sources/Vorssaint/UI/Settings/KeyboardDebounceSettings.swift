@@ -19,44 +19,61 @@ struct KeyboardDebounceSettings: View {
     @State private var selectedKeyCode: Int64?
     @State private var selectedWindow = Defaults.defaultKeyboardDebounceWindowMs
 
-    var body: some View {
-        Form {
-            ZenithPreviewFormSection { ZenithKeyDebouncePreviewCard() } // Zenith fork: the preview card
-            Section(l10n.s.keyDebounceName) {
-                Toggle(l10n.s.keyDebounceEnable, isOn: $enabled)
-                    .onChange(of: enabled) { _, value in
-                        KeyboardDebounceService.shared.syncWithPreferences()
-                        guard value, !permissions.accessibility else { return }
-                        permissions.requestAccessibility()
-                        permissions.openAccessibilitySettings()
-                    }
-                Text(l10n.s.keyDebounceCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                if enabled, debounce.isRunning {
-                    Label(l10n.s.keyDebounceActiveNow, systemImage: "checkmark.circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(ZenithStatus.success)
-                }
-                Stepper(value: globalWindowBinding,
-                        in: Defaults.allowedKeyboardDebounceWindowRange,
-                        step: Defaults.keyboardDebounceWindowStep) {
-                    HStack {
-                        Text(l10n.s.keyDebounceGlobalWindow)
-                        Spacer()
-                        Text("\(globalWindow) ms")
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                    }
-                }
-                .disabled(!enabled)
-                .zenithPreviewTarget("keyDebounce.window") // Zenith fork
-            }
+    private var text: ZenithInputWindowsStrings { ZenithStrings.inputWindows(l10n.language) }
 
-            Section(l10n.s.keyDebouncePerKeySection) {
-                Text(l10n.s.keyDebouncePerKeyCaption)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+    // Zenith fork: a kit feature page: the hero with the master switch, the
+    // preview, the window for every key, then the keys with windows of their own.
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                ZenithHero(title: l10n.s.keyDebounceName, subtitle: text.keyDebounceSubtitle, chips: chips,
+                           isOn: enabledBinding, switchLabel: l10n.s.keyDebounceEnable, switchHint: l10n.s.keyDebounceCaption,
+                           animation: .keyDebounce)
+                if enabled, !permissions.accessibility {
+                    InputWindowsPermissionSection()
+                }
+                ZenithKeyDebouncePreviewCard()
+                ZenithSection {
+                    ZenithRow(l10n.s.keyDebounceGlobalWindow, value: globalWindowBinding,
+                              in: Defaults.allowedKeyboardDebounceWindowRange,
+                              step: Defaults.keyboardDebounceWindowStep,
+                              info: l10n.s.keyDebounceCaption, format: { "\($0) ms" })
+                        .disabled(!enabled)
+                        .zenithPreviewTarget("keyDebounce.window")
+                }
+                perKey
+            }
+            .frame(maxWidth: 760)
+            .frame(maxWidth: .infinity)
+            .padding(22)
+        }
+        .zenithPreviewJumps()
+        .onAppear {
+            globalWindow = Defaults.sanitizedKeyboardDebounceWindow(globalWindow)
+            selectedWindow = Defaults.sanitizedKeyboardDebounceWindow(selectedWindow)
+        }
+    }
+
+    private var chips: [ZenithChip] {
+        var chips = [ZenithChip("\(Defaults.sanitizedKeyboardDebounceWindow(globalWindow)) ms"),
+                     ZenithChip(text.count(keyWindows.count, "key", "keys"))]
+        if enabled, debounce.isRunning { chips.append(ZenithChip(text.activeNow, dot: ZenithStatus.success)) }
+        return chips
+    }
+
+    private var enabledBinding: Binding<Bool> {
+        Binding(get: { enabled }, set: { value in
+            enabled = value
+            KeyboardDebounceService.shared.syncWithPreferences()
+            guard value, !permissions.accessibility else { return }
+            permissions.requestAccessibility()
+            permissions.openAccessibilitySettings()
+        })
+    }
+
+    private var perKey: some View {
+        ZenithSection(l10n.s.keyDebouncePerKeySection) {
+            ZenithRow(l10n.s.keyDebounceKeyLabel, info: l10n.s.keyDebouncePerKeyCaption) {
                 HStack(spacing: 8) {
                     Picker(l10n.s.keyDebounceKeyLabel, selection: $selectedKeyCode) {
                         Text(l10n.s.keyDebounceKeyLabel).tag(Int64?.none)
@@ -64,38 +81,30 @@ struct KeyboardDebounceSettings: View {
                             Text(key.label).tag(Optional(key.code))
                         }
                     }
-                    .frame(minWidth: 160)
-                    Stepper(value: $selectedWindow,
-                            in: Defaults.allowedKeyboardDebounceWindowRange,
-                            step: Defaults.keyboardDebounceWindowStep) {
-                        Text("\(selectedWindow) ms")
-                            .monospacedDigit()
-                    }
+                    .labelsHidden()
+                    .fixedSize()
+                    ZenithRowStepper(title: l10n.s.keyDebounceKeyLabel, value: $selectedWindow,
+                                     range: Defaults.allowedKeyboardDebounceWindowRange,
+                                     step: Defaults.keyboardDebounceWindowStep, format: { "\($0) ms" })
                     Button(l10n.s.keyDebounceAddKey) {
-                        if let selectedKeyCode {
-                            setWindow(selectedWindow, for: selectedKeyCode)
-                        }
+                        if let selectedKeyCode { setWindow(selectedWindow, for: selectedKeyCode) }
                     }
-                    .disabled(!enabled || selectedKeyCode == nil)
+                    .disabled(selectedKeyCode == nil)
                 }
-
-                if keyWindows.isEmpty {
-                    Text(l10n.s.keyDebounceNoOverrides)
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                } else {
-                    ForEach(keyWindows) { row in
+            }
+            if keyWindows.isEmpty {
+                Text(l10n.s.keyDebounceNoOverrides)
+                    .font(ZenithType.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 10)
+            } else {
+                ForEach(keyWindows) { row in
+                    ZenithRow(KeyboardDebounceKeyCatalog.label(for: row.keyCode)) {
                         HStack(spacing: 8) {
-                            Text(KeyboardDebounceKeyCatalog.label(for: row.keyCode))
-                                .font(.system(size: 12, weight: .semibold))
-                                .frame(width: 70, alignment: .leading)
-                            Stepper(value: binding(for: row.keyCode),
-                                    in: Defaults.allowedKeyboardDebounceWindowRange,
-                                    step: Defaults.keyboardDebounceWindowStep) {
-                                Text("\(row.window) ms")
-                                    .foregroundStyle(.secondary)
-                                    .monospacedDigit()
-                            }
+                            ZenithRowStepper(title: KeyboardDebounceKeyCatalog.label(for: row.keyCode),
+                                             value: binding(for: row.keyCode),
+                                             range: Defaults.allowedKeyboardDebounceWindowRange,
+                                             step: Defaults.keyboardDebounceWindowStep, format: { "\($0) ms" })
                             Button {
                                 removeWindow(for: row.keyCode)
                             } label: {
@@ -103,24 +112,13 @@ struct KeyboardDebounceSettings: View {
                             }
                             .buttonStyle(.borderless)
                             .help(l10n.s.keyDebounceRemoveKey)
+                            .accessibilityLabel(l10n.s.keyDebounceRemoveKey)
                         }
                     }
                 }
             }
-            .disabled(!enabled)
-
-            if enabled, !permissions.accessibility {
-                Section(l10n.s.permissionRequired) {
-                    PermissionRow(kind: .accessibility)
-                }
-            }
         }
-        .formStyle(.grouped)
-        .zenithPreviewJumps() // Zenith fork
-        .onAppear {
-            globalWindow = Defaults.sanitizedKeyboardDebounceWindow(globalWindow)
-            selectedWindow = Defaults.sanitizedKeyboardDebounceWindow(selectedWindow)
-        }
+        .disabled(!enabled)
     }
 
     private var globalWindowBinding: Binding<Int> {
