@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Vorssaint
+// Copyright (C) 2026 Satu Visual
 
 import SwiftUI
 import UserNotifications
@@ -17,6 +18,20 @@ struct CleanerSettings: View {
         case system, whatsApp
     }
 
+    @AppStorage(DefaultsKey.cleanerScheduleFrequency) private var scheduleFrequencyRaw = "off"
+
+    private var chips: [ZenithChip] {
+        let schedule: String
+        switch CleanerSchedule.Frequency.sanitized(scheduleFrequencyRaw) {
+        case .off: schedule = l10n.s.cleanerScheduleOff
+        case .daily: schedule = l10n.s.cleanerScheduleDaily
+        case .weekly: schedule = l10n.s.cleanerScheduleWeekly
+        }
+        var chips = [ZenithChip("\(l10n.s.cleanerScheduleTitle): \(schedule)")]
+        if whatsAppEnabled { chips.append(ZenithChip(FeatureStrings.whatsAppDownloads(l10n.language).title)) }
+        return chips
+    }
+
     /// A panel surface can ask for a specific tool; the hint is one-shot.
     private func consumeToolHint() {
         guard let hint = router.cleanerTool else { return }
@@ -25,40 +40,49 @@ struct CleanerSettings: View {
         tool = wanted
     }
 
+    private let page = ZenithStrings.systemApps(.enUS)
+
+    // Zenith fork: built with the Settings kit: the hero, the preview on the
+    // tool shown, the tool's picker while WhatsApp downloads is on, then the
+    // tool itself in a grouped card of its own height.
     var body: some View {
-        VStack(spacing: 0) {
-            // Zenith fork: the preview card, its states following the tool shown.
-            CleanerPreviewCard(selection: whatsAppEnabled
-                ? Binding(get: { tool == .whatsApp ? 1 : 0 }, set: { tool = $0 == 1 ? .whatsApp : .system })
-                : nil)
-                .zenithToolsPreviewWidth()
-                .padding(.horizontal, 24)
-                .padding(.top, 14)
-                .padding(.bottom, whatsAppEnabled ? 0 : 6)
-            if whatsAppEnabled {
-                Picker("", selection: $tool) {
-                    Label(l10n.s.cleanerName, systemImage: "sparkles")
-                        .tag(Tool.system)
-                    Label(FeatureStrings.whatsAppDownloads(l10n.language).title,
-                          systemImage: "arrow.down.doc")
-                        .tag(Tool.whatsApp)
+        ScrollView {
+            ZenithPageColumn {
+                ZenithHero(title: l10n.s.cleanerName, subtitle: page.cleanerSubtitle, chips: chips,
+                           animation: .cleaner)
+                CleanerPreviewCard(selection: whatsAppEnabled
+                    ? Binding(get: { tool == .whatsApp ? 1 : 0 }, set: { tool = $0 == 1 ? .whatsApp : .system })
+                    : nil)
+                if whatsAppEnabled {
+                    ZenithSection {
+                        ZenithRow(page.cleanerTool) {
+                            Picker(page.cleanerTool, selection: $tool) {
+                                Text(l10n.s.cleanerName).tag(Tool.system)
+                                Text(FeatureStrings.whatsAppDownloads(l10n.language).title).tag(Tool.whatsApp)
+                            }
+                            .pickerStyle(.segmented)
+                            .labelsHidden()
+                            .fixedSize()
+                        }
+                    }
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .frame(maxWidth: 440)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 14)
-
-                Divider()
-            }
-
-            if whatsAppEnabled, tool == .whatsApp {
-                WhatsAppDownloadsSettings()
-            } else {
-                CleanerView()
+                VStack(alignment: .leading, spacing: 8) {
+                    ZenithSectionTitle(whatsAppEnabled && tool == .whatsApp
+                                       ? FeatureStrings.whatsAppDownloads(l10n.language).title : page.cleanerWorkspace)
+                    Group {
+                        if whatsAppEnabled, tool == .whatsApp {
+                            WhatsAppDownloadsSettings()
+                        } else {
+                            CleanerView()
+                        }
+                    }
+                    // The tools' own lists and forms leave their background to the card.
+                    .scrollContentBackground(.hidden)
+                    .frame(height: 560)
+                    .zenithGroupBackground()
+                }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .onAppear {
             if !whatsAppEnabled { tool = .system }
             consumeToolHint()
