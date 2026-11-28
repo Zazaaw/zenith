@@ -138,6 +138,7 @@ struct SettingsView: View {
                                             .volumeMixer, .soundOutput, .musicBlocker, .micMute, // Zenith fork: sound
                                             .screenshot, .screenRecording, .textCapture, .colorPicker, .cameraPreview,
                                             .removeBackground, .emojiPicker, .calculator, // Zenith fork: Orbit wave 2
+                                            .appLock, // Zenith fork: App Lock
                                             .privacyBlur] // Zenith fork: Privacy
         if ownHeader.contains(router.page) { return nil }
         if router.page == .translate { return nil } // Zenith fork: Translate opens with its own header
@@ -219,6 +220,7 @@ struct SettingsView: View {
         case .removeBackground: RemoveBackgroundSettingsPage() // Zenith fork: Orbit wave 2
         case .emojiPicker: EmojiPickerSettingsPage()
         case .calculator: CalculatorSettingsPage()
+        case .appLock: AppLockSettingsPage() // Zenith fork
         case .privacyBlur: PrivacyBlurSettingsPage() // Zenith fork: Privacy
         // Zenith fork: the island's sections, pages of their own.
         case .notchCalendar: NotchCalendarSettingsPage()

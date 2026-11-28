@@ -30,7 +30,8 @@ enum OrbitCatalogTests {
         suite.expect(Set(pages) == [.lockScreen, .meetings, .translate, .mechakey, .workspaces, .pocket, .remote,
                                     .batteries, .faceUnlock,
                                     .removeBackground, .emojiPicker, .calculator, // Orbit wave 2
-                                    .privacyBlur] && pages.count == 13, // Privacy
+                                    .appLock, // App Lock
+                                    .privacyBlur] && pages.count == 14, // Privacy
                      "every Zenith page appears exactly once: \(pages)")
         suite.expect(items.count == AppFeature.allCases.count + pages.count,
                      "Orbit lists the hub's features and Zenith's pages, nothing else")
@@ -62,7 +63,7 @@ enum OrbitCatalogTests {
             "Camera Preview", "Wallpaper", "Scratchpad", "Screenshot", "Screen Recording", "Text Capture", "Color Picker",
             "Dock", "Window Layout", "Clipboard", "System Monitor", "Fan Control", "Dynamic Island", "Calendar",
             "Notifications", "Music", "Timer", "Agents", "Downloads", "Watch", "Lock Screen", "Remove Background",
-            "Emoji Picker", "Calculator", "Privacy Blur",
+            "Emoji Picker", "Calculator", "App Lock", "Privacy Blur",
         ]
         let unresolved = settingsPages.filter { OrbitIcons.named($0)?.name != $0 }
         suite.expect(unresolved.isEmpty, "every Settings page has an Orbit icon under its name (missing: \(unresolved))")

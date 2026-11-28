@@ -52,6 +52,7 @@ enum SettingsBackupSupport {
         keys.formUnion(RemoveBackgroundDefaults.backupKeys) // Zenith fork: Orbit wave 2, each beside its code
         keys.formUnion(EmojiPickerDefaults.backupKeys)
         keys.formUnion(CalculatorDefaults.backupKeys)
+        keys.formUnion(AppLockDefaults.backupKeys) // Zenith fork: App Lock, beside its code
         keys.formUnion(PrivacyBlurDefaults.backupKeys) // Zenith fork: Privacy, beside its code
         keys.formUnion(ZenithAppearanceDefaults.all) // Zenith fork: Settings → Appearance
         keys.subtract(machineStateKeys)

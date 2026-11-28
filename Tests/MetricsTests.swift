@@ -327,6 +327,7 @@ struct MetricsTests {
             ("remove-background", { RemoveBackgroundTests.run(suite) }), // Zenith fork: naming, sources, crop bounds
             ("emoji-picker", { EmojiPickerTests.run(suite) }), // Zenith fork: Unicode's list, search, tones, recents
             ("calculator", { CalculatorTests.run(suite) }), // Zenith fork: the parser, evaluator, format and history
+            ("app-lock", { AppLockTests.run(suite) }), // Zenith fork: when an app is covered, how an unlock ends
             ("privacy-blur", { PrivacyBlurTests.run(suite) }), // Zenith fork: regions, reveal, placement, auto-on
         ]
         var selected = Set<String>()

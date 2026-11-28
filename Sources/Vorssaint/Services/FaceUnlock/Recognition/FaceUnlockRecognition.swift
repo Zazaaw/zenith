@@ -78,6 +78,16 @@ final class FaceUnlockRecognitionService: FaceUnlockRecognizer, @unchecked Senda
         }
     }
 
+    /// Zenith fork: one scan away from the lock screen (App Lock's shield),
+    /// with its own stop condition in place of `shouldContinueScan` for this
+    /// scan only. The next lock screen scan puts that one back.
+    @MainActor
+    func scan(timeout: TimeInterval, while shouldContinue: @escaping () -> Bool,
+              completion: @escaping (FaceUnlockScanOutcome) -> Void) {
+        scanner.shouldContinue = shouldContinue
+        scanner.scan(timeout: timeout, completion: completion)
+    }
+
     func cancelScan() {
         Task { @MainActor in self.scanner.cancel() }
     }
