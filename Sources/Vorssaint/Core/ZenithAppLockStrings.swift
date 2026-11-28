@@ -4,7 +4,7 @@
 import Foundation
 
 // Zenith fork: App Lock's text, for its Settings page and the shield that
-// covers a locked app. English in every language, by the owner's decision,
+// covers a locked app's windows. English in every language, by the owner's decision,
 // as Mechakey's. Settings search still finds the page by Indonesian aliases
 // (AppLockSearch).
 
@@ -16,7 +16,7 @@ struct ZenithAppLockStrings {
     let enableHint = "Off, Zenith watches no app."
 
     // Stage.
-    let stageCaption = "A locked app, covered until you unlock it"
+    let stageCaption = "A locked app’s windows, covered until you unlock it"
     let stageLocked = "Locked"
     let stageScanning = "Face Unlock"
     let stageUnlocked = "Unlocked"
@@ -35,6 +35,8 @@ struct ZenithAppLockStrings {
 
     // Unlocking.
     let unlockSection = "Unlocking"
+    let coverTitle = "Covers only the app’s windows"
+    let coverCaption = "A blur sits on each window of the locked app and follows it as it moves, resizes or changes Space; the rest of the screen stays yours, and clicking another app hides the locked one. Typing goes to the shield: Return unlocks, Esc hides the app. With Accessibility allowed for Zenith the blur follows at once, otherwise a moment later."
     let systemMethod = "Touch ID or password"
     let systemMethodCaption = "macOS asks with Touch ID, or your Mac password where Touch ID is not available or you choose Use Password."
     let always = "Always"
@@ -62,7 +64,7 @@ struct ZenithAppLockStrings {
     // Limits.
     let limitsSection = "Limits"
     let limitsTitle = "A deterrent, not a vault"
-    let limitsCaption = "App Lock keeps casual snooping out; it is not a security boundary. A locked app keeps running underneath: its notifications, Dock menu, Quick Look, Spotlight and other apps can still show what is in it, and anyone who can quit Zenith, or knows your password, can open it. For data that must stay private, use FileVault, a separate user account or the app’s own lock."
+    let limitsCaption = "App Lock keeps casual snooping out; it is not a security boundary. A locked app keeps running underneath: its notifications, Dock menu, Mission Control, Quick Look, Spotlight and other apps can still show what is in it, and anyone who can quit Zenith, or knows your password, can open it. For data that must stay private, use FileVault, a separate user account or the app’s own lock."
 
     // Shield.
     let lockedBy = "Locked by Zenith"

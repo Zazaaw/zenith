@@ -155,6 +155,9 @@ struct AppLockSettingsPage: View {
 
     private var unlocking: some View {
         ZenithSection(text.unlockSection) {
+            ZenithRow(text.coverTitle, info: text.coverCaption) {
+                Image(systemName: "macwindow").foregroundStyle(.secondary)
+            }
             ZenithRow(text.systemMethod, info: text.systemMethodCaption) {
                 Text(text.always).foregroundStyle(.secondary)
             }
