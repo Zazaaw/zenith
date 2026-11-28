@@ -8,8 +8,9 @@ import LocalAuthentication
 // Zenith fork: App Lock in the running app. While it is on with an app to
 // lock, it listens to the workspace (an app coming to the front, launching or
 // quitting) and to the Mac locking, sleeping and starting its screen saver:
-// notifications only, no timer and no polling. Off, or with no app chosen, it
-// observes nothing. Tests and the catalog run quiet: no observer, no shield,
+// notifications only, no timer and no polling. Only while a shield is up
+// does its tracker follow the covered app's windows (AppLockWindowTracker).
+// Off, or with no app chosen, it observes nothing. Tests and the catalog run quiet: no observer, no shield,
 // no prompt. Decisions live in AppLockSupport; this file only carries them out.
 
 @MainActor
