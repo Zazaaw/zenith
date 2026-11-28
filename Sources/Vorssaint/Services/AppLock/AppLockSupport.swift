@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Satu Visual
 
+import CoreGraphics
 import Foundation
 
 // Zenith fork: App Lock's decisions, without windows, workspace observers or
 // authentication, so the tests reach every one: the preferences, which apps
 // can never be locked, whether an app coming to the front is covered, how an
 // unlock ends (time out of the front, the app quitting, the Mac locking or
-// sleeping, Zenith starting again), and what the shield does when another
-// app comes forward while it is up.
+// sleeping, Zenith starting again), what the shield does when another app
+// comes forward while it is up, and where its panes and card go over the
+// locked app's windows.
 //
 // App Lock keeps casual snooping out; it is not a security boundary (see the
 // page's Limits row).
@@ -273,5 +275,172 @@ enum AppLockMethod: Equatable {
 
     static func plan(preferFace: Bool, faceUnlockReady: Bool) -> [AppLockMethod] {
         preferFace && faceUnlockReady ? [.face, .system] : [.system]
+    }
+}
+
+/// What a key pressed while the shield holds the keyboard does. Nothing
+/// typed reaches the locked app: the shield's card is the key window.
+enum AppLockShieldKey: Equatable {
+    /// Esc: Cancel, the app hides.
+    case cancel
+    /// Return or Enter: Unlock.
+    case unlock
+    /// Tab and Space: move between the card's buttons and press one.
+    case pass
+    /// Anything else, shortcuts included, is dropped without a sound.
+    case swallow
+
+    static let escape: UInt16 = 53
+    static let returnKey: UInt16 = 36
+    static let enter: UInt16 = 76
+    static let tab: UInt16 = 48
+    static let space: UInt16 = 49
+
+    static func action(keyCode: UInt16) -> AppLockShieldKey {
+        switch keyCode {
+        case escape: return .cancel
+        case returnKey, enter: return .unlock
+        case tab, space: return .pass
+        default: return .swallow
+        }
+    }
+}
+
+// MARK: - Where the shield goes
+
+/// One entry of the window server's list. Bounds, owner, number and layer
+/// need no permission (titles would).
+struct AppLockWindow: Equatable {
+    let id: CGWindowID
+    let pid: pid_t
+    /// The window server's space: top left of the main display, y down.
+    let frame: CGRect
+    let layer: Int
+    let alpha: Double
+}
+
+/// The shield covers only the locked app's windows: one pane exactly over
+/// each window on the current Space, ordered just above it (so whatever
+/// covers that window still covers the pane), and one card, centred in the
+/// app's frontmost window with room for it. The rest of the screen stays
+/// as it is.
+enum AppLockShieldPlacement {
+    /// The panes' corners: a little tighter than a window's, so no corner
+    /// of the window shows past its pane.
+    static let cornerRadius: CGFloat = 12
+    /// Smaller windows are helpers (a 1×1 event window, a drag image).
+    static let minimumSide: CGFloat = 40
+    /// The highest layer a locked app's own window may sit on and still be
+    /// covered: its floating palettes (3) and modal panels (8). Menus, the
+    /// Dock and status items sit higher.
+    static let highestLayer = 8
+    /// What a window needs to hold the card in its middle.
+    static let cardRoom = CGSize(width: 360, height: 300)
+    /// Refreshes in a row a pane was up but missing from the list before it
+    /// is taken out and put back (it stayed on a Space its window left).
+    static let strandedAfter = 2
+
+    /// `CGWindowListCopyWindowInfo`'s entries, front to back as listed.
+    static func windows(from info: [[String: Any]]) -> [AppLockWindow] {
+        info.compactMap { entry in
+            guard let number = (entry[kCGWindowNumber as String] as? NSNumber)?.uint32Value,
+                  let pid = (entry[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value,
+                  let raw = entry[kCGWindowBounds as String] as? [String: Any],
+                  let x = (raw["X"] as? NSNumber)?.doubleValue, let y = (raw["Y"] as? NSNumber)?.doubleValue,
+                  let width = (raw["Width"] as? NSNumber)?.doubleValue,
+                  let height = (raw["Height"] as? NSNumber)?.doubleValue else { return nil }
+            let layer = (entry[kCGWindowLayer as String] as? NSNumber)?.intValue ?? 0
+            let alpha = (entry[kCGWindowAlpha as String] as? NSNumber)?.doubleValue ?? 1
+            return AppLockWindow(id: number, pid: pid, frame: CGRect(x: x, y: y, width: width, height: height),
+                                 layer: layer, alpha: alpha)
+        }
+    }
+
+    /// The locked app's windows that get a pane, front to back. The list
+    /// holds only what is on the current Space, so a minimised, hidden or
+    /// off-Space window gets none (and its pane closes).
+    static func targets(in windows: [AppLockWindow], pid: pid_t) -> [AppLockWindow] {
+        windows.filter { window in
+            window.pid == pid && (0...highestLayer).contains(window.layer) && window.alpha > 0.01
+                && window.frame.width >= minimumSide && window.frame.height >= minimumSide
+        }
+    }
+
+    /// The window the card sits in: the frontmost ordinary window with room
+    /// for it, else the largest (a palette only when nothing else is up).
+    /// None when the app shows no window here; the card then stands alone in
+    /// the middle of the screen.
+    static func cardHost(among targets: [AppLockWindow]) -> CGWindowID? {
+        let ordinary = targets.filter { $0.layer == 0 }
+        let pool = ordinary.isEmpty ? targets : ordinary
+        if let roomy = pool.first(where: { $0.frame.width >= cardRoom.width && $0.frame.height >= cardRoom.height }) {
+            return roomy.id
+        }
+        return pool.max { $0.frame.width * $0.frame.height < $1.frame.width * $1.frame.height }?.id
+    }
+
+    /// The card's rectangle (window server space): centred on the part of
+    /// the host window that is on a screen and kept inside that screen;
+    /// with no host, centred on `fallback`. `screens` are visible frames in
+    /// the window server's space too.
+    static func cardFrame(size: CGSize, host: CGRect?, screens: [CGRect], fallback: CGRect) -> CGRect {
+        var screen = fallback
+        var area = fallback
+        if let host {
+            let shown = screens.map { ($0, $0.intersection(host)) }
+                .filter { !$0.1.isNull && !$0.1.isEmpty }
+                .max { $0.1.width * $0.1.height < $1.1.width * $1.1.height }
+            if let shown {
+                screen = shown.0
+                area = shown.1
+            } else {
+                area = host
+            }
+        }
+        var frame = CGRect(x: area.midX - size.width / 2, y: area.midY - size.height / 2,
+                           width: size.width, height: size.height)
+        if frame.maxX > screen.maxX { frame.origin.x = screen.maxX - size.width }
+        if frame.minX < screen.minX { frame.origin.x = screen.minX }
+        if frame.maxY > screen.maxY { frame.origin.y = screen.maxY - size.height }
+        if frame.minY < screen.minY { frame.origin.y = screen.minY }
+        return frame.integral
+    }
+
+    /// The window server's rectangle in AppKit's space (origin at the bottom
+    /// left of the main display, y up), and back: the flip is its own inverse.
+    static func flipped(_ frame: CGRect, mainDisplayHeight: CGFloat) -> CGRect {
+        CGRect(x: frame.minX, y: mainDisplayHeight - frame.maxY, width: frame.width, height: frame.height)
+    }
+
+    /// Whether `pane` has to be ordered again to sit just above `target`.
+    /// It is right when it is in front of the target with nothing between
+    /// them but the locked app's own windows (its sheets and children, which
+    /// the window server keeps on their parent, each with a pane of its
+    /// own) and Zenith's. Another app's window between them, the pane behind
+    /// its window, or the pane missing from the list means it is out of
+    /// place.
+    static func needsOrdering(pane: CGWindowID?, above target: AppLockWindow, ownPID: pid_t,
+                              in windows: [AppLockWindow]) -> Bool {
+        guard let pane,
+              let paneIndex = windows.firstIndex(where: { $0.id == pane }),
+              let targetIndex = windows.firstIndex(where: { $0.id == target.id }) else { return true }
+        guard paneIndex < targetIndex else { return true }
+        return windows[(paneIndex + 1)..<targetIndex].contains { $0.pid != target.pid && $0.pid != ownPID }
+    }
+
+    /// Whether the locked app put its window back over a pane that was in
+    /// place: it came forward (a Dock click, its own Window menu) and took
+    /// the keyboard with it, so the shield takes the keyboard back. A new
+    /// pane, or one missing from the list, says nothing.
+    static func wasRaisedOver(pane: CGWindowID?, above target: AppLockWindow, in windows: [AppLockWindow]) -> Bool {
+        guard let pane,
+              let paneIndex = windows.firstIndex(where: { $0.id == pane }),
+              let targetIndex = windows.firstIndex(where: { $0.id == target.id }) else { return false }
+        return targetIndex < paneIndex
+    }
+
+    /// Refreshes in a row a pane was up but not in the on-screen list.
+    static func misses(after previous: Int, isUp: Bool, isListed: Bool) -> Int {
+        isUp && !isListed ? previous + 1 : 0
     }
 }
