@@ -138,7 +138,8 @@ struct SettingsView: View {
                                             .volumeMixer, .soundOutput, .musicBlocker, .micMute, // Zenith fork: sound
                                             .screenshot, .screenRecording, .textCapture, .colorPicker, .cameraPreview,
                                             .removeBackground, .emojiPicker, .calculator, // Zenith fork: Orbit wave 2
-                                            .appLock] // Zenith fork: App Lock
+                                            .appLock, // Zenith fork: App Lock
+                                            .privacyBlur] // Zenith fork: Privacy
         if ownHeader.contains(router.page) { return nil }
         if router.page == .translate { return nil } // Zenith fork: Translate opens with its own header
         // Zenith fork: the Everyday pages open with their own hero.
@@ -218,6 +219,7 @@ struct SettingsView: View {
         case .emojiPicker: EmojiPickerSettingsPage()
         case .calculator: CalculatorSettingsPage()
         case .appLock: AppLockSettingsPage() // Zenith fork
+        case .privacyBlur: PrivacyBlurSettingsPage() // Zenith fork: Privacy
         case .volumeMixer: VolumeMixerSettingsPage() // Zenith fork: the sound tools, a page each
         case .soundOutput: SoundOutputSettingsPage()
         case .musicBlocker: MusicBlockerSettingsPage()

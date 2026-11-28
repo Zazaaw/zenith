@@ -91,7 +91,8 @@ enum OrbitCatalog {
     static let pages: [SettingsPage] = [.lockScreen, .meetings, .translate, .mechakey, .workspaces,
                                         .pocket, .remote, .batteries, .faceUnlock,
                                         .removeBackground, .emojiPicker, .calculator, // Zenith fork: Orbit wave 2
-                                        .appLock] // Zenith fork: App Lock
+                                        .appLock, // Zenith fork: App Lock
+                                        .privacyBlur] // Zenith fork: Privacy
 
     /// Every item: the hub's features in their catalog order, then the pages.
     static let items: [OrbitItem] = AppFeature.allCases.map(item(for:)) + pages.compactMap(item(for:))
@@ -163,6 +164,10 @@ enum OrbitCatalog {
         case .appLock: // Zenith fork: App Lock
             return OrbitItem(id: .page(page), iconName: "App Lock", category: .privacy,
                              switchKey: AppLockDefaults.enabled)
+        // Zenith fork: Privacy.
+        case .privacyBlur:
+            return OrbitItem(id: .page(page), iconName: "Privacy Blur", category: .privacy,
+                             switchKey: PrivacyBlurDefaults.enabled, pagePermissions: [.accessibility])
         default:
             return nil
         }

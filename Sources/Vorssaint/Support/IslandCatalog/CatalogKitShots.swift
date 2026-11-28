@@ -38,6 +38,7 @@ extension CatalogShots {
         ] + kitEverydayPages
             + kitWave2Pages // Zenith fork: Orbit wave 2 (CatalogKitShotsWave2)
             + kitPrivacyPages // Zenith fork: the Privacy pages (CatalogKitShotsPrivacy)
+            + kitBlurPages // Zenith fork: Privacy Blur (CatalogKitShotsBlur)
             + kitSystemPages // Zenith fork: the System and Apps pages (CatalogKitShotsSystem)
         var shots: [CatalogShot] = []
         for (name, page, preferences, height) in pages {

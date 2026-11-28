@@ -37,6 +37,7 @@ enum ZenithSettingsSearch {
         .page(.emojiPicker): EmojiPickerSearch.aliases,
         .page(.calculator): CalculatorSearch.aliases,
         .page(.appLock): AppLockSearch.aliases, // Zenith fork: App Lock
+        .page(.privacyBlur): PrivacyBlurSearch.aliases, // Zenith fork: Privacy
         .page(.finderTools): ["finder", "cut paste", "cut and paste", "potong tempel", "pindah file", "rename",
                               "ganti nama", "F2", "dmg", "disk image", "install app", "pasang aplikasi"],
         // The sound and capture tools' own pages.
@@ -84,6 +85,7 @@ enum ZenithSettingsSearch {
         let emojiPicker = ZenithStrings.emojiPicker(language)
         let calculator = ZenithStrings.calculator(language)
         let appLock = ZenithStrings.appLock(language) // App Lock
+        let privacyBlur = ZenithStrings.privacyBlur(language) // Privacy
         let appearance = ZenithStrings.appearancePage(language) // Appearance
         let theme = FeatureStrings.appearance(language) // its Theme keeps General's localized words
         let general = FeatureStrings.generalSettings(language)
@@ -280,6 +282,25 @@ enum ZenithSettingsSearch {
             page(.zenithAppLockHide, title: appLock.hideWhenInactive, icon: "eye.slash",
                  keywords: [appLock.title, appLock.hideWhenInactiveCaption],
                  aliases: ["mission control", "hide app", "sembunyikan aplikasi"]),
+            // Privacy: Privacy Blur and its sections.
+            page(.zenithPrivacyBlur, title: privacyBlur.enable, icon: "eye.slash",
+                 keywords: [privacyBlur.title, privacyBlur.subtitle], aliases: PrivacyBlurSearch.aliases),
+            page(.zenithPrivacyBlurApps, title: privacyBlur.appsSection, icon: "app.badge",
+                 keywords: [privacyBlur.addApp, "WhatsApp", "Telegram", "Slack", "Discord", "Messages"],
+                 aliases: ["chat apps", "aplikasi chat", "tambah aplikasi"]),
+            page(.zenithPrivacyBlurRegions, title: privacyBlur.regionsSection, icon: "rectangle.split.2x1",
+                 keywords: [privacyBlur.chatList, privacyBlur.messages, privacyBlur.names, privacyBlur.listEdge],
+                 aliases: ["chat list", "daftar chat", "nama dan foto", "lebar sidebar"]),
+            page(.zenithPrivacyBlurReveal, title: privacyBlur.revealSection, icon: "cursorarrow.rays",
+                 keywords: [privacyBlur.hover, privacyBlur.shortcut],
+                 aliases: ["hover", "peek", "intip", "arahkan kursor"]),
+            page(.zenithPrivacyBlurKeys, title: privacyBlur.holdKey, icon: "option",
+                 keywords: [privacyBlur.revealWhileTyping, privacyBlur.holdKeyCaption],
+                 aliases: ["hold option", "typing", "tahan tombol", "saat mengetik"]),
+            page(.zenithPrivacyBlurSharing, title: privacyBlur.presentation, icon: "rectangle.on.rectangle",
+                 keywords: [privacyBlur.whenSection, privacyBlur.whenSharing, privacyBlur.detectionNote],
+                 aliases: ["screen sharing", "screen recording", "projector", "zoom", "berbagi layar", "rekam layar",
+                           "mode presentasi"]),
             // Appearance: the page, then its theme, motion, glass and battery.
             SettingsSearchItem(id: .page(.appearance), destination: FeatureSettingsDestination(.appearance),
                                title: appearance.title, icon: "paintpalette", keywords: [appearance.subtitle],

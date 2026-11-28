@@ -262,6 +262,7 @@ struct ZenithOrbitStrings {
         case .emojiPicker: return "Emoji Picker"
         case .calculator: return "Calculator"
         case .appLock: return "App Lock" // Zenith fork
+        case .privacyBlur: return "Privacy Blur" // Zenith fork: Privacy
         default: return ""
         }
     }
@@ -281,6 +282,7 @@ struct ZenithOrbitStrings {
         case .emojiPicker: return "Find an emoji by name and type it anywhere"
         case .calculator: return "Sums and functions, answered as you type"
         case .appLock: return "Touch ID, your face or your password before an app opens" // Zenith fork
+        case .privacyBlur: return "Frost your chats from people looking at the screen" // Zenith fork: Privacy
         default: return ""
         }
     }

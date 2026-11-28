@@ -24,6 +24,7 @@ enum SettingsPage: Hashable, CaseIterable {
     case spaces // Zenith fork: Spaces in a fixed order, apart from the Dock
     case quickLauncher, quickToggles, quitApps, cleaningMode, wallpaper, scratchpad // Zenith fork: Quick Tools, one page each
     case removeBackground, emojiPicker, calculator // Zenith fork: Orbit wave 2, pages of their own
+    case privacyBlur // Zenith fork: frost over chat windows, in the Privacy group
     // Zenith fork: the System group's pages split out of Energy, Monitor and General.
     case sleep, brightness, fanControl, menuBar
     // Zenith fork: the sound tools, a page each (they were sections of General and Quick Tools).
@@ -104,6 +105,8 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
     case zenithEmojiPicker, zenithEmojiPickerPicking
     case zenithCalculator, zenithCalculatorAnswers
     case zenithAppLock, zenithAppLockApps, zenithAppLockRelock, zenithAppLockHide // Zenith fork: App Lock
+    case zenithPrivacyBlur, zenithPrivacyBlurApps, zenithPrivacyBlurRegions, zenithPrivacyBlurReveal, // Zenith fork
+         zenithPrivacyBlurKeys, zenithPrivacyBlurSharing
 
     var page: SettingsPage {
         switch self {
@@ -156,6 +159,8 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
         case .zenithEmojiPicker, .zenithEmojiPickerPicking: return .emojiPicker
         case .zenithCalculator, .zenithCalculatorAnswers: return .calculator
         case .zenithAppLock, .zenithAppLockApps, .zenithAppLockRelock, .zenithAppLockHide: return .appLock // Zenith fork
+        case .zenithPrivacyBlur, .zenithPrivacyBlurApps, .zenithPrivacyBlurRegions, .zenithPrivacyBlurReveal,
+             .zenithPrivacyBlurKeys, .zenithPrivacyBlurSharing: return .privacyBlur // Zenith fork
         case .zenithAppearanceTheme, .zenithAppearanceMotion, .zenithAppearanceGlass, .zenithAppearanceBattery: return .appearance
         case .zenithDropZones, .zenithWatermark: return .shelf
         case .zenithDesignOverlay, .zenithBeautify: return .screenshot
@@ -673,7 +678,8 @@ enum FeatureVisibilitySupport {
              .meetings, .mechakey, .appearance, // Zenith fork
              .menuBar, // Zenith fork: the app's own menu bar, which no hub feature hides
              .removeBackground, .emojiPicker, .calculator, // Zenith fork: Orbit wave 2
-             .appLock: // Zenith fork: App Lock
+             .appLock, // Zenith fork: App Lock
+             .privacyBlur: // Zenith fork: Privacy
             return []
         }
     }

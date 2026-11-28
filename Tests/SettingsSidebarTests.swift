@@ -44,8 +44,11 @@ enum SettingsSidebarTests {
                                                 .page(.removeBackground), .page(.emojiPicker), .page(.calculator)]
                         && group(.fromOrbit).count == 6,
                      "From Orbit lists the features Zenith added: Meetings, Translate, Mechakey and Orbit wave 2")
-        suite.expect(group(.privacy) == [.page(.appLock)] && SettingsSidebarGroup.privacy.title == "Privacy",
-                     "Privacy holds App Lock")
+        suite.expect(Set(group(.privacy)) == [.page(.appLock), .page(.privacyBlur)] && group(.privacy).count == 2
+                        && SettingsSidebarGroup.privacy.title == "Privacy",
+                     "Privacy holds App Lock and Privacy Blur")
+        suite.expect(SettingsSidebarIcons.orbitName(for: .page(.privacyBlur)) == "Privacy Blur",
+                     "Privacy Blur draws its Orbit icon in the sidebar")
         suite.expect(group(.island).prefix(2) == [.page(.notch), .page(.lockScreen)]
                         && group(.devices).first == .page(.pocket)
                         && group(.everyday).prefix(6) == [.page(.shelf), .page(.clipboard), .page(.finderTools), .page(.media),

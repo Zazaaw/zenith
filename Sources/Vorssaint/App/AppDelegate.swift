@@ -200,6 +200,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         RemoveBackgroundService.launch() // Zenith fork: Orbit wave 2, each shortcut only while its feature is on
         EmojiPickerService.launch()
         AppLockService.launch() // Zenith fork: App Lock, watching the workspace only while on
+        PrivacyBlurService.launch() // Zenith fork: Privacy, nothing watched while it is off
         if AppFeature.monitorPower.isAvailable, PowerSampler.hasInternalBattery {
             MaxCapacityProbe.shared.refreshIfStale()
         }

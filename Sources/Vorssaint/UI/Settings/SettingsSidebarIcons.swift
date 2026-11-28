@@ -72,6 +72,7 @@ enum SettingsSidebarIcons {
         case .emojiPicker: return "Emoji Picker"
         case .calculator: return "Calculator"
         case .appLock: return "App Lock" // Zenith fork
+        case .privacyBlur: return "Privacy Blur" // Zenith fork: Privacy
         case .volumeMixer: return "Volume Mixer"
         case .soundOutput: return "Sound Output"
         case .musicBlocker: return "Music Blocker"
