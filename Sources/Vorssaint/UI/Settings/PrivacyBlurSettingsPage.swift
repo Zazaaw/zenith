@@ -7,32 +7,39 @@ import UniformTypeIdentifiers
 
 /// Zenith fork: Settings → Privacy Blur, a feature page on the Settings kit
 /// (docs/SETTINGS-KIT.md): the hero with the master switch (which asks for
-/// Accessibility the first time it turns on), a chat window frosting on the
-/// stage, the apps, what to blur in each (pictures of the window's parts),
-/// how strong, how to peek, and when it blurs. Everything writes
+/// Accessibility the first time it turns on), a chat window blurred item by
+/// item on the stage, the apps and how each one blurs (each item or the
+/// whole window), what to blur (the browser extension's options), how
+/// strong, how to peek, and when it blurs. Everything writes
 /// `PrivacyBlurDefaults`; `PrivacyBlurService` follows.
 struct PrivacyBlurSettingsPage: View {
     @ObservedObject private var service = PrivacyBlurService.shared
     @ObservedObject private var permissions = Permissions.shared
     @AppStorage(PrivacyBlurDefaults.enabled) private var enabled = false
     @AppStorage(PrivacyBlurDefaults.strength) private var strength = PrivacyBlurDefaults.defaultStrength
-    @AppStorage(PrivacyBlurDefaults.hover) private var hover = PrivacyBlurHover.defaultValue.rawValue
+    @AppStorage(PrivacyBlurDefaults.messages) private var blurMessages = true
+    @AppStorage(PrivacyBlurDefaults.previews) private var blurPreviews = true
+    @AppStorage(PrivacyBlurDefaults.media) private var blurMedia = true
+    @AppStorage(PrivacyBlurDefaults.avatars) private var blurAvatars = true
+    @AppStorage(PrivacyBlurDefaults.names) private var blurNames = true
+    @AppStorage(PrivacyBlurDefaults.input) private var blurInput = true
+    @AppStorage(PrivacyBlurDefaults.noDelay) private var noDelay = false
     @AppStorage(PrivacyBlurDefaults.holdKey) private var holdKey = PrivacyBlurHoldKey.none.rawValue
     @AppStorage(PrivacyBlurDefaults.revealWhileTyping) private var revealWhileTyping = false
     @AppStorage(PrivacyBlurDefaults.when) private var when = PrivacyBlurWhen.always.rawValue
     @AppStorage(PrivacyBlurDefaults.presentationMode) private var presentation = false
     @AppStorage(PrivacyBlurDefaults.shortcut) private var shortcut = PrivacyBlurService.defaultShortcut.storageValue
     @State private var stageState = 0
-    @State private var chosenApp: String?
     /// Bumped after each write of a preference that is not a plain value.
     @State private var revision = 0
 
     private let text = ZenithStrings.privacyBlur(.enUS)
 
     var body: some View {
-        ScrollView {
+        let preferences = stored
+        return ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                ZenithHero(title: text.title, subtitle: text.subtitle, chips: chips,
+                ZenithHero(title: text.title, subtitle: text.subtitle, chips: chips(preferences),
                            isOn: Binding(get: { enabled }, set: { service.setEnabled($0) }),
                            switchLabel: text.enable, switchHint: text.enableHint, animation: .privacyBlur)
                     .zenithSectionAnchor(.zenithPrivacyBlur, cornerRadius: ZenithKitSurface.heroRadius + 6, inset: 6)
@@ -43,16 +50,16 @@ struct PrivacyBlurSettingsPage: View {
                 }
                 ZenithStage(caption: text.stageCaption, states: [text.stageBlurred, text.stageHover],
                             selection: $stageState) {
-                    PrivacyBlurStageArt(layout: stored.layout(of: currentApp), regions: stored.regions(of: currentApp),
+                    PrivacyBlurStageArt(options: preferences.options,
+                                        mode: preferences.apps.first.map(preferences.mode(of:)) ?? .items,
                                         hovering: stageState == 1,
-                                        hover: PrivacyBlurHover(rawValue: hover) ?? .defaultValue,
                                         frost: PrivacyBlurRevealing.frostOpacity(strength: strength))
                 }
                 Group {
-                    apps
-                    regions
+                    apps(preferences)
+                    items(preferences)
                     blur
-                    revealing
+                    revealing(preferences)
                     timing
                 }
                 .disabled(!enabled)
@@ -68,18 +75,12 @@ struct PrivacyBlurSettingsPage: View {
 
     private var stored: PrivacyBlurPreferences {
         _ = revision
+        // The plain values are read through their @AppStorage so a switch redraws the page at once.
+        _ = (blurMessages, blurPreviews, blurMedia, blurAvatars, blurNames, blurInput, noDelay)
         return PrivacyBlurPreferences(defaults: .standard)
     }
 
-    /// The app whose regions the page shows: the chosen one, or the first.
-    private var currentApp: String {
-        let apps = stored.apps
-        if let chosenApp, apps.contains(chosenApp) { return chosenApp }
-        return apps.first ?? PrivacyBlurPreset.whatsApp.id
-    }
-
-    private var chips: [ZenithChip] {
-        let preferences = stored
+    private func chips(_ preferences: PrivacyBlurPreferences) -> [ZenithChip] {
         var chips: [ZenithChip] = []
         if preferences.apps.count == 1, let app = preferences.apps.first {
             chips.append(ZenithChip(PrivacyBlurApps.name(of: app, customNames: preferences.customNames)))
@@ -102,9 +103,8 @@ struct PrivacyBlurSettingsPage: View {
 
     // MARK: Apps
 
-    private var apps: some View {
-        let preferences = stored
-        return ZenithSection(text.appsSection, anchor: .zenithPrivacyBlurApps, footer: text.appsFooter) {
+    private func apps(_ preferences: PrivacyBlurPreferences) -> some View {
+        ZenithSection(text.appsSection, anchor: .zenithPrivacyBlurApps, footer: text.appsFooter) {
             if preferences.apps.isEmpty {
                 ZenithRow(text.noApps) { EmptyView() }
             }
@@ -130,6 +130,7 @@ struct PrivacyBlurSettingsPage: View {
     private func appRow(_ app: String, preferences: PrivacyBlurPreferences) -> some View {
         let installed = PrivacyBlurAppLookup.url(of: app)
         let running = PrivacyBlurAppLookup.isRunning(app)
+        let generic = PrivacyBlurApps.support(of: app) == .generic
         return ZenithRow(PrivacyBlurApps.name(of: app, customNames: preferences.customNames),
                          info: PrivacyBlurPreset.named(app)?.bundleIDs.joined(separator: ", ") ?? app,
                          essential: installed == nil ? text.notInstalled : nil) {
@@ -143,10 +144,25 @@ struct PrivacyBlurSettingsPage: View {
                         .font(ZenithType.caption)
                         .foregroundStyle(.secondary)
                 }
+                Picker(text.blurMode, selection: modeBinding(app)) {
+                    ForEach(PrivacyBlurMode.allCases) { Text(text.title($0, generic: generic)).tag($0) }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .fixedSize()
+                .help(text.modeCaption)
                 Button(text.remove) { remove(app) }
                     .controlSize(.small)
             }
         }
+    }
+
+    private func modeBinding(_ app: String) -> Binding<PrivacyBlurMode> {
+        Binding(get: { stored.mode(of: app) }, set: { mode in
+            var modes = UserDefaults.standard.dictionary(forKey: PrivacyBlurDefaults.modes) as? [String: String] ?? [:]
+            modes[app] = mode.rawValue
+            write(modes, forKey: PrivacyBlurDefaults.modes)
+        })
     }
 
     private func add(_ app: String, name: String?) {
@@ -159,12 +175,10 @@ struct PrivacyBlurSettingsPage: View {
             write(names, forKey: PrivacyBlurDefaults.customNames)
         }
         write(list, forKey: PrivacyBlurDefaults.apps)
-        chosenApp = app
     }
 
     private func remove(_ app: String) {
         write(stored.apps.filter { $0 != app }, forKey: PrivacyBlurDefaults.apps)
-        if chosenApp == app { chosenApp = nil }
     }
 
     /// Any other app, picked from Applications.
@@ -183,64 +197,32 @@ struct PrivacyBlurSettingsPage: View {
             name: (name as NSString).deletingPathExtension)
     }
 
-    // MARK: Regions
+    // MARK: What to blur
 
-    private var regions: some View {
-        let preferences = stored
-        let app = currentApp
-        let chosen = preferences.regions(of: app)
-        return VStack(alignment: .leading, spacing: 10) {
-            ZenithSectionTitle(text.regionsSection)
-            if preferences.apps.count > 1 {
-                Picker(text.regionsFor, selection: Binding(get: { app }, set: { chosenApp = $0 })) {
-                    ForEach(preferences.apps, id: \.self) { item in
-                        Text(PrivacyBlurApps.name(of: item, customNames: preferences.customNames)).tag(item)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .padding(.horizontal, 4)
-            }
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 10)], spacing: 12) {
-                ForEach(PrivacyBlurRegion.allCases) { region in
-                    PrivacyBlurRegionTile(label: text.title(region), detail: text.detail(region),
-                                          selected: chosen.contains(region)) {
-                        setRegions(PrivacyBlurRegion.toggled(chosen, region), for: app)
-                    } art: {
-                        PrivacyBlurRegionDiagram(region: region, layout: preferences.layout(of: app))
-                    }
-                }
-            }
-            .accessibilityElement(children: .contain)
-            .accessibilityLabel(text.regionsSection)
-            ZenithSection(anchor: .zenithPrivacyBlurRegions,
-                          footer: chosen.contains(.names) && !chosen.contains(.chatList) ? text.namesNote : text.regionsCaption) {
-                ZenithRow(text.listEdge, value: listEdgeBinding(app), in: PrivacyBlurLayout.listEdgeRange,
-                          info: text.listEdgeCaption,
-                          valueLabel: "\(Int(preferences.layout(of: app).listEdge)) pt",
-                          minimumSymbol: "sidebar.left", maximumSymbol: "rectangle.leadinghalf.filled")
-                ZenithRow(text.defaultListEdge, button: text.resetListEdge) {
-                    var edges = stored.listEdges
-                    edges[app] = nil
-                    write(edges, forKey: PrivacyBlurDefaults.listWidths)
-                }
-            }
-            .disabled(chosen.contains(.everything))
+    private func items(_ preferences: PrivacyBlurPreferences) -> some View {
+        let itemApps = preferences.apps.filter { preferences.mode(of: $0) == .items }
+        let footer: String
+        if itemApps.isEmpty {
+            footer = text.windowOnlyNote
+        } else if itemApps.contains(where: { PrivacyBlurApps.support(of: $0) == .generic }) {
+            footer = text.genericNote
+        } else {
+            footer = text.itemsFooter
         }
-    }
-
-    private func setRegions(_ regions: Set<PrivacyBlurRegion>, for app: String) {
-        var all = UserDefaults.standard.dictionary(forKey: PrivacyBlurDefaults.regions) as? [String: [String]] ?? [:]
-        all[app] = PrivacyBlurRegion.stored(regions)
-        write(all, forKey: PrivacyBlurDefaults.regions)
-    }
-
-    private func listEdgeBinding(_ app: String) -> Binding<Double> {
-        Binding(get: { Double(stored.layout(of: app).listEdge) }, set: { value in
-            var edges = stored.listEdges
-            edges[app] = value.rounded()
-            write(edges, forKey: PrivacyBlurDefaults.listWidths)
-        })
+        return VStack(alignment: .leading, spacing: 8) {
+            ZenithSection(text.itemsSection, anchor: .zenithPrivacyBlurRegions, footer: footer) {
+                ZenithRow(text.messages, isOn: $blurMessages, info: text.messagesCaption)
+                ZenithRow(text.previews, isOn: $blurPreviews, info: text.previewsCaption)
+                ZenithRow(text.media, isOn: $blurMedia, info: text.mediaCaption)
+                ZenithRow(text.avatars, isOn: $blurAvatars, info: text.avatarsCaption)
+                ZenithRow(text.names, isOn: $blurNames, info: text.namesCaption)
+                ZenithRow(text.input, isOn: $blurInput, info: text.inputCaption)
+            }
+            .disabled(itemApps.isEmpty)
+            if !itemApps.isEmpty, enabled, !permissions.accessibility {
+                ZenithFootnote(text.itemsNeedAccessibility)
+            }
+        }
     }
 
     // MARK: Blur
@@ -255,11 +237,13 @@ struct PrivacyBlurSettingsPage: View {
 
     // MARK: Revealing
 
-    private var revealing: some View {
-        ZenithSection(text.revealSection, anchor: .zenithPrivacyBlurReveal) {
-            ZenithRow(text.hover, selection: $hover, info: text.hoverCaption) {
-                ForEach(PrivacyBlurHover.allCases) { Text(text.title($0)).tag($0.rawValue) }
-            }
+    private func revealing(_ preferences: PrivacyBlurPreferences) -> some View {
+        let hoverReveal = Binding(get: { stored.options.hoverReveal },
+                                  set: { write($0, forKey: PrivacyBlurDefaults.hoverReveal) })
+        return ZenithSection(text.revealSection, anchor: .zenithPrivacyBlurReveal) {
+            ZenithRow(text.hoverReveal, isOn: hoverReveal, info: text.hoverRevealCaption)
+            ZenithRow(text.noDelay, isOn: $noDelay, info: text.noDelayCaption)
+                .disabled(!preferences.options.hoverReveal)
             ZenithShortcutSettingRow(text.shortcut, info: text.shortcutCaption,
                                      storageKey: PrivacyBlurDefaults.shortcut,
                                      fallback: PrivacyBlurService.defaultShortcut,
@@ -314,229 +298,148 @@ enum PrivacyBlurAppLookup {
     }
 }
 
-// MARK: - Region tiles
-
-/// A region's tile: the kit's picture tile, chosen as part of a set.
-struct PrivacyBlurRegionTile<Art: View>: View {
-    let label: String
-    let detail: String
-    let selected: Bool
-    let action: () -> Void
-    @ViewBuilder let art: () -> Art
-    @Environment(\.zenithTint) private var tint
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.colorSchemeContrast) private var contrast
-    @State private var hovering = false
-
-    var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
-        Button(action: action) {
-            VStack(spacing: 7) {
-                ZStack {
-                    ZenithStageGradient(tint: tint, dark: colorScheme == .dark)
-                    art()
-                }
-                .frame(height: 70)
-                .frame(maxWidth: .infinity)
-                .clipShape(shape)
-                .overlay(shape.strokeBorder(selected ? Color.accentColor
-                                                : Color.primary.opacity(contrast == .increased ? 0.3 : (hovering ? 0.2 : 0.08)),
-                                            lineWidth: selected ? 2.5 : 1))
-                Text(label)
-                    .font(.system(size: 11.5, weight: selected ? .semibold : .regular))
-                    .foregroundStyle(selected ? Color.accentColor : .secondary)
-                    .lineLimit(1)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering = $0 }
-        .help(detail)
-        .accessibilityLabel(label)
-        .accessibilityHint(detail)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-}
-
-/// A tiny chat window with the region's parts frosted in the accent colour.
-struct PrivacyBlurRegionDiagram: View {
-    let region: PrivacyBlurRegion
-    let layout: PrivacyBlurLayout
-    @Environment(\.colorScheme) private var colorScheme
-
-    private static let nominal = CGSize(width: 1100, height: 700)
-
-    var body: some View {
-        let size = CGSize(width: 88, height: 56)
-        let scale = size.width / Self.nominal.width
-        let pieces = PrivacyBlurRegions.pieces([region], layout: layout, size: Self.nominal)
-        ZStack(alignment: .topLeading) {
-            PrivacyBlurMiniWindow(layout: layout, scale: scale, detail: false)
-            ForEach(pieces.indices, id: \.self) { index in
-                let rect = pieces[index].rect
-                RoundedRectangle(cornerRadius: 2, style: .continuous)
-                    .fill(Color.accentColor.opacity(0.55))
-                    .frame(width: rect.width * scale, height: rect.height * scale)
-                    .offset(x: rect.minX * scale, y: rect.minY * scale)
-            }
-        }
-        .frame(width: size.width, height: size.height, alignment: .topLeading)
-        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
-        .shadow(color: .black.opacity(0.25), radius: 3, y: 2)
-        .accessibilityHidden(true)
-    }
-}
-
 // MARK: - Stage art
 
-/// A chat window drawn from the app's layout: a rail, the chat list's rows,
-/// the conversation's header, bubbles and the composer. `scale` maps the
-/// layout's points onto the drawing.
-struct PrivacyBlurMiniWindow: View {
-    let layout: PrivacyBlurLayout
-    let scale: CGFloat
-    var detail = true
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        let dark = colorScheme == .dark
-        GeometryReader { proxy in
-            let w = proxy.size.width, h = proxy.size.height
-            let rail = layout.rail * scale, edge = min(layout.listEdge * scale, w * 0.75)
-            let header = layout.header * scale, top = layout.listTop * scale
-            let ink = dark ? Color.white : Color.black
-            ZStack(alignment: .topLeading) {
-                Rectangle().fill(dark ? Color(white: 0.13) : Color(white: 0.98))
-                Rectangle().fill(dark ? Color(white: 0.1) : Color(white: 0.93)).frame(width: rail)
-                Rectangle().fill(dark ? Color(white: 0.16) : Color.white).frame(width: edge - rail).offset(x: rail)
-                Rectangle().fill(ink.opacity(0.08)).frame(width: 0.5).offset(x: edge)
-                // The conversation's header: a photo and a name.
-                Circle().fill(Color(red: 0.5, green: 0.7, blue: 0.95)).frame(width: header * 0.55, height: header * 0.55)
-                    .offset(x: edge + header * 0.3, y: header * 0.22)
-                Capsule().fill(ink.opacity(0.35)).frame(width: (w - edge) * 0.22, height: max(2, header * 0.14))
-                    .offset(x: edge + header * 1.0, y: header * 0.42)
-                Rectangle().fill(ink.opacity(0.08)).frame(width: w - edge, height: 0.5).offset(x: edge, y: header)
-                // The chat list's rows.
-                let rowHeight = max(6, 72 * scale)
-                ForEach(0..<12, id: \.self) { row in
-                    let y = top + CGFloat(row) * rowHeight
-                    if y + rowHeight * 0.8 < h {
-                        Circle().fill(Self.avatar(row)).frame(width: rowHeight * 0.66, height: rowHeight * 0.66)
-                            .offset(x: rail + rowHeight * 0.18, y: y + rowHeight * 0.17)
-                        Capsule().fill(ink.opacity(0.4)).frame(width: (edge - rail) * 0.42, height: max(1.5, rowHeight * 0.13))
-                            .offset(x: rail + rowHeight * 1.0, y: y + rowHeight * 0.25)
-                        Capsule().fill(ink.opacity(0.18)).frame(width: (edge - rail) * 0.6, height: max(1.5, rowHeight * 0.11))
-                            .offset(x: rail + rowHeight * 1.0, y: y + rowHeight * 0.55)
-                    }
-                }
-                // The bubbles.
-                ForEach(0..<6, id: \.self) { index in
-                    let mine = index % 3 == 1
-                    let width = (w - edge) * [0.42, 0.34, 0.5, 0.28, 0.44, 0.36][index]
-                    let y = header + (h - header) * (0.08 + CGFloat(index) * 0.13)
-                    if detail || index < 4 {
-                        RoundedRectangle(cornerRadius: max(2, 8 * scale * 2), style: .continuous)
-                            .fill(mine ? Color(red: 0.3, green: 0.78, blue: 0.5).opacity(dark ? 0.75 : 0.85)
-                                       : (dark ? Color(white: 0.24) : Color(white: 0.9)))
-                            .frame(width: width, height: max(4, (h - header) * 0.085))
-                            .offset(x: mine ? w - width - 12 * scale * 2 : edge + 12 * scale * 2, y: y)
-                    }
-                }
-            }
-        }
-    }
-
-    private static func avatar(_ row: Int) -> Color {
-        [Color(red: 0.95, green: 0.6, blue: 0.45), Color(red: 0.5, green: 0.7, blue: 0.95),
-         Color(red: 0.65, green: 0.55, blue: 0.95), Color(red: 0.45, green: 0.8, blue: 0.6)][row % 4]
-    }
-}
-
-/// The stage: the chat window with its chosen parts frosted; on Hover the
-/// pointer rests on the conversation and clears the part (or the circle)
-/// under it.
+/// The stage: the sample WhatsApp window (PrivacyBlurSample) drawn small,
+/// with the items the options blur frosted one by one by the same rules the
+/// overlay follows. On Hover the pointer rests on a bubble and clears it
+/// alone (or a circle, for a window blurred whole).
 struct PrivacyBlurStageArt: View {
-    let layout: PrivacyBlurLayout
-    let regions: Set<PrivacyBlurRegion>
+    let options: PrivacyBlurItemOptions
+    let mode: PrivacyBlurMode
     let hovering: Bool
-    let hover: PrivacyBlurHover
     let frost: Double
     @Environment(\.colorScheme) private var colorScheme
 
-    private static let nominal = CGSize(width: 1100, height: 560)
-    private static let drawn = CGSize(width: 440, height: 224)
-    /// Where the stage's pointer rests, in the nominal window.
-    private static let pointer = CGPoint(x: 780, y: 300)
+    private static let scene: PrivacyBlurScene = {
+        let sample = PrivacyBlurSample.whatsApp()
+        return PrivacyBlurItems.classify(.tuned, root: sample.root, window: sample.window)
+    }()
+    private static let window = PrivacyBlurSample.windowSize
+    private static let scale: CGFloat = 0.25
+    /// Where the stage's pointer rests: on a bubble, in the window's space.
+    private static let pointer = CGPoint(x: 770, y: 292)
 
     var body: some View {
-        let scale = Self.drawn.width / Self.nominal.width
-        let pieces = PrivacyBlurRegions.pieces(regions, layout: layout, size: Self.nominal)
-        let reveal = hovering
-            ? PrivacyBlurRevealing.reveal(hover: hover == .off ? .region : hover, holding: false, typing: false,
-                                          isFocusedWindow: false, pointer: Self.pointer, windowSize: Self.nominal,
-                                          pieces: pieces)
-            : .none
+        let scale = Self.scale
         let dark = colorScheme == .dark
+        let shown = PrivacyBlurItems.shown(scene: Self.scene, mode: mode, options: options, windowSize: Self.window)
+        let reveal = hovering
+            ? PrivacyBlurRevealing.reveal(hoverReveal: true, holding: false, typing: false, isFocusedWindow: false,
+                                          pointer: Self.pointer, windowSize: Self.window, items: shown)
+            : .none
         ZStack(alignment: .topLeading) {
-            PrivacyBlurMiniWindow(layout: layout, scale: scale)
-            ForEach(pieces.indices, id: \.self) { index in
-                let rect = pieces[index].rect
-                if reveal != .piece(index) {
-                    frostPane(dark: dark)
-                        .frame(width: rect.width * scale, height: rect.height * scale)
-                        .mask(holeMask(rect: rect, reveal: reveal, scale: scale))
-                        .offset(x: rect.minX * scale, y: rect.minY * scale)
+            PrivacyBlurMiniWindow(scene: Self.scene, scale: scale)
+            ForEach(shown.indices, id: \.self) { index in
+                let item = shown[index]
+                if reveal != .item(index) {
+                    frostShape(item, dark: dark, scale: scale, reveal: reveal)
                 }
             }
             if hovering {
                 Image(systemName: "cursorarrow")
-                    .font(.system(size: 18, weight: .regular))
+                    .font(.system(size: 16, weight: .regular))
                     .foregroundStyle(.black)
                     .shadow(color: .white, radius: 1)
                     .offset(x: Self.pointer.x * scale - 3, y: Self.pointer.y * scale - 3)
             }
         }
-        .frame(width: Self.drawn.width, height: Self.drawn.height, alignment: .topLeading)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.25), lineWidth: 1))
+        .frame(width: Self.window.width * scale, height: Self.window.height * scale, alignment: .topLeading)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(.white.opacity(0.25), lineWidth: 1))
         .shadow(color: .black.opacity(0.3), radius: 10, y: 5)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(hovering ? "A chat window, clear under the pointer" : "A chat window under frosted glass")
+        .accessibilityLabel(hovering ? "A chat window, one message clear under the pointer"
+                                     : "A chat window with each message, name and photo blurred")
     }
 
-    /// Frost drawn, not blurred: a pale wash in the window's colour with
-    /// soft blobs where the text was.
-    private func frostPane(dark: Bool) -> some View {
-        ZStack {
-            Rectangle().fill(dark ? Color(white: 0.22).opacity(0.75 + frost * 0.25) : Color(white: 0.94).opacity(0.75 + frost * 0.25))
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(0..<6, id: \.self) { i in
-                    Capsule().fill((dark ? Color.white : Color.black).opacity(0.06 * (1 - frost) + 0.02))
-                        .frame(width: [70, 50, 90, 40, 66, 54][i], height: 10)
-                }
+    /// Frost drawn, not blurred: a pale wash in the window's colour over the
+    /// item, rounded like it.
+    @ViewBuilder
+    private func frostShape(_ item: PrivacyBlurItem, dark: Bool, scale: CGFloat, reveal: PrivacyBlurReveal) -> some View {
+        let shape = RoundedRectangle(cornerRadius: item.cornerRadius * scale, style: .continuous)
+        let base = dark ? Color(white: 0.3) : Color(white: 0.84)
+        let pane = ZStack {
+            shape.fill(base.opacity(0.7 + frost * 0.3))
+            shape.fill(LinearGradient(colors: [.white.opacity(dark ? 0.1 : 0.4), .clear], startPoint: .top, endPoint: .bottom))
+        }
+        .frame(width: item.rect.width * scale, height: item.rect.height * scale)
+        if case .circle(let point) = reveal {
+            let radius = PrivacyBlurRevealing.circleRadius * scale
+            pane
+                .mask(Rectangle().overlay(
+                    Circle()
+                        .fill(RadialGradient(colors: [.black, .black, .clear], center: .center, startRadius: 0, endRadius: radius))
+                        .frame(width: radius * 2, height: radius * 2)
+                        .position(x: (point.x - item.rect.minX) * scale, y: (point.y - item.rect.minY) * scale)
+                        .blendMode(.destinationOut)
+                ).compositingGroup())
+                .offset(x: item.rect.minX * scale, y: item.rect.minY * scale)
+        } else {
+            pane.offset(x: item.rect.minX * scale, y: item.rect.minY * scale)
+        }
+    }
+}
+
+/// A chat window drawn from a scene: the window and its two
+/// columns' backgrounds, each chat row's photo, name and preview, the open
+/// chat's header, the bubbles (yours on the right) and the typing field.
+struct PrivacyBlurMiniWindow: View {
+    let scene: PrivacyBlurScene
+    let scale: CGFloat
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        let dark = colorScheme == .dark
+        let ink = dark ? Color.white : Color.black
+        let list = scene.areas.first { $0.id == PrivacyBlurWhatsAppRules.listArea }?.rect ?? .zero
+        let conversation = scene.areas.first { $0.id == PrivacyBlurWhatsAppRules.conversationArea }?.rect ?? .zero
+        ZStack(alignment: .topLeading) {
+            Rectangle().fill(dark ? Color(white: 0.11) : Color(white: 0.95))
+            Rectangle().fill(dark ? Color(white: 0.15) : Color.white)
+                .frame(width: list.width * scale).offset(x: list.minX * scale)
+            Rectangle().fill(dark ? Color(white: 0.13) : Color(red: 0.96, green: 0.94, blue: 0.9))
+                .frame(width: conversation.width * scale).offset(x: conversation.minX * scale)
+            ForEach(scene.items.indices, id: \.self) { index in
+                content(scene.items[index], conversation: conversation, ink: ink, dark: dark)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(12)
-            LinearGradient(colors: [.white.opacity(dark ? 0.08 : 0.35), .clear], startPoint: .top, endPoint: .bottom)
         }
     }
 
     @ViewBuilder
-    private func holeMask(rect: CGRect, reveal: PrivacyBlurReveal, scale: CGFloat) -> some View {
-        if case .circle(let point) = reveal {
-            let radius = PrivacyBlurRevealing.circleRadius * scale
-            Rectangle()
-                .overlay(
-                    Circle()
-                        .fill(RadialGradient(colors: [.black, .black, .clear], center: .center,
-                                             startRadius: 0, endRadius: radius))
-                        .frame(width: radius * 2, height: radius * 2)
-                        .position(x: (point.x - rect.minX) * scale, y: (point.y - rect.minY) * scale)
-                        .blendMode(.destinationOut)
-                )
-                .compositingGroup()
-        } else {
-            Rectangle()
+    private func content(_ item: PrivacyBlurItem, conversation: CGRect, ink: Color, dark: Bool) -> some View {
+        let rect = CGRect(x: item.rect.minX * scale, y: item.rect.minY * scale,
+                          width: item.rect.width * scale, height: item.rect.height * scale)
+        switch item.kind {
+        case .avatar:
+            Circle().fill(Self.avatar(Int(item.rect.minY / 69)))
+                .frame(width: rect.width, height: rect.height).offset(x: rect.minX, y: rect.minY)
+        case .name, .preview:
+            Capsule().fill(ink.opacity(item.kind == .name ? 0.45 : 0.22))
+                .frame(width: rect.width * (item.kind == .name ? 0.55 : 0.8), height: max(2, rect.height * 0.4))
+                .offset(x: rect.minX, y: rect.midY - max(2, rect.height * 0.4) / 2)
+        case .message:
+            let mine = item.rect.maxX > conversation.maxX - 24
+            RoundedRectangle(cornerRadius: item.cornerRadius * scale, style: .continuous)
+                .fill(mine ? Color(red: 0.3, green: 0.75, blue: 0.5).opacity(dark ? 0.6 : 0.55)
+                           : (dark ? Color(white: 0.24) : Color.white))
+                .frame(width: rect.width, height: rect.height).offset(x: rect.minX, y: rect.minY)
+        case .media:
+            RoundedRectangle(cornerRadius: item.cornerRadius * scale, style: .continuous)
+                .fill(LinearGradient(colors: [Color(red: 0.95, green: 0.65, blue: 0.4), Color(red: 0.45, green: 0.55, blue: 0.95)],
+                                     startPoint: .topLeading, endPoint: .bottomTrailing))
+                .frame(width: rect.width, height: rect.height).offset(x: rect.minX, y: rect.minY)
+        case .input:
+            RoundedRectangle(cornerRadius: item.cornerRadius * scale, style: .continuous)
+                .fill(dark ? Color(white: 0.22) : Color.white)
+                .frame(width: rect.width, height: rect.height).offset(x: rect.minX, y: rect.minY)
+        case .window:
+            EmptyView()
         }
+    }
+
+    private static func avatar(_ row: Int) -> Color {
+        [Color(red: 0.95, green: 0.6, blue: 0.45), Color(red: 0.5, green: 0.7, blue: 0.95),
+         Color(red: 0.65, green: 0.55, blue: 0.95), Color(red: 0.45, green: 0.8, blue: 0.6)][abs(row) % 4]
     }
 }
