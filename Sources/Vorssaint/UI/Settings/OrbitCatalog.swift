@@ -13,7 +13,7 @@ import Foundation
 /// Orbit's shelves, in the order the chips show them. `all` and `installed`
 /// are views, never an item's home.
 enum OrbitCategory: String, CaseIterable, Identifiable {
-    case all, island, ai, productivity, media, files, capture, windows, input, sound, system, devices, installed
+    case all, island, ai, productivity, media, files, capture, windows, input, sound, system, devices, privacy, installed
 
     var id: String { rawValue }
 
@@ -90,7 +90,8 @@ enum OrbitCatalog {
     /// Zenith's own pages, which no hub feature stands for.
     static let pages: [SettingsPage] = [.lockScreen, .meetings, .translate, .mechakey, .workspaces,
                                         .pocket, .remote, .batteries, .faceUnlock,
-                                        .removeBackground, .emojiPicker, .calculator] // Zenith fork: Orbit wave 2
+                                        .removeBackground, .emojiPicker, .calculator, // Zenith fork: Orbit wave 2
+                                        .appLock] // Zenith fork: App Lock
 
     /// Every item: the hub's features in their catalog order, then the pages.
     static let items: [OrbitItem] = AppFeature.allCases.map(item(for:)) + pages.compactMap(item(for:))
@@ -159,6 +160,9 @@ enum OrbitCatalog {
         case .calculator:
             return OrbitItem(id: .page(page), iconName: "Calculator", category: .productivity,
                              switchKey: CalculatorDefaults.enabled)
+        case .appLock: // Zenith fork: App Lock
+            return OrbitItem(id: .page(page), iconName: "App Lock", category: .privacy,
+                             switchKey: AppLockDefaults.enabled)
         default:
             return nil
         }

@@ -199,6 +199,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, NSW
         MechakeyService.shared.start() // Zenith fork: keyboard sounds, listening only while on
         RemoveBackgroundService.launch() // Zenith fork: Orbit wave 2, each shortcut only while its feature is on
         EmojiPickerService.launch()
+        AppLockService.launch() // Zenith fork: App Lock, watching the workspace only while on
         if AppFeature.monitorPower.isAvailable, PowerSampler.hasInternalBattery {
             MaxCapacityProbe.shared.refreshIfStale()
         }

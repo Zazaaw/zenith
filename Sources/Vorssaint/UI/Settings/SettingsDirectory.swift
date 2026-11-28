@@ -680,6 +680,9 @@ enum SettingsDirectory {
                                       icon: "face.smiling", keywords: EmojiPickerSearch.keywords(language)),
                 SettingsDirectoryItem(page: .calculator, title: ZenithStrings.calculator(language).title,
                                       icon: "plus.forwardslash.minus", keywords: CalculatorSearch.keywords(language)),
+                // Zenith fork: App Lock, a page of its own in the Privacy group (no hub feature).
+                SettingsDirectoryItem(page: .appLock, title: ZenithStrings.appLock(language).title,
+                                      icon: "lock.app.dashed", keywords: AppLockSearch.keywords(language)),
                 SettingsDirectoryItem(page: .radialMenu,
                                       title: FeatureStrings.radialMenu(language).pageTitle,
                                       icon: "circle.grid.cross",

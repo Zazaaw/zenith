@@ -101,6 +101,8 @@ struct ZenithCategoryTint: Equatable {
         case .system: return pair(ZenithRGB(0.45, 0.95, 0.6), ZenithRGB(0.1, 0.65, 0.4))
         case .apps: return pair(ZenithRGB(1, 0.7, 0.4), ZenithRGB(0.95, 0.42, 0.15))
         case .devices: return pair(ZenithRGB(0.3, 0.92, 0.8), ZenithRGB(0.1, 0.5, 0.75))
+        // Zenith fork: Privacy, a calm steel blue.
+        case .privacy: return pair(ZenithRGB(0.62, 0.74, 1), ZenithRGB(0.32, 0.36, 0.78))
         // The hero mockup's amber for the features that came from Orbit.
         case .fromOrbit: return pair(ZenithRGB(1, 0.72, 0.25), ZenithRGB(0.95, 0.45, 0.2))
         }
