@@ -110,7 +110,8 @@ float), `.mechakey`, `.translate`, `.meetings`, `.shelf`, `.batteries`,
 Devices pages keep theirs in `ZenithHeroAnimationsEveryday.swift`: `.clipboard`,
 `.finderTools`, `.mediaTools`, `.urlCleaner`, `.textSnippets`, `.pocket`,
 `.remote`, `.faceUnlock`. Orbit wave 2's are in `ZenithHeroAnimationsWave2.swift`:
-`.removeBackground`, `.emojiPicker`, `.calculator`. The System and Apps pages keep
+`.removeBackground`, `.emojiPicker`, `.calculator`. The Privacy pages keep theirs
+in `ZenithHeroAnimationsPrivacy.swift`: `.appLock`. The System and Apps pages keep
 theirs in `ZenithHeroAnimationsSystem.swift`: `.systemMonitor`, `.fanControl`,
 `.sleep`, `.brightness`, `.menuBar`, `.commandBar`, `.cleaner`, `.uninstaller`,
 `.homebrew`, `.appUpdates`, `.killProcess`, `.portManager`.
