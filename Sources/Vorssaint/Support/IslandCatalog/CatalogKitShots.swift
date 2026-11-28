@@ -37,6 +37,7 @@ extension CatalogShots {
             ("camera-preview", .cameraPreview, [AppFeature.cameraPreview.availabilityKey: true], 1050),
         ] + kitEverydayPages
             + kitWave2Pages // Zenith fork: Orbit wave 2 (CatalogKitShotsWave2)
+            + kitPrivacyPages // Zenith fork: the Privacy pages (CatalogKitShotsPrivacy)
             + kitSystemPages // Zenith fork: the System and Apps pages (CatalogKitShotsSystem)
         var shots: [CatalogShot] = []
         for (name, page, preferences, height) in pages {

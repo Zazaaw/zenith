@@ -36,6 +36,7 @@ enum ZenithSettingsSearch {
         .page(.removeBackground): RemoveBackgroundSearch.aliases, // Zenith fork: Orbit wave 2
         .page(.emojiPicker): EmojiPickerSearch.aliases,
         .page(.calculator): CalculatorSearch.aliases,
+        .page(.appLock): AppLockSearch.aliases, // Zenith fork: App Lock
         .page(.finderTools): ["finder", "cut paste", "cut and paste", "potong tempel", "pindah file", "rename",
                               "ganti nama", "F2", "dmg", "disk image", "install app", "pasang aplikasi"],
         // The sound and capture tools' own pages.
@@ -82,6 +83,7 @@ enum ZenithSettingsSearch {
         let removeBackground = ZenithStrings.removeBackground(language) // Orbit wave 2
         let emojiPicker = ZenithStrings.emojiPicker(language)
         let calculator = ZenithStrings.calculator(language)
+        let appLock = ZenithStrings.appLock(language) // App Lock
         let appearance = ZenithStrings.appearancePage(language) // Appearance
         let theme = FeatureStrings.appearance(language) // its Theme keeps General's localized words
         let general = FeatureStrings.generalSettings(language)
@@ -266,6 +268,18 @@ enum ZenithSettingsSearch {
             page(.zenithCalculatorAnswers, title: calculator.answersSection, icon: "number",
                  keywords: [calculator.decimalPlaces, calculator.clearHistory],
                  aliases: ["decimal places", "history", "angka desimal", "riwayat hitungan"]),
+            // App Lock: the switch, the apps, locking again and hiding.
+            page(.zenithAppLock, title: appLock.enable, icon: "lock.app.dashed",
+                 keywords: [appLock.title, appLock.systemMethod, appLock.faceMethod], aliases: AppLockSearch.aliases),
+            page(.zenithAppLockApps, title: appLock.appsSection, icon: "square.stack",
+                 keywords: [appLock.addApp, appLock.addRunning],
+                 aliases: ["locked apps", "add app", "aplikasi terkunci", "tambah aplikasi"]),
+            page(.zenithAppLockRelock, title: appLock.relockSection, icon: "timer",
+                 keywords: [appLock.relock, appLock.scope, appLock.lockWithMac, appLock.lockNow],
+                 aliases: ["relock", "lock again", "kunci lagi", "kunci ulang"]),
+            page(.zenithAppLockHide, title: appLock.hideWhenInactive, icon: "eye.slash",
+                 keywords: [appLock.title, appLock.hideWhenInactiveCaption],
+                 aliases: ["mission control", "hide app", "sembunyikan aplikasi"]),
             // Appearance: the page, then its theme, motion, glass and battery.
             SettingsSearchItem(id: .page(.appearance), destination: FeatureSettingsDestination(.appearance),
                                title: appearance.title, icon: "paintpalette", keywords: [appearance.subtitle],

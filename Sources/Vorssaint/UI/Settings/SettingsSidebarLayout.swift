@@ -11,6 +11,8 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
     /// The four tiles above the groups: General, Appearance, Command Bar, Orbit.
     case tiles
     case island, everyday, capture, windows, input, sound, system, apps, devices
+    /// Zenith fork: what keeps the screen and the apps to yourself.
+    case privacy
     /// The features Zenith added through Orbit, such as Meetings and Translate.
     case fromOrbit
     /// The app itself: shortcuts, advanced, what's new, support, about.
@@ -31,6 +33,7 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
         case .system: return "System"
         case .apps: return "Apps"
         case .devices: return "Devices"
+        case .privacy: return "Privacy"
         case .fromOrbit: return "From Orbit"
         case .zenith: return "Zenith"
         }
@@ -64,6 +67,7 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
         case .sleep, .brightness, .fanControl, .menuBar: return .system // Zenith fork
         case .cleaner, .uninstaller, .homebrew, .appUpdates, .killProcess, .portManager: return .apps
         case .remote, .pocket, .faceUnlock, .batteries: return .devices
+        case .appLock: return .privacy // Zenith fork: App Lock
         case .meetings, .translate, .mechakey,
              .removeBackground, .emojiPicker, .calculator: return .fromOrbit // Zenith fork: Orbit wave 2
         case .shortcuts, .advanced, .about, .releaseNotes, .support: return .zenith

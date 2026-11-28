@@ -32,6 +32,7 @@ enum SettingsPage: Hashable, CaseIterable {
     case volumeMixer, soundOutput, musicBlocker, micMute
     // Zenith fork: the capture tools, a page each (Screen capture and Quick Tools were split).
     case screenRecording, textCapture, colorPicker, cameraPreview
+    case appLock // Zenith fork: App Lock, in the Privacy group
 }
 
 /// Stable, non-localized identities for destinations inside shared Settings
@@ -104,6 +105,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
     case zenithRemoveBackground, zenithRemoveBackgroundResult // Zenith fork: Orbit wave 2
     case zenithEmojiPicker, zenithEmojiPickerPicking
     case zenithCalculator, zenithCalculatorAnswers
+    case zenithAppLock, zenithAppLockApps, zenithAppLockRelock, zenithAppLockHide // Zenith fork: App Lock
 
     var page: SettingsPage {
         switch self {
@@ -156,6 +158,7 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
         case .zenithRemoveBackground, .zenithRemoveBackgroundResult: return .removeBackground // Zenith fork
         case .zenithEmojiPicker, .zenithEmojiPickerPicking: return .emojiPicker
         case .zenithCalculator, .zenithCalculatorAnswers: return .calculator
+        case .zenithAppLock, .zenithAppLockApps, .zenithAppLockRelock, .zenithAppLockHide: return .appLock // Zenith fork
         case .zenithAppearanceTheme, .zenithAppearanceMotion, .zenithAppearanceGlass, .zenithAppearanceBattery: return .appearance
         case .zenithDropZones, .zenithWatermark: return .shelf
         case .zenithDesignOverlay, .zenithBeautify: return .screenshot
@@ -613,7 +616,8 @@ enum FeatureVisibilitySupport {
              .workspaces, .remote, .pocket, .faceUnlock, .batteries,
              .meetings, .mechakey, .appearance, // Zenith fork
              .menuBar, // Zenith fork: the app's own menu bar, which no hub feature hides
-             .removeBackground, .emojiPicker, .calculator: // Zenith fork: Orbit wave 2
+             .removeBackground, .emojiPicker, .calculator, // Zenith fork: Orbit wave 2
+             .appLock: // Zenith fork: App Lock
             return []
         }
     }
