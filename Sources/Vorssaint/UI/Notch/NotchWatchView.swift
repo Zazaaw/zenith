@@ -10,7 +10,7 @@ struct NotchWatchSettingsControls: View {
     @AppStorage(DefaultsKey.notchWatchSound) private var sound = true
     private var text: NotchWatchStrings { FeatureStrings.notchWatch(l10n.language) }
 
-    // Zenith fork: Settings → Watch. Its page's hero holds the section's
+    // Zenith fork: Settings → Dynamic Island → Modules → Watch. Its tile holds the section's
     // switch (the same preference), so the rows are what it does once on.
     var body: some View {
         ZenithSection(ZenithStrings.islandPages(l10n.language).watching) {

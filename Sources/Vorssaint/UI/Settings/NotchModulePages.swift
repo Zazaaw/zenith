@@ -4,110 +4,267 @@
 import EventKit
 import SwiftUI
 
-// Zenith fork: the island's sections with options of their own, each a page
-// in the Island group (docs/SETTINGS-KIT.md, feature page recipe): the hero
-// with the section's switch for the island, the section in the open island
-// on the stage, then its options. Their place among the sections and the
-// sections without options stay on the Dynamic Island page.
+// Zenith fork: the Dynamic Island page's Modules section (docs/SETTINGS-KIT.md,
+// a tile grid like System Monitor's): a tile per module with its Orbit icon,
+// its name and the switch that shows it in the island, and the selected
+// module's settings under the grid, opening with a small header and the
+// module's own animation. Their place among the sections stays on the
+// Content tab above.
 
-// MARK: - Shell
+// MARK: - Grid
 
-/// Whether a section shows in the island: its own switch where it has one,
-/// and its absence from the hidden list, as the island page's list reads it.
-enum NotchModuleShowing {
-    static func binding(_ module: NotchModule, hidden: Binding<String>, enabled: Binding<Bool>? = nil) -> Binding<Bool> {
-        Binding {
-            (enabled?.wrappedValue ?? true)
-                && !hidden.wrappedValue.split(separator: ",").contains(Substring(module.rawValue))
-        } set: { shown in
-            enabled?.wrappedValue = shown
-            var values = Set(hidden.wrappedValue.split(separator: ",").map(String.init))
-            if shown { values.remove(module.rawValue) } else { values.insert(module.rawValue) }
-            hidden.wrappedValue = values.sorted().joined(separator: ",")
-            NotchService.shared.syncWithPreferences()
+/// The Modules section: the tiles, then the chosen module's settings.
+struct IslandModulesSection: View {
+    @Binding var selection: IslandSettingsModule
+    /// The "show in the island" preference each tile's switch reads and writes.
+    let showing: (IslandSettingsModule) -> Binding<Bool>
+    /// Scrolls the page to an id inside the module's settings.
+    let reveal: (String) -> Void
+    @ObservedObject private var l10n = L10n.shared
+    @ObservedObject private var features = FeatureRuntime.shared
+
+    /// Where every way into a module scrolls the page to.
+    static let anchorID = "zenith.island.modules"
+
+    var body: some View {
+        let text = ZenithStrings.islandPages(l10n.language)
+        VStack(alignment: .leading, spacing: 18) {
+            ZenithSection(text.modules, footer: text.modulesFooter) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 10)], spacing: 10) {
+                    ForEach(IslandSettingsModule.allCases) { module in
+                        IslandModuleTile(module: module, title: module.title(l10n.language),
+                                         hint: module == .companion ? FeatureStrings.notchMascot(l10n.language).hint
+                                             : text.showInIslandHint,
+                                         selected: module == selection,
+                                         available: features.isAvailable(module.feature),
+                                         isOn: showing(module)) { selection = module }
+                    }
+                }
+                .padding(.vertical, 12)
+            }
+            .id(Self.anchorID)
+            IslandModuleDetail(module: selection, reveal: reveal)
+                .id(selection)
         }
     }
 }
 
-/// The page every section shares: the hero, a note while the island is off,
-/// the section on the stage and the section's options under it.
-struct NotchModuleSettingsPage<Animation: ZenithHeroAnimation, Content: View>: View {
-    let module: NotchModule
-    let subtitle: String
-    var chips: [ZenithChip] = []
-    let isShown: Binding<Bool>
-    let animation: Animation
-    let content: Content
-    @ObservedObject private var l10n = L10n.shared
-    @ObservedObject private var router = SettingsRouter.shared
-    @AppStorage(DefaultsKey.notchEnabled) private var islandEnabled = false
-
-    init(module: NotchModule, subtitle: String, chips: [ZenithChip] = [], isShown: Binding<Bool>,
-         animation: Animation, @ViewBuilder content: () -> Content) {
-        self.module = module
-        self.subtitle = subtitle
-        self.chips = chips
-        self.isShown = isShown
-        self.animation = animation
-        self.content = content()
-    }
-
-    private var text: ZenithIslandPagesStrings { ZenithStrings.islandPages(l10n.language) }
+/// One module: its icon on the stage (click it for its settings) and its switch.
+private struct IslandModuleTile: View {
+    let module: IslandSettingsModule
+    let title: String
+    let hint: String
+    let selected: Bool
+    let available: Bool
+    @Binding var isOn: Bool
+    let select: () -> Void
+    @Environment(\.zenithTint) private var tint
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
-        ScrollView {
+        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
+        VStack(spacing: 8) {
+            Button(action: select) {
+                ZStack {
+                    ZenithStageGradient(tint: tint, dark: colorScheme == .dark)
+                    IslandModuleIcon(module: module, size: 36)
+                        .shadow(color: .black.opacity(0.3), radius: 3, y: 2)
+                        .opacity(available ? 1 : 0.45)
+                }
+                .frame(height: 56)
+                .frame(maxWidth: .infinity)
+                .clipShape(shape)
+                .overlay(shape.strokeBorder(selected ? Color.accentColor
+                                                : Color.primary.opacity(contrast == .increased ? 0.3 : 0.08),
+                                            lineWidth: selected ? 2.5 : 1))
+                .contentShape(shape)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(title)
+            .accessibilityAddTraits(selected ? .isSelected : [])
+            HStack(spacing: 6) {
+                Text(title)
+                    .font(.system(size: 11.5, weight: selected ? .semibold : .regular))
+                    .foregroundStyle(selected ? Color.accentColor : .secondary)
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                // Off and still while its feature is out of Orbit; its settings say how to bring it back.
+                ZenithRowSwitch(title: title, isOn: available ? $isOn : .constant(false))
+                    .scaleEffect(0.85)
+                    .disabled(!available)
+                    .help(hint)
+            }
+        }
+    }
+}
+
+/// A module's Orbit icon, from the bitmap cache.
+private struct IslandModuleIcon: View {
+    let module: IslandSettingsModule
+    let size: CGFloat
+
+    var body: some View {
+        OrbitRasterizedIcon(key: "island-module|\(module.rawValue)", size: size) {
+            if let icon = OrbitIcons.named(module.orbitName) {
+                OrbitIconView(icon: icon)
+            } else {
+                SettingsFallbackIcon(symbol: module.notchModule?.symbol ?? AppFeature.notchMascot.symbolName,
+                                     tint: SettingsSidebarGroup.island.tint)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+// MARK: - Detail
+
+/// The chosen module's settings, or how to bring it back while its feature
+/// is out of Orbit.
+private struct IslandModuleDetail: View {
+    let module: IslandSettingsModule
+    let reveal: (String) -> Void
+    @ObservedObject private var l10n = L10n.shared
+    @ObservedObject private var features = FeatureRuntime.shared
+
+    var body: some View {
+        if features.isAvailable(module.feature) {
+            switch module {
+            case .calendar: NotchCalendarModuleSettings()
+            case .notifications: NotchNotificationsModuleSettings()
+            case .music: NotchMusicModuleSettings()
+            case .timer: NotchTimerModuleSettings()
+            case .agents: NotchAgentsModuleSettings()
+            case .downloads: NotchDownloadsModuleSettings()
+            case .watch: NotchWatchModuleSettings()
+            case .companion: NotchMascotModuleSettings(reveal: reveal)
+            }
+        } else {
             VStack(alignment: .leading, spacing: 18) {
-                ZenithHero(title: module.title(l10n.language), subtitle: subtitle, chips: chips, isOn: isShown,
-                           switchLabel: text.showInIsland, switchHint: text.showInIslandHint, animation: animation)
-                if !islandEnabled {
-                    ZenithCallout(.info, text.islandOff) {
-                        Button(text.turnOnIsland) {
-                            islandEnabled = true
-                            NotchService.shared.syncWithPreferences()
+                IslandModuleHeader(module: module)
+                ZenithCallout(.info, module.feature.enableReason(l10n)) {
+                    Button(FeatureStrings.notchEditor(l10n.language).openFeatures) { module.feature.showInFeatures() }
+                }
+            }
+        }
+    }
+}
+
+/// The top of a module's settings: its animation, small, then its name,
+/// what it does and a fact or two.
+struct IslandModuleHeader: View {
+    let module: IslandSettingsModule
+    var chips: [ZenithChip] = []
+    @ObservedObject private var l10n = L10n.shared
+    @Environment(\.zenithTint) private var tint
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    /// The hero's art at this scale.
+    private static let scale: CGFloat = 0.44
+
+    var body: some View {
+        let text = ZenithStrings.islandPages(l10n.language)
+        let dark = colorScheme == .dark
+        let shape = RoundedRectangle(cornerRadius: ZenithKitSurface.heroRadius - 6, style: .continuous)
+        HStack(alignment: .center, spacing: 14) {
+            art
+            VStack(alignment: .leading, spacing: 5) {
+                Text(text.moduleSettings.uppercased())
+                    .font(.system(size: 10, weight: .bold))
+                    .tracking(1.4)
+                    .foregroundStyle(tint.label(dark: dark).color)
+                Text(module.title(l10n.language))
+                    .font(.system(size: 20, weight: .bold))
+                    .tracking(-0.3)
+                    .lineLimit(1)
+                    .accessibilityAddTraits(.isHeader)
+                Text(module.subtitle(text))
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if !chips.isEmpty {
+                    ViewThatFits(in: .horizontal) {
+                        ForEach((1...chips.count).reversed(), id: \.self) { count in
+                            HStack(spacing: 6) { ForEach(chips.prefix(count)) { $0 } }
                         }
                     }
-                }
-                NotchModuleStage(module: module, caption: text.previewCaption)
-                content
-                HStack(spacing: 8) {
-                    ZenithFootnote(text.moreOnIslandPage)
-                    Button(FeatureStrings.notch(l10n.language).title) {
-                        router.request(FeatureSettingsDestination(notch: .module(.controls)))
-                    }
-                    .buttonStyle(.link)
-                    .font(ZenithType.caption)
+                    .padding(.top, 2)
                 }
             }
-            .frame(maxWidth: 760)
-            .frame(maxWidth: .infinity)
-            .padding(22)
+            Spacer(minLength: 0)
+        }
+        .padding(.leading, 8)
+        .padding(.trailing, 16)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            shape.fill(ZenithKitSurface.groupFill(dark: dark, opaque: true).opacity(dark ? 0.55 : 0.9))
+                .overlay(shape.fill(LinearGradient(colors: [tint.deep.color.opacity(dark ? 0.16 : 0.1), .clear],
+                                                   startPoint: .leading, endPoint: .center)))
+        }
+        .clipShape(shape)
+        .overlay(shape.strokeBorder(ZenithKitSurface.hairline(highContrast: contrast == .increased)))
+    }
+
+    private var art: some View {
+        let size = ZenithHero<ZenithHeroIconArt>.artSize
+        let tint = tint
+        let dark = colorScheme == .dark
+        let module = module
+        return ZenithKitClock { t, moving in
+            let context = ZenithHeroArtContext(t: t, moving: moving, tint: tint, dark: dark,
+                                               icon: ZenithHeroIcon(orbitName: module.orbitName))
+            IslandModuleArt(module: module, context: context)
+                .frame(width: size, height: size)
+                .scaleEffect(Self.scale)
+                .frame(width: size * Self.scale, height: size * Self.scale)
+        }
+        .frame(width: size * Self.scale, height: size * Self.scale)
+        .accessibilityHidden(true)
+    }
+}
+
+/// Each module's hero animation (ZenithHeroAnimationsIsland).
+private struct IslandModuleArt: View {
+    let module: IslandSettingsModule
+    let context: ZenithHeroArtContext
+
+    var body: some View {
+        switch module {
+        case .calendar: ZenithCalendarHeroArt().art(context)
+        case .notifications: ZenithNotificationsHeroArt().art(context)
+        case .music: ZenithMusicHeroArt().art(context)
+        case .timer: ZenithTimerHeroArt().art(context)
+        case .agents: ZenithAgentsHeroArt().art(context)
+        case .downloads: ZenithDownloadsHeroArt().art(context)
+        case .watch: ZenithWatchHeroArt().art(context)
+        case .companion: ZenithMascotHeroArt().art(context)
         }
     }
 }
 
-/// A section in the open island, on the stage.
-struct NotchModuleStage: View {
-    let module: NotchModule
-    let caption: String
-
-    var body: some View {
-        ZenithSettingsPreviewCard(id: "notch." + module.rawValue, caption: caption) {
-            let size = ZenithPreviewOpenIsland<NotchPagePreview>.size(module)
-            ZenithPreviewDesktop(screenWidth: ZenithPreviewIslandGeometry.band(around: size.width, minimum: 720)) {
-                ZenithPreviewOpenIsland(module: module)
-            }
-            .id(module)
+extension IslandSettingsModule {
+    /// What the module does, under its name.
+    func subtitle(_ text: ZenithIslandPagesStrings) -> String {
+        switch self {
+        case .calendar: return text.calendarSubtitle
+        case .notifications: return text.notificationsSubtitle
+        case .music: return text.musicSubtitle
+        case .timer: return text.timerSubtitle
+        case .agents: return text.agentsSubtitle
+        case .downloads: return text.downloadsSubtitle
+        case .watch: return text.watchSubtitle
+        case .companion: return text.mascotSubtitle
         }
     }
 }
 
 // MARK: - Calendar
 
-struct NotchCalendarSettingsPage: View {
+struct NotchCalendarModuleSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var permissions = Permissions.shared
-    @AppStorage(DefaultsKey.notchHiddenModules) private var hidden = ""
-    @AppStorage(DefaultsKey.notchCalendarEnabled) private var enabled = true
     @AppStorage(DefaultsKey.notchCalendarCountdown) private var countdown = false
     @AppStorage(DefaultsKey.notchCalendarCountdownLead) private var countdownLead = NotchCalendarSupport.defaultCountdownLeadMinutes
     @AppStorage(DefaultsKey.notchCalendarTimeLeft) private var timeLeft = false
@@ -117,10 +274,9 @@ struct NotchCalendarSettingsPage: View {
         let text = ZenithStrings.islandPages(l10n.language)
         let calendar = FeatureStrings.notchCalendar(l10n.language)
         let granted = permissions.calendarAccess == .fullAccess
-        NotchModuleSettingsPage(module: .calendar, subtitle: text.calendarSubtitle,
-                                chips: [granted ? ZenithChip(text.granted) : ZenithChip(text.needsAccess, dot: ZenithStatus.warning)],
-                                isShown: NotchModuleShowing.binding(.calendar, hidden: $hidden, enabled: $enabled),
-                                animation: .calendar) {
+        VStack(alignment: .leading, spacing: 18) {
+            IslandModuleHeader(module: .calendar,
+                               chips: [granted ? ZenithChip(text.granted) : ZenithChip(text.needsAccess, dot: ZenithStatus.warning)])
             if !granted {
                 ZenithCallout(.warning, calendar.permission) {
                     Button(calendar.allow, action: permissions.requestCalendar).disabled(permissions.requestingCalendar)
@@ -158,19 +314,17 @@ struct NotchCalendarSettingsPage: View {
 
 // MARK: - Notifications
 
-struct NotchNotificationsSettingsPage: View {
+struct NotchNotificationsModuleSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var permissions = Permissions.shared
-    @AppStorage(DefaultsKey.notchHiddenModules) private var hidden = ""
     @AppStorage(DefaultsKey.notchNotificationsEnabled) private var enabled = true
     @AppStorage(DefaultsKey.notchDismissNativeNotifications) private var dismissNative = false
 
     var body: some View {
         let text = ZenithStrings.islandPages(l10n.language)
         let notifications = FeatureStrings.notchNotifications(l10n.language)
-        NotchModuleSettingsPage(module: .notifications, subtitle: text.notificationsSubtitle,
-                                isShown: NotchModuleShowing.binding(.notifications, hidden: $hidden, enabled: $enabled),
-                                animation: .notifications) {
+        VStack(alignment: .leading, spacing: 18) {
+            IslandModuleHeader(module: .notifications)
             if enabled, !permissions.accessibility {
                 ZenithSection(text.access) {
                     PermissionRow(kind: .accessibility).padding(.vertical, 8)
@@ -189,9 +343,8 @@ struct NotchNotificationsSettingsPage: View {
 
 // MARK: - Music
 
-struct NotchMusicSettingsPage: View {
+struct NotchMusicModuleSettings: View {
     @ObservedObject private var l10n = L10n.shared
-    @AppStorage(DefaultsKey.notchHiddenModules) private var hidden = ""
     @AppStorage(DefaultsKey.notchShowPlayingMusic) private var showPlayingMusic = true
     @AppStorage(DefaultsKey.notchIncludeOtherPlayers) private var includeOtherPlayers = true
     @AppStorage(DefaultsKey.notchMusicShowVolume) private var showVolume = false
@@ -221,8 +374,8 @@ struct NotchMusicSettingsPage: View {
         let text = ZenithStrings.islandPages(l10n.language)
         let notch = FeatureStrings.notch(l10n.language)
         let music = FeatureStrings.notchMusicExtras(l10n.language)
-        NotchModuleSettingsPage(module: .music, subtitle: text.musicSubtitle, chips: chips,
-                                isShown: NotchModuleShowing.binding(.music, hidden: $hidden), animation: .music) {
+        VStack(alignment: .leading, spacing: 18) {
+            IslandModuleHeader(module: .music, chips: chips)
             ZenithSection(text.nowPlaying) {
                 ZenithRow(notch.playingMusic, isOn: $showPlayingMusic)
                 ZenithRow(music.includeOtherPlayers, isOn: $includeOtherPlayers)
@@ -268,20 +421,16 @@ struct NotchMusicSettingsPage: View {
 
 // MARK: - Timer
 
-struct NotchTimerSettingsPage: View {
+struct NotchTimerModuleSettings: View {
     @ObservedObject private var l10n = L10n.shared
-    @AppStorage(DefaultsKey.notchHiddenModules) private var hidden = ""
-    @AppStorage(DefaultsKey.notchTimerEnabled) private var enabled = true
     @AppStorage(DefaultsKey.notchTimerSoundEnabled) private var sound = true
     @AppStorage(DefaultsKey.notchHideTimerCountdown) private var hideCountdown = false
 
     var body: some View {
         let text = ZenithStrings.islandPages(l10n.language)
         let activities = FeatureStrings.notchActivities(l10n.language)
-        NotchModuleSettingsPage(module: .timer, subtitle: text.timerSubtitle,
-                                chips: [ZenithChip(sound ? text.soundOn : text.silent)],
-                                isShown: NotchModuleShowing.binding(.timer, hidden: $hidden, enabled: $enabled),
-                                animation: .timer) {
+        VStack(alignment: .leading, spacing: 18) {
+            IslandModuleHeader(module: .timer, chips: [ZenithChip(sound ? text.soundOn : text.silent)])
             ZenithSection(text.timer) {
                 ZenithRow(activities.soundEnabled, isOn: $sound)
                 ZenithRow(activities.hideTimerCountdown, isOn: $hideCountdown)
@@ -293,10 +442,8 @@ struct NotchTimerSettingsPage: View {
 
 // MARK: - Agents
 
-struct NotchAgentsSettingsPage: View {
+struct NotchAgentsModuleSettings: View {
     @ObservedObject private var l10n = L10n.shared
-    @AppStorage(DefaultsKey.notchHiddenModules) private var hidden = ""
-    @AppStorage(DefaultsKey.notchAgentsEnabled) private var enabled = false
     @AppStorage(DefaultsKey.notchAgentsClaude) private var claude = true
     @AppStorage(DefaultsKey.notchAgentsCodex) private var codex = true
     @AppStorage(DefaultsKey.notchAgentsOpenCode) private var opencode = true
@@ -306,10 +453,8 @@ struct NotchAgentsSettingsPage: View {
     var body: some View {
         let text = ZenithStrings.islandPages(l10n.language)
         let count = [claude, codex, opencode, copilot, cursor].filter { $0 }.count
-        NotchModuleSettingsPage(module: .agents, subtitle: text.agentsSubtitle,
-                                chips: [ZenithChip(text.agentCount(count))],
-                                isShown: NotchModuleShowing.binding(.agents, hidden: $hidden, enabled: $enabled),
-                                animation: .agents) {
+        VStack(alignment: .leading, spacing: 18) {
+            IslandModuleHeader(module: .agents, chips: [ZenithChip(text.agentCount(count))])
             NotchAgentsSettingsControls()
         }
     }
@@ -317,15 +462,10 @@ struct NotchAgentsSettingsPage: View {
 
 // MARK: - Downloads
 
-struct NotchDownloadsSettingsPage: View {
-    @ObservedObject private var l10n = L10n.shared
-    @AppStorage(DefaultsKey.notchHiddenModules) private var hidden = ""
-
+struct NotchDownloadsModuleSettings: View {
     var body: some View {
-        let text = ZenithStrings.islandPages(l10n.language)
-        NotchModuleSettingsPage(module: .downloads, subtitle: text.downloadsSubtitle,
-                                isShown: NotchModuleShowing.binding(.downloads, hidden: $hidden),
-                                animation: .downloads) {
+        VStack(alignment: .leading, spacing: 18) {
+            IslandModuleHeader(module: .downloads)
             NotchDownloadsSettingsControls()
         }
     }
@@ -333,18 +473,14 @@ struct NotchDownloadsSettingsPage: View {
 
 // MARK: - Watch
 
-struct NotchWatchSettingsPage: View {
+struct NotchWatchModuleSettings: View {
     @ObservedObject private var l10n = L10n.shared
-    @AppStorage(DefaultsKey.notchHiddenModules) private var hidden = ""
-    @AppStorage(DefaultsKey.notchWatchEnabled) private var enabled = true
     @AppStorage(DefaultsKey.notchWatchSound) private var sound = true
 
     var body: some View {
         let text = ZenithStrings.islandPages(l10n.language)
-        NotchModuleSettingsPage(module: .watch, subtitle: text.watchSubtitle,
-                                chips: [ZenithChip(sound ? text.soundOn : text.silent)],
-                                isShown: NotchModuleShowing.binding(.watch, hidden: $hidden, enabled: $enabled),
-                                animation: .watch) {
+        VStack(alignment: .leading, spacing: 18) {
+            IslandModuleHeader(module: .watch, chips: [ZenithChip(sound ? text.soundOn : text.silent)])
             NotchWatchSettingsControls()
         }
     }

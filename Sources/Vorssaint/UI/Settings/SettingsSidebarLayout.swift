@@ -51,9 +51,7 @@ enum SettingsSidebarGroup: Int, CaseIterable, Identifiable {
     static func of(page: SettingsPage) -> SettingsSidebarGroup {
         switch page {
         case .general, .appearance, .commandBar, .features: return .tiles
-        case .notch, .notchMascot, .lockScreen,
-             .notchCalendar, .notchNotifications, .notchMusic, .notchTimer, .notchAgents, .notchDownloads,
-             .notchWatch: return .island
+        case .notch, .lockScreen: return .island // Zenith fork: the island's modules are tiles on its page
         case .clipboard, .finderTools, .shelf, .media, .urlCleaner, .textSnippets: return .everyday
         case .quickLauncher, .quickToggles, .quitApps, .cleaningMode, .wallpaper, .scratchpad: return .everyday
         case .screenshot, .screenRecording, .textCapture, .colorPicker, .cameraPreview: return .capture
@@ -111,9 +109,7 @@ enum SettingsSidebarLayout {
 
     /// Rows that open their group, ahead of the directory's order.
     static let leading: [SettingsSidebarGroup: [SettingsSidebarItem.ID]] = [
-        .island: [.page(.notch), .page(.lockScreen), .page(.notchCalendar), .page(.notchNotifications),
-                  .page(.notchMusic), .page(.notchTimer), .page(.notchAgents), .page(.notchDownloads),
-                  .page(.notchWatch), .page(.notchMascot)],
+        .island: [.page(.notch), .page(.lockScreen)],
         .everyday: [.page(.shelf), .page(.clipboard), .page(.finderTools), .page(.media), .page(.urlCleaner),
                     .page(.textSnippets)],
         .capture: [.page(.screenshot), .page(.screenRecording), .page(.textCapture), .page(.colorPicker),

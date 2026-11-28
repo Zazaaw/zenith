@@ -704,9 +704,9 @@ enum FeatureCatalogTests {
                         && !AppFeature.notch.initialInstallGroup.contains(.notchMascot)
                         && AppFeature.notchMascot.permissions.isEmpty
                         && AppFeature.notchMascot.enabledKeys == [DefaultsKey.notchMascotEnabled]
-                        && AppFeature.notchMascot.settingsDestination == FeatureSettingsDestination(.notchMascot)
-                        && FeatureVisibilitySupport.features(for: .notchMascot) == [.notchMascot],
-                     "the companion leaves with the island but only comes when picked, with a page of its own")
+                        && AppFeature.notchMascot.settingsDestination == FeatureSettingsDestination(notch: .companion)
+                        && FeatureVisibilitySupport.features(for: .notch).contains(.notchMascot),
+                     "the companion leaves with the island but only comes when picked, a tile of the island's page")
         suite.expect(AppPermission.allCases.map(\.rawValue) == [
             "accessibility", "screenRecording", "fullDiskAccess", "filesAndFolders", "notifications",
             "automationFinder", "automationPlayback", "audioCapture", "microphone", "camera",
@@ -2455,13 +2455,13 @@ enum FeatureCatalogTests {
         let settingsRouter = SettingsRouter.shared
         let companionRouter = SettingsRouter()
         companionRouter.request(AppFeature.notchMascot.settingsDestination)
-        suite.expect(companionRouter.page == .notchMascot
+        suite.expect(companionRouter.page == .notch && companionRouter.destination.notchLocation == .companion
                      && pageVisible(companionRouter.page, available: [.notchMascot]),
-                     "the companion's settings remain reachable on its own page when it alone is installed, including the install-island prompt")
+                     "the companion's settings remain reachable on the island's page when it alone is installed, including the install-island prompt")
         suite.expect(pageVisible(companionRouter.page, available: [.notch, .notchMascot])
-                     && !pageVisible(companionRouter.page, available: [.notch])
+                     && pageVisible(companionRouter.page, available: [.notch])
                      && !pageVisible(companionRouter.page, available: []),
-                     "the companion's page leaves with the companion, whether or not the island stays")
+                     "the companion's tile stays with the island's page, which leaves only with every island feature")
         var settingsRequestCount = 0
         var settingsRequestsPublishedReady = true
         let settingsRequestObservation = settingsRouter.$requestID

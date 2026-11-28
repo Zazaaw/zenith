@@ -24,10 +24,10 @@ extension CatalogShots {
             settings(prefix + "notch-behavior", page: .notch, height: 900) {
                 SettingsRouter.shared.request(FeatureSettingsDestination(notch: .behavior))
             },
-            settings(prefix + "mascot", page: .notchMascot, preferences: [DefaultsKey.notchMascotEnabled: true],
+            settings(prefix + "mascot", page: .notch, preferences: [DefaultsKey.notchMascotEnabled: true],
                      height: 900) {
-                // The page of its own, which the router otherwise folds into the island's tab.
-                SettingsRouter.shared.page = .notchMascot
+                // The companion's tile in the Modules grid, scrolled to.
+                SettingsRouter.shared.request(FeatureSettingsDestination(notch: .companion))
             },
             settings(prefix + "lock-screen", page: .lockScreen, preferences: [DefaultsKey.notchLockScreen: true],
                      settle: 2, height: 900) {

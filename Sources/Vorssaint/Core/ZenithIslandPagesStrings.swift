@@ -3,20 +3,20 @@
 
 import Foundation
 
-// Zenith fork: the text the Island group's pages add around their settings
-// (Settings → Dynamic Island, Calendar, Notifications, Music, Timer, Agents,
-// Downloads, Watch, Mascot). The settings themselves keep their localized
-// labels; these lines are English in every language, like the kit's.
+// Zenith fork: the text the Dynamic Island page adds around its settings:
+// its hero and the Modules grid (Calendar, Notifications, Now Playing, Timer,
+// AI Agents, Downloads, Watch, Companion) with each module's settings. The
+// settings themselves keep their localized labels; these lines are English
+// in every language, like the kit's.
 
 struct ZenithIslandPagesStrings {
-    // Every section's page.
+    // The Modules grid.
+    let modules = "Modules"
+    let modulesFooter = "A module’s switch shows it in the island. Click a module for its settings below."
     let showInIsland = "Show in the island"
-    let showInIslandHint = "The section joins the open island, where the sections bar reaches it."
-    let islandOff = "The Dynamic Island is off, so this section waits until it is on."
-    let turnOnIsland = "Turn On the Island"
-    let previewCaption = "The section in the open island, as it looks on this Mac."
-    let moreOnIslandPage = "Its place among the sections is set on the Dynamic Island page."
-    let openSection = "Open the section’s page"
+    let showInIslandHint = "The module joins the open island, where the sections bar reaches it."
+    let moduleSettings = "Module settings"
+    let moduleBelowHint = "Its settings are in Modules, further down this page."
 
     // Dynamic Island.
     let compactChip = "Compact"
@@ -28,7 +28,6 @@ struct ZenithIslandPagesStrings {
     let companionHint = "The star that lives in the island, how it looks and when it visits."
     let on = "On"
     let off = "Off"
-    let modulePageHint = "This section has its own page in the Island group."
 
     // The sections' subtitles.
     let calendarSubtitle = "Today’s events and what comes next, with a countdown before each one."

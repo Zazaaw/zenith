@@ -437,7 +437,7 @@ struct ZenithMascotPicture: View {
     }
 }
 
-/// The Mascot page's card: the companion resting in the island, as it looks now.
+/// The companion module's card: the companion resting in the island, as it looks now.
 struct ZenithMascotPreviewCard: View {
     var action: () -> Void
 
