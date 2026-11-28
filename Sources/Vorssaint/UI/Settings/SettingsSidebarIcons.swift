@@ -29,7 +29,6 @@ enum SettingsSidebarIcons {
         case .commandBar: return "Command Bar"
         case .features: return "Orbit"
         case .notch: return "Dynamic Island"
-        case .notchMascot: return "Mascot"
         case .lockScreen: return "Lock Screen"
         case .clipboard: return "Clipboard"
         case .shelf: return "Shelf"
@@ -73,14 +72,6 @@ enum SettingsSidebarIcons {
         case .emojiPicker: return "Emoji Picker"
         case .calculator: return "Calculator"
         case .appLock: return "App Lock" // Zenith fork
-        // Zenith fork: the island's sections, pages of their own.
-        case .notchCalendar: return "Calendar"
-        case .notchNotifications: return "Notifications"
-        case .notchMusic: return "Music"
-        case .notchTimer: return "Timer"
-        case .notchAgents: return "Agents"
-        case .notchDownloads: return "Downloads"
-        case .notchWatch: return "Watch"
         case .volumeMixer: return "Volume Mixer"
         case .soundOutput: return "Sound Output"
         case .musicBlocker: return "Music Blocker"

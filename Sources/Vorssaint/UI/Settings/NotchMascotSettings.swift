@@ -3,12 +3,14 @@
 
 import SwiftUI
 
-/// Settings → Mascot, the companion's own page. Zenith fork: a feature page of
-/// the kit (docs/SETTINGS-KIT.md): the hero with its switch and the star
-/// hopping, the companion resting in the island on the stage and acting out
-/// what it does on request, how it looks as pictures, how it behaves, and
-/// whether the Command Bar comes out with it.
-struct NotchMascotSettings: View {
+/// Settings → Dynamic Island → Modules → Companion. Zenith fork: the module's
+/// settings under the Modules grid (docs/SETTINGS-KIT.md): its header with the
+/// star hopping, the companion resting in the island on the stage and acting
+/// out what it does on request, how it looks as pictures, how it behaves, and
+/// whether the Command Bar comes out with it. Its tile holds its switch.
+struct NotchMascotModuleSettings: View {
+    /// Scrolls the Dynamic Island page to an id in here.
+    let reveal: (String) -> Void
     @ObservedObject private var l10n = L10n.shared
     /// Redraws when the island or the Command Bar is installed or removed.
     @ObservedObject private var features = FeatureRuntime.shared
@@ -50,29 +52,19 @@ struct NotchMascotSettings: View {
     private var animation: Animation? { reduceMotion ? nil : .smooth(duration: 0.25) }
 
     var body: some View {
-        ScrollViewReader { proxy in // Zenith fork: the preview card scrolls to the look
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    ZenithHero(title: text.title, subtitle: ZenithStrings.islandPages(l10n.language).mascotSubtitle,
-                               chips: [ZenithChip(text.style(look.style)), ZenithChip(text.palette(look.palette))],
-                               isOn: $enabled, switchLabel: text.title, switchHint: text.hint, animation: .mascot)
-                    if !islandOn { islandNote }
-                    ZenithMascotPreviewCard {
-                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
-                            proxy.scrollTo(Self.appearanceID, anchor: .top)
-                        }
-                    }
-                    NotchMascotStageCard(look: look, side: restingSide, awake: enabled, canGreet: enabled && islandOn,
-                                         visits: visits, reactions: reactions, hides: hidesWhenIdle, text: text,
-                                         language: l10n.language)
-                    appearance.id(Self.appearanceID)
-                    behavior
-                    commandBarSection
-                }
-                .frame(maxWidth: 760)
-                .frame(maxWidth: .infinity)
-                .padding(22)
-            }
+        VStack(alignment: .leading, spacing: 18) {
+            IslandModuleHeader(module: .companion,
+                               chips: [ZenithHeroStatus.chip(on: enabled), ZenithChip(text.style(look.style)),
+                                       ZenithChip(text.palette(look.palette))])
+            if !islandOn { islandNote }
+            // Zenith fork: the preview card scrolls to the look.
+            ZenithMascotPreviewCard { reveal(Self.appearanceID) }
+            NotchMascotStageCard(look: look, side: restingSide, awake: enabled, canGreet: enabled && islandOn,
+                                 visits: visits, reactions: reactions, hides: hidesWhenIdle, text: text,
+                                 language: l10n.language)
+            appearance.id(Self.appearanceID)
+            behavior
+            commandBarSection
         }
     }
 

@@ -194,10 +194,16 @@ struct ZenithMasterPill: View {
 struct ZenithHeroIcon: View {
     var page: SettingsPageIcon?
     var size: CGFloat = 88
+    /// An Orbit icon by its name (`OrbitIcons`), for art about something that
+    /// is not the page itself: a module of the Dynamic Island page.
+    var orbitName: String?
 
     var body: some View {
         Group {
-            if let page {
+            if let orbitName, let icon = OrbitIcons.named(orbitName) {
+                OrbitRasterizedIcon(key: "zenith-hero-orbit|\(orbitName)", size: size) { OrbitIconView(icon: icon) }
+                    .accessibilityHidden(true)
+            } else if let page {
                 SettingsDestinationIcon(id: page.id, symbol: page.symbol, size: size, rich: true)
             } else {
                 ZenithHeroIconBase(size: size)

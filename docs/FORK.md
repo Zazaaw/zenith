@@ -23,8 +23,10 @@ rebranding dikerjakan bertahap (lihat di bawah).
   Black/Gradient/Liquid, hemat baterai), dan **Settings kit** (`docs/SETTINGS-KIT.md`):
   hero rata kiri beranimasi per fitur, panggung ber-tint kategori, baris ⓘ, More options.
 - **Aturan Settings:** satu baris sidebar = satu halaman = satu fitur (halaman gabungan
-  lama dipecah: Mouse, Quick Tools, Energy, Screenshot, Dock, island per modul, suara
-  keluar dari General). Teks UI baru Zenith berbahasa Inggris.
+  lama dipecah: Mouse, Quick Tools, Energy, Screenshot, Dock, suara keluar dari General).
+  Pengecualian: Dynamic Island tetap **satu halaman**; modulnya (Calendar, Notifications,
+  Now Playing, Timer, AI Agents, Downloads, Watch, Companion) jadi grid tile di bagian
+  Modules, setting modul terpilih muncul di bawahnya. Teks UI baru Zenith berbahasa Inggris.
 - **Test & render senyap:** test, selftest dan katalog offscreen jalan dengan
   `ZenithQuiet.isOn`: tidak ada beep, chime, atau tap keyboard (Mechakey) di Mac pemilik.
   Beep wajib lewat `ZenithQuiet.beep()` (dijaga test `harness`).

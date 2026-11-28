@@ -215,6 +215,40 @@ enum SettingsDirectory {
         let hoverDelay = hover || (hideFullscreen && state.on(DefaultsKey.notchHoverInFullscreen))
         let batteryRest = state.hardware.battery && state.batteryRest
         let tintedBattery = batteryRest && state.on(DefaultsKey.notchLowBatteryTint)
+        // Zenith fork: the modules of the Dynamic Island page's Modules grid, each landing on its tile.
+        let notchWatch = FeatureStrings.notchWatch(language)
+        let notchFiles = FeatureStrings.notchFiles(language)
+        let moduleTerms: [SettingsSearchTerms] = [
+            .init([notchCalendar.countdown, notchCalendar.countdownLead, notchCalendar.timeLeft, notchCalendar.weekNumbers,
+                   notchCalendar.calendars], feature: .notchCalendar, notch: .module(.calendar)),
+            .init([FeatureStrings.notchNotifications(language).hideSystemBanner], feature: .notchNotifications,
+                  notch: .module(.notifications)),
+            .init([notch.playingMusic, notchMusic.includeOtherPlayers, notchMusic.preferredPlayer, notchMusic.browserCovers,
+                   notchMusic.showVolume, notchMusic.enableLyrics, notchMusic.enableQueue, notchMusic.liveEqualizer, "music"],
+                  notch: .module(.music)),
+            .init([notchMusic.online], feature: .notchLyrics, notch: .module(.music), when: state.on(DefaultsKey.notchLyricsEnabled)),
+            .init([activities.soundEnabled, activities.hideTimerCountdown], feature: .notchTimer, notch: .module(.timer)),
+            .init([notchAgents.title, "Claude", "Codex", "OpenCode", "GitHub Copilot", "Cursor", "AI", "tokens",
+                   notchAgents.resetsCard, notchAgents.limitsAs, notchAgents.limitFocus, notchAgents.liveActivity,
+                   notchAgents.finishAlert, notchAgents.limitAlert, notchAgents.budget, notchAgents.priceUpdates],
+                  feature: .notchAgents, notch: .module(.agents)),
+            .init([notchAgents.readout], feature: .notchAgents, notch: .module(.agents),
+                  when: state.on(DefaultsKey.notchAgentsLiveActivity)),
+            .init([notchAgents.finishAfter], feature: .notchAgents, notch: .module(.agents),
+                  when: state.on(DefaultsKey.notchAgentsFinishAlert)),
+            .init([notchAgents.limitAt], feature: .notchAgents, notch: .module(.agents),
+                  when: state.on(DefaultsKey.notchAgentsLimitAlert)),
+            .init([FeatureStrings.claudeAccount(language).title], feature: .notchAgents, notch: .module(.agents),
+                  when: state.on(DefaultsKey.notchAgentsClaude)),
+            .init([notchFiles.downloadsTitle, notchFiles.chooseFolder], feature: .notchDownloads, notch: .module(.downloads)),
+            .init([notchWatch.title, notchWatch.sound], feature: .notchWatch, notch: .module(.watch)),
+            .init(mascot.searchKeywords, feature: .notchMascot, notch: .companion),
+            .init([mascot.shape], feature: .notchMascot, notch: .companion, when: state.minimalMascot),
+            .init([mascot.side], feature: .notchMascot, notch: .companion,
+                  when: state.hardware.notchedDisplay || !state.capsule),
+            .init([mascot.frequency], feature: .notchMascot, notch: .companion, when: state.on(DefaultsKey.notchMascotVisits)),
+            .init([mascot.opensAs], feature: .commandBar, notch: .companion, when: state.on(DefaultsKey.notchCommandBar)),
+        ]
         let islandTerms: [SettingsSearchTerms] = [
             .init([notchEditor.layout, notch.size, notch.showOutline], notch: .layout),
             .init([notch.width, notch.maximumHeight], notch: .layout, when: state.customSize),
@@ -247,7 +281,7 @@ enum SettingsDirectory {
             .init([notch.hoverInFullscreen], notch: .behavior, when: hideFullscreen),
         ] + [AppFeature.screenshot, .screenRecorder, .screenOCR, .colorPicker].map {
             SettingsSearchTerms([notch.captureActivity], feature: $0, notch: .module(.captures))
-        }
+        } + moduleTerms
         return [
             (categories.essentials, [
                 SettingsDirectoryItem(page: .general, title: s.tabGeneral, icon: "gearshape",
@@ -525,49 +559,6 @@ enum SettingsDirectory {
                                       title: notch.title,
                                       icon: "macbook",
                                       keywords: [notch.description, "notch"], terms: islandTerms),
-                // Zenith fork: the island's sections with options of their own, each a page.
-                SettingsDirectoryItem(page: .notchCalendar, title: NotchModule.calendar.title(language), icon: "calendar",
-                                      keywords: [notchCalendar.countdown, notchCalendar.countdownLead, notchCalendar.timeLeft,
-                                                 notchCalendar.weekNumbers, notchCalendar.calendars]),
-                SettingsDirectoryItem(page: .notchNotifications, title: NotchModule.notifications.title(language),
-                                      icon: "bell", keywords: [FeatureStrings.notchNotifications(language).hideSystemBanner]),
-                SettingsDirectoryItem(page: .notchMusic, title: NotchModule.music.title(language), icon: "music.note",
-                                      keywords: [notch.playingMusic, notchMusic.includeOtherPlayers, notchMusic.preferredPlayer,
-                                                 notchMusic.browserCovers, notchMusic.showVolume, notchMusic.enableLyrics,
-                                                 notchMusic.enableQueue, notchMusic.liveEqualizer, "music"],
-                                      terms: [
-                                        .init([notchMusic.online], feature: .notchLyrics,
-                                              when: state.on(DefaultsKey.notchLyricsEnabled)),
-                                      ]),
-                SettingsDirectoryItem(page: .notchTimer, title: NotchModule.timer.title(language), icon: "timer",
-                                      keywords: [activities.soundEnabled, activities.hideTimerCountdown]),
-                SettingsDirectoryItem(page: .notchAgents, title: NotchModule.agents.title(language), icon: "sparkles",
-                                      keywords: [notchAgents.title, "Claude", "Codex", "OpenCode", "GitHub Copilot", "Cursor",
-                                                 "AI", "tokens", notchAgents.resetsCard, notchAgents.limitsAs,
-                                                 notchAgents.limitFocus, notchAgents.liveActivity, notchAgents.finishAlert,
-                                                 notchAgents.limitAlert, notchAgents.budget, notchAgents.priceUpdates],
-                                      terms: [
-                                        .init([notchAgents.readout], when: state.on(DefaultsKey.notchAgentsLiveActivity)),
-                                        .init([notchAgents.finishAfter], when: state.on(DefaultsKey.notchAgentsFinishAlert)),
-                                        .init([notchAgents.limitAt], when: state.on(DefaultsKey.notchAgentsLimitAlert)),
-                                        .init([FeatureStrings.claudeAccount(language).title],
-                                              when: state.on(DefaultsKey.notchAgentsClaude)),
-                                      ]),
-                SettingsDirectoryItem(page: .notchDownloads, title: NotchModule.downloads.title(language),
-                                      icon: "arrow.down.circle",
-                                      keywords: [FeatureStrings.notchFiles(language).downloadsTitle,
-                                                 FeatureStrings.notchFiles(language).chooseFolder]),
-                SettingsDirectoryItem(page: .notchWatch, title: NotchModule.watch.title(language), icon: "eye",
-                                      keywords: [FeatureStrings.notchWatch(language).title,
-                                                 FeatureStrings.notchWatch(language).sound]),
-                SettingsDirectoryItem(page: .notchMascot, title: mascot.title,
-                                      icon: AppFeature.notchMascot.symbolName, keywords: mascot.searchKeywords,
-                                      terms: [
-                                        .init([mascot.shape], when: state.minimalMascot),
-                                        .init([mascot.side], when: state.hardware.notchedDisplay || !state.capsule),
-                                        .init([mascot.frequency], when: state.on(DefaultsKey.notchMascotVisits)),
-                                        .init([mascot.opensAs], feature: .commandBar, when: state.on(DefaultsKey.notchCommandBar)),
-                                      ]),
                 // Zenith fork: the lock screen, a page of its own beside the island's.
                 SettingsDirectoryItem(page: .lockScreen, title: lockScreen.title, icon: "lock.display",
                                       keywords: [lockScreen.show, lockScreen.sounds]),

@@ -92,12 +92,12 @@ enum SettingsSidebarTests {
     }
 
     /// Nothing the old sidebar reached may disappear: every page has a row
-    /// (the island's companion lives in a tab of the island's page), and
-    /// every available tool on a shared page keeps its own.
+    /// (the island's modules and companion are tiles of the island's page),
+    /// and every available tool on a shared page keeps its own.
     private static func reachability(_ suite: TestSuite) {
         let items = sections(available: { _ in true }).flatMap(\.items)
         let pages = Set(items.map(\.destination.page))
-        let missing = SettingsPage.allCases.filter { $0 != .notchMascot && !pages.contains($0) }
+        let missing = SettingsPage.allCases.filter { !pages.contains($0) }
         suite.expect(missing.isEmpty, "every Settings page is reachable from the sidebar (missing: \(missing))")
         let ids = Set(items.map(\.id))
         // Zenith fork: one row per page. A page of several features keeps a
@@ -105,7 +105,7 @@ enum SettingsSidebarTests {
         // the shared pages still list their tools.
         let tools = AppFeature.allCases.filter { feature in
             let destination = feature.settingsDestination
-            return destination.sectionAnchor != nil && destination.page != .notchMascot
+            return destination.sectionAnchor != nil
                 && !SettingsDirectory.singleRowPages.contains(destination.page)
         }
         let missingTools = tools.filter { !ids.contains(.feature($0)) }

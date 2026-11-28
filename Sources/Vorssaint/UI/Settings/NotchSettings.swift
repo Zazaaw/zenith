@@ -6,9 +6,11 @@ import SwiftUI
 /// Settings → Dynamic Island. Zenith fork: a feature page of the kit
 /// (docs/SETTINGS-KIT.md): the hero with the island's switch, the island on
 /// the stage, then its tabs: the layout and size, the sections and their
-/// order, what it rests with and the notices it shows, and how it opens. The
-/// sections with options of their own (Calendar, Notifications, Music, Timer,
-/// Agents, Downloads, Watch) and the companion have pages in the Island group.
+/// order, what it rests with and the notices it shows, and how it opens.
+/// Under them the Modules grid: the modules with settings of their own
+/// (Calendar, Notifications, Now Playing, Timer, AI Agents, Downloads, Watch
+/// and the companion), each tile with its switch, the chosen one's settings
+/// below it. Every way into a module lands on its tile.
 struct NotchSettings: View {
     @ObservedObject private var l10n = L10n.shared
     @ObservedObject private var features = FeatureRuntime.shared
@@ -92,7 +94,12 @@ struct NotchSettings: View {
     @AppStorage(DefaultsKey.clipboardHistoryEnabled) private var clipboardHistoryEnabled = false
     @AppStorage(DefaultsKey.notchHoverExpands) private var hoverExpand = true
     @AppStorage(DefaultsKey.notchQuickAccessLayout) private var accessData = Data()
+    @AppStorage(IslandSettingsModule.rememberedKey) private var islandModuleRaw = IslandSettingsModule.calendar.rawValue
     @State private var tab = NotchSettingsTab.layout
+    /// A request to scroll to the Modules grid, set when a module is revealed.
+    @State private var modulesReveal: UUID?
+    /// The tile chosen on this visit, ahead of the remembered one.
+    @State private var chosenModule: IslandSettingsModule?
     @State private var selectedModule = NotchModule.controls
     @State private var draggingModule: NotchModule?
     @State private var draggingControl: NotchControlItem?
@@ -132,38 +139,90 @@ struct NotchSettings: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                ZenithHero(title: text.title, subtitle: text.description, chips: heroChips, isOn: $enabled,
-                           switchLabel: text.enable, animation: .island)
-                if enabled, AppFeature.notch.isAvailable, !(hover && hideUntilHover && !hiddenShowsActivity),
-                   !notch.geometry.isNotched, !permissions.accessibility {
-                    ZenithCallout(.warning, text.menuBarAccessHint) {
-                        Button(l10n.s.permissionRequest) { permissions.requestAccessibility() }
-                        Button(l10n.s.permissionOpenSettings) { permissions.openAccessibilitySettings() }
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    ZenithHero(title: text.title, subtitle: text.description, chips: heroChips, isOn: $enabled,
+                               switchLabel: text.enable, animation: .island)
+                    if enabled, AppFeature.notch.isAvailable, !(hover && hideUntilHover && !hiddenShowsActivity),
+                       !notch.geometry.isNotched, !permissions.accessibility {
+                        ZenithCallout(.warning, text.menuBarAccessHint) {
+                            Button(l10n.s.permissionRequest) { permissions.requestAccessibility() }
+                            Button(l10n.s.permissionOpenSettings) { permissions.openAccessibilitySettings() }
+                        }
+                    }
+                    // Zenith fork: the island on the stage, its states the tabs below.
+                    ZenithNotchPreviewCard(tab: $tab, module: selectedModule, canOpen: enabled) { NotchService.shared.open() }
+                    Group {
+                        switch tab {
+                        case .layout: layoutPage
+                        case .content: contentEditor
+                        case .activity: activityPage
+                        case .behavior: behaviorPage
+                        }
+                    }
+                    .id(tab)
+                    // Zenith fork: the modules with settings of their own, as tiles.
+                    IslandModulesSection(selection: Binding(get: { islandModule }, set: { showIslandModule($0, scrolls: false) }),
+                                         showing: islandModuleShowing) { id in
+                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) { proxy.scrollTo(id, anchor: .top) }
                     }
                 }
-                // Zenith fork: the island on the stage, its states the tabs below.
-                ZenithNotchPreviewCard(tab: $tab, module: selectedModule, canOpen: enabled) { NotchService.shared.open() }
-                Group {
-                    switch tab {
-                    case .layout: layoutPage
-                    case .content: contentEditor
-                    case .activity: activityPage
-                    case .behavior: behaviorPage
-                    }
-                }
-                .id(tab)
+                .frame(maxWidth: 760)
+                .frame(maxWidth: .infinity)
+                .padding(22)
             }
-            .frame(maxWidth: 760)
-            .frame(maxWidth: .infinity)
-            .padding(22)
+            .onChange(of: configuration) { _, _ in sync() }
+            .onChange(of: accessData) { _, _ in NotchService.shared.syncWithPreferences() }
+            .onChange(of: tab) { _, _ in draggingModule = nil; draggingControl = nil }
+            .onAppear {
+                revealDestination()
+                if let request = modulesReveal { scrollToModules(request, using: proxy) }
+            }
+            .onChange(of: router.requestID) { _, _ in revealDestination() }
+            .onChange(of: modulesReveal) { _, request in
+                if let request { scrollToModules(request, using: proxy) }
+            }
         }
-        .onChange(of: configuration) { _, _ in sync() }
-        .onChange(of: accessData) { _, _ in NotchService.shared.syncWithPreferences() }
-        .onChange(of: tab) { _, _ in draggingModule = nil; draggingControl = nil }
-        .onAppear(perform: revealDestination)
-        .onChange(of: router.requestID) { _, _ in revealDestination() }
+    }
+
+    /// The Modules grid's chosen tile, remembered between visits.
+    private var islandModule: IslandSettingsModule {
+        get { chosenModule ?? IslandSettingsModule(remembered: islandModuleRaw) }
+        nonmutating set {
+            chosenModule = newValue
+            islandModuleRaw = newValue.rawValue
+        }
+    }
+
+    /// Zenith fork: a module's tile, chosen, its section in the Content tab
+    /// with it, and the page scrolled to the grid unless the tile was clicked.
+    private func showIslandModule(_ module: IslandSettingsModule, scrolls: Bool = true) {
+        islandModule = module
+        if let section = module.notchModule { selectedModule = section }
+        if scrolls { modulesReveal = UUID() }
+    }
+
+    /// The grid at the top, once the page has laid out, and again on the
+    /// next pass in case the tab above was still settling.
+    private func scrollToModules(_ request: UUID, using proxy: ScrollViewProxy) {
+        DispatchQueue.main.async {
+            guard modulesReveal == request else { return }
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
+                proxy.scrollTo(IslandModulesSection.anchorID, anchor: .top)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                guard modulesReveal == request else { return }
+                proxy.scrollTo(IslandModulesSection.anchorID, anchor: .top)
+            }
+        }
+    }
+
+    /// Whether a module shows in the island: the companion's own switch, or
+    /// the section's, as the Content tab's list reads it.
+    private func islandModuleShowing(_ module: IslandSettingsModule) -> Binding<Bool> {
+        guard let section = module.notchModule else { return $mascotEnabled }
+        return moduleBinding(section)
     }
 
     /// The island's size and how it opens, as two facts beside the switch.
@@ -175,6 +234,14 @@ struct NotchSettings: View {
 
     private func revealDestination() {
         guard let location = router.destination.notchLocation else { return }
+        // Zenith fork: a module with settings of its own lands on its tile in
+        // the Modules grid; a section inside it is found by its anchor instead.
+        if let module = location.islandModule {
+            islandModule = module
+            if let section = module.notchModule { selectedModule = section }
+            if router.destination.sectionAnchor == nil { modulesReveal = router.requestID }
+            return
+        }
         if case .module(let module) = location { selectedModule = module }
         tab = location.tab
     }
@@ -279,11 +346,11 @@ struct NotchSettings: View {
                                            ?? (module == .github ? ZenithStrings.gitHub(l10n.language).missingCLI : text.disabled)) {
                         SettingsRouter.shared.request(FeatureSettingsDestination(.features), targetFeature: moduleFeature(module))
                     }
-                    if let page = module.settingsPage {
-                        // Zenith fork: its options live on its own page in the Island group.
+                    if let tile = IslandSettingsModule(module) {
+                        // Zenith fork: its settings are a tile of the Modules grid below.
                         ZenithSection {
-                            ZenithRow(pages.openSection, info: pages.modulePageHint, value: module.title(l10n.language)) {
-                                router.request(FeatureSettingsDestination(page))
+                            ZenithRow(pages.moduleSettings, info: pages.moduleBelowHint, value: module.title(l10n.language)) {
+                                showIslandModule(tile)
                             }
                         }
                     } else if available || module == .github, hasOptions(module) {
@@ -482,10 +549,10 @@ struct NotchSettings: View {
                 .padding(.vertical, 10)
                 if restingChoice == .battery { lowBatteryControls }
                 switchRow("menubar.rectangle", text.coverMenus, caption: text.coverMenusHint, isOn: $coversMenus)
-                // Zenith fork: the companion's own page, from where it rests.
+                // Zenith fork: the companion's tile in the Modules grid, from where it rests.
                 if features.isAvailable(.notchMascot) {
                     ZenithRow(pages.companion, info: pages.companionHint, value: mascotEnabled ? pages.on : pages.off) {
-                        router.request(FeatureSettingsDestination(.notchMascot))
+                        showIslandModule(.companion)
                     }
                 }
             }

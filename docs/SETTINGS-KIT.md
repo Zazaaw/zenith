@@ -69,6 +69,18 @@ Meetings, Batteries, Lock Screen, Shelf, …)
 3. One `ZenithSection(tool name, anchor: .tool)` per tool, its switch as the first
    row, its options after it, rarely used ones in `ZenithMoreOptions(id: "page.tool")`.
 
+**Tile grid** (parts of one feature with options of their own: System Monitor's
+metrics, the Dynamic Island's Modules)
+
+1. A `ZenithSection` holding a `LazyVGrid` of tiles: the part's icon on
+   `ZenithStageGradient`, its name and its switch under it, an accent ring on
+   the chosen one.
+2. The chosen part's options right under the grid. The Dynamic Island's
+   (`IslandModulesSection`) open with `IslandModuleHeader`, the part's hero
+   animation drawn small. Remember the choice.
+3. Destinations select the tile (`NotchSettingsLocation.islandModule`) and
+   scroll to the grid; a section anchor inside the part still lands on itself.
+
 **List page** (Kill Process, Port Manager, Uninstaller, Homebrew, exclusion lists)
 
 1. `ZenithSystemHeader` with the list's main action as the accessory (Refresh, Add).

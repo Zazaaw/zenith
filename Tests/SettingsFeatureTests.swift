@@ -36,6 +36,9 @@ enum SettingsFeatureTests {
         let router: SettingsRouter
         var tab = NotchSettingsTab.layout
         var selectedModule = NotchModule.controls
+        // Zenith fork: the Modules grid's tile and its scroll request.
+        var islandModule = IslandSettingsModule.calendar
+        var modulesReveal: UUID?
 
         init(router: SettingsRouter) { self.router = router }
     }
@@ -144,14 +147,14 @@ enum SettingsFeatureTests {
                           hiddenWithout: Set<AppFeature>?, needsBattery: Bool)] = [
             (FeatureStrings.screenshot(.enUS).scrollingAutoScrollToggle, .screenshot, [], [.screenshot], false),
             (Strings.enUS.uninstallerWatchTrashToggle, .uninstaller, [], [.uninstaller], false),
-            (music.enableLyrics, .notchMusic, [.notchLyrics], nil, false),
-            (music.enableQueue, .notchMusic, [.notchQueue], nil, false),
-            (music.online, .notchMusic, [], [.notchLyrics], false),
+            (music.enableLyrics, .notch, [.notchLyrics], nil, false),
+            (music.enableQueue, .notch, [.notchQueue], nil, false),
+            (music.online, .notch, [], [.notchLyrics], false),
             (FeatureStrings.notchClipboardSize(.enUS).entrySize, .notch, [], [.clipboardHistory], false),
             (notch.clipboardActivity, .notch, [], [.clipboardHistory], false),
             (notch.dragReveal, .notch, [], [.shelf], false),
-            (FeatureStrings.notchCalendar(.enUS).weekNumbers, .notchCalendar, [], [.notchCalendar], false),
-            (FeatureStrings.notchActivities(.enUS).hideTimerCountdown, .notchTimer, [], [.notchTimer], false),
+            (FeatureStrings.notchCalendar(.enUS).weekNumbers, .notch, [], [.notchCalendar], false),
+            (FeatureStrings.notchActivities(.enUS).hideTimerCountdown, .notch, [], [.notchTimer], false),
             (notch.captureActivity, .notch, captureTools.subtracting([.colorPicker]), captureTools, false),
             (lowBattery.title, .notch, [], [.monitorPower], true),
             (lowBattery.early, .notch, [], [.monitorPower], true),
@@ -210,7 +213,14 @@ enum SettingsFeatureTests {
                 if let location = destination.notchLocation {
                     let island = IslandSettings(router: SearchCommands.router)
                     island.revealDestination()
-                    suite.expect(island.tab == location.tab, "the island reveals the requested tab")
+                    if let tile = location.islandModule {
+                        // Zenith fork: a module with settings of its own is a tile of the Modules grid.
+                        suite.expect(island.islandModule == tile && island.tab == .layout
+                                        && (island.modulesReveal != nil) == (destination.sectionAnchor == nil),
+                                     "the island selects \(tile) in Modules and scrolls to it")
+                    } else {
+                        suite.expect(island.tab == location.tab, "the island reveals the requested tab")
+                    }
                     if case .module(let module) = location {
                         suite.expect(island.selectedModule == module, "the island reveals \(module) inside Content")
                     }
@@ -244,17 +254,17 @@ enum SettingsFeatureTests {
         verify(alerts.diskThreshold, opens: monitorAlerts, commandID: alertID, shown: false)
         verify(alerts.disk, opens: monitorAlerts, commandID: alertID)
 
-        // Zenith fork: the island's sections with options open pages of their own.
-        let musicDestination = FeatureSettingsDestination(.notchMusic)
+        // Zenith fork: the island's modules open their tile in the Dynamic Island page's Modules grid.
+        let musicDestination = FeatureSettingsDestination(notch: .module(.music))
         verify(music.online, opens: musicDestination, commandID: "settings.feature.notchLyrics")
         defaults.set(false, forKey: DefaultsKey.notchLyricsEnabled)
         verify(music.online, opens: musicDestination, commandID: "settings.feature.notchLyrics", shown: false)
-        verify(music.enableLyrics, opens: musicDestination, commandID: "settings.notchMusic", without: [.notchLyrics])
+        verify(music.enableLyrics, opens: musicDestination, commandID: "settings.notch.content.music", without: [.notchLyrics])
         for language in [AppLanguage.ptBR, .enUS] {
             let lead = FeatureStrings.notchCalendar(language).countdownLead
-            let destination = FeatureSettingsDestination(.notchCalendar)
-            verify(lead, opens: destination, commandID: "settings.notchCalendar", language: language)
-            verify(lead, opens: destination, commandID: "settings.notchCalendar", shown: false,
+            let destination = FeatureSettingsDestination(notch: .module(.calendar))
+            verify(lead, opens: destination, commandID: "settings.feature.notchCalendar", language: language)
+            verify(lead, opens: destination, commandID: "settings.feature.notchCalendar", shown: false,
                    without: [.notchCalendar], language: language)
         }
         verify(Strings.enUS.hotkeyToggle, opens: FeatureSettingsDestination(.general), commandID: "action.openSettings")

@@ -7,8 +7,8 @@ import SwiftUI
 
 /// Zenith fork: the Island group's pages and the system pages around them
 /// (`ONLY=kit-island…`), in Dark and Light Mode: the Dynamic Island page on
-/// each tab, every section's page, Lock Screen, Mascot, Appearance and the
-/// app's own pages.
+/// each tab and at each module of its Modules grid, Lock Screen, Appearance
+/// and the app's own pages.
 @MainActor
 extension CatalogShots {
     static var kitIsland: [CatalogShot] {
@@ -19,15 +19,17 @@ extension CatalogShots {
             ("island-content", .notch, .module(.controls), island, 1300),
             ("island-activity", .notch, .activity, island, 1900),
             ("island-behavior", .notch, .behavior, with([ZenithMoreOptionsRule.key("notch.behavior"): true]), 1800),
-            ("calendar", .notchCalendar, nil, island, 1150),
-            ("notifications", .notchNotifications, nil, island, 1000),
-            ("music", .notchMusic, nil, with([ZenithMoreOptionsRule.key("notchMusic"): true]), 1250),
-            ("timer", .notchTimer, nil, island, 900),
-            ("agents", .notchAgents, nil, with([DefaultsKey.notchAgentsEnabled: true]), 2600),
-            ("downloads", .notchDownloads, nil, island, 950),
-            ("watch", .notchWatch, nil, island, 950),
+            // The Modules grid, scrolled to, with each module's settings under it.
+            ("calendar", .notch, .module(.calendar), island, 1300),
+            ("notifications", .notch, .module(.notifications), island, 1150),
+            ("music", .notch, .module(.music), with([ZenithMoreOptionsRule.key("notchMusic"): true]), 1400),
+            ("timer", .notch, .module(.timer), island, 1000),
+            ("agents", .notch, .module(.agents), with([DefaultsKey.notchAgentsEnabled: true]), 2800),
+            ("downloads", .notch, .module(.downloads), island, 1050),
+            ("watch", .notch, .module(.watch), with([AppFeature.notchWatch.availabilityKey: true]), 1050),
             ("lockscreen", .lockScreen, nil, with([DefaultsKey.notchLockScreen: true]), 1500),
-            ("mascot", .notchMascot, nil, with([DefaultsKey.notchMascotEnabled: true]), 1900),
+            ("mascot", .notch, .companion, with([DefaultsKey.notchMascotEnabled: true,
+                                                AppFeature.notchMascot.availabilityKey: true]), 2100),
             ("appearance", .appearance, nil, [:], 1500),
             ("shortcuts", .shortcuts, nil, [:], 1300),
             ("advanced", .advanced, nil, [:], 1300),

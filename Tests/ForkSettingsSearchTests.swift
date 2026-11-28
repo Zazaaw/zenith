@@ -165,7 +165,12 @@ enum ForkSettingsSearchTests {
             router.request(destination)
             let island = SettingsFeatureTests.IslandSettings(router: router)
             island.revealDestination()
-            suite.expect(island.tab == location.tab, "\(item.title) opens the island's \(location.id) tab")
+            if let tile = location.islandModule {
+                // Zenith fork: a module with settings of its own is a tile of the Modules grid.
+                suite.expect(island.islandModule == tile, "\(item.title) selects the \(tile) tile in Modules")
+            } else {
+                suite.expect(island.tab == location.tab, "\(item.title) opens the island's \(location.id) tab")
+            }
             if case .module(let module) = location {
                 suite.expect(island.selectedModule == module, "\(item.title) opens the \(module) options")
             }

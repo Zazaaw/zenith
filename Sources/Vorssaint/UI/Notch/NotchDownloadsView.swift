@@ -10,7 +10,7 @@ struct NotchDownloadsSettingsControls: View {
     @AppStorage(DefaultsKey.notchDownloadsEnabled) private var enabled = true
     private var text: NotchFilesStrings { FeatureStrings.notchFiles(l10n.language) }
 
-    // Zenith fork: Settings → Downloads, a section of compact rows (docs/SETTINGS-KIT.md).
+    // Zenith fork: Settings → Dynamic Island → Modules → Downloads, a section of compact rows (docs/SETTINGS-KIT.md).
     var body: some View {
         let pages = ZenithStrings.islandPages(l10n.language)
         ZenithSection(pages.folder) {

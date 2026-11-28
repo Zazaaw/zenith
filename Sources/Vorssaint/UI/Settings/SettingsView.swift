@@ -126,7 +126,7 @@ struct SettingsView: View {
     /// Zenith fork: the title Settings draws above a page, nil for the pages
     /// that open with their own `SettingsPageHeader` or hero.
     private var zenithPageTitle: String? {
-        let ownHeader: Set<SettingsPage> = [.features, .notch, .notchMascot, .monitor,
+        let ownHeader: Set<SettingsPage> = [.features, .notch, .monitor,
                                             .switcher, .dock, .homebrew, .releaseNotes, .about, .support,
                                             .portManager, .workspaces, .lockScreen, .remote,
                                             .faceUnlock, .batteries, .pocket,
@@ -143,7 +143,6 @@ struct SettingsView: View {
         if router.page == .translate { return nil } // Zenith fork: Translate opens with its own header
         // Zenith fork: the Everyday pages open with their own hero.
         if [.shelf, .clipboard, .finderTools, .media, .urlCleaner, .textSnippets].contains(router.page) { return nil }
-        if router.page.isNotchModulePage { return nil } // Zenith fork: the island's sections open with their hero
         // Zenith fork: the System and Apps pages open with their own hero.
         if [.sleep, .brightness, .fanControl, .menuBar, .commandBar, .cleaner, .uninstaller, .homebrew, .appUpdates,
             .killProcess, .portManager].contains(router.page) { return nil }
@@ -159,7 +158,6 @@ struct SettingsView: View {
         case .features: FeatureHubSettings()
         case .textSnippets: TextSnippetsSettings()
         case .notch: NotchSettings()
-        case .notchMascot: NotchMascotSettings()
         case .radialMenu: RadialMenuSettings()
         case .commandBar: CommandBarSettings()
         case .monitor: MonitorSettings()
@@ -220,14 +218,6 @@ struct SettingsView: View {
         case .emojiPicker: EmojiPickerSettingsPage()
         case .calculator: CalculatorSettingsPage()
         case .appLock: AppLockSettingsPage() // Zenith fork
-        // Zenith fork: the island's sections, pages of their own.
-        case .notchCalendar: NotchCalendarSettingsPage()
-        case .notchNotifications: NotchNotificationsSettingsPage()
-        case .notchMusic: NotchMusicSettingsPage()
-        case .notchTimer: NotchTimerSettingsPage()
-        case .notchAgents: NotchAgentsSettingsPage()
-        case .notchDownloads: NotchDownloadsSettingsPage()
-        case .notchWatch: NotchWatchSettingsPage()
         case .volumeMixer: VolumeMixerSettingsPage() // Zenith fork: the sound tools, a page each
         case .soundOutput: SoundOutputSettingsPage()
         case .musicBlocker: MusicBlockerSettingsPage()
