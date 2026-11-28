@@ -137,7 +137,8 @@ struct SettingsView: View {
                                             .wallpaper, .scratchpad,
                                             .volumeMixer, .soundOutput, .musicBlocker, .micMute, // Zenith fork: sound
                                             .screenshot, .screenRecording, .textCapture, .colorPicker, .cameraPreview,
-                                            .removeBackground, .emojiPicker, .calculator] // Zenith fork: Orbit wave 2
+                                            .removeBackground, .emojiPicker, .calculator, // Zenith fork: Orbit wave 2
+                                            .privacyBlur] // Zenith fork: Privacy
         if ownHeader.contains(router.page) { return nil }
         if router.page == .translate { return nil } // Zenith fork: Translate opens with its own header
         // Zenith fork: the Everyday pages open with their own hero.
@@ -218,6 +219,7 @@ struct SettingsView: View {
         case .removeBackground: RemoveBackgroundSettingsPage() // Zenith fork: Orbit wave 2
         case .emojiPicker: EmojiPickerSettingsPage()
         case .calculator: CalculatorSettingsPage()
+        case .privacyBlur: PrivacyBlurSettingsPage() // Zenith fork: Privacy
         // Zenith fork: the island's sections, pages of their own.
         case .notchCalendar: NotchCalendarSettingsPage()
         case .notchNotifications: NotchNotificationsSettingsPage()

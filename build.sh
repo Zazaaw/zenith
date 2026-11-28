@@ -761,6 +761,9 @@ if (( TEST )); then
         Sources/Vorssaint/Core/ZenithCalculatorStrings.swift
         Sources/Vorssaint/Core/ZenithEmojiPickerStrings.swift
         Sources/Vorssaint/Core/ZenithRemoveBackgroundStrings.swift
+        # Zenith fork: Privacy Blur's regions, placement and rules, and its words.
+        Sources/Vorssaint/Services/PrivacyBlur/PrivacyBlurSupport.swift
+        Sources/Vorssaint/Core/ZenithPrivacyBlurStrings.swift
         # Zenith fork: Orbit, the Features page's catalog, its words and its icons.
         Sources/Vorssaint/UI/Settings/OrbitCatalog.swift
         Sources/Vorssaint/Core/ZenithOrbitStrings.swift
@@ -771,6 +774,7 @@ if (( TEST )); then
         Sources/Vorssaint/UI/Icons/OrbitIconsSystemAI.swift
         Sources/Vorssaint/UI/Icons/OrbitIconsCatalog.swift
         Sources/Vorssaint/UI/Icons/OrbitIconsPages.swift
+        Sources/Vorssaint/UI/Icons/OrbitIconsPrivacy.swift
         Sources/Vorssaint/UI/Icons/OrbitIconRaster.swift
         Tests/*.swift
         build/generated-tests/*.swift

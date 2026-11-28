@@ -24,6 +24,7 @@ enum SettingsPage: Hashable, CaseIterable {
     case spaces // Zenith fork: Spaces in a fixed order, apart from the Dock
     case quickLauncher, quickToggles, quitApps, cleaningMode, wallpaper, scratchpad // Zenith fork: Quick Tools, one page each
     case removeBackground, emojiPicker, calculator // Zenith fork: Orbit wave 2, pages of their own
+    case privacyBlur // Zenith fork: frost over chat windows, in the Privacy group
     // Zenith fork: the island's sections with options of their own, each a page in the Island group.
     case notchCalendar, notchNotifications, notchMusic, notchTimer, notchAgents, notchDownloads, notchWatch
     // Zenith fork: the System group's pages split out of Energy, Monitor and General.
@@ -104,6 +105,8 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
     case zenithRemoveBackground, zenithRemoveBackgroundResult // Zenith fork: Orbit wave 2
     case zenithEmojiPicker, zenithEmojiPickerPicking
     case zenithCalculator, zenithCalculatorAnswers
+    case zenithPrivacyBlur, zenithPrivacyBlurApps, zenithPrivacyBlurRegions, zenithPrivacyBlurReveal, // Zenith fork
+         zenithPrivacyBlurKeys, zenithPrivacyBlurSharing
 
     var page: SettingsPage {
         switch self {
@@ -156,6 +159,8 @@ enum SettingsSectionAnchor: String, CaseIterable, Hashable {
         case .zenithRemoveBackground, .zenithRemoveBackgroundResult: return .removeBackground // Zenith fork
         case .zenithEmojiPicker, .zenithEmojiPickerPicking: return .emojiPicker
         case .zenithCalculator, .zenithCalculatorAnswers: return .calculator
+        case .zenithPrivacyBlur, .zenithPrivacyBlurApps, .zenithPrivacyBlurRegions, .zenithPrivacyBlurReveal,
+             .zenithPrivacyBlurKeys, .zenithPrivacyBlurSharing: return .privacyBlur // Zenith fork
         case .zenithAppearanceTheme, .zenithAppearanceMotion, .zenithAppearanceGlass, .zenithAppearanceBattery: return .appearance
         case .zenithDropZones, .zenithWatermark: return .shelf
         case .zenithDesignOverlay, .zenithBeautify: return .screenshot
@@ -613,7 +618,8 @@ enum FeatureVisibilitySupport {
              .workspaces, .remote, .pocket, .faceUnlock, .batteries,
              .meetings, .mechakey, .appearance, // Zenith fork
              .menuBar, // Zenith fork: the app's own menu bar, which no hub feature hides
-             .removeBackground, .emojiPicker, .calculator: // Zenith fork: Orbit wave 2
+             .removeBackground, .emojiPicker, .calculator, // Zenith fork: Orbit wave 2
+             .privacyBlur: // Zenith fork: Privacy
             return []
         }
     }

@@ -680,6 +680,9 @@ enum SettingsDirectory {
                                       icon: "face.smiling", keywords: EmojiPickerSearch.keywords(language)),
                 SettingsDirectoryItem(page: .calculator, title: ZenithStrings.calculator(language).title,
                                       icon: "plus.forwardslash.minus", keywords: CalculatorSearch.keywords(language)),
+                // Zenith fork: Privacy Blur, in the Privacy group.
+                SettingsDirectoryItem(page: .privacyBlur, title: ZenithStrings.privacyBlur(language).title,
+                                      icon: "eye.slash", keywords: PrivacyBlurSearch.keywords(language)),
                 SettingsDirectoryItem(page: .radialMenu,
                                       title: FeatureStrings.radialMenu(language).pageTitle,
                                       icon: "circle.grid.cross",
