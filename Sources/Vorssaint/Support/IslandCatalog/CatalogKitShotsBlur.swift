@@ -17,7 +17,7 @@ extension CatalogShots {
             ("privacy-blur-parts", .privacyBlur,
              [PrivacyBlurDefaults.enabled: true,
               PrivacyBlurDefaults.apps: [PrivacyBlurPreset.whatsApp.id, PrivacyBlurPreset.discord.id],
-              PrivacyBlurDefaults.regions: [PrivacyBlurPreset.whatsApp.id: ["chatList", "names"]],
+              PrivacyBlurDefaults.media: false, PrivacyBlurDefaults.noDelay: true,
               PrivacyBlurDefaults.when: PrivacyBlurWhen.whileSharing.rawValue,
               ZenithMoreOptionsRule.key("privacyBlur"): true], 1650),
         ]

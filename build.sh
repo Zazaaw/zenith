@@ -764,8 +764,9 @@ if (( TEST )); then
         # Zenith fork: App Lock's decisions and its words.
         Sources/Vorssaint/Services/AppLock/AppLockSupport.swift
         Sources/Vorssaint/Core/ZenithAppLockStrings.swift
-        # Zenith fork: Privacy Blur's regions, placement and rules, and its words.
+        # Zenith fork: Privacy Blur's items, placement and rules, and its words.
         Sources/Vorssaint/Services/PrivacyBlur/PrivacyBlurSupport.swift
+        Sources/Vorssaint/Services/PrivacyBlur/PrivacyBlurItems.swift
         Sources/Vorssaint/Core/ZenithPrivacyBlurStrings.swift
         # Zenith fork: Orbit, the Features page's catalog, its words and its icons.
         Sources/Vorssaint/UI/Settings/OrbitCatalog.swift

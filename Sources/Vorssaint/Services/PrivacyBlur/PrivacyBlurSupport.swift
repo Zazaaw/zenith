@@ -6,12 +6,13 @@ import Foundation
 
 // Zenith fork: Privacy Blur's decisions, without windows, observers or event
 // monitors, so the tests reach every one: the preferences, the chat apps and
-// where their columns sit, the parts of a window each region covers, which
-// part the pointer reveals, which on-screen windows get an overlay and when
-// one has to be ordered again, and when the blur is on at all.
+// how each one blurs, what the pointer reveals and how fast, which on-screen
+// windows get an overlay and when one has to be ordered again, and when the
+// blur is on at all. What a window's items are (chat rows, bubbles, names,
+// photos) is decided in PrivacyBlurItems.swift.
 //
 // Geometry is in the window server's space (origin at the top left of the
-// main display, y down). A window's parts are in its own space (origin at
+// main display, y down). A window's items are in its own space (origin at
 // its top left, y down), which is also the overlay view's flipped space.
 
 /// Privacy Blur's preferences. Kept here, not in `DefaultsKey`, so the
@@ -20,74 +21,66 @@ enum PrivacyBlurDefaults {
     static let enabled = "zenithPrivacyBlurEnabled"                 // Bool, default false
     static let apps = "zenithPrivacyBlurApps"                       // [String] app ids, default [WhatsApp]
     static let customNames = "zenithPrivacyBlurCustomNames"         // [String: String] bundle id → name
-    static let regions = "zenithPrivacyBlurRegions"                 // [String: [String]] app id → regions
-    static let listWidths = "zenithPrivacyBlurListWidths"           // [String: Double] app id → chat list edge
+    static let modes = "zenithPrivacyBlurModes"                     // [String: String] app id → PrivacyBlurMode
     static let strength = "zenithPrivacyBlurStrength"               // Double 0...1, default 0.6
-    static let hover = "zenithPrivacyBlurHover"                     // PrivacyBlurHover, default .region
+    // What the item mode blurs, as the browser extension's options: all on but "No transition delay".
+    static let messages = "zenithPrivacyBlurMessages"               // Bool, default true
+    static let previews = "zenithPrivacyBlurPreviews"               // Bool, default true
+    static let media = "zenithPrivacyBlurMedia"                     // Bool, default true
+    static let avatars = "zenithPrivacyBlurAvatars"                 // Bool, default true
+    static let names = "zenithPrivacyBlurNames"                     // Bool, default true
+    static let input = "zenithPrivacyBlurInput"                     // Bool, default true
+    static let hoverReveal = "zenithPrivacyBlurHoverReveal"         // Bool, default true
+    static let noDelay = "zenithPrivacyBlurNoDelay"                 // Bool, default false
     static let holdKey = "zenithPrivacyBlurHoldKey"                 // PrivacyBlurHoldKey, default .none
     static let revealWhileTyping = "zenithPrivacyBlurRevealTyping"  // Bool, default false
     static let when = "zenithPrivacyBlurWhen"                       // PrivacyBlurWhen, default .always
     static let presentationMode = "zenithPrivacyBlurPresentation"   // Bool, default false (not backed up)
     static let shortcut = "zenithPrivacyBlurShortcut"               // GlobalShortcut.storageValue, "" for none
+    /// The first version's hover menu ("off", "region", "circle"), read so
+    /// a person who had turned hovering off keeps it off.
+    static let legacyHover = "zenithPrivacyBlurHover"
 
     /// What the settings backup carries. Presentation mode is the state of
     /// one talk on one Mac, so it stays out.
-    static let backupKeys: Set<String> = [enabled, apps, customNames, regions, listWidths, strength, hover,
-                                          holdKey, revealWhileTyping, when, shortcut]
+    static let backupKeys: Set<String> = [enabled, apps, customNames, modes, strength, messages, previews, media,
+                                          avatars, names, input, hoverReveal, noDelay, holdKey, revealWhileTyping,
+                                          when, shortcut]
     static let defaultStrength = 0.6
 }
 
 // MARK: - Apps
 
-/// Where a chat app's columns sit, in points from its window's edges. The
-/// apps change their layouts, so these are a starting point the page lets
-/// the person adjust (the chat list's edge); "Everything" never depends on them.
-struct PrivacyBlurLayout: Equatable {
-    /// A strip on the leading edge before the chat list: WhatsApp's tabs,
-    /// Slack's workspaces, Discord's servers.
-    var rail: CGFloat
-    /// The chat list's trailing edge, from the window's leading edge.
-    var listEdge: CGFloat
-    /// The conversation's header (the name and photo), from the window's top.
-    var header: CGFloat
-    /// Where the chat list's rows start, from the window's top.
-    var listTop: CGFloat
-    /// The photos' column at the leading edge of the list.
-    var avatar: CGFloat
-    /// A trailing panel of names (Discord's members), 0 for none.
-    var trailing: CGFloat = 0
-
-    /// For an app Zenith knows nothing about: a common two-column chat.
-    static let generic = PrivacyBlurLayout(rail: 0, listEdge: 320, header: 56, listTop: 90, avatar: 64)
-
-    /// The chat list edge a slider may choose.
-    static let listEdgeRange: ClosedRange<Double> = 160...720
+/// How Zenith finds the items in an app's window.
+enum PrivacyBlurItemSupport: Equatable {
+    /// Rules made for the app from its Accessibility tree's shape (WhatsApp).
+    case tuned
+    /// Every text block, picture and text field the tree shows, without
+    /// knowing the app. Unverified, so the app starts on the whole window.
+    case generic
 }
 
 /// A chat app Privacy Blur knows: its name, the bundle ids it ships under
-/// and where its columns sit.
+/// and how its items are found.
 struct PrivacyBlurPreset: Identifiable, Equatable {
     let id: String
     let name: String
     let bundleIDs: [String]
-    let layout: PrivacyBlurLayout
+    let items: PrivacyBlurItemSupport
 
     static let whatsApp = PrivacyBlurPreset(
         id: "net.whatsapp.WhatsApp", name: "WhatsApp", bundleIDs: ["net.whatsapp.WhatsApp", "desktop.WhatsApp"],
-        layout: PrivacyBlurLayout(rail: 64, listEdge: 440, header: 64, listTop: 150, avatar: 72))
+        items: .tuned)
     static let telegram = PrivacyBlurPreset(
         id: "ru.keepcoder.Telegram", name: "Telegram",
-        bundleIDs: ["ru.keepcoder.Telegram", "com.tdesktop.Telegram", "org.telegram.desktop"],
-        layout: PrivacyBlurLayout(rail: 0, listEdge: 320, header: 56, listTop: 92, avatar: 66))
+        bundleIDs: ["ru.keepcoder.Telegram", "com.tdesktop.Telegram", "org.telegram.desktop"], items: .generic)
     static let slack = PrivacyBlurPreset(
-        id: "com.tinyspeck.slackmacgap", name: "Slack", bundleIDs: ["com.tinyspeck.slackmacgap"],
-        layout: PrivacyBlurLayout(rail: 72, listEdge: 340, header: 92, listTop: 92, avatar: 40))
+        id: "com.tinyspeck.slackmacgap", name: "Slack", bundleIDs: ["com.tinyspeck.slackmacgap"], items: .generic)
     static let discord = PrivacyBlurPreset(
         id: "com.hnc.Discord", name: "Discord", bundleIDs: ["com.hnc.Discord", "com.hnc.DiscordPTB", "com.hnc.DiscordCanary"],
-        layout: PrivacyBlurLayout(rail: 72, listEdge: 312, header: 70, listTop: 70, avatar: 56, trailing: 240))
+        items: .generic)
     static let messages = PrivacyBlurPreset(
-        id: "com.apple.MobileSMS", name: "Messages", bundleIDs: ["com.apple.MobileSMS"],
-        layout: PrivacyBlurLayout(rail: 0, listEdge: 320, header: 52, listTop: 100, avatar: 70))
+        id: "com.apple.MobileSMS", name: "Messages", bundleIDs: ["com.apple.MobileSMS"], items: .generic)
 
     /// In the order the page offers them; WhatsApp first, the default.
     static let all: [PrivacyBlurPreset] = [whatsApp, telegram, slack, discord, messages]
@@ -136,14 +129,9 @@ enum PrivacyBlurApps {
         return app.split(separator: ".").last.map(String.init) ?? app
     }
 
-    /// The layout for `app`, with the person's chat list edge when they moved it.
-    static func layout(of app: String, listEdges: [String: Double]) -> PrivacyBlurLayout {
-        var layout = PrivacyBlurPreset.named(app)?.layout ?? .generic
-        if let edge = listEdges[app], edge.isFinite {
-            let range = PrivacyBlurLayout.listEdgeRange
-            layout.listEdge = CGFloat(min(range.upperBound, max(range.lowerBound, edge)))
-        }
-        return layout
+    /// How the app's items are found: a preset's own rules, the generic ones otherwise.
+    static func support(of app: String) -> PrivacyBlurItemSupport {
+        PrivacyBlurPreset.named(app)?.items ?? .generic
     }
 
     /// The presets the Add menu still offers.
@@ -152,115 +140,29 @@ enum PrivacyBlurApps {
     }
 }
 
-// MARK: - Regions
+// MARK: - Modes
 
-/// What a window blurs.
-enum PrivacyBlurRegion: String, CaseIterable, Identifiable {
-    case everything, chatList, messages, names
+/// How an app's windows blur.
+enum PrivacyBlurMode: String, CaseIterable, Identifiable {
+    /// Each chat row's photo, name and preview, each bubble, the open
+    /// chat's name and photo and the typing field, on their own.
+    case items
+    /// One pane over the whole window. Also what the item mode falls back
+    /// to while it can't find the items (no Accessibility, a layout it
+    /// doesn't recognise).
+    case window
 
     var id: String { rawValue }
 
-    /// The choice as stored, Everything when nothing (or nothing known) is.
-    static func choice(_ stored: [String]?) -> Set<PrivacyBlurRegion> {
-        let regions = Set((stored ?? []).compactMap(PrivacyBlurRegion.init(rawValue:)))
-        if regions.isEmpty || regions.contains(.everything) { return [.everything] }
-        return regions
-    }
-
-    /// The choice after a tile is pressed: Everything stands alone, the parts
-    /// combine, and taking the last part away leaves Everything.
-    static func toggled(_ current: Set<PrivacyBlurRegion>, _ tapped: PrivacyBlurRegion) -> Set<PrivacyBlurRegion> {
-        if tapped == .everything { return [.everything] }
-        var next = current.subtracting([.everything])
-        if next.contains(tapped) { next.remove(tapped) } else { next.insert(tapped) }
-        return next.isEmpty ? [.everything] : next
-    }
-
-    /// For storage, in a fixed order.
-    static func stored(_ regions: Set<PrivacyBlurRegion>) -> [String] {
-        allCases.filter(regions.contains).map(\.rawValue)
-    }
-}
-
-/// One blurred part of a window, in the window's own space.
-struct PrivacyBlurPiece: Equatable {
-    let region: PrivacyBlurRegion
-    let rect: CGRect
-}
-
-enum PrivacyBlurRegions {
-    /// Narrower than the chat list plus this, a chat app shows one column at
-    /// a time, so a part can't be told from the rest: the whole window blurs.
-    static let compactConversation: CGFloat = 260
-    /// Windows smaller than this a side are popovers and tooltips, never chats.
-    static let minimumSide: CGFloat = 120
-
-    /// The parts of a window of `size` that `regions` blur. Everything is the
-    /// window in two panes (the chat list's column and the rest), so hovering
-    /// one reveals it alone. Parts inside another part are dropped, so no
-    /// spot blurs twice.
-    static func pieces(_ regions: Set<PrivacyBlurRegion>, layout: PrivacyBlurLayout, size: CGSize) -> [PrivacyBlurPiece] {
-        let w = size.width, h = size.height
-        guard w >= 1, h >= 1 else { return [] }
-        let full = CGRect(x: 0, y: 0, width: w, height: h)
-        let rail = min(max(0, layout.rail), w / 4)
-        let edge = min(max(layout.listEdge, rail + 80), w)
-        let compact = w < edge + compactConversation
-        let choice = regions.isEmpty ? [.everything] : regions
-
-        if choice.contains(.everything) || compact {
-            guard !compact else { return [PrivacyBlurPiece(region: .everything, rect: full)] }
-            return [PrivacyBlurPiece(region: .everything, rect: CGRect(x: 0, y: 0, width: edge, height: h)),
-                    PrivacyBlurPiece(region: .everything, rect: CGRect(x: edge, y: 0, width: w - edge, height: h))]
-        }
-
-        let trailing = min(max(0, layout.trailing), (w - edge) / 2)
-        let header = min(max(0, layout.header), h / 3)
-        let conversationWidth = w - edge - trailing
-        var pieces: [PrivacyBlurPiece] = []
-        if choice.contains(.chatList) {
-            pieces.append(PrivacyBlurPiece(region: .chatList, rect: CGRect(x: rail, y: 0, width: edge - rail, height: h)))
-        }
-        if choice.contains(.messages) {
-            pieces.append(PrivacyBlurPiece(region: .messages,
-                                           rect: CGRect(x: edge, y: header, width: conversationWidth, height: h - header)))
-        }
-        if choice.contains(.names) {
-            if header > 0 {
-                pieces.append(PrivacyBlurPiece(region: .names, rect: CGRect(x: edge, y: 0, width: conversationWidth, height: header)))
-            }
-            let top = min(max(0, layout.listTop), h)
-            let avatar = min(max(0, layout.avatar), edge - rail)
-            if avatar > 0, top < h {
-                pieces.append(PrivacyBlurPiece(region: .names, rect: CGRect(x: rail, y: top, width: avatar, height: h - top)))
-            }
-            if trailing > 0 {
-                pieces.append(PrivacyBlurPiece(region: .names,
-                                               rect: CGRect(x: w - trailing, y: header, width: trailing, height: h - header)))
-            }
-        }
-        // A part inside another (the photos inside a blurred chat list) goes.
-        return pieces.enumerated().filter { index, piece in
-            !pieces.enumerated().contains { other, outer in
-                other != index && outer.rect.contains(piece.rect) && (outer.rect != piece.rect || other < index)
-            }
-        }.map(\.element).filter { $0.rect.width >= 1 && $0.rect.height >= 1 }
+    /// The app's mode as stored, or its default: items for an app with
+    /// rules of its own, the whole window for the rest.
+    static func of(_ app: String, stored: [String: String]) -> PrivacyBlurMode {
+        if let raw = stored[app], let mode = PrivacyBlurMode(rawValue: raw) { return mode }
+        return PrivacyBlurApps.support(of: app) == .tuned ? .items : .window
     }
 }
 
 // MARK: - Revealing
-
-/// What hovering a blurred window shows.
-enum PrivacyBlurHover: String, CaseIterable, Identifiable {
-    case off
-    /// The part under the pointer.
-    case region
-    /// A soft circle around the pointer.
-    case circle
-
-    var id: String { rawValue }
-    static let defaultValue = PrivacyBlurHover.region
-}
 
 /// The key that reveals every blurred window while it is held alone.
 enum PrivacyBlurHoldKey: String, CaseIterable, Identifiable {
@@ -303,10 +205,42 @@ enum PrivacyBlurHoldKey: String, CaseIterable, Identifiable {
 enum PrivacyBlurReveal: Equatable {
     case none
     case all
-    /// The piece at this index is clear.
-    case piece(Int)
-    /// A soft circle at this point (the window's space) is clear.
+    /// The item at this index is clear.
+    case item(Int)
+    /// A soft circle at this point (the window's space) is clear: hovering
+    /// a window blurred whole.
     case circle(CGPoint)
+}
+
+/// How a reveal fades in and out.
+struct PrivacyBlurTransition: Equatable {
+    /// How long the pointer rests on an item before it clears.
+    var delay: TimeInterval
+    var fadeIn: TimeInterval
+    var fadeOut: TimeInterval
+
+    /// The rest before an item clears, as the extension has it.
+    static let restingDelay: TimeInterval = 0.3
+
+    /// A short rest before an item clears, unless "No transition delay" is
+    /// on. Reduce Motion keeps the rest but drops the fades. Blurring again
+    /// never waits.
+    static func timing(noDelay: Bool, reduceMotion: Bool) -> PrivacyBlurTransition {
+        let delay = noDelay ? 0 : restingDelay
+        if reduceMotion { return PrivacyBlurTransition(delay: delay, fadeIn: 0, fadeOut: 0) }
+        return PrivacyBlurTransition(delay: delay, fadeIn: noDelay ? 0 : 0.16, fadeOut: noDelay ? 0.1 : 0.2)
+    }
+
+    /// Whether going from `current` to `next` waits for the rest: only an
+    /// item (or the circle) coming clear under the pointer. Holding the key,
+    /// typing, blurring again, the circle following the pointer and the
+    /// revealed item moving (a scroll, a read) are at once.
+    static func waits(from current: PrivacyBlurReveal, to next: PrivacyBlurReveal) -> Bool {
+        switch (current, next) {
+        case (_, .none), (_, .all), (.circle, .circle): return false
+        default: return current != next
+        }
+    }
 }
 
 enum PrivacyBlurRevealing {
@@ -325,31 +259,36 @@ enum PrivacyBlurRevealing {
         return now >= lastKey && now - lastKey < typingHold
     }
 
-    /// The piece under `point` (the window's space): the smallest one that
-    /// holds it, nil outside them all.
-    static func piece(at point: CGPoint, in pieces: [PrivacyBlurPiece]) -> Int? {
-        pieces.indices.filter { pieces[$0].rect.contains(point) }
-            .min { pieces[$0].rect.width * pieces[$0].rect.height < pieces[$1].rect.width * pieces[$1].rect.height }
-    }
-
     /// One overlay's reveal. Holding the key shows every window; typing shows
-    /// the app's focused window; otherwise the pointer, when it is over this
-    /// window, shows the part or the circle under it.
-    static func reveal(hover: PrivacyBlurHover, holding: Bool, typing: Bool, isFocusedWindow: Bool,
-                       pointer: CGPoint?, windowSize: CGSize, pieces: [PrivacyBlurPiece]) -> PrivacyBlurReveal {
+    /// the app's focused window; otherwise, when hovering reveals, the
+    /// pointer shows the item under it, or a circle around it on a window
+    /// blurred whole.
+    static func reveal(hoverReveal: Bool, holding: Bool, typing: Bool, isFocusedWindow: Bool,
+                       pointer: CGPoint?, windowSize: CGSize, items: [PrivacyBlurItem]) -> PrivacyBlurReveal {
         if holding { return .all }
         if typing && isFocusedWindow { return .all }
-        guard let pointer, CGRect(origin: .zero, size: windowSize).contains(pointer) else { return .none }
-        switch hover {
-        case .off:
-            return .none
-        case .region:
-            return piece(at: pointer, in: pieces).map(PrivacyBlurReveal.piece) ?? .none
-        case .circle:
-            let circle = CGRect(x: pointer.x - circleRadius, y: pointer.y - circleRadius,
-                                width: circleRadius * 2, height: circleRadius * 2)
-            return pieces.contains { $0.rect.intersects(circle) } ? .circle(pointer) : .none
-        }
+        guard hoverReveal, let pointer, CGRect(origin: .zero, size: windowSize).contains(pointer),
+              let index = PrivacyBlurItems.item(at: pointer, in: items) else { return .none }
+        return items[index].kind == .window ? .circle(pointer) : .item(index)
+    }
+
+    /// Whether two items are the same one, moved a little (a scroll, a new
+    /// read): the same kind, mostly overlapping.
+    static func sameItem(_ a: PrivacyBlurItem, _ b: PrivacyBlurItem) -> Bool {
+        guard a.kind == b.kind else { return false }
+        let overlap = a.rect.intersection(b.rect)
+        guard !overlap.isNull else { return false }
+        let smaller = min(a.rect.width * a.rect.height, b.rect.width * b.rect.height)
+        return smaller > 0 && overlap.width * overlap.height >= smaller * 0.6
+    }
+
+    /// The reveal after the items changed: an item revealed before stays
+    /// revealed at its new index, or nothing is when it went.
+    static func remap(_ reveal: PrivacyBlurReveal, from old: [PrivacyBlurItem], to new: [PrivacyBlurItem]) -> PrivacyBlurReveal {
+        guard case .item(let index) = reveal else { return reveal }
+        guard old.indices.contains(index) else { return .none }
+        if new.indices.contains(index), sameItem(old[index], new[index]) { return reveal }
+        return new.firstIndex { sameItem(old[index], $0) }.map(PrivacyBlurReveal.item) ?? .none
     }
 
     /// How opaque the frost over the blur is, for a strength of 0…1: always
@@ -372,7 +311,15 @@ struct PrivacyBlurWindow: Equatable {
     let alpha: Double
 }
 
+/// Kept for callers of the first version: the smallest chat window.
+enum PrivacyBlurRegions {
+    static let minimumSide = PrivacyBlurPlacement.minimumSide
+}
+
 enum PrivacyBlurPlacement {
+    /// Windows smaller than this a side are popovers and tooltips, never chats.
+    static let minimumSide: CGFloat = 120
+
     /// `CGWindowListCopyWindowInfo`'s entries, front to back as listed.
     /// Bounds, owner, number and layer need no permission.
     static func windows(from info: [[String: Any]]) -> [PrivacyBlurWindow] {
@@ -396,8 +343,7 @@ enum PrivacyBlurPlacement {
     static func targets(in windows: [PrivacyBlurWindow], pids: Set<pid_t>) -> [PrivacyBlurWindow] {
         windows.filter { window in
             pids.contains(window.pid) && window.layer == 0 && window.alpha > 0.01
-                && window.frame.width >= PrivacyBlurRegions.minimumSide
-                && window.frame.height >= PrivacyBlurRegions.minimumSide
+                && window.frame.width >= minimumSide && window.frame.height >= minimumSide
         }
     }
 
@@ -484,32 +430,37 @@ struct PrivacyBlurPreferences: Equatable {
     var enabled: Bool
     var apps: [String]
     var customNames: [String: String]
-    var regions: [String: Set<PrivacyBlurRegion>]
-    var listEdges: [String: Double]
+    var modes: [String: PrivacyBlurMode]
+    var options: PrivacyBlurItemOptions
     var strength: Double
-    var hover: PrivacyBlurHover
     var holdKey: PrivacyBlurHoldKey
     var revealWhileTyping: Bool
     var when: PrivacyBlurWhen
     var presentation: Bool
 
     init(defaults: UserDefaults) {
-        enabled = defaults.object(forKey: PrivacyBlurDefaults.enabled) as? Bool ?? false
+        func bool(_ key: String, _ fallback: Bool) -> Bool { defaults.object(forKey: key) as? Bool ?? fallback }
+        enabled = bool(PrivacyBlurDefaults.enabled, false)
         apps = PrivacyBlurApps.normalized(defaults.array(forKey: PrivacyBlurDefaults.apps) as? [String])
         customNames = defaults.dictionary(forKey: PrivacyBlurDefaults.customNames) as? [String: String] ?? [:]
-        let storedRegions = defaults.dictionary(forKey: PrivacyBlurDefaults.regions) as? [String: [String]] ?? [:]
-        regions = Dictionary(uniqueKeysWithValues: apps.map { ($0, PrivacyBlurRegion.choice(storedRegions[$0])) })
-        listEdges = defaults.dictionary(forKey: PrivacyBlurDefaults.listWidths) as? [String: Double] ?? [:]
+        let storedModes = defaults.dictionary(forKey: PrivacyBlurDefaults.modes) as? [String: String] ?? [:]
+        modes = Dictionary(uniqueKeysWithValues: apps.map { ($0, PrivacyBlurMode.of($0, stored: storedModes)) })
+        let hoveringWasOff = defaults.string(forKey: PrivacyBlurDefaults.legacyHover) == "off"
+        options = PrivacyBlurItemOptions(messages: bool(PrivacyBlurDefaults.messages, true),
+                                         previews: bool(PrivacyBlurDefaults.previews, true),
+                                         media: bool(PrivacyBlurDefaults.media, true),
+                                         avatars: bool(PrivacyBlurDefaults.avatars, true),
+                                         names: bool(PrivacyBlurDefaults.names, true),
+                                         input: bool(PrivacyBlurDefaults.input, true),
+                                         hoverReveal: bool(PrivacyBlurDefaults.hoverReveal, !hoveringWasOff),
+                                         noDelay: bool(PrivacyBlurDefaults.noDelay, false))
         let strength = defaults.object(forKey: PrivacyBlurDefaults.strength) as? Double ?? PrivacyBlurDefaults.defaultStrength
         self.strength = strength.isFinite ? min(1, max(0, strength)) : PrivacyBlurDefaults.defaultStrength
-        hover = PrivacyBlurHover(rawValue: defaults.string(forKey: PrivacyBlurDefaults.hover) ?? "") ?? .defaultValue
         holdKey = PrivacyBlurHoldKey(rawValue: defaults.string(forKey: PrivacyBlurDefaults.holdKey) ?? "") ?? .none
-        revealWhileTyping = defaults.object(forKey: PrivacyBlurDefaults.revealWhileTyping) as? Bool ?? false
+        revealWhileTyping = bool(PrivacyBlurDefaults.revealWhileTyping, false)
         when = PrivacyBlurWhen(rawValue: defaults.string(forKey: PrivacyBlurDefaults.when) ?? "") ?? .always
-        presentation = defaults.object(forKey: PrivacyBlurDefaults.presentationMode) as? Bool ?? false
+        presentation = bool(PrivacyBlurDefaults.presentationMode, false)
     }
 
-    func regions(of app: String) -> Set<PrivacyBlurRegion> { regions[app] ?? [.everything] }
-
-    func layout(of app: String) -> PrivacyBlurLayout { PrivacyBlurApps.layout(of: app, listEdges: listEdges) }
+    func mode(of app: String) -> PrivacyBlurMode { modes[app] ?? PrivacyBlurMode.of(app, stored: [:]) }
 }

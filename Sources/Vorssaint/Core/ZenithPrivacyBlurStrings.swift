@@ -10,23 +10,23 @@ import Foundation
 struct ZenithPrivacyBlurStrings {
     // Page.
     let title = "Privacy Blur"
-    let subtitle = "Frost your chats so people around you can’t read them. Hover to peek, the app keeps working underneath."
+    let subtitle = "Blur each chat, message, name and photo so people around you can’t read them. Hover one to peek, the app keeps working underneath."
     let enable = "Enable Privacy Blur"
     let enableHint = "Off, nothing watches your apps and no overlay is drawn."
 
     // Accessibility.
-    let accessibilityNeeded = "Privacy Blur follows your chat windows as they move through Accessibility. Without it the blur still works, but catches up a moment later."
+    let accessibilityNeeded = "Privacy Blur finds each chat, message and photo, and follows your chat windows as they move, through Accessibility. Without it each window blurs whole and catches up a moment later."
     let openAccessibility = "Allow Accessibility"
 
     // Stage.
-    let stageCaption = "A frosted pane sits just above the app’s window. Clicks go straight through."
+    let stageCaption = "Each item gets its own blur, just above the app’s window. Clicks go straight through."
     let stageBlurred = "Blurred"
     let stageHover = "Hover"
     let stageSharing = "Sharing"
 
     // Apps.
     let appsSection = "Apps"
-    let appsFooter = "Privacy Blur draws a pane over these apps’ windows. Nothing is read from them or injected into them."
+    let appsFooter = "Privacy Blur draws over these apps’ windows. It reads only where things sit in them, never what they say, and changes nothing inside them."
     let addApp = "Add App"
     let add = "Add"
     let addOtherApp = "Other App…"
@@ -36,23 +36,29 @@ struct ZenithPrivacyBlurStrings {
     let notRunning = "Not open"
     let noApps = "Add an app to blur its windows."
 
-    // Regions.
-    let regionsSection = "What to blur"
-    let regionsFor = "Regions for"
-    let regionsCaption = "Everything always fits. The parts follow where each app usually puts its columns."
-    let everything = "Everything"
-    let everythingDetail = "The whole window, in two panes"
-    let chatList = "Chat list"
-    let chatListDetail = "The column of conversations"
-    let messages = "Messages"
-    let messagesDetail = "The open conversation"
-    let names = "Names & photos"
-    let namesDetail = "The conversation’s header and the list’s photos"
-    let listEdge = "Chat list width"
-    let listEdgeCaption = "Where the chat list ends, from the window’s left edge. Match it to the app if it moved."
-    let resetListEdge = "Reset"
-    let defaultListEdge = "The app’s usual width"
-    let namesNote = "Names in the chat list sit beside their messages: blur the Chat list to hide them too."
+    // What to blur.
+    let itemsSection = "What to blur"
+    let itemsFooter = "Each item blurs on its own and clears when you hover it. Zenith finds them by their shape in the app’s Accessibility tree; it never reads what they say."
+    let blurMode = "Blur"
+    let modeItems = "Each item"
+    let modeItemsExperimental = "Each item (experimental)"
+    let modeWindow = "Whole window"
+    let modeCaption = "Each item blurs chat rows, bubbles, names and photos one by one. Whole window covers it all with one pane, for apps Zenith doesn’t know."
+    let messages = "All messages in chat"
+    let messagesCaption = "Every bubble in the open chat."
+    let previews = "Last messages preview"
+    let previewsCaption = "The last message under each chat in the list."
+    let media = "Media preview"
+    let mediaCaption = "Photos, videos and stickers in the chat, apart from text."
+    let avatars = "Profile pictures"
+    let avatarsCaption = "The photos in the chat list and the open chat’s header."
+    let names = "Group/user names"
+    let namesCaption = "The names in the chat list and the open chat’s header."
+    let input = "Blur typing input"
+    let inputCaption = "The field you type your message in."
+    let itemsNeedAccessibility = "Each item needs Accessibility to find the items. Without it the whole window blurs."
+    let windowOnlyNote = "Apps set to Whole window, and any app while Zenith can’t make out its layout, blur whole: hovering clears a circle around the pointer."
+    let genericNote = "For apps other than WhatsApp, Each item blurs every text block, picture and text field Zenith can find. It hasn’t been tuned for them yet."
 
     // Blur.
     let blurSection = "Blur"
@@ -63,11 +69,10 @@ struct ZenithPrivacyBlurStrings {
 
     // Revealing.
     let revealSection = "Revealing"
-    let hover = "Hover reveals"
-    let hoverCaption = "Moving the pointer over a blurred window shows what is under it, for you alone to read."
-    let hoverOff = "Nothing"
-    let hoverRegion = "The part under the pointer"
-    let hoverCircle = "A circle around the pointer"
+    let hoverReveal = "Reveal items on hover"
+    let hoverRevealCaption = "The item under the pointer clears for you to read; the rest stays blurred. On a window blurred whole, a circle around the pointer clears."
+    let noDelay = "No transition delay"
+    let noDelayCaption = "Items clear as soon as the pointer reaches them, without the short rest first."
     let holdKey = "Hold to reveal all"
     let holdKeyCaption = "While you hold this key alone, every blurred window clears."
     let holdNone = "Off"
@@ -100,29 +105,10 @@ struct ZenithPrivacyBlurStrings {
         Mirror(reflecting: self).children.compactMap { $0.value as? String }
     }
 
-    func title(_ region: PrivacyBlurRegion) -> String {
-        switch region {
-        case .everything: return everything
-        case .chatList: return chatList
-        case .messages: return messages
-        case .names: return names
-        }
-    }
-
-    func detail(_ region: PrivacyBlurRegion) -> String {
-        switch region {
-        case .everything: return everythingDetail
-        case .chatList: return chatListDetail
-        case .messages: return messagesDetail
-        case .names: return namesDetail
-        }
-    }
-
-    func title(_ hover: PrivacyBlurHover) -> String {
-        switch hover {
-        case .off: return hoverOff
-        case .region: return hoverRegion
-        case .circle: return hoverCircle
+    func title(_ mode: PrivacyBlurMode, generic: Bool) -> String {
+        switch mode {
+        case .items: return generic ? modeItemsExperimental : modeItems
+        case .window: return modeWindow
         }
     }
 
@@ -155,12 +141,14 @@ extension ZenithStrings {
 enum PrivacyBlurSearch {
     static let aliases = ["privacy blur", "privacy", "blur", "blur chat", "hide chat", "hide messages", "frost",
                           "whatsapp", "telegram", "screen sharing", "presentation", "shoulder surfing",
-                          "privasi", "buram","sembunyikan chat", "sembunyikan pesan",
-                          "samarkan", "kaburkan", "rahasia", "berbagi layar", "presentasi"]
+                          "privasi", "buram", "sembunyikan chat", "sembunyikan pesan",
+                          "samarkan", "kaburkan", "rahasia", "berbagi layar", "presentasi",
+                          "foto profil", "nama grup", "pratinjau pesan"]
 
     static func keywords(_ language: AppLanguage) -> [String] {
         let text = ZenithStrings.privacyBlur(language)
-        return [text.enable, text.appsSection, text.regionsSection, text.strength, text.hover, text.shortcut,
+        return [text.enable, text.appsSection, text.itemsSection, text.messages, text.previews, text.media,
+                text.avatars, text.names, text.input, text.strength, text.hoverReveal, text.noDelay, text.shortcut,
                 text.presentation]
     }
 }
