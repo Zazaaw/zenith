@@ -84,6 +84,13 @@ final class PrivacyBlurOverlay {
         canvas.apply(reveal, animated: true)
     }
 
+    /// Refreshes in a row the pane was up but not in the on-screen list.
+    var misses = 0
+
+    func hide() {
+        panel.orderOut(nil)
+    }
+
     func close() {
         panel.orderOut(nil)
         panel.close()

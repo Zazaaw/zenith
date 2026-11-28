@@ -244,6 +244,15 @@ final class PrivacyBlurTracker {
             overlay.update(frame: target.frame,
                            cocoaFrame: PrivacyBlurPlacement.cocoaFrame(target.frame, mainDisplayHeight: mainHeight),
                            pieces: pieces, frost: frost)
+            // Up but missing from this Space's list twice running: the pane
+            // stayed on the Space its window left (full screen, a moved
+            // window). Out and in again brings it to the current one.
+            let listed = overlay.windowNumber.map { id in windows.contains { $0.id == id } } ?? false
+            overlay.misses = overlay.isOnScreen && !listed ? overlay.misses + 1 : 0
+            if overlay.misses >= 2 {
+                overlay.hide()
+                overlay.misses = 0
+            }
             if PrivacyBlurPlacement.needsOrdering(overlay: overlay.isOnScreen ? overlay.windowNumber : nil,
                                                   target: target, ownPID: ownPID, in: windows) {
                 overlay.order(above: target.id)
